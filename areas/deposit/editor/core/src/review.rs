@@ -229,6 +229,15 @@ impl FieldDiff {
     pub fn changed(&self) -> bool {
         self.published != self.submitted
     }
+
+    /// Whether this row is a change the pull-request run would write: [`Self::changed`], and, for
+    /// a project the published set carries, not a [`GIT_OWNED`](registry::GIT_OWNED) member,
+    /// whose published copy is the one that counts. What Online detection and the submit gate's
+    /// "nothing to review" refusal both count.
+    #[must_use]
+    pub fn counts_as_change(&self, published: bool) -> bool {
+        self.changed() && !(published && registry::GIT_OWNED.contains(&self.field.as_str()))
+    }
 }
 
 /// Compare a submission against the published project, member by member.

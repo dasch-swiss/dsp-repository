@@ -21,6 +21,7 @@ pub struct LinkBuilder {
     aria_label: Option<String>,
     aria_current: Option<String>,
     disabled: bool,
+    autofocus: bool,
     id: Option<String>,
     test_id: Option<String>,
 }
@@ -37,6 +38,7 @@ pub fn link(label: impl Render, href: impl Into<String>) -> LinkBuilder {
         aria_label: None,
         aria_current: None,
         disabled: false,
+        autofocus: false,
         id: None,
         test_id: None,
     }
@@ -92,6 +94,13 @@ impl LinkBuilder {
         self
     }
 
+    /// Focus the link when the page loads: for the safe choice of a confirmation, so a reader
+    /// lands on it rather than on the irreversible one.
+    pub fn autofocus(mut self) -> Self {
+        self.autofocus = true;
+        self
+    }
+
     fn markup(&self) -> Markup {
         let href = (!self.disabled).then_some(self.href.as_str());
         let aria_disabled = self.disabled.then_some("true");
@@ -109,6 +118,7 @@ impl LinkBuilder {
                 aria-current=[self.aria_current.as_deref()]
                 aria-disabled=[aria_disabled]
                 tabindex=[tabindex]
+                autofocus[self.autofocus]
                 id=[self.id.as_deref()]
                 data-testid=[self.test_id.as_deref()]
             { (self.label) }
@@ -147,6 +157,12 @@ mod tests {
         assert!(out.contains(r#"href="/x""#));
         assert!(out.contains(r#"class="link "#), "{out}");
         assert!(out.contains(">Go</a>"));
+    }
+
+    #[test]
+    fn autofocus_is_rendered_only_when_asked_for() {
+        assert!(link("Go", "/x").autofocus().build().into_string().contains(" autofocus"));
+        assert!(!link("Go", "/x").build().into_string().contains("autofocus"));
     }
 
     #[test]

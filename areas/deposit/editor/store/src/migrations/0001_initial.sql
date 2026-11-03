@@ -19,7 +19,7 @@
 -- hand — which is the only way in, the image having no shell.
 --
 -- No foreign keys. The account columns (`updated_by`, `submitted_by`,
--- `reviewed_by`, `actor`, `approved_by`, `proposed_by`, `decided_by`) hold ids
+-- `reviewed_by`, `actor`, `approved_by`, `proposed_by`, `decided_by`, `created_by`) hold ids
 -- of accounts that live in identity's database, so they cannot reference them
 -- (areas/deposit/ADR-0004). A removed account leaves its id behind, naming no
 -- account; readers resolve names through identity and render a miss as unknown.
@@ -94,8 +94,9 @@ CREATE INDEX submissions_reviewed_by ON submissions (reviewed_by);
 -- substituted for their value before approving. The last two read
 -- `review_state`.
 --
--- Append-only: a row is written by the transition that ends the round and never
--- updated, so the rows for one project are its review history. Repeated rounds
+-- Never updated: a row is written by the transition that ends the round, so the
+-- rows for one project are its review history. RDU's removal of a created project
+-- deletes them with the project. Repeated rounds
 -- leave a trail rather than overwriting one field.
 CREATE TABLE review_rounds (
     id            TEXT NOT NULL PRIMARY KEY,
@@ -226,3 +227,15 @@ CREATE INDEX entity_proposals_shortcode_status ON entity_proposals (shortcode, s
 CREATE INDEX entity_proposals_kind_entity_id ON entity_proposals (kind, entity_id);
 CREATE INDEX entity_proposals_proposed_by ON entity_proposals (proposed_by);
 CREATE INDEX entity_proposals_decided_by ON entity_proposals (decided_by);
+
+-- Projects RDU created in the editor and the published set does not carry yet.
+-- A registration of its own rather than the draft row: discarding the draft
+-- must not delete the project. Deleted by RDU, or by the startup pass once the
+-- published set carries the shortcode. `shortcode` is the normalized key the
+-- other tables use.
+CREATE TABLE created_projects (
+    shortcode  TEXT NOT NULL PRIMARY KEY,
+    name       TEXT NOT NULL,
+    created_by TEXT,
+    created_at TEXT NOT NULL
+) STRICT;

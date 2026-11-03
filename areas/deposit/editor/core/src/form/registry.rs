@@ -528,6 +528,11 @@ pub const FIELDS: &[Field] = &[
 /// forgotten field.
 pub const OMITTED: &[&str] = &["records", "clusters", "collections"];
 
+/// The display-only members git owns once the published set carries the project: RDU maintains
+/// them in the repository, so a local record's copy is never compared against the published one
+/// nor written back over it.
+pub const GIT_OWNED: &[&str] = &["howToCite", "legalInfo"];
+
 /// The sections, in the order the rail shows them: the published project page's
 /// grouping, so the structure a depositor edits in is the one they read in.
 pub const SECTIONS: &[Section] = &[
@@ -749,6 +754,16 @@ mod tests {
             display_only,
             BTreeSet::from(["id", "pid", "shortcode", "howToCite", "legalInfo"])
         );
+    }
+
+    #[test]
+    fn every_git_owned_member_is_a_display_only_field() {
+        // An editable one would have a depositor's change ignored at startup and overwritten at
+        // collection.
+        for member in GIT_OWNED {
+            let field = FIELDS.iter().find(|field| field.id == *member);
+            assert!(field.is_some_and(|field| field.display_only), "{member}");
+        }
     }
 
     /// The `*.json` files directly under `dir`.

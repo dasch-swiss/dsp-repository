@@ -155,6 +155,8 @@ mod tests {
             "/projects/0801/entities/person-1/fields/affiliations/add",
             "/projects/0801/entities/person-1/fields/affiliations/x/remove",
             "/review/0801",
+            "/projects/new",
+            "/projects/0801/remove",
             "/depositors",
             "/depositors/x/edit",
             "/depositors/x/remove",

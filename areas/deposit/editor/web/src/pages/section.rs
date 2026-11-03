@@ -297,6 +297,8 @@ pub struct SectionView<'a> {
     /// The published project's name, or `None` for a shortcode the published set
     /// does not hold.
     pub project_name: Option<&'a str>,
+    /// A project RDU created in the editor, which "Discard draft" reseeds rather than empties.
+    pub created: bool,
     pub section: &'static Section,
     /// Which fields and sections this reader sees. The registry is consulted by
     /// the decoder too, so the form and the save cannot disagree.
@@ -602,16 +604,7 @@ fn status(view: &SectionView<'_>) -> Markup {
                             .title(WITHDRAWN_TITLE)
                     })
                 }
-                Some(Notice::Discarded) => {
-                    ({
-                        alert(
-                                "The draft has been discarded. This form is showing the project's published \
-                                 metadata again, and nothing you save from here is submitted until you say so.",
-                            )
-                            .variant(AlertVariant::Success)
-                            .title(DISCARDED_TITLE)
-                    })
-                }
+                Some(Notice::Discarded) => { (discarded_notice(view.created)) }
                 Some(Notice::Changed { by, at }) => { (changed_notice(by, at)) }
                 Some(Notice::Proposed { kind, operation, entity_id }) => {
                     (proposed_notice(view, kind, operation, entity_id))
@@ -891,6 +884,50 @@ fn changed_notice(by: Option<&str>, at: &str) -> Markup {
     }
 }
 
+/// The notice after a discard. A created project has no published metadata to return to: it
+/// re-opens with what its creation derived.
+fn discarded_notice(created: bool) -> Markup {
+    let message = if created {
+        "The draft has been discarded. This form is showing the project with only its shortcode and \
+         identifiers, and nothing you save from here is submitted until you say so."
+    } else {
+        "The draft has been discarded. This form is showing the project's published metadata again, and \
+         nothing you save from here is submitted until you say so."
+    };
+    html! {
+        (alert(message).variant(AlertVariant::Success).title(DISCARDED_TITLE))
+    }
+}
+
+/// What the discard confirmation says will happen.
+const fn discard_consequence(created: bool) -> &'static str {
+    if created {
+        "Discarding the draft removes everything entered since the project was created, its name included. It \
+         cannot be undone. The project itself is kept, with its shortcode and identifiers."
+    } else {
+        "Discarding the draft removes every change that has not been submitted. It cannot be undone. The \
+         project itself is not affected — the form re-opens showing its published metadata."
+    }
+}
+
+/// A question before an irreversible action: a group named by its heading and described by
+/// `consequence`, so both are announced on entry, with focus on the control carrying `autofocus`
+/// (the safe choice), on a page load and where the enhanced path morphs the panel in.
+fn confirmation(heading: &str, consequence: &str, choices: Markup) -> Markup {
+    html! {
+        div class="rounded border border-neutral-300 bg-white p-4 flex flex-col gap-3"
+            role="group"
+            aria-labelledby="confirm-heading"
+            aria-describedby="confirm-consequence"
+            data-init=(FOCUS_AUTOFOCUS)
+        {
+            h3 id="confirm-heading" class="font-bold" { (heading) }
+            p id="confirm-consequence" { (consequence) }
+            div class="flex items-center gap-4" { (choices) }
+        }
+    }
+}
+
 /// The write controls, which depend on where the project sits in the cycle.
 /// Every one is a named submit on the same form: a native submit posts the
 /// activated button's name and value and Datastar's form mode appends them from
@@ -899,40 +936,30 @@ fn changed_notice(by: Option<&str>, at: &str) -> Markup {
 fn controls(view: &SectionView<'_>) -> Markup {
     html! {
         @if view.confirming == Some(Confirmation::Discard) {
-            div class="rounded border border-neutral-300 bg-white p-4 flex flex-col gap-3" {
-                p {
-                    "Discarding the draft removes every change that has not been submitted. It cannot be undone. \
-                     The project itself is not affected — the form re-opens showing its published metadata."
-                }
-                div class="flex items-center gap-4" {
-                    ({
-                        button("Yes, discard the draft")
-                            .button_type(ButtonType::Submit)
-                            .name_value(INTENT, DISCARD)
-                    })
-                    // A link, as for declining a withdrawal: backing out must write
-                    // nothing, and a button with no intent falls through to save.
-                    (link("Keep the draft", view.action()))
-                }
-            }
+            ({
+                confirmation(
+                    "Discard the draft?",
+                    discard_consequence(view.created),
+                    html! {
+                        ({ button("Yes, discard the draft")
+                        .button_type(ButtonType::Submit).name_value(INTENT, DISCARD) })
+                        (link("Keep the draft", view.action()).autofocus())
+                    },
+                )
+            })
         } @else if view.confirming == Some(Confirmation::Withdrawal) {
-            div class="rounded border border-neutral-300 bg-white p-4 flex flex-col gap-3" {
-                p {
-                    "Taking the submission back removes it from RDU's queue, along with anything a reviewer has \
-                     already recorded on it. Your draft is kept, so you can keep editing and submit again."
-                }
-                div class="flex items-center gap-4" {
-                    ({
-                        button("Yes, take it back")
-                            .button_type(ButtonType::Submit)
-                            .name_value(INTENT, WITHDRAW)
-                    })
-                    // A link, not a button: a button with no intent falls through to save,
-                    // which this form refuses while a submission is pending, so declining
-                    // would answer "nothing was saved".
-                    (link("Keep waiting", view.action()))
-                }
-            }
+            ({
+                confirmation(
+                    "Take the submission back?",
+                    "Taking the submission back removes it from RDU's queue, along with anything a reviewer \
+                     has already recorded on it. Your draft is kept, so you can keep editing and submit again.",
+                    html! {
+                        ({ button("Yes, take it back").button_type(ButtonType::Submit)
+                        .name_value(INTENT, WITHDRAW) }) (link("Keep waiting", view
+                        .action()).autofocus())
+                    },
+                )
+            })
         } @else if view.locked.is_some() {
             @if view.may_withdraw {
                 div class="flex items-center gap-4" {
@@ -1032,6 +1059,7 @@ mod tests {
             awaiting_release: false,
             shortcode: "0801d",
             project_name: Some("Bernoulli-Euler Online"),
+            created: false,
             section: section(section_id).expect("a known section"),
             audience,
             draft,

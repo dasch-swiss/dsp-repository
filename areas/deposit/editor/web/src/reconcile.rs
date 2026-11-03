@@ -10,16 +10,22 @@
 //! proof the content is already published. Retiring an accepted entity
 //! proposal once its entity appears in the published set: the id is now
 //! resolvable from the published side, so the proposal's own row is no longer
-//! what makes it visible. Everything else is reported and left alone: a record
-//! for a project dropped upstream may be the only surviving copy of that work.
+//! what makes it visible. Deleting a created project's registration once the
+//! published set carries its shortcode: the project is published, and from then
+//! on it is edited like any other; its draft stays. Everything else is reported and left alone: a
+//! record for a project dropped upstream may be the only surviving copy of that work.
 //!
 //! **A failure here is not fatal**, unlike identity's `ensure_rdu` (`identity-web`). The
 //! cost is a stale status label; refusing to start costs the whole service.
+use std::collections::BTreeSet;
+
 use chrono::Utc;
 use editor_core::agents::Agents;
 use editor_core::proposals::ProposalOperation;
 use editor_core::published::PublishedProjects;
-use editor_core::repository::{ApprovedRecordRepository, EntityProposalRepository, RepositoryError};
+use editor_core::repository::{
+    ApprovedRecordRepository, CreatedProjectRepository, EntityProposalRepository, RepositoryError,
+};
 use editor_core::status::{classify_record, RecordClassification};
 
 /// What one startup pass did, for the log line and for tests.
@@ -43,18 +49,28 @@ pub(crate) struct Reconciliation {
     /// Accepted entity proposals whose retirement could not be written, or
     /// whose set could not be enumerated at all. The next start retries them.
     pub proposals_retire_failed: usize,
+    /// Created projects whose shortcode the published set now carries. Their registration is
+    /// deleted; a draft stays, as the draft of a published project.
+    pub created_published: usize,
+    /// Created projects that could not be swept, or whose set could not be enumerated at all. The
+    /// next start retries them.
+    pub created_sweep_failed: usize,
 }
 
 impl Reconciliation {
     /// Whether anything needs a human.
     pub(crate) const fn needs_attention(self) -> bool {
-        self.removed_upstream > 0 || self.unreadable > 0 || self.retry_failed > 0 || self.proposals_retire_failed > 0
+        self.removed_upstream > 0
+            || self.unreadable > 0
+            || self.retry_failed > 0
+            || self.proposals_retire_failed > 0
+            || self.created_sweep_failed > 0
     }
 }
 
-/// Compare every approved record against the published set and discard the ones
-/// whose change has shipped, then retire every accepted entity proposal whose
-/// entity has appeared in the published set.
+/// Sweep the created projects the published set now carries, compare every approved record
+/// against the published set and discard the ones whose change has shipped, then retire every
+/// accepted entity proposal whose entity has appeared in the published set.
 ///
 /// Errors only when the approved records cannot be enumerated at all: a single
 /// record that cannot be read or deleted is counted and stepped over, so one
@@ -63,14 +79,16 @@ impl Reconciliation {
 pub(crate) async fn reconcile_published(
     records_repo: &dyn ApprovedRecordRepository,
     proposals: &dyn EntityProposalRepository,
+    created_repo: &dyn CreatedProjectRepository,
     published: &PublishedProjects,
     agents: &Agents,
 ) -> Result<Reconciliation, RepositoryError> {
-    let records = records_repo.list_all().await?;
     let mut summary = Reconciliation::default();
+    let created = sweep_created_projects(created_repo, published, &mut summary).await;
+    let records = records_repo.list_all().await?;
 
     for record in records {
-        match classify_record(&record, published.get(&record.shortcode)) {
+        match classify_record(&record, published.get(&record.shortcode), &created) {
             RecordClassification::Published => {
                 // The delete is the whole transition: with no approved record
                 // and no submission, the project derives as Online. The returned
@@ -146,6 +164,57 @@ pub(crate) async fn reconcile_published(
     retire_accepted_proposals(proposals, agents, &mut summary).await;
 
     Ok(summary)
+}
+
+/// Delete the registration of every created project whose shortcode the published set now carries,
+/// and return the normalized shortcodes of the ones it does not. The draft is kept: a depositor may
+/// have saved edits after the approval the release carries.
+///
+/// Its own pass, not part of the record loop: a project published by a hand-merged file, or never
+/// submitted, has no approved record. Failures are counted, not propagated, for the reason
+/// [`retire_accepted_proposals`] gives; a created project that cannot be enumerated classifies
+/// as dropped upstream until the next start.
+async fn sweep_created_projects(
+    repo: &dyn CreatedProjectRepository,
+    published: &PublishedProjects,
+    summary: &mut Reconciliation,
+) -> BTreeSet<String> {
+    let created = match repo.list().await {
+        Ok(created) => created,
+        Err(error) => {
+            summary.created_sweep_failed += 1;
+            tracing::error!(
+                error = %error,
+                "could not enumerate the created projects; the sweep is retried on the next start"
+            );
+            return BTreeSet::new();
+        }
+    };
+    let mut remaining = BTreeSet::new();
+    for project in created {
+        if published.get(&project.shortcode).is_none() {
+            remaining.insert(project.shortcode);
+            continue;
+        }
+        match repo.delete_registration(&project.shortcode).await {
+            Ok(_) => {
+                summary.created_published += 1;
+                tracing::info!(
+                    project.shortcode = %project.shortcode,
+                    "the published set carries a created project; its registration is deleted"
+                );
+            }
+            Err(error) => {
+                summary.created_sweep_failed += 1;
+                tracing::error!(
+                    project.shortcode = %project.shortcode,
+                    error = %error,
+                    "could not delete a published created project's registration; it will be retried on the next start"
+                );
+            }
+        }
+    }
+    remaining
 }
 
 /// Retire every accepted entity proposal whose entity the published set now
@@ -248,7 +317,7 @@ mod tests {
         let record = record(PUBLISHED_SHORTCODE, &payload);
         ApprovedRecordRepository::create(&db, &record).await.expect("create");
 
-        let summary = reconcile_published(&db, &db, &published, &agent_corpus())
+        let summary = reconcile_published(&db, &db, &db, &published, &agent_corpus())
             .await
             .expect("reconciles");
 
@@ -275,7 +344,7 @@ mod tests {
             .await
             .expect("create");
 
-        let summary = reconcile_published(&db, &db, &published, &agent_corpus())
+        let summary = reconcile_published(&db, &db, &db, &published, &agent_corpus())
             .await
             .expect("reconciles");
 
@@ -302,7 +371,7 @@ mod tests {
             .await
             .expect("create");
 
-        let summary = reconcile_published(&db, &db, &published, &agent_corpus())
+        let summary = reconcile_published(&db, &db, &db, &published, &agent_corpus())
             .await
             .expect("reconciles");
 
@@ -331,7 +400,7 @@ mod tests {
             .await
             .expect("create");
 
-        let summary = reconcile_published(&db, &db, &published, &agent_corpus())
+        let summary = reconcile_published(&db, &db, &db, &published, &agent_corpus())
             .await
             .expect("reconciles");
 
@@ -359,7 +428,7 @@ mod tests {
             Faults { approved_records_list_all: true, ..Faults::default() },
         );
 
-        let result = reconcile_published(&faulty, &faulty, &published, &agent_corpus()).await;
+        let result = reconcile_published(&faulty, &faulty, &faulty, &published, &agent_corpus()).await;
 
         assert!(
             result.is_err(),
@@ -395,7 +464,7 @@ mod tests {
             Faults { approved_records_delete_missing: true, ..Faults::default() },
         );
 
-        let summary = reconcile_published(&faulty, &faulty, &published, &agent_corpus())
+        let summary = reconcile_published(&faulty, &faulty, &faulty, &published, &agent_corpus())
             .await
             .expect("reconciles");
 
@@ -455,7 +524,9 @@ mod tests {
         assert!(agents.has(&shipped.entity_id), "the low allocation must be published");
         assert!(!agents.has(&unshipped.entity_id), "the allocation above the floor must not be");
 
-        let summary = reconcile_published(&db, &db, &published, &agents).await.expect("reconciles");
+        let summary = reconcile_published(&db, &db, &db, &published, &agents)
+            .await
+            .expect("reconciles");
 
         assert_eq!(summary.proposals_retired, 1);
         let retired = EntityProposalRepository::find(&db, shipped.id)
@@ -482,10 +553,14 @@ mod tests {
             .await
             .expect("create");
 
-        let first = reconcile_published(&db, &db, &published, &agents).await.expect("reconciles");
+        let first = reconcile_published(&db, &db, &db, &published, &agents)
+            .await
+            .expect("reconciles");
         assert_eq!(first.proposals_retired, 1);
 
-        let second = reconcile_published(&db, &db, &published, &agents).await.expect("reconciles");
+        let second = reconcile_published(&db, &db, &db, &published, &agents)
+            .await
+            .expect("reconciles");
         assert_eq!(
             second.proposals_retired, 0,
             "the guard makes retirement idempotent, not decorative"
@@ -503,7 +578,9 @@ mod tests {
         assert!(agents.has(&proposal.entity_id), "the fixture entity must be published");
         EntityProposalRepository::create_change(&db, &proposal).await.expect("create");
 
-        let summary = reconcile_published(&db, &db, &published, &agents).await.expect("reconciles");
+        let summary = reconcile_published(&db, &db, &db, &published, &agents)
+            .await
+            .expect("reconciles");
 
         assert_eq!(summary.proposals_retired, 0);
         let survivor = EntityProposalRepository::find(&db, proposal.id)
@@ -538,7 +615,7 @@ mod tests {
             },
         );
 
-        let summary = reconcile_published(&faulty, &faulty, &published, &agent_corpus())
+        let summary = reconcile_published(&faulty, &faulty, &faulty, &published, &agent_corpus())
             .await
             .expect("the record pass still reports");
 
@@ -561,7 +638,7 @@ mod tests {
             Faults { entity_proposals_retire: true, ..Faults::default() },
         );
 
-        let summary = reconcile_published(&faulty, &faulty, &published, &agent_corpus())
+        let summary = reconcile_published(&faulty, &faulty, &faulty, &published, &agent_corpus())
             .await
             .expect("reconciles");
 
@@ -588,11 +665,114 @@ mod tests {
                 .expect("create");
         }
 
-        let summary = reconcile_published(&db, &db, &published, &agents).await.expect("reconciles");
+        let summary = reconcile_published(&db, &db, &db, &published, &agents)
+            .await
+            .expect("reconciles");
 
         assert_eq!(
             summary.proposals_retired, 0,
             "a proposal that is not accepted must never acquire a retirement timestamp"
         );
+    }
+
+    async fn register(db: &editor_store::Database, shortcode: &str, payload: &str) {
+        use editor_core::records::{CreatedProject, DraftRecord};
+        CreatedProjectRepository::create(
+            db,
+            &CreatedProject {
+                shortcode: shortcode.to_string(),
+                name: "Created".to_string(),
+                created_by: None,
+                created_at: Utc::now(),
+            },
+            &DraftRecord {
+                shortcode: shortcode.to_string(),
+                payload: payload.to_string(),
+                updated_by: None,
+                created_at: Utc::now(),
+                updated_at: Utc::now(),
+            },
+        )
+        .await
+        .expect("register");
+    }
+
+    #[tokio::test]
+    async fn a_created_projects_approved_record_waits_for_its_release_and_is_kept() {
+        let db = editor_store::test_support::open_for_test("reconcile-created-waiting").await;
+        let published = published_corpus();
+        let seed = serde_json::to_string(&editor_core::creation::seed("08AB", "Created")).unwrap();
+        register(&db, "08ab", &seed).await;
+        ApprovedRecordRepository::create(&db, &record("08ab", &seed))
+            .await
+            .expect("create");
+
+        let summary = reconcile_published(&db, &db, &db, &published, &agent_corpus())
+            .await
+            .expect("reconciles");
+
+        assert_eq!(summary.waiting, 1, "{summary:?}");
+        assert_eq!(summary.removed_upstream, 0, "{summary:?}");
+        assert!(!summary.needs_attention(), "{summary:?}");
+        assert_eq!(ApprovedRecordRepository::list_all(&db).await.unwrap().len(), 1);
+        assert!(CreatedProjectRepository::find(&db, "08ab").await.unwrap().is_some());
+    }
+
+    #[tokio::test]
+    async fn a_sweep_that_cannot_enumerate_keeps_the_created_projects_record_and_reports_it() {
+        use editor_store::test_support::{Faults, FaultyStore};
+
+        let db = std::sync::Arc::new(editor_store::test_support::open_for_test("reconcile-created-list-fails").await);
+        let published = published_corpus();
+        let seed = serde_json::to_string(&editor_core::creation::seed("08AB", "Created")).unwrap();
+        register(&db, "08ab", &seed).await;
+        ApprovedRecordRepository::create(&*db, &record("08ab", &seed))
+            .await
+            .expect("create");
+        let faulty = FaultyStore::new(
+            std::sync::Arc::clone(&db),
+            Faults { created_projects_list: true, ..Faults::default() },
+        );
+
+        let summary = reconcile_published(&faulty, &faulty, &faulty, &published, &agent_corpus())
+            .await
+            .expect("the record pass still runs");
+
+        assert_eq!(summary.created_sweep_failed, 1, "{summary:?}");
+        assert_eq!(summary.removed_upstream, 1, "counted, not read as released: {summary:?}");
+        assert!(summary.needs_attention(), "{summary:?}");
+        assert_eq!(
+            ApprovedRecordRepository::list_all(&*db).await.unwrap().len(),
+            1,
+            "the record is kept"
+        );
+        assert!(CreatedProjectRepository::find(&*db, "08ab").await.unwrap().is_some());
+    }
+
+    #[tokio::test]
+    async fn a_created_project_the_published_set_now_carries_loses_its_registration_and_keeps_its_draft() {
+        // Published by a hand-merged file or after release; either way the project has no
+        // approved record to be swept with.
+        let db = editor_store::test_support::open_for_test("reconcile-created-swept").await;
+        let published = published_corpus();
+        let edited = r#"{"name":"saved after the approval"}"#;
+        register(&db, "0101", edited).await;
+        register(&db, "08ab", "{}").await;
+
+        let summary = reconcile_published(&db, &db, &db, &published, &agent_corpus())
+            .await
+            .expect("reconciles");
+
+        assert_eq!(summary.created_published, 1, "{summary:?}");
+        assert!(CreatedProjectRepository::find(&db, "0101").await.unwrap().is_none());
+        assert_eq!(
+            editor_core::repository::DraftRepository::find(&db, "0101")
+                .await
+                .unwrap()
+                .map(|draft| draft.payload)
+                .as_deref(),
+            Some(edited)
+        );
+        assert!(CreatedProjectRepository::find(&db, "08ab").await.unwrap().is_some());
     }
 }

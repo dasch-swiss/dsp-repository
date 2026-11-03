@@ -7,14 +7,17 @@
 //!
 //! The comparison is [`crate::review::diff`], not a second one: a comparison
 //! written here would be a second definition of "changed" from the one RDU
-//! reviews through, and the two would drift. Nothing canonicalises, sorts or
-//! serialises before comparing: `serde_json::Value`'s map equality compares by
+//! reviews through, and the two would drift. It leaves out the
+//! [`crate::form::registry::GIT_OWNED`] members, as the submit gate does. Nothing canonicalises,
+//! sorts or serialises before comparing: `serde_json::Value`'s map equality compares by
 //! key, so language-map key order cannot register as a change. Pinned by
 //! `tests::language_map_key_order_is_not_a_change`.
+use std::collections::BTreeSet;
+
 use shared_metadata::project::ProjectRaw;
 
 use crate::draft::ProjectDraft;
-use crate::records::{ApprovedRecord, SubmissionState};
+use crate::records::{normalize_shortcode, ApprovedRecord, SubmissionState};
 use crate::review::diff;
 
 /// The states a depositor may see, and no others; the list is closed.
@@ -102,9 +105,9 @@ pub enum Comparison {
     /// because that one is the resting state read as Online, and "nothing
     /// anywhere" must never be read that way.
     Absent,
-    /// Local only, and never published: a new project. Unreachable while the
-    /// editor edits existing projects only, since nothing allocates an `id`,
-    /// `pid` or `shortcode`; kept so a build that adds creation finds the branch.
+    /// Local only, and never published: no `id` or `pid`. A created project's draft carries the
+    /// derived ones, so it compares as [`Self::RemovedUpstream`]; [`classify_record`] tells the
+    /// two apart by the created set.
     NewAndUnpublished,
     /// In both, and publishing the local record would change nothing. The
     /// precondition for Online.
@@ -114,13 +117,17 @@ pub enum Comparison {
     Differs { changed: Vec<String> },
     /// A local record exists for a project the published set no longer holds.
     /// Never resolved automatically: the local record is the only surviving
-    /// copy of the depositor's work.
+    /// copy of the depositor's work. A created project's record compares here
+    /// too; [`classify_record`] reads it as waiting for its first release.
     RemovedUpstream,
 }
 
 impl Comparison {
     /// Read the published side against the local side. `local` is whichever
-    /// record's draft the caller picked; this only compares.
+    /// record's draft the caller picked; this only compares. The
+    /// [`GIT_OWNED`](crate::form::registry::GIT_OWNED) members are not compared
+    /// ([`FieldDiff::counts_as_change`](crate::review::FieldDiff::counts_as_change)): the published
+    /// set's copy is the one that counts.
     #[must_use]
     pub fn classify(published: Option<&ProjectRaw>, local: Option<&ProjectDraft>) -> Self {
         match (published, local) {
@@ -137,7 +144,7 @@ impl Comparison {
                 let published = ProjectDraft::from_raw(published);
                 let changed: Vec<String> = diff(Some(&published), local)
                     .into_iter()
-                    .filter(|row| row.changed())
+                    .filter(|row| row.counts_as_change(true))
                     .map(|row| row.field)
                     .collect();
                 if changed.is_empty() {
@@ -186,8 +193,17 @@ pub enum RecordClassification {
 /// Parses `record.payload` itself, so every caller, the startup pass and the
 /// approved-records page alike, reaches this from the same input rather than a
 /// second parse of its own.
+///
+/// `created` holds the normalized shortcodes of the projects RDU created in the editor. Such a
+/// record carries the `id` and `pid` its creation derived, which [`Comparison::classify`] reads
+/// as "published once"; absent from the published set, it is waiting for its first release, with
+/// every member it holds to publish.
 #[must_use]
-pub fn classify_record(record: &ApprovedRecord, published: Option<&ProjectRaw>) -> RecordClassification {
+pub fn classify_record(
+    record: &ApprovedRecord,
+    published: Option<&ProjectRaw>,
+    created: &BTreeSet<String>,
+) -> RecordClassification {
     let local = match serde_json::from_str::<ProjectDraft>(&record.payload) {
         Ok(draft) => draft,
         Err(error) => return RecordClassification::Unreadable { problem: error.to_string() },
@@ -195,6 +211,15 @@ pub fn classify_record(record: &ApprovedRecord, published: Option<&ProjectRaw>) 
 
     match Comparison::classify(published, Some(&local)) {
         Comparison::Matches => RecordClassification::Published,
+        Comparison::RemovedUpstream if created.contains(&normalize_shortcode(&record.shortcode)) => {
+            RecordClassification::WaitingForRelease {
+                changed: diff(None, &local)
+                    .into_iter()
+                    .filter(|row| row.changed())
+                    .map(|row| row.field)
+                    .collect(),
+            }
+        }
         Comparison::RemovedUpstream => RecordClassification::RemovedUpstream,
         Comparison::Differs { changed } => RecordClassification::WaitingForRelease { changed },
         Comparison::NewAndUnpublished | Comparison::Unchanged | Comparison::Absent => RecordClassification::Anomalous,
@@ -324,6 +349,27 @@ mod tests {
         };
         assert_eq!(changed, &["name"]);
         assert!(!comparison.permits_online());
+    }
+
+    #[test]
+    fn a_git_owned_member_is_not_a_change() {
+        // RDU adds a created project's licence and completes its citation in the repository; the
+        // approved record still holds the seed.
+        let raw = published_raw();
+        assert!(
+            !raw.legal_info.is_empty(),
+            "the fixture must carry a licence for this test to mean anything"
+        );
+        let mut local = ProjectDraft::from_raw(&raw);
+        local.set("legalInfo", json!([]));
+        local.set("howToCite", json!("A seeded citation."));
+        assert_eq!(Comparison::classify(Some(&raw), Some(&local)), Comparison::Matches);
+
+        local.set("name", json!("A Different Name"));
+        assert_eq!(
+            Comparison::classify(Some(&raw), Some(&local)),
+            Comparison::Differs { changed: vec!["name".to_string()] }
+        );
     }
 
     #[test]
@@ -465,7 +511,7 @@ mod tests {
     fn a_differing_record_is_waiting_for_release() {
         let record = approved_record(&differing_payload());
         assert_eq!(
-            classify_record(&record, Some(&published_raw())),
+            classify_record(&record, Some(&published_raw()), &BTreeSet::new()),
             RecordClassification::WaitingForRelease { changed: vec!["name".to_string()] }
         );
     }
@@ -473,7 +519,46 @@ mod tests {
     #[test]
     fn an_unparseable_payload_is_unreadable_rather_than_a_panic() {
         let record = approved_record("{ not json");
-        let classification = classify_record(&record, Some(&published_raw()));
+        let classification = classify_record(&record, Some(&published_raw()), &BTreeSet::new());
         assert!(matches!(classification, RecordClassification::Unreadable { .. }));
+    }
+
+    #[test]
+    fn a_created_projects_record_is_waiting_for_its_first_release_not_removed_upstream() {
+        let seeded = serde_json::to_string(&crate::creation::seed("08AB", "Basler Fotoarchiv")).unwrap();
+        let mut record = approved_record(&seeded);
+        record.shortcode = "08ab".to_string();
+
+        assert_eq!(
+            classify_record(&record, None, &BTreeSet::new()),
+            RecordClassification::RemovedUpstream,
+            "a seeded id and pid read as published once without the registration"
+        );
+        let RecordClassification::WaitingForRelease { changed } =
+            classify_record(&record, None, &BTreeSet::from(["08ab".to_string()]))
+        else {
+            panic!("a created project's record waits for its release");
+        };
+        for member in ["shortcode", "id", "pid", "name", "howToCite"] {
+            assert!(changed.iter().any(|field| field == member), "{member} in {changed:?}");
+        }
+    }
+
+    #[test]
+    fn a_released_created_project_whose_licence_rdu_added_is_published() {
+        // The record holds the seeded citation and empty licence; the released file holds RDU's.
+        let released = published_raw();
+        let mut local = ProjectDraft::from_raw(&released);
+        local.set("legalInfo", json!([]));
+        local.set(
+            "howToCite",
+            json!("Basler Fotoarchiv [database] (DaSCH), https://ark.dasch.swiss/ark:/72163/1/0102."),
+        );
+        let record = approved_record(&serde_json::to_string(&local).unwrap());
+
+        assert_eq!(
+            classify_record(&record, Some(&released), &BTreeSet::new()),
+            RecordClassification::Published
+        );
     }
 }

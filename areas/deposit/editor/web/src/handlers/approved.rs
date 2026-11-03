@@ -81,16 +81,26 @@ pub(crate) async fn overview(State(state): State<EditorState>, Rdu(user): Rdu) -
         Ok(records) => records,
         Err(error) => return storage_error(&state, &user, SURFACE, "read the approved records", &error),
     };
+    let created = match crate::shell::created_projects(&state).await {
+        Ok(created) => created,
+        Err(error) => return storage_error(&state, &user, SURFACE, "read the created projects", &error),
+    };
+    let created_set = created.keys().cloned().collect();
 
     let rows: Vec<RowStrings> = records
         .iter()
-        .map(|record| RowStrings {
-            id: record.id.to_string(),
-            shortcode: crate::shell::shortcode_as_published(&state, &record.shortcode),
-            project_name: crate::shell::project_name(&state, &record.shortcode).map(str::to_string),
-            approved_at: crate::shell::format_instant(record.approved_at),
-            pull_requests_url: pull_requests_url(&record.shortcode),
-            classification: classify_record(record, state.published.get(&record.shortcode)),
+        .map(|record| {
+            let draft = serde_json::from_str(&record.payload).ok();
+            let (shortcode, project_name) =
+                crate::shell::project_label(&state, &created, &record.shortcode, draft.as_ref());
+            RowStrings {
+                id: record.id.to_string(),
+                shortcode,
+                project_name,
+                approved_at: crate::shell::format_instant(record.approved_at),
+                pull_requests_url: pull_requests_url(&record.shortcode),
+                classification: classify_record(record, state.published.get(&record.shortcode), &created_set),
+            }
         })
         .collect();
     let view_rows: Vec<page::ApprovedRow<'_>> = rows
@@ -144,16 +154,25 @@ pub(crate) async fn discard_form(State(state): State<EditorState>, Rdu(user): Rd
         Ok(None) => return no_such_record(&state, &user),
         Err(error) => return storage_error(&state, &user, SURFACE, "read the approved records", &error),
     };
-    let shortcode = crate::shell::shortcode_as_published(&state, &record.shortcode);
-    let approved_at = crate::shell::format_instant(record.approved_at);
-    let pull_requests_url = pull_requests_url(&record.shortcode);
     // Classified here too, so a reader who reached this URL directly sees the
     // same state the list would have shown rather than a page that reads alike
     // whatever it is about to destroy.
-    let classification = classify_record(&record, state.published.get(&record.shortcode));
+    let created = match crate::shell::created_projects(&state).await {
+        Ok(created) => created,
+        Err(error) => return storage_error(&state, &user, SURFACE, "read the created projects", &error),
+    };
+    let draft = serde_json::from_str(&record.payload).ok();
+    let (shortcode, project_name) = crate::shell::project_label(&state, &created, &record.shortcode, draft.as_ref());
+    let approved_at = crate::shell::format_instant(record.approved_at);
+    let pull_requests_url = pull_requests_url(&record.shortcode);
+    let classification = classify_record(
+        &record,
+        state.published.get(&record.shortcode),
+        &created.keys().cloned().collect(),
+    );
     let impact = page::DiscardImpact {
         shortcode: &shortcode,
-        project_name: crate::shell::project_name(&state, &record.shortcode),
+        project_name: project_name.as_deref(),
         approved_at: &approved_at,
         pull_requests_url: &pull_requests_url,
         state: &classification,
@@ -496,5 +515,45 @@ mod tests {
 
         let second = app.oneshot(as_session(post(&uri, ""), &session)).await.unwrap();
         assert_ne!(second.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn a_created_projects_record_reads_waiting_for_release_not_dropped_upstream() {
+        use editor_core::records::{CreatedProject, DraftRecord};
+        use editor_core::repository::CreatedProjectRepository;
+
+        let (state, _) = test_state("approved-created").await;
+        let seed = serde_json::to_string(&editor_core::creation::seed("08AB", "Basler Fotoarchiv")).unwrap();
+        CreatedProjectRepository::create(
+            &*state.editor,
+            &CreatedProject {
+                shortcode: "08ab".to_string(),
+                name: "Basler Fotoarchiv".to_string(),
+                created_by: None,
+                created_at: Utc::now(),
+            },
+            &DraftRecord {
+                shortcode: "08ab".to_string(),
+                payload: seed.clone(),
+                updated_by: None,
+                created_at: Utc::now(),
+                updated_at: Utc::now(),
+            },
+        )
+        .await
+        .unwrap();
+        let record = approved_record("08ab", &seed);
+        ApprovedRecordRepository::create(&*state.editor, &record).await.unwrap();
+        let (_, session) = an_rdu_session(&state).await;
+        let app = test_app(&state);
+
+        for uri in ["/approved".to_string(), format!("/approved/{}/discard", record.id)] {
+            let response = app.clone().oneshot(as_session(get(&uri), &session)).await.unwrap();
+            let body = body_string(response).await;
+            assert!(body.contains("Waiting for release"), "{uri}: {body}");
+            assert!(!body.contains("dropped upstream"), "{uri}: {body}");
+            assert!(body.contains("Basler Fotoarchiv"), "named from the registration: {uri}: {body}");
+            assert!(body.contains("08AB"), "spelled as created: {uri}: {body}");
+        }
     }
 }

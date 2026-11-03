@@ -37,7 +37,7 @@ use crate::form::obligation::unsatisfied_required;
 use crate::form::registry::{sections_for, Audience, Field};
 use crate::form::submit::{typed_sentinels, unresolved_agents};
 use crate::proposals::{problems as proposal_problems, EntityProposal, ProposalProblem};
-use crate::review::{diff, FieldDiff};
+use crate::review::diff;
 
 /// The first gate a draft failed, and what it found there.
 #[derive(Debug)]
@@ -150,9 +150,13 @@ pub fn check(
 
     // Nothing to review. Allowed through, this locks the depositor's own form
     // on a submission a reviewer can only clear by rejecting it. The comparison
-    // is `review::diff`, the one the review surface itself renders from, so
-    // "changes nothing" means here exactly what it means there.
-    if !diff(published, draft).iter().any(FieldDiff::changed) {
+    // is `review::diff`, the one the review surface itself renders from, counted as
+    // `status::Comparison::classify` counts it: a draft's stale copy of a git-owned
+    // member is not a change the pull-request run would write.
+    if !diff(published, draft)
+        .iter()
+        .any(|row| row.counts_as_change(published.is_some()))
+    {
         return Err(SubmitRefusal::Unchanged);
     }
 

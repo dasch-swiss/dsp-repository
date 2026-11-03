@@ -13,7 +13,7 @@ use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
 use crate::proposals::{EntityProposal, ProposalDecision};
-use crate::records::{ApprovedRecord, DraftRecord, ReviewRound, Submission};
+use crate::records::{ApprovedRecord, CreatedProject, DraftRecord, ReviewRound, Submission};
 
 /// What can go wrong in a repository call.
 ///
@@ -109,6 +109,48 @@ pub trait ApprovedRecordRepository: Send + Sync {
     /// `false` if there was no record to delete. Used when the change goes
     /// Online and the local record is discarded.
     async fn delete(&self, id: Uuid) -> Result<bool>;
+}
+
+/// Projects RDU created in the editor. Every `shortcode` is the normalized key.
+#[async_trait]
+pub trait CreatedProjectRepository: Send + Sync {
+    /// Register the project and write its seeded draft, in one transaction.
+    /// [`RepositoryError::Conflict`] when the shortcode already has a registration or a draft, so
+    /// a draft a depositor saved after the caller's checks is never overwritten.
+    async fn create(&self, project: &CreatedProject, draft: &DraftRecord) -> Result<()>;
+
+    async fn find(&self, shortcode: &str) -> Result<Option<CreatedProject>>;
+
+    /// Every registration, oldest first.
+    async fn list(&self) -> Result<Vec<CreatedProject>>;
+
+    /// The startup sweep's, once the published set carries the shortcode: delete the registration
+    /// only, so the draft stays as the published project's draft. `false` if there was none. Not a
+    /// removal, which is [`Self::remove`].
+    async fn delete_registration(&self, shortcode: &str) -> Result<bool>;
+
+    /// Whether the shortcode holds no submission and no approved record, so [`Self::remove`] would
+    /// delete no work waiting on RDU or on a release. The one definition of that rule: `remove`
+    /// applies the same check inside its transaction.
+    async fn removable(&self, shortcode: &str) -> Result<bool>;
+
+    /// RDU's removal: delete the registration, its draft and its review rounds and withdraw the
+    /// project's entity proposals that are live or accepted and unretired, in one transaction,
+    /// unless the shortcode has a submission or an approved record.
+    /// The check is inside the transaction, so a submission made after the caller's own check
+    /// still refuses it.
+    async fn remove(&self, shortcode: &str, at: DateTime<Utc>) -> Result<Removal>;
+}
+
+/// What [`CreatedProjectRepository::remove`] did. Anything but `Removed` wrote nothing.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[must_use]
+pub enum Removal {
+    Removed,
+    /// The project has a submission or an approved record.
+    Pending,
+    /// No registration under the shortcode.
+    NotFound,
 }
 
 /// Whether a terminating review action found the submission it named.
@@ -228,16 +270,21 @@ pub trait EntityProposalRepository: Send + Sync {
     async fn retire(&self, id: Uuid, at: DateTime<Utc>) -> Result<bool>;
 }
 
-/// The five editor ports at once, so one handle can serve all of them.
+/// The six editor ports at once, so one handle can serve all of them.
 ///
-/// The five traits are the units of dependency: a function that only reads
+/// The six traits are the units of dependency: a function that only reads
 /// drafts says `&dyn DraftRepository`. This is for a composition root that holds
 /// one handle for all of them, since Rust has no trait object over several
 /// traits. The blanket impl means neither the SQLite implementation nor a test
 /// fake writes `impl EditorRepositories`, and a method is still called through
 /// the port that declares it, so nothing here widens what a call site reaches.
 pub trait EditorRepositories:
-    DraftRepository + SubmissionRepository + ApprovedRecordRepository + ReviewRoundRepository + EntityProposalRepository
+    DraftRepository
+    + SubmissionRepository
+    + ApprovedRecordRepository
+    + ReviewRoundRepository
+    + EntityProposalRepository
+    + CreatedProjectRepository
 {
 }
 
@@ -247,5 +294,6 @@ impl<T> EditorRepositories for T where
         + ApprovedRecordRepository
         + ReviewRoundRepository
         + EntityProposalRepository
+        + CreatedProjectRepository
 {
 }

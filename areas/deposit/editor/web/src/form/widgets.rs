@@ -327,8 +327,9 @@ pub const fn format_message(kind: ValueKind) -> &'static str {
     }
 }
 
-/// Focuses the row an Add just created where the enhanced path morphs it in, since
-/// a browser honours `autofocus` only at page load.
+/// Focuses the `autofocus` element inside where the enhanced path morphs it in (the row an Add
+/// just created, a confirmation's safe choice), since a browser honours `autofocus` only at page
+/// load.
 pub(crate) const FOCUS_AUTOFOCUS: &str = "el.querySelector('[autofocus]')?.focus()";
 
 fn is_added_row(field: &Field, rows: Rows<'_>, position: usize, count: usize) -> bool {

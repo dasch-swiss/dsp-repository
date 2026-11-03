@@ -297,7 +297,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - Depositor-facing vocabulary is closed (REQ-2.1 / REQ-2.2): five states, no "export", "JSON",
     "transfer", "commit", "pull request" (**static-analysis** — `depositor_vocabulary.rs` plus the
     E2E pass).
-  - `editor-store` has no foreign keys: the seven account columns are plain `TEXT`, and a
+  - `editor-store` has no foreign keys: the eight account columns are plain `TEXT`, and a
     deleted account leaves its id behind, which pages render as unknown (**structure**;
     `deposit-server`'s `removed_account.rs` pins the pages: **static-analysis**). Its only
     identity dependency is `identity-ports` (**static-analysis** — `check-capability-deps.sh`: a `store`

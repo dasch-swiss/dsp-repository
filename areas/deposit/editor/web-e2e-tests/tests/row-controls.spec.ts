@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 
 import {
   DEPOSITOR_SHORTCODE,
@@ -240,5 +240,187 @@ test.describe("a variant switch survives the autosave", () => {
 
     expect(await rowCount(page, "disciplines")).toBe(before + 1);
     await expect(added.last().getByLabel("Link")).toBeVisible();
+  });
+});
+
+test.describe("an \"Add another\" value lands, clears, and can be removed", () => {
+  /**
+   * Runs `edit`, then waits for the save it leads to. Waits on the response
+   * rather than the "Draft saved" text, which an earlier autosave on the page
+   * already left up.
+   */
+  async function saveAfter(page: Page, edit: () => Promise<void>) {
+    if (test.info().project.name === "chromium-js") {
+      const saved = page.waitForResponse(
+        (r) => r.request().method() === "POST",
+      );
+      await edit();
+      await page.keyboard.press("Tab");
+      await saved;
+    } else {
+      await edit();
+      await page.getByRole("button", { name: "Save draft" }).click();
+      await page.waitForLoadState("domcontentloaded");
+    }
+  }
+
+  /**
+   * Saves from inside `box` without leaving it: the JS pass fires the change
+   * event the autosave listens for while the box keeps focus, the no-JS pass
+   * clicks "Save draft".
+   */
+  async function saveFromBox(page: Page, box: Locator) {
+    if (test.info().project.name === "chromium-js") {
+      const saved = page.waitForResponse(
+        (r) => r.request().method() === "POST",
+      );
+      await box.focus();
+      await box.dispatchEvent("change");
+      await saved;
+    } else {
+      await page.getByRole("button", { name: "Save draft" }).click();
+      await page.waitForLoadState("domcontentloaded");
+    }
+  }
+
+  test("a custom data language", async ({ page }) => {
+    const add = (p: Page) => p.getByLabel("Add another", { exact: true });
+    const hu = (p: Page) => p.locator('input[name="dataLanguage"][value="hu"]');
+
+    await page.goto(sectionUrl(VARIANT_SHORTCODE, "dataset"));
+    await expect(hu(page)).toHaveCount(0);
+    await saveAfter(page, () => add(page).fill("hu"));
+
+    await expect(add(page)).toHaveValue("");
+    await expect(hu(page)).toBeChecked();
+
+    await saveAfter(page, () => hu(page).uncheck());
+    await page.goto(sectionUrl(VARIANT_SHORTCODE, "dataset"));
+    await expect(hu(page)).toHaveCount(0);
+  });
+
+  test("typing a language that is already held still clears the box", async ({
+    page,
+  }) => {
+    const add = (p: Page) => p.getByLabel("Add another", { exact: true });
+    const hu = (p: Page) => p.locator('input[name="dataLanguage"][value="hu"]');
+
+    await page.goto(sectionUrl(VARIANT_SHORTCODE, "dataset"));
+    await saveAfter(page, () => add(page).fill("hu"));
+    await expect(hu(page)).toBeChecked();
+
+    // The held list is unchanged, so only the response's own token tells the
+    // morph to replace the box rather than patch the typed text in place.
+    await add(page).fill("Hungarian");
+    await saveFromBox(page, add(page));
+    await expect(add(page)).toHaveValue("");
+    await expect(hu(page)).toHaveCount(1);
+    await expect(hu(page)).toBeChecked();
+    // Saved from inside the box, so the replacement keeps the focus it had.
+    if (test.info().project.name === "chromium-js") {
+      await expect(add(page)).toBeFocused();
+    }
+
+    await saveAfter(page, () => hu(page).uncheck());
+    await page.goto(sectionUrl(VARIANT_SHORTCODE, "dataset"));
+    await expect(hu(page)).toHaveCount(0);
+  });
+
+  test("tabbing away from the box leaves the focus where it went", async ({
+    page,
+  }) => {
+    test.skip(
+      test.info().project.name !== "chromium-js",
+      "focus moves on an autosave only with JavaScript",
+    );
+    const add = (p: Page) => p.getByLabel("Add another", { exact: true });
+    const hu = (p: Page) => p.locator('input[name="dataLanguage"][value="hu"]');
+
+    await page.goto(sectionUrl(VARIANT_SHORTCODE, "dataset"));
+    await saveAfter(page, () => add(page).fill("hu"));
+    await expect(hu(page)).toBeChecked();
+
+    await add(page).fill("Hungarian");
+    const saved = page.waitForResponse((r) => r.request().method() === "POST");
+    await page.keyboard.press("Tab");
+    await saved;
+    await expect(add(page)).toHaveValue("");
+    await page.waitForTimeout(300);
+    await expect(add(page)).not.toBeFocused();
+    expect(
+      await page.evaluate(
+        () => document.activeElement && document.activeElement !== document.body,
+      ),
+    ).toBe(true);
+
+    await saveAfter(page, () => hu(page).uncheck());
+    await page.goto(sectionUrl(VARIANT_SHORTCODE, "dataset"));
+    await expect(hu(page)).toHaveCount(0);
+  });
+
+  test("unticking one language while adding another clears the box", async ({
+    page,
+  }) => {
+    const add = (p: Page) => p.getByLabel("Add another", { exact: true });
+    const hu = (p: Page) => p.locator('input[name="dataLanguage"][value="hu"]');
+    const fi = (p: Page) => p.locator('input[name="dataLanguage"][value="fi"]');
+
+    await page.goto(sectionUrl(VARIANT_SHORTCODE, "dataset"));
+    await saveAfter(page, () => add(page).fill("hu"));
+    await expect(hu(page)).toBeChecked();
+
+    // One value out and one in: the stored count is the same before and after.
+    await saveAfter(page, async () => {
+      await hu(page).uncheck();
+      await add(page).fill("Finnish");
+    });
+    await expect(add(page)).toHaveValue("");
+
+    // Without a reload: the checkbox that took hu's slot is not left unticked
+    // by hu's untick, or the next save would drop Finnish.
+    await expect(hu(page)).toHaveCount(0);
+    await expect(fi(page)).toBeChecked();
+    await saveAfter(page, () => add(page).fill("Estonian"));
+    await expect(fi(page)).toBeChecked();
+
+    await page.goto(sectionUrl(VARIANT_SHORTCODE, "dataset"));
+    await expect(fi(page)).toBeChecked();
+    await expect(hu(page)).toHaveCount(0);
+
+    await expect(page.locator('input[name="dataLanguage"][value="et"]')).toBeChecked();
+
+    await saveAfter(page, async () => {
+      await fi(page).uncheck();
+      await page.locator('input[name="dataLanguage"][value="et"]').uncheck();
+    });
+    await page.goto(sectionUrl(VARIANT_SHORTCODE, "dataset"));
+    await expect(fi(page)).toHaveCount(0);
+  });
+
+  test("a custom contributor role", async ({ page }) => {
+    const row = (p: Page) =>
+      p
+        .locator(
+          "fieldset#attributions > ol.repeatable-rows > li.repeatable-row",
+        )
+        .first();
+    const add = (p: Page) => row(p).getByLabel("Add another role");
+    const custom = (p: Page) =>
+      row(p).locator('input[type="checkbox"][value="Gardener"]');
+
+    await page.goto(sectionUrl(VARIANT_SHORTCODE, "contributors"));
+    if ((await rowCount(page, "attributions")) === 0) {
+      await page.locator('[formaction$="/fields/attributions/add"]').click();
+      await expect.poll(() => rowCount(page, "attributions")).toBe(1);
+    }
+    await expect(custom(page)).toHaveCount(0);
+    await saveAfter(page, () => add(page).fill("Gardener"));
+
+    await expect(add(page)).toHaveValue("");
+    await expect(custom(page)).toBeChecked();
+
+    await saveAfter(page, () => custom(page).uncheck());
+    await page.goto(sectionUrl(VARIANT_SHORTCODE, "contributors"));
+    await expect(custom(page)).toHaveCount(0);
   });
 });

@@ -158,18 +158,10 @@ fn count_summary(count: usize) -> String {
     }
 }
 
-/// The language a tag names, or the tag itself. Covers every tag in the committed
-/// corpus; anything else falls back to the tag, since a wrong name is worse than
-/// a raw code and the set of tags is open.
+/// The language a tag names, or the tag itself when it is not in the bundled list:
+/// a wrong name is worse than a raw code.
 pub(crate) fn language_name(tag: &str) -> &str {
-    match tag {
-        "de" => "German",
-        "en" => "English",
-        "fr" => "French",
-        "it" => "Italian",
-        "ar" => "Arabic",
-        other => other,
-    }
+    editor_core::languages::name_for_code(tag).unwrap_or(tag)
 }
 
 /// The control for one editable field, dispatched by id. `pub(crate)` because the
@@ -189,7 +181,7 @@ pub(crate) fn control(field: &Field, draft: &ProjectDraft, shape: Shape, rows: R
         "status" => radio(field, draft, choices(shape)),
         // type="text", for the reason dataManagementPlan gives.
         "url" | "secondaryUrl" => url(field, draft, slot(shape), rows),
-        "typeOfData" | "dataLanguage" => string_list(field, draft, set(shape)),
+        "typeOfData" | "dataLanguage" => string_list(field, draft, set(shape), rows),
         "keywords" | "alternativeNames" => multilingual_rows(field, draft, rows),
         "additionalMaterial" | "documentationMaterial" => string_rows(field, draft, rows),
         "contactPoint" => agent_rows(field, draft, rows),
@@ -226,6 +218,10 @@ pub struct Rows<'a> {
     /// freshly added row alive: a row with no text is never stored, so it exists
     /// only in the form, and the hidden `{field}.row` carries its key back.
     pub posted: Option<&'a FormBody>,
+    /// The body this render answers, kept or not: unlike [`Self::posted`] it is
+    /// also set after an explicit save, which drops the posted rows. Read only to
+    /// tell whether an "Add another" box had text in it; see [`add_box_id`].
+    pub submitted: Option<&'a FormBody>,
     /// Base URL for the add and remove controls: `{base}/add` and
     /// `{base}/{key}/remove`.
     pub action: &'a str,
@@ -331,6 +327,12 @@ pub const fn format_message(kind: ValueKind) -> &'static str {
 /// just created, a confirmation's safe choice), since a browser honours `autofocus` only at page
 /// load.
 pub(crate) const FOCUS_AUTOFOCUS: &str = "el.querySelector('[autofocus]')?.focus()";
+
+/// [`FOCUS_AUTOFOCUS`] for a node that replaces one the depositor may still be in:
+/// replacing a focused node drops focus to the body, so focus is taken only when
+/// it was lost that way. Focus the depositor moved on to stays where it is.
+const FOCUS_IF_LOST: &str =
+    "(!document.activeElement || document.activeElement === document.body) && el.querySelector('[autofocus]')?.focus()";
 
 fn is_added_row(field: &Field, rows: Rows<'_>, position: usize, count: usize) -> bool {
     rows.adding == Some(field.id) && position + 1 == count
@@ -773,10 +775,18 @@ fn attribution_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Mark
                         .checked(held.iter().map(String::as_str))
                 })
                 ({
-                    text_field(format!("{prefix}.role"), ADD_ROLE_LABEL)
+                    let name = format!("{prefix}.role");
+                    let typed = add_text_posted(rows, &name);
+                    let id = add_box_id(
+                        &name,
+                        held.len(),
+                        reset_token(typed).as_deref(),
+                    );
+                    let input = text_field(name, ADD_ROLE_LABEL)
                         .input_type(InputType::Text)
                         .hint(ADD_ROLE_HINT)
-                        .with_id(format!("{prefix}.role-add"))
+                        .with_id(&id);
+                    add_box(&id, input, typed && rows.adding.is_none())
                 })
                 @if rows.propose { (propose_controls(resolved, &contributor, &row_context)) }
             }
@@ -1203,7 +1213,8 @@ const ADD_ROLE_LABEL: &str = "Add another role";
 
 /// Why that input is there. Worth saying, because the group above it already
 /// looks like the whole answer.
-const ADD_ROLE_HINT: &str = "For a role the list does not offer. Type it and save; it joins the list above.";
+const ADD_ROLE_HINT: &str = "For a role the list does not offer. Type it and save; it joins the list above. To remove \
+                             it, untick it and save.";
 
 /// The label on an agent row's control.
 const AGENT_ID_LABEL: &str = "Person or organisation";
@@ -1359,8 +1370,9 @@ fn stored_list<'a>(field: &Field, draft: &'a ProjectDraft) -> Vec<&'a str> {
 /// holds, as the multilingual widget does: a value with no control posts nothing
 /// and would be dropped. An open set also gets a text input named after the
 /// field itself, so a typed value arrives as one more repeated value and the next
-/// render gives it a checkbox.
-fn string_list(field: &Field, draft: &ProjectDraft, set: ChoiceSet) -> Markup {
+/// render gives it a checkbox. A language list names held values it does not
+/// know in the group's own hint, so a screen reader reads them with the group.
+fn string_list(field: &Field, draft: &ProjectDraft, set: ChoiceSet, rows: Rows<'_>) -> Markup {
     let stored = stored_list(field, draft);
     let mut options: Vec<&str> = set.offered().to_vec();
     for value in &stored {
@@ -1369,22 +1381,135 @@ fn string_list(field: &Field, draft: &ProjectDraft, set: ChoiceSet) -> Markup {
         }
     }
 
+    let typed = matches!(set, ChoiceSet::Open(_) | ChoiceSet::Languages(_)) && add_text_posted(rows, field.id);
+    let token = reset_token(typed);
+    // The token also renames the group, and with it every checkbox: a checkbox the
+    // morph reuses keeps the live `checked` the depositor's untick left behind, so
+    // an added value taking an unticked one's slot would show unchecked.
+    let group_id = match token.as_deref() {
+        Some(token) => format!("{}-{token}", field.id),
+        None => field.id.to_string(),
+    };
     let mut group = checkbox_group(field.id, labelled(field))
+        .with_id(group_id)
         .options(options.iter().map(|value| (*value, label_for(field, value))))
         .checked(stored.iter().copied());
-    if let Some(hint) = field.hint {
+    let unlisted: Vec<&str> = match set {
+        ChoiceSet::Languages(_) => stored
+            .iter()
+            .copied()
+            .filter(|value| editor_core::languages::canonical_code(value).is_none())
+            .collect(),
+        _ => Vec::new(),
+    };
+    if let Some(hint) = group_hint(field, &unlisted) {
         group = group.hint(hint);
     }
+    let languages = matches!(set, ChoiceSet::Languages(_));
     html! {
         (group)
-        @if matches!(set, ChoiceSet::Open(_)) {
+        @if matches!(set, ChoiceSet::Open(_) | ChoiceSet::Languages(_)) {
             ({
-                text_field(field.id, ADD_ANOTHER)
+                let id = add_box_id(field.id, stored.len(), token.as_deref());
+                let input = text_field(field.id, ADD_ANOTHER)
                     .input_type(InputType::Text)
-                    .hint(ADD_ANOTHER_HINT)
-                    .with_id(format!("{}-add", field.id))
+                    .hint(if languages { LANGUAGE_ADD_HINT } else { ADD_ANOTHER_HINT })
+                    .with_id(&id);
+                let input = if languages {
+                    input.list(LANGUAGE_NAMES_ID)
+                } else {
+                    input
+                };
+                add_box(&id, input, typed && rows.adding.is_none())
             })
         }
+        @if languages { (language_names()) }
+    }
+}
+
+/// A fixed id, unlike the add box's: the list does not change with the stored
+/// count and is morphed together with the box that points at it.
+const LANGUAGE_NAMES_ID: &str = "data-language-names";
+
+/// The option value is the name, which the server maps back to its code. The
+/// browser does not restrict what is typed (and may lack datalist support), so
+/// the server's resolution and its hint for an unknown name stay the check.
+fn language_names() -> Markup {
+    html! {
+        datalist id=(LANGUAGE_NAMES_ID) {
+            @for language in editor_core::languages::LANGUAGES {
+                option value=(language.name) {}
+            }
+        }
+    }
+}
+
+/// The field's hint plus a note on held values that are not in the language
+/// list, which no checkbox label can say.
+fn group_hint(field: &Field, unlisted: &[&str]) -> Option<Markup> {
+    if field.hint.is_none() && unlisted.is_empty() {
+        return None;
+    }
+    Some(html! {
+        @if let Some(hint) = field.hint { (hint) " " }
+        @if !unlisted.is_empty() {
+            "Not in the language list: "
+            (unlisted.join(", "))
+            ". "
+            (UNLISTED_ADVICE)
+        }
+    })
+}
+
+const UNLISTED_ADVICE: &str = "Type a language name from the list instead, or untick it and save.";
+
+/// A token that makes this response's add box (and, on a list, its checkbox
+/// group) differ from every earlier one, or `None` when the request posted no text
+/// in it.
+///
+/// The box renders no value, so the morph resets its typed text only when it
+/// replaces the node, and it replaces a node only when the id changes. The count
+/// alone does not change it: a value already held (deduplicated) or one unticked
+/// as another is added leaves it unchanged. The clock differs from the previous
+/// response's across restarts and instances. A render that posted nothing carries
+/// no token, so a `GET` is deterministic.
+fn reset_token(typed: bool) -> Option<String> {
+    typed.then(|| {
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_or(0, |since| since.as_nanos());
+        format!("{nanos:x}")
+    })
+}
+
+fn add_box_id(base: &str, held: usize, token: Option<&str>) -> String {
+    match token {
+        Some(token) => format!("{base}-add-{held}-{token}"),
+        None => format!("{base}-add-{held}"),
+    }
+}
+
+/// Whether the request posted text in the "add one more" box named `name`.
+///
+/// The box shares its name with the checkboxes it follows, and a browser submits
+/// in document order, so its value is the last one under that name: always sent,
+/// empty when untouched. An open list's typed value is also a ticked value on the
+/// next render, so no comparison against the options could tell them apart.
+fn add_text_posted(rows: Rows<'_>, name: &str) -> bool {
+    rows.submitted
+        .or(rows.posted)
+        .and_then(|body| body.all(name).last())
+        .is_some_and(|text| !text.trim().is_empty())
+}
+
+/// The add box in a wrapper that refocuses it where the enhanced path morphs a
+/// replacement in. The wrapper's id follows the box's, so it is replaced with it
+/// and `data-init` runs again. Only a box that had focus is refocused (see
+/// [`FOCUS_IF_LOST`]): a depositor who Tabbed on keeps their place.
+fn add_box(id: &str, input: TextFieldBuilder, focus: bool) -> Markup {
+    let input = if focus { input.autofocus() } else { input };
+    html! {
+        div id=(format!("focus-{id}")) data-init=[focus.then_some(FOCUS_IF_LOST)] { (input) }
     }
 }
 
@@ -1392,8 +1517,10 @@ fn string_list(field: &Field, draft: &ProjectDraft, set: ChoiceSet) -> Markup {
 const ADD_ANOTHER: &str = "Add another";
 
 /// Why that input is there, and what happens to what goes in it.
-const ADD_ANOTHER_HINT: &str = "Type one more value and save — it is added to the list above, where you can then \
-                                untick it.";
+const ADD_ANOTHER_HINT: &str = "Type one more value and save; it joins the list above. To remove a value, untick it \
+                                and save.";
+
+const LANGUAGE_ADD_HINT: &str = "Type a language name, for example Hungarian; suggestions may appear as you type.";
 
 /// A list value's label. Language tags get their language name, because `cop`
 /// and `gez` are not readable as they stand; anything else is already prose.
@@ -1630,6 +1757,121 @@ mod tests {
     }
 
     #[test]
+    fn the_add_input_gets_a_new_id_once_a_value_lands() {
+        let field = editor_core::form::registry::field("dataLanguage").expect("dataLanguage is a known field");
+        let set = set(field.shape.expect("dataLanguage has a shape"));
+        let add_id = |draft: &ProjectDraft| {
+            let out = string_list(field, draft, set, Rows::default()).into_string();
+            let at = out.find(r#"id="dataLanguage-add"#).expect("an open list renders its add input");
+            out[at..].split('"').nth(1).expect("the id is quoted").to_string()
+        };
+        let mut draft = ProjectDraft::default();
+        let before = add_id(&draft);
+        draft.set("dataLanguage", serde_json::json!(["hu"]));
+        assert_ne!(before, add_id(&draft));
+    }
+
+    #[test]
+    fn the_add_box_is_replaced_and_refocused_when_the_request_posted_text_in_it() {
+        let field = editor_core::form::registry::field("dataLanguage").expect("dataLanguage is a known field");
+        let set = set(field.shape.expect("dataLanguage has a shape"));
+        let mut draft = ProjectDraft::default();
+        draft.set("dataLanguage", serde_json::json!(["hu"]));
+        let render = |pairs: Vec<(&str, &str)>| {
+            let body = editor_core::form::FormBody::from_pairs(
+                pairs
+                    .into_iter()
+                    .map(|(name, value)| (name.to_string(), value.to_string()))
+                    .collect(),
+            );
+            // `submitted` and not `posted`: an explicit save keeps no rows but still answers a
+            // body.
+            string_list(field, &draft, set, Rows { submitted: Some(&body), ..Rows::default() }).into_string()
+        };
+        let add_id = |out: &str| {
+            let at = out.find(r#"id="dataLanguage-add"#).expect("the add box renders");
+            out[at..].split('"').nth(1).expect("the id is quoted").to_string()
+        };
+
+        let plain = string_list(field, &draft, set, Rows::default()).into_string();
+        assert_eq!(add_id(&plain), "dataLanguage-add-1");
+        assert!(!plain.contains(" autofocus"), "{plain}");
+
+        // The same count as before: "hu" is already held, so the typed name dedupes.
+        let typed = render(vec![("dataLanguage", "hu"), ("dataLanguage", "Hungarian")]);
+        assert_ne!(add_id(&typed), add_id(&plain), "{typed}");
+        assert_eq!(typed.matches(" autofocus").count(), 1, "{typed}");
+        assert_eq!(typed.matches("data-init").count(), 1, "{typed}");
+        assert!(
+            typed.contains("document.activeElement"),
+            "refocus only when focus was lost: {typed}"
+        );
+        // The checkboxes are renamed with the box, so the morph cannot reuse one the depositor
+        // unticked.
+        assert!(plain.contains(r#"id="dataLanguage-0""#), "{plain}");
+        assert!(!typed.contains(r#"id="dataLanguage-0""#), "{typed}");
+
+        // A ticked value and an untouched add box post nothing to refocus for.
+        let untouched = render(vec![("dataLanguage", "hu"), ("dataLanguage", "")]);
+        assert_eq!(add_id(&untouched), add_id(&plain));
+        assert!(!untouched.contains(" autofocus"), "{untouched}");
+    }
+
+    #[test]
+    fn the_data_language_add_box_suggests_language_names_and_an_open_list_does_not() {
+        let out = data_language_control(&[]);
+        assert_eq!(out.matches("<datalist").count(), 1, "{out}");
+        assert!(out.contains(&format!(r#"<datalist id="{LANGUAGE_NAMES_ID}">"#)), "{out}");
+        assert!(out.contains(r#"<option value="Hungarian"></option>"#), "{out}");
+        assert!(out.contains(&format!(r#"list="{LANGUAGE_NAMES_ID}""#)), "{out}");
+
+        // The suggestions outlive a value landing, which only renames the add box.
+        let held = data_language_control(&["hu"]);
+        assert!(held.contains(&format!(r#"<datalist id="{LANGUAGE_NAMES_ID}">"#)), "{held}");
+
+        let open = string_list(
+            editor_core::form::registry::field("typeOfData").expect("typeOfData is a known field"),
+            &ProjectDraft::default(),
+            ChoiceSet::Open(&[]),
+            Rows::default(),
+        )
+        .into_string();
+        assert!(open.contains("-add-"), "an open list keeps its add box: {open}");
+        assert!(!open.contains("<datalist"), "{open}");
+        assert!(!open.contains("list="), "{open}");
+    }
+
+    fn data_language_control(held: &[&str]) -> String {
+        let field = editor_core::form::registry::field("dataLanguage").expect("dataLanguage is a known field");
+        let mut draft = ProjectDraft::default();
+        draft.set("dataLanguage", serde_json::json!(held));
+        string_list(
+            field,
+            &draft,
+            set(field.shape.expect("dataLanguage has a shape")),
+            Rows::default(),
+        )
+        .into_string()
+    }
+
+    #[test]
+    fn a_data_language_preset_keeps_its_label() {
+        let out = data_language_control(&[]);
+        assert!(out.contains("German (de)"), "{out}");
+    }
+
+    #[test]
+    fn a_held_language_the_list_does_not_know_is_named_in_the_hint() {
+        let out = data_language_control(&["de", "Belgian"]);
+        assert!(out.contains("Not in the language list: Belgian."), "{out}");
+        assert!(out.contains("untick it"), "{out}");
+        assert!(!out.contains("Not in the language list: de"), "{out}");
+
+        let listed = data_language_control(&["de", "hu"]);
+        assert!(!listed.contains("Not in the language list"), "{listed}");
+    }
+
+    #[test]
     fn every_shaped_field_has_a_control() {
         // The fallback arm's debug_assert! is compiled out of a release build, so
         // a field given a shape with no arm here would render the unbuilt note in
@@ -1781,6 +2023,7 @@ mod tests {
         draft.set("contactPoint", serde_json::json!(["organization-008", "person-999999"]));
         let field = editor_core::form::registry::field("contactPoint").expect("contactPoint is a known field");
         let rows = Rows {
+            submitted: None,
             posted: None,
             action: "/x",
             adding: None,
@@ -1812,6 +2055,7 @@ mod tests {
         draft.set("contactPoint", serde_json::json!(["person-999999"]));
         let field = editor_core::form::registry::field("contactPoint").expect("contactPoint is a known field");
         let rows = Rows {
+            submitted: None,
             posted: None,
             action: "/x",
             adding: None,
@@ -1845,6 +2089,7 @@ mod tests {
         draft.set("contactPoint", serde_json::json!(["organization-008"]));
         let field = editor_core::form::registry::field("contactPoint").expect("contactPoint is a known field");
         let fresh = Rows {
+            submitted: None,
             posted: None,
             action: "/x",
             adding: None,
@@ -1921,6 +2166,7 @@ mod tests {
             field,
             &published_draft(),
             Rows {
+                submitted: None,
                 posted: Some(&body),
                 action: "/x",
                 adding: None,
@@ -1943,6 +2189,7 @@ mod tests {
         draft.set("contactPoint", serde_json::json!(["organization-008"]));
         let field = editor_core::form::registry::field("contactPoint").expect("contactPoint is a known field");
         let rows = Rows {
+            submitted: None,
             posted: None,
             action: "/x",
             adding: Some("contactPoint"),
@@ -1983,6 +2230,7 @@ mod tests {
             field,
             &draft,
             Rows {
+                submitted: None,
                 posted: Some(&body),
                 action: "/x",
                 adding: None,
@@ -2015,6 +2263,7 @@ mod tests {
         );
         let field = editor_core::form::registry::field("attributions").expect("attributions is a known field");
         let rows = Rows {
+            submitted: None,
             posted: None,
             action: "/x",
             adding: None,
@@ -2040,6 +2289,7 @@ mod tests {
         draft.set("contactPoint", serde_json::json!(["organization-008"]));
         let field = editor_core::form::registry::field("contactPoint").expect("contactPoint is a known field");
         let rows = Rows {
+            submitted: None,
             posted: None,
             action: "/x",
             adding: None,
@@ -2068,6 +2318,7 @@ mod tests {
         let body = posted_contributor_row();
         let field = editor_core::form::registry::field("attributions").expect("attributions is a known field");
         let rows = Rows {
+            submitted: None,
             posted: Some(&body),
             action: "/x",
             adding: None,
@@ -2222,6 +2473,7 @@ mod tests {
         for round in 0..3 {
             let body = editor_core::form::FormBody::from_pairs(posted.clone());
             let rows = Rows {
+                submitted: None,
                 posted: Some(&body),
                 action: "/x",
                 adding: None,

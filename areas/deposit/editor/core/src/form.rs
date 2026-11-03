@@ -45,6 +45,7 @@ use shared_metadata::is_placeholder;
 use shared_metadata::utils::Multilingual;
 
 use crate::draft::{ProjectDraft, UrlSlot};
+use crate::languages;
 use crate::multilingual::{is_language_tag, DraftMultilingual};
 
 /// The longest a language tag may be, and the longest an opaque row key may be.
@@ -354,6 +355,10 @@ pub enum ChoiceSet {
     /// the offer, not the accepted set: the widget unions it with whatever the
     /// project already holds, so an unusual tag keeps its control.
     Open(&'static [&'static str]),
+    /// [`Self::Open`] for ISO 639 language codes. Typed values are split on commas
+    /// and a language name is resolved to its code before the duplicate check; a
+    /// name the list does not know is kept as typed.
+    Languages(&'static [&'static str]),
 }
 
 impl ChoiceSet {
@@ -361,7 +366,7 @@ impl ChoiceSet {
     #[must_use]
     pub const fn offered(self) -> &'static [&'static str] {
         match self {
-            Self::Closed(values) | Self::Open(values) => values,
+            Self::Closed(values) | Self::Open(values) | Self::Languages(values) => values,
         }
     }
 
@@ -370,7 +375,7 @@ impl ChoiceSet {
     pub fn accepts(self, value: &str) -> bool {
         match self {
             Self::Closed(values) => values.contains(&value),
-            Self::Open(_) => true,
+            Self::Open(_) | Self::Languages(_) => true,
         }
     }
 }
@@ -668,23 +673,52 @@ pub(crate) fn apply_multilingual(body: &FormBody, draft: &mut ProjectDraft, fiel
 /// empty and is cleared. Duplicates are dropped, keeping the first. A value
 /// outside a [`ChoiceSet::Closed`] set is dropped for the reason [`apply_choice`]
 /// drops one.
+///
+/// Nothing here bounds how many language values are stored: `submit::over_cap`
+/// counts the same [`language_parts`] and refuses an over-cap body before this runs.
 pub(crate) fn apply_string_list(body: &FormBody, draft: &mut ProjectDraft, field: &str, set: ChoiceSet) {
     if !body.has(field) {
         return;
     }
-    let mut values: Vec<String> = Vec::new();
+    let split = matches!(set, ChoiceSet::Languages(_));
+    let mut values: Vec<&str> = Vec::new();
     let mut seen: HashSet<&str> = HashSet::new();
-    for value in body.all(field) {
-        let value = value.trim();
-        if !value.is_empty() && set.accepts(value) && seen.insert(value) {
-            values.push(value.to_string());
+    let mut take = |part| {
+        if !set.accepts(part) {
+            return;
+        }
+        let value = if split { language_code(part) } else { part };
+        if seen.insert(value) {
+            values.push(value);
+        }
+    };
+    for posted in body.all(field) {
+        if split {
+            language_parts(posted).for_each(&mut take);
+        } else if !posted.trim().is_empty() {
+            take(posted.trim());
         }
     }
     if values.is_empty() {
         draft.remove(field);
     } else {
-        draft.set(field, Value::Array(values.into_iter().map(Value::String).collect()));
+        draft.set(
+            field,
+            Value::Array(values.into_iter().map(|value| Value::String(value.to_string())).collect()),
+        );
     }
+}
+
+/// Shared with `submit::over_cap`, so the cap counts exactly what is stored.
+pub(crate) fn language_parts(posted: &str) -> impl Iterator<Item = &str> {
+    posted.split(',').map(str::trim).filter(|part| !part.is_empty())
+}
+
+/// Falls back to the typed text so a language the list lacks is not lost.
+fn language_code(typed: &str) -> &str {
+    languages::canonical_code(typed)
+        .or_else(|| languages::code_for_name(typed))
+        .unwrap_or(typed)
 }
 
 /// The stored bytes of a text that a submitted one only differs from in
@@ -1754,6 +1788,55 @@ mod tests {
         let mut draft = ProjectDraft::default();
         apply_string_list(&body, &mut draft, "dataLanguage", open);
         assert_eq!(draft.get("dataLanguage"), Some(&serde_json::json!(["de", "la"])));
+    }
+
+    const LANGUAGES: ChoiceSet = ChoiceSet::Languages(&["de", "en"]);
+
+    #[test]
+    fn typed_languages_are_split_and_stored_as_codes_with_an_unknown_name_kept() {
+        let mut draft = draft();
+        apply_string_list(
+            &body(&[("dataLanguage", "Hungarian, Belgian")]),
+            &mut draft,
+            "dataLanguage",
+            LANGUAGES,
+        );
+        assert_eq!(draft.get("dataLanguage"), Some(&json!(["hu", "Belgian"])));
+    }
+
+    #[test]
+    fn a_language_name_beside_its_ticked_code_is_stored_once() {
+        let mut draft = draft();
+        let posted = body(&[("dataLanguage", "hu"), ("dataLanguage", "hungarian")]);
+        apply_string_list(&posted, &mut draft, "dataLanguage", LANGUAGES);
+        assert_eq!(draft.get("dataLanguage"), Some(&json!(["hu"])));
+    }
+
+    #[test]
+    fn a_typed_code_in_any_case_is_stored_as_the_listed_code() {
+        let mut draft = draft();
+        apply_string_list(&body(&[("dataLanguage", "EN")]), &mut draft, "dataLanguage", LANGUAGES);
+        assert_eq!(draft.get("dataLanguage"), Some(&json!(["en"])));
+    }
+
+    #[test]
+    fn a_code_in_other_case_beside_its_ticked_code_is_stored_once() {
+        let mut draft = draft();
+        let posted = body(&[("dataLanguage", "hu"), ("dataLanguage", "HU")]);
+        apply_string_list(&posted, &mut draft, "dataLanguage", LANGUAGES);
+        assert_eq!(draft.get("dataLanguage"), Some(&json!(["hu"])));
+    }
+
+    #[test]
+    fn an_open_list_is_not_split_on_commas() {
+        let mut draft = draft();
+        apply_string_list(
+            &body(&[("typeOfData", "Text, Image")]),
+            &mut draft,
+            "typeOfData",
+            ChoiceSet::Open(&[]),
+        );
+        assert_eq!(draft.get("typeOfData"), Some(&json!(["Text, Image"])));
     }
 
     #[test]

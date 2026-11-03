@@ -11,7 +11,8 @@ use shared_metadata::is_placeholder;
 use super::registry::{sections_for, Audience, Field, Section};
 use crate::agents::AgentScope;
 use crate::draft::ProjectDraft;
-use crate::form::{FormBody, Shape, WhenCleared, MAX_VALUES_PER_FIELD};
+use crate::form::{language_parts, ChoiceSet, FormBody, Shape, WhenCleared, MAX_VALUES_PER_FIELD};
+use crate::languages::canonical_code;
 
 /// Every field whose stored value is a placeholder sentinel the editor could not
 /// have written there, which leaves one way for it to have arrived: a depositor
@@ -35,6 +36,42 @@ pub fn typed_sentinels(audience: Audience, draft: &ProjectDraft) -> Vec<&'static
         .flat_map(|section| section.fields_for(audience))
         .filter(|field| holds_typed_sentinel(field, draft))
         .collect()
+}
+
+/// Every stored language value that is not a listed code, with its field, unless `published`
+/// holds that exact value in the same field.
+///
+/// A draft can hold an unknown typed name, so saving is never refused and submit is where it
+/// stops. A published value is excused so a live project is not unsubmittable over data the
+/// depositor did not write.
+#[must_use]
+pub fn unlisted_languages(
+    audience: Audience,
+    draft: &ProjectDraft,
+    published: Option<&ProjectDraft>,
+) -> Vec<(&'static Field, String)> {
+    sections_for(audience)
+        .flat_map(|section| section.fields_for(audience))
+        .filter(|field| matches!(field.shape, Some(Shape::StringList(ChoiceSet::Languages(_)))))
+        .flat_map(|field| {
+            let held_by_published = strings_in(published, field.id);
+            strings_in(Some(draft), field.id)
+                .filter(|value| canonical_code(value).is_none())
+                .filter(|value| !held_by_published.clone().any(|held| held == *value))
+                .map(|value| (field, value.to_string()))
+                .collect::<Vec<_>>()
+        })
+        .collect()
+}
+
+fn strings_in<'a>(draft: Option<&'a ProjectDraft>, field: &str) -> impl Iterator<Item = &'a str> + Clone {
+    draft
+        .and_then(|draft| draft.get(field))
+        .and_then(Value::as_array)
+        .map(Vec::as_slice)
+        .unwrap_or_default()
+        .iter()
+        .filter_map(Value::as_str)
 }
 
 /// Whether any string anywhere in `value` is a placeholder sentinel.
@@ -133,6 +170,10 @@ pub fn over_cap(audience: Audience, section: &Section, body: &FormBody) -> Vec<&
             // nothing to bound.
             None | Some(Shape::Text(_) | Shape::Choice(_) | Shape::Url(_)) => false,
             Some(Shape::Multilingual) => body.exceeds_entries(field.id, MAX_VALUES_PER_FIELD),
+            // Counts the comma-split parts, as the applier reads them.
+            Some(Shape::StringList(ChoiceSet::Languages(_))) => {
+                body.all(field.id).flat_map(language_parts).nth(MAX_VALUES_PER_FIELD).is_some()
+            }
             // Repeated under one name rather than suffixed.
             Some(Shape::StringList(_)) => body.exceeds_all(field.id, MAX_VALUES_PER_FIELD),
             // Lines are counted across every row too: render cost grows with them.
@@ -420,6 +461,23 @@ mod tests {
     }
 
     #[test]
+    fn comma_separated_data_languages_count_as_separate_values_towards_the_cap() {
+        use crate::form::{FormBody, MAX_VALUES_PER_FIELD};
+
+        let dataset = crate::form::registry::section("dataset").expect("dataset");
+        let parts = |count: usize| (0..count).map(|n| format!("x{n}")).collect::<Vec<_>>().join(", ");
+        let over_for = |count: usize| {
+            let body = FormBody::from_pairs(vec![("dataLanguage".to_string(), parts(count))]);
+            over_cap(Audience::Everyone, dataset, &body)
+                .iter()
+                .map(|f| f.id)
+                .collect::<Vec<_>>()
+        };
+        assert!(over_for(MAX_VALUES_PER_FIELD).is_empty(), "exactly at the cap is allowed");
+        assert_eq!(over_for(MAX_VALUES_PER_FIELD + 1), ["dataLanguage"]);
+    }
+
+    #[test]
     fn a_language_list_is_capped_on_its_lines_not_only_its_rows() {
         use crate::form::{FormBody, MAX_VALUES_PER_FIELD};
 
@@ -459,6 +517,37 @@ mod tests {
         let dataset = crate::form::registry::section("dataset").expect("dataset");
         let over: Vec<(String, String)> = (0..500).map(|n| (format!("description.l{n}"), "text".to_string())).collect();
         assert!(over_cap(Audience::Everyone, dataset, &FormBody::from_pairs(over)).is_empty());
+    }
+
+    #[test]
+    fn an_unlisted_language_is_refused_naming_field_and_value() {
+        let mut draft = draft();
+        draft.set("dataLanguage", json!(["hu", "Belgian"]));
+        let named: Vec<(&str, String)> = unlisted_languages(Audience::Everyone, &draft, None)
+            .into_iter()
+            .map(|(field, value)| (field.id, value))
+            .collect();
+        assert_eq!(named, [("dataLanguage", "Belgian".to_string())]);
+    }
+
+    #[test]
+    fn an_unlisted_language_the_published_project_already_holds_passes() {
+        let mut published = draft();
+        published.set("dataLanguage", json!(["Belgian"]));
+        let mut submitted = draft();
+        submitted.set("dataLanguage", json!(["hu", "Belgian", "Flemish"]));
+        let named: Vec<String> = unlisted_languages(Audience::Everyone, &submitted, Some(&published))
+            .into_iter()
+            .map(|(_, value)| value)
+            .collect();
+        assert_eq!(named, ["Flemish".to_string()], "only the value published does not hold");
+    }
+
+    #[test]
+    fn listed_language_codes_pass() {
+        let mut draft = draft();
+        draft.set("dataLanguage", json!(["hu", "de", "la"]));
+        assert!(unlisted_languages(Audience::Everyone, &draft, None).is_empty());
     }
 
     fn agents() -> crate::agents::Agents {

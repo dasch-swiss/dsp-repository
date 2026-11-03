@@ -379,6 +379,9 @@ pub struct SectionView<'a> {
     /// refusal fills with one line per field holding a finding outside this section, or in it
     /// with no control because RDU accepted it.
     pub format_findings: Vec<Finding>,
+    /// The body this render answers whether or not `posted` keeps it; see
+    /// [`Rows::submitted`].
+    pub submitted: Option<&'a FormBody>,
     /// The field one more blank row was just asked for.
     pub adding_row: Option<&'a str>,
     /// Whether the first control holding a format finding takes focus: a refused submit's
@@ -466,6 +469,7 @@ impl SectionView<'_> {
     fn rows(&self) -> Rows<'_> {
         Rows {
             posted: self.posted,
+            submitted: self.submitted,
             action: &self.rows_action,
             adding: self.adding_row,
             agents: self.agents,
@@ -1175,6 +1179,7 @@ mod tests {
             agents: Some(agent_corpus()),
             posted: None,
             format_findings: Vec::new(),
+            submitted: None,
             adding_row: None,
             focus_finding: false,
             rows_action: format!("/projects/0801d/sections/{section_id}/fields"),
@@ -1363,18 +1368,27 @@ mod tests {
 
     #[test]
     fn no_page_ships_the_whole_agent_set_and_every_picker_can_be_searched() {
-        // Nothing may ship the whole agent set as a <datalist>: the check is for a
-        // datalist anywhere, not an id. Over every section and both audiences,
-        // because funding sits alone in the access section.
+        // Nothing may ship the agent set as a <datalist>: a page carries at most one,
+        // the language names, and only the dataset section has it. The reasons against
+        // an agent one (the set's size, and filtering a box that already holds an id)
+        // do not apply to an empty add box or a fixed list of language names.
         let mut draft = published_draft();
         draft.set("contactPoint", serde_json::json!(["organization-008"]));
         for audience in [Audience::Everyone, Audience::RduOnly] {
             for section in sections_for(audience) {
                 let out = page(&view(&draft, section.id, audience)).into_string();
+                let datalists = out.matches("<datalist").count();
+                assert!(datalists <= 1, "{} ({audience:?}) ships {datalists} datalists", section.id);
+                let language_names = out.contains(r#"<datalist id="data-language-names">"#);
                 assert_eq!(
-                    out.matches("<datalist").count(),
-                    0,
-                    "{} ({audience:?}) ships a datalist again",
+                    datalists == 1,
+                    section.id == "dataset",
+                    "{} ({audience:?}): a datalist belongs on the dataset section only",
+                    section.id
+                );
+                assert!(
+                    datalists == 0 || language_names,
+                    "{} ({audience:?}): not the language one",
                     section.id
                 );
                 assert!(!out.contains("list=\"agent-suggestions\""), "{} ({audience:?})", section.id);

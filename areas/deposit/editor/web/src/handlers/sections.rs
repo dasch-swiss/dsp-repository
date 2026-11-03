@@ -131,6 +131,14 @@ fn unknown_agent_message(id: &str) -> String {
     )
 }
 
+const SUBMIT_REFUSED_UNLISTED_LANGUAGE: &str = "This project cannot be submitted yet: a data language is not one the \
+                                                repository recognises. Your draft has been saved, and each one is \
+                                                named below with a link to it.";
+
+fn unlisted_language_message(value: &str) -> String {
+    format!("\"{value}\" is not in the language list.")
+}
+
 /// The refusal a typed placeholder sentinel renders as.
 const SUBMIT_REFUSED_SENTINEL: &str = "This project cannot be submitted yet: a field holds a word the repository \
                                        reserves for \"no value yet\". Your draft has been saved, and each one is \
@@ -1235,6 +1243,26 @@ async fn submit(
                 };
                 respond(state, user, shortcode, context, &headers, rendering)
             }
+            SubmitRefusal::UnlistedLanguage(unlisted) => {
+                span.record("form.outcome", "unlisted_language");
+                tracing::info!(
+                    fields.unlisted_languages = unlisted.len(),
+                    "refused a submission with a data language the list does not know"
+                );
+                let errors: Vec<(String, String)> = unlisted
+                    .iter()
+                    .map(|(field, value)| (field.id.to_string(), unlisted_language_message(value)))
+                    .collect();
+                refused_with(
+                    state,
+                    user,
+                    shortcode,
+                    context,
+                    headers,
+                    SUBMIT_REFUSED_UNLISTED_LANGUAGE,
+                    &errors,
+                )
+            }
             SubmitRefusal::Invalid(unresolved) => {
                 span.record("form.outcome", "invalid");
                 tracing::info!(
@@ -2016,6 +2044,7 @@ fn view<'a>(
         agents: Some(&context.agents),
         posted,
         format_findings,
+        submitted: context.posted,
         adding_row: rendering.adding_row,
         focus_finding: rendering.focus_finding,
         rows_action: format!("/projects/{shortcode}/sections/{}/fields", context.section.id),
@@ -3670,6 +3699,38 @@ mod tests {
         // it — a refusal costs the submission, never the editing.
         let draft = DraftRepository::find(&*state.editor, "0801d").await.unwrap().expect("a draft");
         assert!(draft.payload.contains("MISSING"), "{}", draft.payload);
+    }
+
+    #[tokio::test]
+    async fn submitting_a_language_the_list_does_not_know_is_refused_naming_it() {
+        // "Hungarian" resolves to a code; "Belgian" is no listed language, so the widget keeps it
+        // as typed. A save stores both, and only the submit is refused.
+        let (state, _) = test_state("section-submit-unlisted-language").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        let response =
+            as_session(&app, post(DATASET, "dataLanguage=Hungarian%2C+Belgian&intent=submit"), &session).await;
+        assert_eq!(response.status(), StatusCode::OK, "a refusal re-renders");
+        let body = body_string(response).await;
+        assert!(
+            body.contains("&quot;Belgian&quot; is not in the language list.</div>"),
+            "{body}"
+        );
+        assert_eq!(
+            SubmissionRepository::find_by_shortcode(&*state.editor, "0801d").await.unwrap(),
+            None,
+            "nothing was submitted"
+        );
+        let draft = DraftRepository::find(&*state.editor, "0801d").await.unwrap().expect("a draft");
+        let stored: serde_json::Value = serde_json::from_str(&draft.payload).expect("the draft is JSON");
+        assert_eq!(
+            stored["dataLanguage"],
+            serde_json::json!(["hu", "Belgian"]),
+            "{}",
+            draft.payload
+        );
     }
 
     #[tokio::test]

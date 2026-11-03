@@ -52,6 +52,7 @@ impl InputType {
 pub struct TextFieldBuilder {
     name: String,
     label: Markup,
+    label_hidden: bool,
     input_type: InputType,
     value: Option<String>,
     hint: Option<Markup>,
@@ -75,6 +76,7 @@ pub fn text_field(name: impl Into<String>, label: impl Render) -> TextFieldBuild
     TextFieldBuilder {
         name: name.into(),
         label: label.render(),
+        label_hidden: false,
         input_type: InputType::default(),
         value: None,
         hint: None,
@@ -92,6 +94,15 @@ pub fn text_field(name: impl Into<String>, label: impl Render) -> TextFieldBuild
 }
 
 impl TextFieldBuilder {
+    /// Keep the label for assistive technology but take it out of the layout, for
+    /// a field already titled by what surrounds it, such as one entry in a list.
+    /// The label is hidden, not omitted: a control with no accessible name is
+    /// announced as just "edit text".
+    pub fn label_hidden(mut self) -> Self {
+        self.label_hidden = true;
+        self
+    }
+
     /// Set the input type (default `Text`).
     pub fn input_type(mut self, input_type: InputType) -> Self {
         self.input_type = input_type;
@@ -196,6 +207,7 @@ impl TextFieldBuilder {
             label: &self.label,
             hint: self.hint.as_ref(),
             error: self.error.as_ref(),
+            label_hidden: self.label_hidden,
         };
         let described_by = shell.described_by();
         let control = html! {
@@ -260,6 +272,17 @@ mod tests {
         );
         assert!(out.contains(r#"id="email""#), "{out}");
         assert!(out.contains(r#"name="email""#), "{out}");
+    }
+
+    #[test]
+    fn a_hidden_label_still_names_the_input_but_leaves_the_layout() {
+        let out = text_field("keywords.r0", "Keyword 1").label_hidden().build().into_string();
+        assert!(
+            out.contains(r#"<label class="field-label sr-only" for="keywords.r0">Keyword 1</label>"#),
+            "{out}"
+        );
+        let shown = text_field("keywords.r0", "Keyword 1").build().into_string();
+        assert!(!shown.contains("sr-only"), "{shown}");
     }
 
     #[test]

@@ -3362,6 +3362,14 @@ mod tests {
         let body = body_string(added).await;
         assert!(body.contains("https://first.example/"), "the filled row survives: {body}");
         assert!(body.contains(r#"name="additionalMaterial.r1""#), "a blank row is added: {body}");
+        // Labelled by what the row holds, not "Link": the hint carries the URL cue.
+        assert!(
+            body.contains(
+                r#"<label class="field-label sr-only" for="additionalMaterial.r0">Additional material 1</label>"#
+            ),
+            "{body}"
+        );
+        assert!(!body.contains("Link 1"), "{body}");
 
         let draft = DraftRepository::find(&*state.editor, "0801d").await.unwrap().expect("a draft");
         let stored: serde_json::Value = serde_json::from_str(&draft.payload).unwrap();

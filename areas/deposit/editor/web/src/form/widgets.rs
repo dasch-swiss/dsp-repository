@@ -398,6 +398,7 @@ pub(crate) fn string_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -
     let stored = stored_rows(field, draft);
     let action = format!("{}/{}", rows.action, field.id);
     let noun = row_noun(field);
+    let name = capitalised(&noun);
     let mut list = repeatable_list(field.id, labelled(field), &action).item_noun(&noun);
     let kind = format_kind(field, "");
     for (position, key) in keys.iter().enumerate() {
@@ -406,9 +407,8 @@ pub(crate) fn string_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -
             Some(body) if body.has(&row_name) => body.get(&format!("{}.{key}", field.id)).unwrap_or_default(),
             _ => stored.get(position).and_then(|row| row.as_str()).unwrap_or_default(),
         };
-        let name = format!("{}.{key}", field.id);
-        let label = row_label(ROW_VALUE_LABEL, position);
-        let control = format_field(name, label, kind, None, rows);
+        let label = row_label(&name, position);
+        let control = format_field(format!("{}.{key}", field.id), label, kind, None, rows).label_hidden();
         list = list.row(
             key,
             html! {
@@ -1223,16 +1223,19 @@ const AGENT_ID_LABEL: &str = "Person or organisation";
 /// submit, because the form is where it can be fixed.
 const UNRESOLVED_AGENT: &str = "No person or organisation with this id — pick one from the list.";
 
-/// A row control's label, with the row's own position in it: five controls all
-/// called "Link" are indistinguishable in a screen reader's form-field list. The
+/// A row control's label, with the row's own position in it: several controls
+/// with one name are indistinguishable in a screen reader's form-field list. The
 /// repeatable-list tile numbers its Remove buttons for the same reason.
 fn row_label(label: &str, position: usize) -> String {
     format!("{label} {}", position + 1)
 }
 
-/// The label on a single-value row's control: a row's own label, since the field
-/// is named by the list's `<legend>` and every control needs a name of its own.
-const ROW_VALUE_LABEL: &str = "Link";
+fn capitalised(text: &str) -> String {
+    let mut chars = text.chars();
+    chars
+        .next()
+        .map_or_else(String::new, |first| first.to_uppercase().chain(chars).collect())
+}
 
 /// What one row of a repeatable field is called, for the tile's "Remove <noun> 2"
 /// labels: the field's label singularised crudely, rather than a second
@@ -1253,11 +1256,7 @@ fn multilingual_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Mar
     keys.truncate(MAX_VALUES_PER_FIELD);
     let action = format!("{}/{}", rows.action, field.id);
     let noun = row_noun(field);
-    let mut capitalised = noun.chars();
-    let name = capitalised
-        .next()
-        .map(|first| first.to_uppercase().chain(capitalised).collect::<String>())
-        .unwrap_or_default();
+    let name = capitalised(&noun);
     let mut budget = MAX_VALUES_PER_FIELD;
     let row_lines: Vec<Vec<(String, String)>> = keys
         .iter()

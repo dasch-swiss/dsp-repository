@@ -751,6 +751,36 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn the_person_form_labels_each_text_row_by_what_it_holds() {
+        let (state, _) = test_state("entity-person-row-labels").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        // A fresh proposal renders no rows, so store one value per field first.
+        let entity_id = a_person_proposal(&app, &state, &session, "0801d").await;
+        let uri = format!("/projects/0801d/entities/{entity_id}");
+        let typed = "givenNames.row=r0&givenNames.r0=Ada&familyNames.row=r0&familyNames.r0=Lovelace\
+                     &jobTitles.row=r0&jobTitles.r0=Archivist";
+        as_session(&app, post(&uri, typed), &session).await;
+        let response = as_session(&app, get(&uri), &session).await;
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = body_string(response).await;
+
+        assert!(!body.contains("Link 1"), "{body}");
+        for (field, label) in [
+            ("givenNames", "Given name 1"),
+            ("familyNames", "Family name 1"),
+            ("jobTitles", "Job title 1"),
+        ] {
+            let id = format!("{field}.r0");
+            let labelled = format!(r#"<label class="field-label sr-only" for="{id}">{label}</label>"#);
+            assert!(body.contains(&labelled), "{label} labels {id}: {body}");
+            assert!(body.contains(&format!(r#"id="{id}""#)), "{id} is an input: {body}");
+        }
+    }
+
+    #[tokio::test]
     async fn a_depositor_opens_the_organisation_form() {
         let (state, _) = test_state("entity-open-organization").await;
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;

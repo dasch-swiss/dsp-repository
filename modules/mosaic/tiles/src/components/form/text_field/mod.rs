@@ -58,6 +58,8 @@ pub struct TextFieldBuilder {
     hint: Option<Markup>,
     error: Option<Markup>,
     autocomplete: Option<String>,
+    placeholder: Option<String>,
+    lang: Option<String>,
     inputmode: Option<&'static str>,
     pattern: Option<String>,
     maxlength: Option<u32>,
@@ -82,6 +84,8 @@ pub fn text_field(name: impl Into<String>, label: impl Render) -> TextFieldBuild
         hint: None,
         error: None,
         autocomplete: None,
+        placeholder: None,
+        lang: None,
         inputmode: None,
         pattern: None,
         maxlength: None,
@@ -141,6 +145,22 @@ impl TextFieldBuilder {
     /// refuses it.
     pub fn autocomplete(mut self, token: impl Into<String>) -> Self {
         self.autocomplete = Some(token.into());
+        self
+    }
+
+    /// Show a greyed example of the expected format while the input is empty.
+    ///
+    /// Always in addition to a [`hint`](Self::hint), never instead of one: a placeholder
+    /// disappears on typing and is low-contrast.
+    pub fn placeholder(mut self, placeholder: impl Into<String>) -> Self {
+        self.placeholder = Some(placeholder.into());
+        self
+    }
+
+    /// Declare the language of the value, as a BCP 47 tag. An empty tag renders no attribute,
+    /// because `lang=""` means "language unknown" rather than "not set".
+    pub fn lang(mut self, lang: impl Into<String>) -> Self {
+        self.lang = Some(lang.into()).filter(|lang| !lang.is_empty());
         self
     }
 
@@ -218,6 +238,8 @@ impl TextFieldBuilder {
                 type=(self.input_type.as_str())
                 value=[self.value.as_deref()]
                 autocomplete=[self.autocomplete.as_deref()]
+                placeholder=[self.placeholder.as_deref()]
+                lang=[self.lang.as_deref()]
                 inputmode=[self.inputmode]
                 pattern=[self.pattern.as_deref()]
                 maxlength=[self.maxlength]
@@ -449,6 +471,29 @@ mod tests {
         assert!(!out.contains("required"), "{out}");
         assert!(!out.contains("autofocus"), "{out}");
         assert!(!out.contains("data-testid="), "{out}");
+    }
+
+    #[test]
+    fn placeholder_and_lang_land_on_the_input_and_are_absent_unless_set() {
+        let out = text_field("title", "Title")
+            .placeholder("e.g. Letters 1900")
+            .lang("de")
+            .build()
+            .into_string();
+        let input = &out[out.find("<input").expect("input missing")..];
+        let input = &input[..input.find('>').expect("input closed")];
+        assert!(input.contains(r#"placeholder="e.g. Letters 1900""#), "{out}");
+        assert!(input.contains(r#"lang="de""#), "{out}");
+
+        let plain = text_field("title", "Title").build().into_string();
+        assert!(!plain.contains("placeholder="), "{plain}");
+        assert!(!plain.contains("lang="), "{plain}");
+    }
+
+    #[test]
+    fn an_empty_lang_renders_no_attribute_since_it_would_mean_unknown_language() {
+        let out = text_field("title", "Title").lang("").build().into_string();
+        assert!(!out.contains("lang="), "{out}");
     }
 
     #[test]

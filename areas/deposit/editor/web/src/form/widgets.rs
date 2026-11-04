@@ -256,7 +256,9 @@ pub(crate) fn language_list(value: &DraftMultilingual) -> Markup {
             @for (tag, text) in value.iter() {
                 @if !text.trim().is_empty() {
                     dt class="text-sm font-bold text-neutral-600" { (language_name(tag)) }
-                    dd class="whitespace-pre-line text-neutral-900" { (text) }
+                    dd  lang=[normalized_language_tag(tag)]
+                        class="whitespace-pre-line text-neutral-900"
+                    { (text) }
                 }
             }
         }
@@ -302,7 +304,7 @@ pub(crate) fn control(field: &Field, draft: &ProjectDraft, shape: Shape, rows: R
         "contactPoint" => agent_rows(field, draft, rows),
         "attributions" => attribution_rows(field, draft, rows),
         "temporalCoverage" | "disciplines" => text_or_reference_rows(field, draft, rows, reference_types(shape)),
-        "spatialCoverage" => reference_rows(field, draft, rows, reference_types(shape)),
+        "spatialCoverage" => reference_rows(field, draft, rows, reference_types(shape), &GENERAL_WORDING),
         "publications" => publication_rows(field, draft, rows),
         "funding" => funding(field, draft, rows),
         // Four choices with long labels and exactly one current: radios would be
@@ -435,6 +437,14 @@ pub const fn format_hint(kind: ValueKind) -> &'static str {
     }
 }
 
+/// The example a control for a value of `kind` shows greyed.
+pub const fn format_example(kind: ValueKind) -> &'static str {
+    match kind {
+        ValueKind::Link | ValueKind::LinkOrNotAccessible => "https://example.org/",
+        ValueKind::DoiOrLink => "https://doi.org/10.1234/abcd",
+    }
+}
+
 /// What a value without its kind's format is told, standing alone: a screen reader
 /// reads it without the field's name.
 pub const fn format_message(kind: ValueKind) -> &'static str {
@@ -535,7 +545,13 @@ pub(crate) fn string_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -
             _ => stored.get(position).and_then(|row| row.as_str()).unwrap_or_default(),
         };
         let label = row_label(&name, position);
-        let control = format_field(format!("{}.{key}", field.id), label, kind, None, rows).label_hidden();
+        // The format rule is said once, on the list, so a row's own control carries no hint and
+        // only its finding.
+        let control = format_field(format!("{}.{key}", field.id), label, None, None, rows).label_hidden();
+        let control = match kind {
+            Some(kind) => control.placeholder(format_example(kind)),
+            None => control,
+        };
         list = list.row(
             key,
             html! {
@@ -543,7 +559,15 @@ pub(crate) fn string_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -
             },
         );
     }
-    if let Some(hint) = field.hint {
+    let hint = [
+        field.hint.map(str::to_string),
+        kind.map(|kind| format_hint(kind).to_string()),
+    ]
+    .into_iter()
+    .flatten()
+    .collect::<Vec<_>>()
+    .join(" ");
+    if !hint.is_empty() {
         list = list.hint(hint);
     }
     html! {
@@ -574,6 +598,9 @@ struct Slot<'a> {
     /// shared name plus its position ([`funder_control`]).
     unique: &'a str,
     label: &'a str,
+    /// The row's position, which the combobox label carries visually hidden and the card's group
+    /// name carries in full; `None` for a slot that is not one of several like it.
+    position: Option<usize>,
     id: &'a str,
     /// Goes into every button's accessible name: two rows can hold the same agent.
     row_context: &'a str,
@@ -618,6 +645,25 @@ fn agent_picker(slot: Slot<'_>, rows: Rows<'_>, inside: Markup) -> Markup {
     }
 }
 
+impl Slot<'_> {
+    /// The group name of a card: the label with the row's number, so two cards stay apart.
+    fn group_name(&self) -> String {
+        match self.position {
+            Some(position) => row_label(self.label, position),
+            None => self.label.to_string(),
+        }
+    }
+
+    fn search_label(&self) -> Markup {
+        match self.position {
+            Some(position) => numbered_label(self.label, position),
+            None => html! {
+                (self.label)
+            },
+        }
+    }
+}
+
 fn slot_search(slot: &Slot<'_>, query_name: &str, rows: Rows<'_>, inside: Markup, autofocus: bool) -> Markup {
     let query = rows.posted.and_then(|body| body.get(query_name)).unwrap_or_default();
     let current = slot.id.trim();
@@ -625,7 +671,7 @@ fn slot_search(slot: &Slot<'_>, query_name: &str, rows: Rows<'_>, inside: Markup
         Some(scope) => results_for(slot.unique, query, scope, &[], rows.propose),
         None => (html! {}, false),
     };
-    let mut search = combobox(query_name, slot.label)
+    let mut search = combobox(query_name, slot.search_label())
         .with_id(agent_query_id(slot.unique))
         .results_id(agent_results_id(slot.unique))
         .value(query)
@@ -691,7 +737,7 @@ fn slot_card(slot: &Slot<'_>, rows: Rows<'_>, inside: Markup, focus: bool) -> Ma
             data-init=[focus.then_some(FOCUS_AUTOFOCUS)]
         {
             input type="hidden" name=(slot.value_name) value=(id);
-            div role="group" aria-label=(slot.label) class=(class) {
+            div role="group" aria-label=(slot.group_name()) class=(class) {
                 div class="flex flex-wrap items-start justify-between gap-3" {
                     div class="flex min-w-0 flex-col gap-1" {
                         @match resolved {
@@ -912,7 +958,7 @@ fn vocabulary_search(
         .name_value(INTENT, FIND_ENTRY)
         .aria_label(format!("{} ({}, row {})", list.label(), field.label, position + 1))
         .build();
-    let mut search = combobox(&query_name, row_label(list.label(), position))
+    let mut search = combobox(&query_name, numbered_label(list.label(), position))
         .with_id(&id)
         .results_id(agent_results_id(&unique))
         .hint(hint)
@@ -1150,7 +1196,8 @@ pub(crate) fn agent_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) ->
         let slot = Slot {
             value_name: &name,
             unique: &name,
-            label: &row_label(AGENT_ID_LABEL, position),
+            label: AGENT_ID_LABEL,
+            position: Some(position),
             id,
             row_context: &row_context,
             focus: is_added_row(field, rows, position, keys.len()),
@@ -1290,7 +1337,8 @@ fn attribution_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Mark
         let slot = Slot {
             value_name: &contributor_name,
             unique: &contributor_name,
-            label: &row_label(AGENT_ID_LABEL, position),
+            label: AGENT_ID_LABEL,
+            position: Some(position),
             id: &contributor,
             row_context: &row_context,
             focus: is_added_row(field, rows, position, keys.len()),
@@ -1493,7 +1541,7 @@ fn text_or_reference_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>, t
             None => held.map_or(TEXT_KIND, |row| stored_kind(field.id, row)),
         };
         let is_reference = current == REFERENCE_KIND;
-        let controls = reference_controls(field, &prefix, types, rows, |member| {
+        let controls = reference_controls(field, &prefix, types, &GENERAL_WORDING, rows, |member| {
             reference_member(posted, held.copied(), &prefix, member)
         });
         let search = reference_search(field, &prefix, position, is_reference, rows);
@@ -1559,6 +1607,7 @@ fn text_or_reference_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>, t
                                         language_name(tag),
                                     )
                                     .input_type(InputType::Text)
+                                    .lang(normalized_language_tag(tag).unwrap_or_default())
                                     .value(texts.get(tag).unwrap_or_default())
                             })
                         }
@@ -1629,33 +1678,48 @@ fn reference_search(field: &Field, prefix: &str, position: usize, active: bool, 
 }
 
 /// One row's three reference controls, shared by every field that renders a
-/// reference so their names and labels cannot drift.
+/// reference so their names and labels cannot drift. Their hints and the link's example come
+/// from the caller's `wording`; the source hint names "URL", so it shows only where `types`
+/// offers it.
 fn reference_controls(
     field: &Field,
     prefix: &str,
     types: &[&str],
+    wording: &ReferenceWording,
     rows: Rows<'_>,
     value: impl Fn(&str) -> String,
 ) -> Markup {
+    let source = types.contains(&"URL").then_some(wording.source_hint);
+    let link = format_field(
+        format!("{prefix}.ref.url"),
+        REFERENCE_URL_LABEL,
+        format_kind(field, "ref.url"),
+        wording.link_lead,
+        rows,
+    );
+    let link = match wording.link_example {
+        Some(example) => link.placeholder(example),
+        None => link,
+    };
+    let shown_as = wording.shown_as_hint;
     html! {
         ({
-            select(format!("{prefix}.ref.type"), REFERENCE_TYPE_LABEL)
-                .options(types.iter().map(|kind| (*kind, source_label(kind))))
-                .selected(value("type"))
-        })
-        ({
-            format_field(
-                    format!("{prefix}.ref.url"),
-                    REFERENCE_URL_LABEL,
-                    format_kind(field, "ref.url"),
-                    None,
-                    rows,
+            let source_control = select(
+                    format!("{prefix}.ref.type"),
+                    REFERENCE_TYPE_LABEL,
                 )
-                .value(value("url"))
+                .options(types.iter().map(|kind| (*kind, source_label(kind))))
+                .selected(value("type"));
+            match source {
+                Some(hint) => source_control.hint(hint),
+                None => source_control,
+            }
         })
+        (link.value(value("url")))
         ({
             text_field(format!("{prefix}.ref.label"), REFERENCE_LABEL_LABEL)
                 .input_type(InputType::Text)
+                .hint(shown_as)
                 .value(value("label"))
         })
     }
@@ -1689,7 +1753,13 @@ fn row_member(field: &Field, stored: Option<&Value>, rows: Rows<'_>, prefix: &st
 
 /// A list of authority references - the reference half of
 /// [`text_or_reference_rows`], with no variant to choose.
-pub(crate) fn reference_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>, types: &[&str]) -> Markup {
+pub(crate) fn reference_rows(
+    field: &Field,
+    draft: &ProjectDraft,
+    rows: Rows<'_>,
+    types: &[&str],
+    wording: &ReferenceWording,
+) -> Markup {
     let keys = row_keys(field, draft, rows);
     let stored = stored_rows(field, draft);
     let action = format!("{}/{}", rows.action, field.id);
@@ -1700,7 +1770,7 @@ pub(crate) fn reference_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>
     for (position, key) in keys.iter().enumerate() {
         let prefix = format!("{}.{key}", field.id);
         let held = stored.get(position).copied();
-        let controls = reference_controls(field, &prefix, types, rows, |member| {
+        let controls = reference_controls(field, &prefix, types, wording, rows, |member| {
             reference_member(posted, held, &prefix, member)
         });
         let search = reference_search(field, &prefix, position, true, rows);
@@ -1751,19 +1821,26 @@ fn publication_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Mark
                     ({
                         textarea(
                                 format!("{prefix}.text"),
-                                row_label(CITATION_LABEL, position),
+                                numbered_label(CITATION_LABEL, position),
                             )
+                            .hint(CITATION_HINT)
+                            .placeholder(CITATION_EXAMPLE)
                             .rows(2)
                             .value(text)
                     })
                     ({
-                        format_field(
-                                format!("{prefix}.pid"),
-                                row_label(PID_LABEL, position),
-                                format_kind(field, "pid"),
-                                Some(PID_HINT),
-                                rows,
-                            )
+                        let pid_kind = format_kind(field, "pid");
+                        let pid_control = format_field(
+                            format!("{prefix}.pid"),
+                            numbered_label(PID_LABEL, position),
+                            pid_kind,
+                            Some(PID_HINT),
+                            rows,
+                        );
+                        match pid_kind {
+                            Some(kind) => pid_control.placeholder(format_example(kind)),
+                            None => pid_control,
+                        }
                             .value(pid)
                     })
                 }
@@ -1917,6 +1994,7 @@ fn funder_control(
         value_name: &value_name,
         unique: &unique,
         label,
+        position: None,
         id,
         row_context,
         focus: false,
@@ -1931,6 +2009,8 @@ fn funder_control(
 const CITATION_LABEL: &str = "Reference";
 const PID_LABEL: &str = "Persistent identifier";
 const PID_HINT: &str = "Only if the publication has one.";
+const CITATION_HINT: &str = "The full citation: authors, year, title and publisher or journal.";
+const CITATION_EXAMPLE: &str = "Muster, A. (2020). Title. Publisher.";
 const FUNDER_LABEL: &str = "Funder";
 const ADD_FUNDER_LABEL: &str = "Add another funder";
 const GRANT_NUMBER_LABEL: &str = "Grant number";
@@ -1971,6 +2051,25 @@ const NO_DISCIPLINE_CHOSEN: &str = "Nothing chosen yet";
 const REFERENCE_TYPE_LABEL: &str = "Source";
 const REFERENCE_URL_LABEL: &str = "Link";
 const REFERENCE_LABEL_LABEL: &str = "Shown as";
+const REFERENCE_SOURCE_HINT: &str = "The service the link comes from, or URL for any other web address.";
+const REFERENCE_SHOWN_AS_HINT: &str =
+    "The text shown for the link, such as its name. If left empty, the link itself is shown.";
+
+/// The wording on a reference row's controls, which the caller supplies.
+pub(crate) struct ReferenceWording {
+    pub(crate) source_hint: &'static str,
+    pub(crate) link_lead: Option<&'static str>,
+    pub(crate) link_example: Option<&'static str>,
+    pub(crate) shown_as_hint: &'static str,
+}
+
+/// The wording for the coverage fields, which have their own field hints.
+pub(crate) const GENERAL_WORDING: ReferenceWording = ReferenceWording {
+    source_hint: REFERENCE_SOURCE_HINT,
+    link_lead: None,
+    link_example: None,
+    shown_as_hint: REFERENCE_SHOWN_AS_HINT,
+};
 
 /// The legend on a contributor row's role group.
 const ROLE_GROUP_LABEL: &str = "Roles";
@@ -1995,6 +2094,17 @@ const UNRESOLVED_AGENT: &str = "No person or organisation with this id — pick 
 /// repeatable-list tile numbers its Remove buttons for the same reason.
 fn row_label(label: &str, position: usize) -> String {
     format!("{label} {}", position + 1)
+}
+
+/// A row control's visible label: the word alone, with the row's number kept for assistive
+/// technology only, so the accessible name stays distinct per row ("Reference 1") while the
+/// page shows no numbered label.
+fn numbered_label(label: &str, position: usize) -> Markup {
+    html! {
+        (label)
+        " "
+        span class="sr-only" { (position + 1) }
+    }
 }
 
 fn capitalised(text: &str) -> String {
@@ -2139,6 +2249,7 @@ fn language_line(field: &Field, rows: Rows<'_>, parts: Line<'_>) -> Markup {
     )
     .label_hidden()
     .input_type(InputType::Text)
+    .lang(tag)
     .value(text)
     .with_id(format!("{id}-text"));
     let input = if focus_text { input.autofocus() } else { input };
@@ -2517,6 +2628,7 @@ pub(crate) fn multilingual(field: &Field, draft: &ProjectDraft, rows: u32) -> Ma
                     ({
                         textarea(format!("{}.{tag}", field.id), language_name(tag))
                             .rows(rows)
+                            .lang(*tag)
                             .value(value.get(tag).unwrap_or_default())
                     })
                 }
@@ -3038,6 +3150,69 @@ mod tests {
 
         assert!(out.contains(r#"<option value="" selected>Choose language</option>"#), "{out}");
         assert!(!out.contains(r#"value="en" selected"#), "{out}");
+    }
+
+    /// The `<input` or `<textarea` tag that carries `attribute`, whole.
+    fn control_tag<'a>(out: &'a str, element: &str, attribute: &str) -> &'a str {
+        let at = out.find(attribute).unwrap_or_else(|| panic!("{attribute} in {out}"));
+        let start = out[..at].rfind(&format!("<{element}")).expect("an opening tag");
+        let end = at + out[at..].find('>').expect("a closing bracket");
+        &out[start..=end]
+    }
+
+    #[test]
+    fn a_keyword_line_declares_its_own_language_and_an_untagged_line_declares_none() {
+        let field = editor_core::form::registry::field("keywords").expect("keywords is a known field");
+        let mut draft = ProjectDraft::default();
+        draft.set("keywords", serde_json::json!([{ "de": "Nomaden", "fr": "Nomades" }]));
+        let out = multilingual_rows(field, &draft, Rows { action: "/x", ..Rows::default() }).into_string();
+
+        let german = control_tag(&out, "input", r#"id="keywords-r0-0-text""#);
+        assert!(german.contains(r#"lang="de""#) && german.contains("Nomaden"), "{german}");
+        let french = control_tag(&out, "input", r#"id="keywords-r0-1-text""#);
+        assert!(french.contains(r#"lang="fr""#) && french.contains("Nomades"), "{french}");
+
+        let rows = Rows { action: "/x", adding: Some("keywords"), ..Rows::default() };
+        let fresh = multilingual_rows(field, &ProjectDraft::default(), rows).into_string();
+        let untagged = control_tag(&fresh, "input", r#"id="keywords-r0-0-text""#);
+        assert!(!untagged.contains("lang="), "{untagged}");
+    }
+
+    #[test]
+    fn an_own_wording_line_declares_its_language_only_when_the_key_is_a_tag() {
+        let field = editor_core::form::registry::field("temporalCoverage").expect("a known field");
+        let mut draft = ProjectDraft::default();
+        draft.set(
+            "temporalCoverage",
+            serde_json::json!([{ "de": "Mittelalter", "en": "Middle Ages" }]),
+        );
+        let out = field_row(field, &draft, Mode::Editable, routed()).into_string();
+        let german = control_tag(&out, "input", r#"name="temporalCoverage.r0.text.de""#);
+        assert!(german.contains(r#"lang="de""#), "{german}");
+
+        let body = FormBody::from_pairs(vec![
+            ("temporalCoverage.row".to_string(), "r0".to_string()),
+            ("temporalCoverage.r0.text.en".to_string(), "Middle Ages".to_string()),
+            ("temporalCoverage.r0.text.not-a-tag".to_string(), "Mittelalter".to_string()),
+        ]);
+        let out = field_row(field, &draft, Mode::Editable, Rows { posted: Some(&body), ..routed() }).into_string();
+        let english = control_tag(&out, "input", r#"name="temporalCoverage.r0.text.en""#);
+        assert!(english.contains(r#"lang="en""#), "{english}");
+        let malformed = control_tag(&out, "input", r#"name="temporalCoverage.r0.text.not-a-tag""#);
+        assert!(!malformed.contains("lang="), "{malformed}");
+    }
+
+    #[test]
+    fn a_description_textarea_declares_the_language_of_its_tag() {
+        let field = editor_core::form::registry::field("description").expect("description is a known field");
+        let mut draft = ProjectDraft::default();
+        draft.set("description", serde_json::json!({ "de": "Ein Projekt", "en": "A project" }));
+        let out = multilingual(field, &draft, 5).into_string();
+
+        for tag in ["de", "en"] {
+            let control = control_tag(&out, "textarea", &format!(r#"name="description.{tag}""#));
+            assert!(control.contains(&format!(r#"lang="{tag}""#)), "{control}");
+        }
     }
 
     #[test]
@@ -3735,7 +3910,8 @@ mod tests {
         let field = editor_core::form::registry::field("spatialCoverage").expect("spatialCoverage is a known field");
         let rows = Rows { posted: Some(&body), action: "/x", ..Rows::default() };
 
-        let out = reference_rows(field, &published_draft(), rows, &["Geonames", "Pleiades"]).into_string();
+        let out =
+            reference_rows(field, &published_draft(), rows, &["Geonames", "Pleiades"], &GENERAL_WORDING).into_string();
         assert!(
             out.contains(r#"name="spatialCoverage.r0.ref.url" type="text" value="Basel""#),
             "{out}"
@@ -3767,7 +3943,7 @@ mod tests {
         }];
         let rows = Rows { action: "/x", format_findings: &findings, ..Rows::default() };
 
-        let out = reference_rows(field, &draft, rows, &["Geonames"]).into_string();
+        let out = reference_rows(field, &draft, rows, &["Geonames"], &GENERAL_WORDING).into_string();
         let input = input_named(&out, "spatialCoverage.r1.ref.url").expect("the second row's link control");
         assert!(input.contains(r#"aria-invalid="true""#), "{input}");
         assert_eq!(out.matches("aria-invalid").count(), 1, "only the flagged control: {out}");
@@ -4439,7 +4615,7 @@ mod tests {
         assert!(out.contains(r#"role="combobox""#), "{out}");
         assert!(out.contains(r#"name="contactPoint.r0.q""#), "{out}");
         assert!(
-            out.contains(r#"<label class="field-label" for="contactPoint.r0-q">Person or organisation 1"#),
+            out.contains(r#"<label class="field-label" for="contactPoint.r0-q">Person or organisation <span class="sr-only">1</span></label>"#),
             "{out}"
         );
         assert!(out.contains(hidden), "an abandoned change keeps the stored choice: {out}");
@@ -4783,5 +4959,268 @@ mod tests {
             "the blank trailing funder searches: {out}"
         );
         assert!(!out.contains(".new.q"), "{out}");
+    }
+
+    /// Every `<label>`'s inner markup in `out`.
+    fn label_markups(out: &str) -> Vec<&str> {
+        out.split("<label")
+            .skip(1)
+            .filter_map(|label| {
+                let inner = label.split_once('>')?.1;
+                Some(inner.split_once("</label>")?.0)
+            })
+            .collect()
+    }
+
+    /// The text of `out`'s element opening with `marker`'s tag up to `</`, for an id lookup.
+    fn describing_text(out: &str, described_by: &str) -> String {
+        let id_at = out
+            .find(&format!(r#"id="{described_by}""#))
+            .unwrap_or_else(|| panic!("no element with id {described_by}: {out}"));
+        let after = &out[id_at..];
+        let text = after.split_once('>').expect("a tag end").1;
+        text.split_once("</").expect("a closing tag").0.to_string()
+    }
+
+    /// The `aria-describedby` ids of the tag opening at the `name` attribute `control`.
+    fn described_by_of(out: &str, control: &str) -> Vec<String> {
+        let at = out
+            .find(&format!(r#"name="{control}""#))
+            .unwrap_or_else(|| panic!("no control {control}: {out}"));
+        let tag_start = out[..at].rfind('<').expect("an opening tag");
+        let tag_end = at + out[at..].find('>').expect("a tag end");
+        let tag = &out[tag_start..tag_end];
+        tag.split_once(r#"aria-describedby=""#)
+            .map(|(_, rest)| {
+                rest.split('"')
+                    .next()
+                    .unwrap_or_default()
+                    .split_whitespace()
+                    .map(str::to_string)
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
+    fn hints_of(out: &str, control: &str) -> String {
+        described_by_of(out, control)
+            .iter()
+            .map(|id| describing_text(out, id))
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+
+    #[test]
+    fn a_link_list_says_its_format_once_and_each_row_shows_an_example() {
+        let field =
+            editor_core::form::registry::field("additionalMaterial").expect("additionalMaterial is a known field");
+        let mut draft = ProjectDraft::default();
+        draft.set(
+            "additionalMaterial",
+            serde_json::json!(["https://example.org/a", "https://example.org/b"]),
+        );
+        let out = field_row(field, &draft, Mode::Editable, Rows { action: "/x", ..Rows::default() }).into_string();
+
+        assert_eq!(out.matches(format_hint(ValueKind::Link)).count(), 1, "{out}");
+        let example = format!(r#"placeholder="{}""#, format_example(ValueKind::Link));
+        assert_eq!(out.matches(&example).count(), 2, "{out}");
+        let fieldset = out.split("<fieldset").nth(1).expect("the list is a fieldset");
+        let described_by = fieldset
+            .split_once(r#"aria-describedby=""#)
+            .expect("the list is described")
+            .1
+            .split('"')
+            .next()
+            .unwrap_or_default();
+        assert!(
+            described_by
+                .split_whitespace()
+                .any(|id| describing_text(&out, id).contains(format_hint(ValueKind::Link))),
+            "the list's description holds the format: {out}"
+        );
+    }
+
+    #[test]
+    fn a_link_in_a_row_of_a_link_list_still_gets_its_own_error() {
+        let field =
+            editor_core::form::registry::field("additionalMaterial").expect("additionalMaterial is a known field");
+        let mut draft = ProjectDraft::default();
+        draft.set("additionalMaterial", serde_json::json!(["https://example.org/a", "Basel"]));
+        let findings = [Finding {
+            field,
+            control: "additionalMaterial.r1".to_string(),
+            kind: ValueKind::Link,
+        }];
+        let rows = Rows { action: "/x", format_findings: &findings, ..Rows::default() };
+        let out = field_row(field, &draft, Mode::Editable, rows).into_string();
+
+        let input = input_named(&out, "additionalMaterial.r1").expect("the second row's control");
+        assert!(input.contains(r#"aria-invalid="true""#), "{input}");
+        assert!(
+            hints_of(&out, "additionalMaterial.r1").contains(format_message(ValueKind::Link)),
+            "{out}"
+        );
+    }
+
+    #[test]
+    fn a_publication_control_announces_what_it_wants() {
+        let field = editor_core::form::registry::field("publications").expect("publications is a known field");
+        let mut draft = ProjectDraft::default();
+        draft.set(
+            "publications",
+            serde_json::json!([{ "text": "Muster, A.", "pid": { "url": "https://doi.org/10.1/x" } }]),
+        );
+        let out = field_row(field, &draft, Mode::Editable, Rows { action: "/x", ..Rows::default() }).into_string();
+
+        let citation = hints_of(&out, "publications.r0.text");
+        assert!(citation.contains(CITATION_HINT), "{citation}");
+        let pid = hints_of(&out, "publications.r0.pid");
+        assert!(
+            pid.contains(PID_HINT) && pid.contains(format_hint(ValueKind::DoiOrLink)),
+            "{pid}"
+        );
+        assert!(out.contains(&format!(r#"placeholder="{CITATION_EXAMPLE}""#)), "{out}");
+        assert!(
+            out.contains(&format!(r#"placeholder="{}""#, format_example(ValueKind::DoiOrLink))),
+            "{out}"
+        );
+    }
+
+    #[test]
+    fn an_authority_record_control_announces_what_it_wants() {
+        let field = crate::entity::fields_for(editor_core::proposals::ProposalKind::Person)
+            .iter()
+            .find(|field| field.id == "sameAs")
+            .expect("a person has authority records");
+        let mut draft = ProjectDraft::default();
+        draft.set(
+            "sameAs",
+            serde_json::json!([{ "type": "GND", "url": "https://d-nb.info/gnd/1", "text": "A" }]),
+        );
+        let out = reference_rows(
+            field,
+            &draft,
+            Rows { action: "/x", ..Rows::default() },
+            crate::entity::SAME_AS_TYPES,
+            &crate::entity::SAME_AS_WORDING,
+        )
+        .into_string();
+        let wording = &crate::entity::SAME_AS_WORDING;
+        let (lead, example) = (wording.link_lead.expect("a lead"), wording.link_example.expect("an example"));
+
+        assert!(hints_of(&out, "sameAs.r0.ref.type").contains(wording.source_hint), "{out}");
+        let link = hints_of(&out, "sameAs.r0.ref.url");
+        assert!(link.contains(lead) && link.contains(format_hint(ValueKind::Link)), "{link}");
+        assert!(hints_of(&out, "sameAs.r0.ref.label").contains(wording.shown_as_hint), "{out}");
+        assert!(out.contains(&format!(r#"placeholder="{example}""#)), "{out}");
+    }
+
+    #[test]
+    fn a_coverage_reference_keeps_wording_true_for_a_place() {
+        let field = editor_core::form::registry::field("spatialCoverage").expect("spatialCoverage is a known field");
+        let mut draft = ProjectDraft::default();
+        draft.set(
+            "spatialCoverage",
+            serde_json::json!([{ "type": "Geonames", "url": "https://www.geonames.org/1" }]),
+        );
+        let out = reference_rows(
+            field,
+            &draft,
+            Rows { action: "/x", ..Rows::default() },
+            &["Geonames", "Pleiades", "URL"],
+            &GENERAL_WORDING,
+        )
+        .into_string();
+
+        assert!(
+            hints_of(&out, "spatialCoverage.r0.ref.type").contains(REFERENCE_SOURCE_HINT),
+            "{out}"
+        );
+        assert!(
+            hints_of(&out, "spatialCoverage.r0.ref.label").contains(REFERENCE_SHOWN_AS_HINT),
+            "{out}"
+        );
+        assert!(!out.contains(crate::entity::SAME_AS_WORDING.shown_as_hint), "{out}");
+    }
+
+    #[test]
+    fn no_row_label_shows_a_number_and_each_still_names_its_row() {
+        // The number is for assistive technology: visible text "Reference 1" repeated down a
+        // list reads as clutter, and a name without it would be the same on every row.
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let mut draft = ProjectDraft::default();
+        draft.set("publications", serde_json::json!([{ "text": "A" }, { "text": "B" }]));
+        draft.set("contactPoint", serde_json::json!(["", ""]));
+        draft.set("spatialCoverage", serde_json::json!([{ "text": "Basel" }, { "text": "Bern" }]));
+        draft.set(
+            "attributions",
+            serde_json::json!([
+                { "contributor": "person-001", "contributorType": ["Author"] },
+                { "contributor": "person-001", "contributorType": ["Editor"] },
+            ]),
+        );
+        let rows = Rows {
+            action: "/x",
+            agents: Some(&scope),
+            vocabulary_path: Some("/projects/0801d/sections/discovery/vocabulary"),
+            ..Rows::default()
+        };
+        let mut out = String::new();
+        for id in ["publications", "contactPoint", "spatialCoverage", "attributions"] {
+            let field = editor_core::form::registry::field(id).expect("a known field");
+            out.push_str(&field_row(field, &draft, Mode::Editable, rows).into_string());
+        }
+
+        let labels = label_markups(&out);
+        assert!(!labels.is_empty(), "{out}");
+        for label in &labels {
+            let visible = label
+                .split(r#"<span class="sr-only">"#)
+                .enumerate()
+                .map(|(at, part)| {
+                    if at == 0 {
+                        part
+                    } else {
+                        part.split_once("</span>").map_or("", |(_, rest)| rest)
+                    }
+                })
+                .collect::<String>();
+            let digit_ending =
+                visible.trim().chars().last().is_some_and(|last| last.is_ascii_digit()) && visible.trim().contains(' ');
+            assert!(!digit_ending, "a visible numbered label {visible:?}: {label}");
+        }
+        for name in [
+            r#"Reference <span class="sr-only">1</span>"#,
+            r#"Reference <span class="sr-only">2</span>"#,
+            r#"Persistent identifier <span class="sr-only">2</span>"#,
+            r#"Person or organisation <span class="sr-only">2</span>"#,
+            r#"Search for a place <span class="sr-only">2</span>"#,
+        ] {
+            assert!(labels.contains(&name), "{name} among {labels:?}");
+        }
+    }
+
+    #[test]
+    fn a_read_only_language_map_marks_each_value_with_its_language() {
+        let mut value = DraftMultilingual::new();
+        value.set("en", "Hello");
+        value.set("de", "Hallo");
+        value.set("not a tag", "Odd");
+
+        let out = language_list(&value).into_string();
+
+        assert!(
+            out.contains(r#"<dd lang="en" class="whitespace-pre-line text-neutral-900">Hello</dd>"#),
+            "{out}"
+        );
+        assert!(
+            out.contains(r#"<dd lang="de" class="whitespace-pre-line text-neutral-900">Hallo</dd>"#),
+            "{out}"
+        );
+        assert!(
+            out.contains(r#"<dd class="whitespace-pre-line text-neutral-900">Odd</dd>"#),
+            "{out}"
+        );
     }
 }

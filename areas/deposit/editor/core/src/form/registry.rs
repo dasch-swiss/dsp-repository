@@ -474,7 +474,7 @@ pub const FIELDS: &[Field] = &[
     hinted(
         "documentationMaterial",
         "Documentation material",
-        "Documentation, codebooks, guides. Compiled by RDU on the depositor's behalf.",
+        "Links to documentation, codebooks and guides. Compiled by RDU on the depositor's behalf.",
         Recommended,
         RduOnly,
         Some(StringRows),
@@ -483,7 +483,7 @@ pub const FIELDS: &[Field] = &[
     hinted(
         "additionalMaterial",
         "Additional material",
-        "Any additional material related to the dataset — related datasets, mirrors, sister projects.",
+        "Links to additional material related to the dataset, such as related datasets, mirrors and sister projects.",
         Optional,
         Everyone,
         Some(StringRows),

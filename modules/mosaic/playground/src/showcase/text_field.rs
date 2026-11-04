@@ -81,6 +81,16 @@ fn examples() -> Markup {
         })
         ({
             example(
+                "text_field-placeholder",
+                "Placeholder and language",
+                "`.placeholder()` shows a greyed example of the format and always sits beside a hint, never \
+                 replaces one: it vanishes on typing and is low-contrast. `.lang()` marks a value held in a \
+                 known language so a screen reader pronounces it correctly; an empty tag renders nothing.",
+                placeholder_and_lang(),
+            )
+        })
+        ({
+            example(
                 "text_field-prefilled",
                 "Holding a rejected entry",
                 "A rejected form comes back showing what was typed, including the part that was wrong.",
@@ -202,6 +212,18 @@ fn label_hidden() -> Markup {
         (text_field("keywords.r0", "Keyword 1").label_hidden().value("archive"))
         (text_field("keywords.r1", "Keyword 2").label_hidden().value("letters"))
     })
+}
+
+fn placeholder_and_lang() -> Markup {
+    let fields = html! {
+        ({
+            text_field("publication_date", "Publication date")
+                .placeholder("2019-07-01")
+                .hint("Year, year and month, or a full date.")
+        })
+        (text_field("title_de", "Title").value("Briefe aus dem Engadin").lang("de"))
+    };
+    form_column(fields)
 }
 
 fn prefilled() -> Markup {

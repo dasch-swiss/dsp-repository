@@ -32,6 +32,8 @@ pub struct TextareaBuilder {
     value: Option<String>,
     hint: Option<Markup>,
     error: Option<Markup>,
+    placeholder: Option<String>,
+    lang: Option<String>,
     rows: u32,
     maxlength: Option<u32>,
     required: bool,
@@ -50,6 +52,8 @@ pub fn textarea(name: impl Into<String>, label: impl Render) -> TextareaBuilder 
         value: None,
         hint: None,
         error: None,
+        placeholder: None,
+        lang: None,
         rows: DEFAULT_ROWS,
         maxlength: None,
         required: false,
@@ -75,6 +79,20 @@ impl TextareaBuilder {
     /// Mark the field invalid and say why. See [`super::text_field::TextFieldBuilder::error`].
     pub fn error(mut self, message: impl Render) -> Self {
         self.error = Some(message.render());
+        self
+    }
+
+    /// Show a greyed example of the expected format while the textarea is empty.
+    /// Always in addition to a [`hint`](Self::hint), never instead of one.
+    pub fn placeholder(mut self, placeholder: impl Into<String>) -> Self {
+        self.placeholder = Some(placeholder.into());
+        self
+    }
+
+    /// Declare the language of the value, as a BCP 47 tag. An empty tag renders no attribute,
+    /// because `lang=""` means "language unknown" rather than "not set".
+    pub fn lang(mut self, lang: impl Into<String>) -> Self {
+        self.lang = Some(lang.into()).filter(|lang| !lang.is_empty());
         self
     }
 
@@ -123,6 +141,8 @@ impl TextareaBuilder {
                 name=(self.name)
                 rows=(self.rows)
                 maxlength=[self.maxlength]
+                placeholder=[self.placeholder.as_deref()]
+                lang=[self.lang.as_deref()]
                 aria-describedby=[described_by.as_deref()]
                 aria-invalid=[shell.aria_invalid()]
                 data-testid=[self.test_id.as_deref()]
@@ -257,6 +277,25 @@ mod tests {
         assert!(!out.contains("required"), "{out}");
         assert!(!out.contains("data-testid="), "{out}");
         assert!(!out.contains("aria-describedby"), "{out}");
+    }
+
+    #[test]
+    fn placeholder_and_lang_land_on_the_textarea_and_are_absent_unless_set() {
+        let out = textarea("d", "D").placeholder("e.g. A letter").lang("fr").build().into_string();
+        let start = &out[out.find("<textarea").expect("textarea missing")..];
+        let start = &start[..start.find('>').expect("start tag closed")];
+        assert!(start.contains(r#"placeholder="e.g. A letter""#), "{out}");
+        assert!(start.contains(r#"lang="fr""#), "{out}");
+
+        let plain = textarea("d", "D").build().into_string();
+        assert!(!plain.contains("placeholder="), "{plain}");
+        assert!(!plain.contains("lang="), "{plain}");
+    }
+
+    #[test]
+    fn an_empty_lang_renders_no_attribute_since_it_would_mean_unknown_language() {
+        let out = textarea("d", "D").lang("").build().into_string();
+        assert!(!out.contains("lang="), "{out}");
     }
 
     #[test]

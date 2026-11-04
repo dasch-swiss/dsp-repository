@@ -557,8 +557,17 @@ fn apply_organization(body: &FormBody, draft: &mut ProjectDraft) {
     apply(Shape::Text(WhenCleared::Drop), body, draft, "name");
     apply(Shape::Text(WhenCleared::Drop), body, draft, "url");
     apply(Shape::Multilingual, body, draft, "alternativeName");
-    for (member, _) in page::ADDRESS_MEMBERS {
-        apply(Shape::Text(WhenCleared::Drop), body, draft, &format!("address.{member}"));
+    for member in page::ADDRESS_MEMBERS {
+        apply(Shape::Text(WhenCleared::Drop), body, draft, &format!("address.{}", member.name));
+    }
+    // A canton belongs to a Swiss address only. The form always posts it, so
+    // this is what clears one left behind by a country that was changed.
+    let takes_canton = draft
+        .get("address.country")
+        .and_then(Value::as_str)
+        .is_some_and(editor_core::countries::takes_canton);
+    if !takes_canton {
+        draft.remove("address.canton");
     }
     // All four of `street`, `postalCode`, `locality` and `country`,
     // or no `address` at all. Each member above already drops itself when
@@ -1068,6 +1077,60 @@ mod tests {
             payload.get("address").is_none(),
             "an all-empty address is omitted entirely: {payload}"
         );
+    }
+
+    #[tokio::test]
+    async fn a_canton_is_kept_for_a_swiss_country_and_cleared_for_any_other() {
+        let (state, _) = test_state("entity-address-canton").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        let entity_id = an_organization_proposal(&app, &state, &session, "0801d").await;
+        let uri = format!("/projects/0801d/entities/{entity_id}");
+        let address = |country: &str| {
+            format!(
+                "name=Test+Org&url=https%3A%2F%2Fexample.org%2F&address.street=Main+St&address.postalCode=1000\
+                 &address.locality=Town&address.country={country}&address.canton=Zurich&address.additional="
+            )
+        };
+
+        as_session(&app, post(&uri, &address("Switzerland")), &session).await;
+        let payload = stored_payload(&state, "0801d").await;
+        assert_eq!(payload["address"]["canton"], "Zurich", "{payload}");
+
+        as_session(&app, post(&uri, &address("Germany")), &session).await;
+        let payload = stored_payload(&state, "0801d").await;
+        assert_eq!(payload["address"]["country"], "Germany", "{payload}");
+        assert!(payload["address"].get("canton").is_none(), "{payload}");
+    }
+
+    #[tokio::test]
+    async fn a_canton_is_kept_for_a_stored_country_spelled_with_stray_whitespace() {
+        let (state, _) = test_state("entity-address-canton-spelling").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        let entity_id = an_organization_proposal(&app, &state, &session, "0801d").await;
+
+        let proposal = proposals_for(&state, "0801d").await.into_iter().next().expect("a proposal");
+        EntityProposalRepository::update_payload(
+            &*state.editor,
+            proposal.id,
+            r#"{"name":"Test Org","url":"https://example.org/","address":{"street":"Main St",
+               "postalCode":"1000","locality":"Town","country":"Switzerland ","canton":"Zurich"}}"#,
+            Utc::now(),
+        )
+        .await
+        .expect("the payload should update");
+
+        // The form re-posts the stored country, since its select keeps a stored value selected.
+        let uri = format!("/projects/0801d/entities/{entity_id}");
+        let body = "name=Renamed+Org&url=https%3A%2F%2Fexample.org%2F&address.street=Main+St&address.postalCode=1000\
+                    &address.locality=Town&address.country=Switzerland+&address.canton=Zurich&address.additional=";
+
+        as_session(&app, post(&uri, body), &session).await;
+        let payload = stored_payload(&state, "0801d").await;
+        assert_eq!(payload["address"]["canton"], "Zurich", "{payload}");
     }
 
     #[tokio::test]

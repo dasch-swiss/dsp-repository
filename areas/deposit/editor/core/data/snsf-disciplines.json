@@ -1,0 +1,707 @@
+[
+  {
+    "code": "10102",
+    "name": "Religious studies, Theology",
+    "group": "Theology & religious studies, history, archaeology"
+  },
+  {
+    "code": "10103",
+    "name": "Ecclesiastical history",
+    "group": "Theology & religious studies, history, archaeology"
+  },
+  {
+    "code": "10301",
+    "name": "General history (without pre- and early history)",
+    "group": "Theology & religious studies, history, archaeology"
+  },
+  {
+    "code": "10302",
+    "name": "Swiss history",
+    "group": "Theology & religious studies, history, archaeology"
+  },
+  {
+    "code": "10303",
+    "name": "Ancient history and Classical studies",
+    "group": "Theology & religious studies, history, archaeology"
+  },
+  {
+    "code": "10401",
+    "name": "Prehistory",
+    "group": "Theology & religious studies, history, archaeology"
+  },
+  {
+    "code": "10402",
+    "name": "Archaeology",
+    "group": "Theology & religious studies, history, archaeology"
+  },
+  {
+    "code": "10101",
+    "name": "Philosophy",
+    "group": "Linguistics & literature, philosophy"
+  },
+  {
+    "code": "10501",
+    "name": "German and English languages and literature",
+    "group": "Linguistics & literature, philosophy"
+  },
+  {
+    "code": "10502",
+    "name": "Romance languages and literature",
+    "group": "Linguistics & literature, philosophy"
+  },
+  {
+    "code": "10503",
+    "name": "Other languages and literature",
+    "group": "Linguistics & literature, philosophy"
+  },
+  {
+    "code": "10607",
+    "name": "Applied linguistics",
+    "group": "Linguistics & literature, philosophy"
+  },
+  {
+    "code": "10404",
+    "name": "Visual arts and Art history",
+    "group": "Art studies, musicology, theatre & film, architecture"
+  },
+  {
+    "code": "10405",
+    "name": "Musicology",
+    "group": "Art studies, musicology, theatre & film, architecture"
+  },
+  {
+    "code": "10406",
+    "name": "Theatre and Cinema",
+    "group": "Art studies, musicology, theatre & film, architecture"
+  },
+  {
+    "code": "10407",
+    "name": "Architecture and Social urban science",
+    "group": "Art studies, musicology, theatre & film, architecture"
+  },
+  {
+    "code": "10603",
+    "name": "Arts",
+    "group": "Art studies, musicology, theatre & film, architecture"
+  },
+  {
+    "code": "10604",
+    "name": "Music, Theatre",
+    "group": "Art studies, musicology, theatre & film, architecture"
+  },
+  {
+    "code": "10206",
+    "name": "Social geography and ecology",
+    "group": "Ethnology, social & human geography"
+  },
+  {
+    "code": "10403",
+    "name": "Ethnology",
+    "group": "Ethnology, social & human geography"
+  },
+  {
+    "code": "10104",
+    "name": "Education and learning sciences, subject-specific education",
+    "group": "Psychology, educational studies"
+  },
+  {
+    "code": "10105",
+    "name": "Psychology",
+    "group": "Psychology, educational studies"
+  },
+  {
+    "code": "10605",
+    "name": "Applied psychology",
+    "group": "Psychology, educational studies"
+  },
+  {
+    "code": "10201",
+    "name": "Sociology",
+    "group": "Sociology, social work, political & media sciences, health"
+  },
+  {
+    "code": "10202",
+    "name": "Political science",
+    "group": "Sociology, social work, political & media sciences, health"
+  },
+  {
+    "code": "10207",
+    "name": "Communication sciences",
+    "group": "Sociology, social work, political & media sciences, health"
+  },
+  {
+    "code": "10601",
+    "name": "Social work",
+    "group": "Sociology, social work, political & media sciences, health"
+  },
+  {
+    "code": "10602",
+    "name": "Health",
+    "group": "Sociology, social work, political & media sciences, health"
+  },
+  {
+    "code": "10203",
+    "name": "Economics",
+    "group": "Economics, law"
+  },
+  {
+    "code": "10204",
+    "name": "Science of management",
+    "group": "Economics, law"
+  },
+  {
+    "code": "10205",
+    "name": "Legal sciences",
+    "group": "Economics, law"
+  },
+  {
+    "code": "20100",
+    "name": "Mathematics",
+    "group": "Mathematics"
+  },
+  {
+    "code": "20200",
+    "name": "Astronomy, Astrophysics and Space Sciences",
+    "group": "Astronomy, astrophysics & space sciences"
+  },
+  {
+    "code": "20301",
+    "name": "Physical Chemistry",
+    "group": "Chemistry"
+  },
+  {
+    "code": "20303",
+    "name": "Inorganic Chemistry",
+    "group": "Chemistry"
+  },
+  {
+    "code": "20304",
+    "name": "Organic Chemistry",
+    "group": "Chemistry"
+  },
+  {
+    "code": "20401",
+    "name": "Theoretical Physics",
+    "group": "Physics"
+  },
+  {
+    "code": "20402",
+    "name": "Nuclear Physics",
+    "group": "Physics"
+  },
+  {
+    "code": "20403",
+    "name": "Particle Physics",
+    "group": "Physics"
+  },
+  {
+    "code": "20404",
+    "name": "Condensed Matter Physics",
+    "group": "Physics"
+  },
+  {
+    "code": "20405",
+    "name": "Technical Physics",
+    "group": "Physics"
+  },
+  {
+    "code": "20406",
+    "name": "Plasma Physics",
+    "group": "Physics"
+  },
+  {
+    "code": "20409",
+    "name": "Other disciplines of Physics",
+    "group": "Physics"
+  },
+  {
+    "code": "20501",
+    "name": "Civil Engineering",
+    "group": "Engineering sciences"
+  },
+  {
+    "code": "20502",
+    "name": "Mechanical Engineering",
+    "group": "Engineering sciences"
+  },
+  {
+    "code": "20503",
+    "name": "Fluid Dynamics",
+    "group": "Engineering sciences"
+  },
+  {
+    "code": "20504",
+    "name": "Electrical Engineering",
+    "group": "Engineering sciences"
+  },
+  {
+    "code": "20505",
+    "name": "Material Sciences",
+    "group": "Engineering sciences"
+  },
+  {
+    "code": "20506",
+    "name": "Information Technology",
+    "group": "Engineering sciences"
+  },
+  {
+    "code": "20507",
+    "name": "Chemical Engineering",
+    "group": "Engineering sciences"
+  },
+  {
+    "code": "20508",
+    "name": "Microelectronics, Optoelectronics",
+    "group": "Engineering sciences"
+  },
+  {
+    "code": "20509",
+    "name": "Agricultural Engineering",
+    "group": "Engineering sciences"
+  },
+  {
+    "code": "20510",
+    "name": "Forest Engineering",
+    "group": "Engineering sciences"
+  },
+  {
+    "code": "20511",
+    "name": "Other disciplines of Engineering Sciences",
+    "group": "Engineering sciences"
+  },
+  {
+    "code": "20701",
+    "name": "Pedology",
+    "group": "Environmental sciences"
+  },
+  {
+    "code": "20702",
+    "name": "Geomorphology",
+    "group": "Environmental sciences"
+  },
+  {
+    "code": "20703",
+    "name": "Meteorology",
+    "group": "Environmental sciences"
+  },
+  {
+    "code": "20704",
+    "name": "Climatology, Atmospheric Chemistry, Aeronomy",
+    "group": "Environmental sciences"
+  },
+  {
+    "code": "20705",
+    "name": "Hydrology, Limnology, Glaciology",
+    "group": "Environmental sciences"
+  },
+  {
+    "code": "20706",
+    "name": "Oceanography",
+    "group": "Environmental sciences"
+  },
+  {
+    "code": "20709",
+    "name": "Other disciplines of Environmental Sciences",
+    "group": "Environmental sciences"
+  },
+  {
+    "code": "20801",
+    "name": "Geology",
+    "group": "Earth sciences"
+  },
+  {
+    "code": "20802",
+    "name": "Geophysics",
+    "group": "Earth sciences"
+  },
+  {
+    "code": "20803",
+    "name": "Geochemistry",
+    "group": "Earth sciences"
+  },
+  {
+    "code": "20804",
+    "name": "Geochronology",
+    "group": "Earth sciences"
+  },
+  {
+    "code": "20805",
+    "name": "Palaeontology",
+    "group": "Earth sciences"
+  },
+  {
+    "code": "20806",
+    "name": "Mineralogy",
+    "group": "Earth sciences"
+  },
+  {
+    "code": "20809",
+    "name": "Other disciplines of Earth Sciences",
+    "group": "Earth sciences"
+  },
+  {
+    "code": "30101",
+    "name": "Biochemistry",
+    "group": "Basic biological research"
+  },
+  {
+    "code": "30102",
+    "name": "Molecular Biology",
+    "group": "Basic biological research"
+  },
+  {
+    "code": "30103",
+    "name": "Cellular Biology, Cytology",
+    "group": "Basic biological research"
+  },
+  {
+    "code": "30104",
+    "name": "Genetics",
+    "group": "Basic biological research"
+  },
+  {
+    "code": "30105",
+    "name": "Embryology, Developmental Biology",
+    "group": "Basic biological research"
+  },
+  {
+    "code": "30106",
+    "name": "Radiobiology",
+    "group": "Basic biological research"
+  },
+  {
+    "code": "30107",
+    "name": "Experimental Microbiology",
+    "group": "Basic biological research"
+  },
+  {
+    "code": "30108",
+    "name": "Biophysics",
+    "group": "Basic biological research"
+  },
+  {
+    "code": "30201",
+    "name": "Botany",
+    "group": "General biology"
+  },
+  {
+    "code": "30202",
+    "name": "Zoology",
+    "group": "General biology"
+  },
+  {
+    "code": "30203",
+    "name": "Paleontology (biol.)",
+    "group": "General biology"
+  },
+  {
+    "code": "30204",
+    "name": "Anthropology, Primatology",
+    "group": "General biology"
+  },
+  {
+    "code": "30205",
+    "name": "Agricultural and Forestry Sciences",
+    "group": "General biology"
+  },
+  {
+    "code": "30206",
+    "name": "Environmental Research",
+    "group": "General biology"
+  },
+  {
+    "code": "30207",
+    "name": "Ecology",
+    "group": "General biology"
+  },
+  {
+    "code": "30209",
+    "name": "Animal Breeding",
+    "group": "General biology"
+  },
+  {
+    "code": "30301",
+    "name": "Structural Research",
+    "group": "Basic medical sciences"
+  },
+  {
+    "code": "30302",
+    "name": "Neurophysiology and Brain Research",
+    "group": "Basic medical sciences"
+  },
+  {
+    "code": "30303",
+    "name": "Cardiovascular Research",
+    "group": "Basic medical sciences"
+  },
+  {
+    "code": "30304",
+    "name": "Endocrinology",
+    "group": "Basic medical sciences"
+  },
+  {
+    "code": "30305",
+    "name": "Physiology: other topics",
+    "group": "Basic medical sciences"
+  },
+  {
+    "code": "30306",
+    "name": "Pharmacology, Pharmacy",
+    "group": "Basic medical sciences"
+  },
+  {
+    "code": "30307",
+    "name": "Medical Microbiology",
+    "group": "Basic medical sciences"
+  },
+  {
+    "code": "30401",
+    "name": "Experimental Cancer Research",
+    "group": "Experimental medicine"
+  },
+  {
+    "code": "30402",
+    "name": "Pathophysiology",
+    "group": "Experimental medicine"
+  },
+  {
+    "code": "30403",
+    "name": "Immunology, Immunopathology",
+    "group": "Experimental medicine"
+  },
+  {
+    "code": "30405",
+    "name": "Nutritional Research, Vitaminology",
+    "group": "Experimental medicine"
+  },
+  {
+    "code": "30407",
+    "name": "Ethology",
+    "group": "Experimental medicine"
+  },
+  {
+    "code": "30701",
+    "name": "Internal Medicine",
+    "group": "Clinical medicine"
+  },
+  {
+    "code": "30702",
+    "name": "Surgery",
+    "group": "Clinical medicine"
+  },
+  {
+    "code": "30703",
+    "name": "Clinical Cancer Research",
+    "group": "Clinical medicine"
+  },
+  {
+    "code": "30704",
+    "name": "Clinical Pharmacology",
+    "group": "Clinical medicine"
+  },
+  {
+    "code": "30705",
+    "name": "Dermatology",
+    "group": "Clinical medicine"
+  },
+  {
+    "code": "30706",
+    "name": "Gynaecology",
+    "group": "Clinical medicine"
+  },
+  {
+    "code": "30707",
+    "name": "Paediatrics",
+    "group": "Clinical medicine"
+  },
+  {
+    "code": "30708",
+    "name": "Neurology, Psychiatry",
+    "group": "Clinical medicine"
+  },
+  {
+    "code": "30709",
+    "name": "Otorhinolaryngology",
+    "group": "Clinical medicine"
+  },
+  {
+    "code": "30710",
+    "name": "Ophthalmology",
+    "group": "Clinical medicine"
+  },
+  {
+    "code": "30711",
+    "name": "Dentistry",
+    "group": "Clinical medicine"
+  },
+  {
+    "code": "30712",
+    "name": "Tropical Medicine",
+    "group": "Clinical medicine"
+  },
+  {
+    "code": "30713",
+    "name": "Veterinary Medicine",
+    "group": "Clinical medicine"
+  },
+  {
+    "code": "30714",
+    "name": "Biomedical Engineering",
+    "group": "Clinical medicine"
+  },
+  {
+    "code": "30715",
+    "name": "Clinical Cardiovascular Research",
+    "group": "Clinical medicine"
+  },
+  {
+    "code": "30716",
+    "name": "Clinical Endocrinology",
+    "group": "Clinical medicine"
+  },
+  {
+    "code": "30717",
+    "name": "Clinical Pathophysiology",
+    "group": "Clinical medicine"
+  },
+  {
+    "code": "30718",
+    "name": "Clinical Immunology and Immunopathology",
+    "group": "Clinical medicine"
+  },
+  {
+    "code": "30719",
+    "name": "Clinical Nutritional Research",
+    "group": "Clinical medicine"
+  },
+  {
+    "code": "30720",
+    "name": "Geriatrics",
+    "group": "Clinical medicine"
+  },
+  {
+    "code": "30721",
+    "name": "Sport Medicine",
+    "group": "Clinical medicine"
+  },
+  {
+    "code": "30801",
+    "name": "Congenital Disorders",
+    "group": "Preventive medicine (epidemiology / prevention)"
+  },
+  {
+    "code": "30802",
+    "name": "Mental Disorders, Psychosomatic Diseases",
+    "group": "Preventive medicine (epidemiology / prevention)"
+  },
+  {
+    "code": "30803",
+    "name": "Addictive Diseases",
+    "group": "Preventive medicine (epidemiology / prevention)"
+  },
+  {
+    "code": "30804",
+    "name": "Accidents",
+    "group": "Preventive medicine (epidemiology / prevention)"
+  },
+  {
+    "code": "30805",
+    "name": "Cancer",
+    "group": "Preventive medicine (epidemiology / prevention)"
+  },
+  {
+    "code": "30806",
+    "name": "Cardiovascular Diseases",
+    "group": "Preventive medicine (epidemiology / prevention)"
+  },
+  {
+    "code": "30807",
+    "name": "Metabolic Disorders",
+    "group": "Preventive medicine (epidemiology / prevention)"
+  },
+  {
+    "code": "30808",
+    "name": "Infectious Diseases",
+    "group": "Preventive medicine (epidemiology / prevention)"
+  },
+  {
+    "code": "30809",
+    "name": "Diseases of Bones and Joints",
+    "group": "Preventive medicine (epidemiology / prevention)"
+  },
+  {
+    "code": "30810",
+    "name": "Oral Preventive Medicine",
+    "group": "Preventive medicine (epidemiology / prevention)"
+  },
+  {
+    "code": "30811",
+    "name": "Respiratory Diseases",
+    "group": "Preventive medicine (epidemiology / prevention)"
+  },
+  {
+    "code": "30812",
+    "name": "Methods of Epidemiology and Preventive Medicine",
+    "group": "Preventive medicine (epidemiology / prevention)"
+  },
+  {
+    "code": "30901",
+    "name": "Group Medicine",
+    "group": "Social medicine"
+  },
+  {
+    "code": "30902",
+    "name": "Social Paediatrics",
+    "group": "Social medicine"
+  },
+  {
+    "code": "30903",
+    "name": "Medico-Social Problems of Youth",
+    "group": "Social medicine"
+  },
+  {
+    "code": "30904",
+    "name": "Medico-Social Problems of the Elderly",
+    "group": "Social medicine"
+  },
+  {
+    "code": "30905",
+    "name": "Rehabilitation",
+    "group": "Social medicine"
+  },
+  {
+    "code": "30906",
+    "name": "Human Ecology",
+    "group": "Social medicine"
+  },
+  {
+    "code": "30907",
+    "name": "Environmental Toxicology",
+    "group": "Social medicine"
+  },
+  {
+    "code": "30908",
+    "name": "Dietetics",
+    "group": "Social medicine"
+  },
+  {
+    "code": "30909",
+    "name": "Occupational Medicine, Ergonomy",
+    "group": "Social medicine"
+  },
+  {
+    "code": "30910",
+    "name": "Health Education",
+    "group": "Social medicine"
+  },
+  {
+    "code": "30911",
+    "name": "Public Health and Health Services",
+    "group": "Social medicine"
+  },
+  {
+    "code": "30912",
+    "name": "Medical Statistics",
+    "group": "Social medicine"
+  }
+]

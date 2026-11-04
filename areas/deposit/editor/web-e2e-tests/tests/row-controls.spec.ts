@@ -233,7 +233,7 @@ test.describe("a variant switch survives the autosave", () => {
       "Draft saved",
     );
 
-  test("a new row switched to a recognised entry stays, on that branch", async ({
+  test("a new row switched to the UNESCO nomenclature stays, on that branch", async ({
     page,
   }) => {
     await page.goto(sectionUrl(VARIANT_SHORTCODE, "dataset"));
@@ -244,7 +244,7 @@ test.describe("a variant switch survives the autosave", () => {
     const added = page.locator(
       "fieldset#disciplines > ol.repeatable-rows > li.repeatable-row",
     );
-    await added.last().getByLabel("A recognised entry").check();
+    await added.last().getByLabel("From the UNESCO nomenclature").check();
     await autosaved(page);
 
     expect(await rowCount(page, "disciplines")).toBe(before + 1);

@@ -62,6 +62,7 @@ export const DEPOSITOR_SHORTCODES = [
   "E2E1",
   "E2E2",
   "0111",
+  "0113",
 ] as const;
 
 /** Row add/remove assertions. */
@@ -119,6 +120,11 @@ export const CREATED_SHORTCODES: Partial<Record<string, string>> = {
  * shared: submitting locks the form, so any other spec would find it read-only.
  */
 export const A11Y_STATES_SHORTCODE = DEPOSITOR_SHORTCODES[12];
+/**
+ * The refused submit: its draft holds a malformed link on purpose, so any other spec would
+ * find its own save warned about that link.
+ */
+export const REFUSED_SUBMIT_SHORTCODE = DEPOSITOR_SHORTCODES[13];
 
 const PORT = Number(process.env.EDITOR_E2E_PORT ?? 4101);
 export const BASE_URL = `http://127.0.0.1:${PORT}`;

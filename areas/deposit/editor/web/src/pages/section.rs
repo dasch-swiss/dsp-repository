@@ -33,7 +33,7 @@ use serde_json::Value;
 use shared_datastar as datastar;
 
 use crate::entity::{entity_label, entity_labels, Precedence};
-use crate::form::widgets::{field_row, Mode, Rows, FOCUS_AUTOFOCUS};
+use crate::form::widgets::{field_row, format_message, Mode, Rows, FOCUS_AUTOFOCUS};
 use crate::form::INTENT;
 
 /// The id the enhanced path's patch targets. Also the anchor a save returns to.
@@ -380,6 +380,10 @@ pub struct SectionView<'a> {
     /// refusal fills with one line per field holding a finding outside this section, or in it
     /// with no control because RDU accepted it.
     pub format_findings: Vec<Finding>,
+    /// On a [`Notice::Saved`] render, the format findings of every other section this
+    /// reader sees, each with its section: submit refuses them all, so the saved notice
+    /// counts and links them with [`Self::format_findings`]. Empty on any other render.
+    pub findings_elsewhere: Vec<(&'static Section, Finding)>,
     /// The body this render answers whether or not `posted` keeps it; see
     /// [`Rows::submitted`].
     pub submitted: Option<&'a FormBody>,
@@ -405,6 +409,37 @@ pub struct SectionView<'a> {
 }
 
 impl SectionView<'_> {
+    /// The prefix a full page load puts in front of the document `<title>`: the
+    /// notice's own, plus on a save how many values still need fixing, which a
+    /// screen reader would otherwise never hear about (see the module docs).
+    pub fn title_prefix(&self) -> Option<String> {
+        let prefix = self.notice?.title_prefix()?;
+        match (self.notice, self.values_to_fix()) {
+            (Some(Notice::Saved), count) if count > 0 => Some(format!("{prefix}, {}", needs_fixing(count))),
+            _ => Some(prefix.to_string()),
+        }
+    }
+
+    /// Values without their format anywhere in the project, which submit refuses.
+    fn values_to_fix(&self) -> usize {
+        self.format_findings.len() + self.findings_elsewhere.len()
+    }
+
+    /// Where a link to a finding goes: its control, on this page or on its section's.
+    /// A field RDU accepted renders no control, so its link stops at the section.
+    fn finding_href(&self, section: &Section, finding: &Finding) -> String {
+        let page = format!("/projects/{}/sections/{}", self.shortcode, section.id);
+        if self.accepted_fields.iter().any(|accepted| accepted == finding.field.id) {
+            return page;
+        }
+        let page = if section.id == self.section.id {
+            String::new()
+        } else {
+            page
+        };
+        format!("{page}#{}", finding.control)
+    }
+
     /// How one field renders. Three answers, not two: a whole-form lock and an
     /// accepted field are both read-only and lift on different events, so the
     /// reader has to be told which applies.
@@ -652,9 +687,7 @@ fn status(view: &SectionView<'_>) -> Markup {
             aria-live="polite"
         {
             @match view.notice {
-                Some(Notice::Saved) => {
-                    (alert(format!("{SAVED_TITLE}.")).variant(AlertVariant::Success))
-                }
+                Some(Notice::Saved) => { (saved_notice(view)) }
                 Some(Notice::Submitted) => {
                     ({
                         alert(submitted_body(view.audience))
@@ -841,6 +874,47 @@ fn round_details(round: &RoundSummary<'_>) -> Markup {
                 }
             }
         }
+    }
+}
+
+/// "N values need fixing", the count the saved notice and its title prefix share.
+fn needs_fixing(count: usize) -> String {
+    match count {
+        1 => "1 value needs fixing".to_string(),
+        count => format!("{count} values need fixing"),
+    }
+}
+
+/// The saved notice. A warning, not a success, while the draft holds a value submit would
+/// refuse: "Draft saved." beside a field's format error reads as all being well. Lists every
+/// such value, this section's too, each a link to its control, as an error summary does.
+fn saved_notice(view: &SectionView<'_>) -> Markup {
+    let count = view.values_to_fix();
+    if count == 0 {
+        return html! {
+            (alert(format!("{SAVED_TITLE}.")).variant(AlertVariant::Success))
+        };
+    }
+    let here = view.format_findings.iter().map(|finding| (view.section, finding));
+    let elsewhere = view.findings_elsewhere.iter().map(|(section, finding)| (*section, finding));
+    let body = html! {
+        p { (needs_fixing(count)) " before you can submit for review." }
+        ul class="flex flex-col gap-2" {
+            @for (section, finding) in here.chain(elsewhere) {
+                li {
+                    a href=(view.finding_href(section, finding)) class="underline font-bold" {
+                        (finding.field.label)
+                    }
+                    " ("
+                    (section.title)
+                    "): "
+                    (format_message(finding.kind))
+                }
+            }
+        }
+    };
+    html! {
+        (alert(body).variant(AlertVariant::Warning).title(SAVED_TITLE))
     }
 }
 
@@ -1182,6 +1256,7 @@ mod tests {
             agents: Some(agent_corpus()),
             posted: None,
             format_findings: Vec::new(),
+            findings_elsewhere: Vec::new(),
             submitted: None,
             adding_row: None,
             focus_finding: false,

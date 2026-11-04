@@ -35,7 +35,7 @@ use crate::form::INTENT;
 use crate::handlers::auth::{Account, Authenticated};
 use crate::handlers::sections::audience_of;
 use crate::handlers::{
-    agent_search_response, is_enhanced, navigate, picker_root, storage_error, AgentSearchParams, StorageSurface,
+    agent_search_response, is_enhanced, navigate, picker_root, storage_error, SearchParams, StorageSurface,
 };
 use crate::pages::section::{changed_agent, keeps_posted, FIND_AGENT};
 use crate::shell::EditorState;
@@ -190,7 +190,7 @@ pub(crate) async fn agent_search(
     State(state): State<EditorState>,
     Authenticated(user): Authenticated,
     Path((shortcode, entity_id)): Path<(String, String)>,
-    Query(params): Query<AgentSearchParams>,
+    Query(params): Query<SearchParams>,
 ) -> Response {
     let span = tracing::Span::current();
     span.record("auth.actor", tracing::field::display(user.id));

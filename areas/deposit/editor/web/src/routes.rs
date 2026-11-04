@@ -92,6 +92,10 @@ pub(crate) fn routes() -> Vec<Route> {
             "/projects/{shortcode}/sections/{section}/agents",
             get(crate::handlers::sections::agent_search),
         ),
+        (
+            "/projects/{shortcode}/sections/{section}/vocabulary",
+            get(crate::handlers::sections::vocabulary_search),
+        ),
         // Adding and removing a row of a repeatable field. Under the section's
         // own URL, and handled by the same module, so a row action resolves
         // through one `context()` — the audience gate, the lock check and the

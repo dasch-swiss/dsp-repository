@@ -38,6 +38,7 @@ Agent reference card for the **work phase**. All authoritative detail lives in `
 
 - Project JSON files are canonical: top-level members in `ProjectRaw`'s declaration order, nested objects in theirs, language keys alphabetical, 4-space indent, trailing newline, no explicit `null`. Enforced byte-for-byte by `editor-core`'s `canonical_round_trip` test; regenerate with `CANONICALIZE_PROJECT_FILES=1 cargo test -p editor-core --test canonical_round_trip` rather than reordering by hand.
 - New project `temporalCoverage` values must resolve to structured dates for OAI-PMH — add each new free-text value to `areas/access/dpe/server/data/temporal-coverage-enrichment.json` (keyed by display text, with a W3CDTF range and `source: "llm"`). See `docs/src/dpe/oai-pmh.md` and the "Adding a Project Metadata File" section of `areas/access/dpe/CLAUDE.md`.
+- A new `spatialCoverage` or `temporalCoverage` reference must be a bundled option: run `python3 scripts/build-coverage-vocabularies.py` (for a new period, `python3 scripts/fetch-chronontology-periods.py` first), or `editor-core`'s drift tests fail.
 
 ## Git, Commits, and Pull Requests
 

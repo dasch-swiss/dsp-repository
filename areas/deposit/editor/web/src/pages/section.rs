@@ -70,6 +70,9 @@ pub const DISCARD_CONFIRM: &str = "discard-confirm";
 /// re-renders with the posted body kept, which carries the query back.
 pub const FIND_AGENT: &str = "find-agent";
 
+/// The Search button of a vocabulary combobox: handled like [`FIND_AGENT`].
+pub const FIND_ENTRY: &str = "find-entry";
+
 /// Start a proposal for a new person.
 pub const PROPOSE_PERSON: &str = "propose-person";
 
@@ -152,6 +155,26 @@ pub fn added_agent(intent: &str) -> Option<(&str, &str)> {
         .filter(|(field, agent_id)| !field.is_empty() && !agent_id.is_empty())
 }
 
+/// The intent a vocabulary combobox's option posts: `pick:{prefix}:{value}`.
+const PICK: &str = "pick";
+
+/// The intent picking `value` from the vocabulary combobox of the row `prefix` (`disciplines.r0`).
+#[must_use]
+pub fn pick_intent(prefix: &str, value: &str) -> String {
+    format!("{PICK}{PROPOSE_CHANGES_SEPARATOR}{prefix}{PROPOSE_CHANGES_SEPARATOR}{value}")
+}
+
+/// The row prefix and value a posted pick carries, or `None` when it is not a pick or either part
+/// is empty. Splits at the first colon after the verb: a row prefix never holds one, a url does.
+#[must_use]
+pub fn picked_entry(intent: &str) -> Option<(&str, &str)> {
+    intent
+        .strip_prefix(PICK)?
+        .strip_prefix(PROPOSE_CHANGES_SEPARATOR)?
+        .split_once(PROPOSE_CHANGES_SEPARATOR)
+        .filter(|(prefix, value)| !prefix.is_empty() && !value.is_empty())
+}
+
 /// The intent a card's Change control posts: `change-agent:{unique}`. It opens the search on an
 /// existing card and, like [`FIND_AGENT`], stores the body and re-renders without a redirect.
 const CHANGE_AGENT: &str = "change-agent";
@@ -196,12 +219,15 @@ pub fn removed_role(intent: &str) -> Option<(&str, &str)> {
         .filter(|(prefix, role)| !prefix.is_empty() && !role.is_empty())
 }
 
-/// Whether a posted intent keeps the body on the enhanced path of a write: the choice, the append
-/// and the role removal edit the form's rows, and the rest of the form may hold a row that is not
-/// storable yet. Find and change re-render the body in any case.
+/// Whether a posted intent keeps the body on the enhanced path of a write: the choice, the pick,
+/// the append and the role removal edit the form's rows, and the rest of the form may hold a row
+/// that is not storable yet. Find and change re-render the body in any case.
 #[must_use]
 pub fn keeps_posted(intent: &str) -> bool {
-    chosen_agent(intent).is_some() || added_agent(intent).is_some() || removed_role(intent).is_some()
+    chosen_agent(intent).is_some()
+        || picked_entry(intent).is_some()
+        || added_agent(intent).is_some()
+        || removed_role(intent).is_some()
 }
 
 /// The name a form posts the draft revision it was rendered from under. The
@@ -580,8 +606,9 @@ impl SectionView<'_> {
 
     /// What a repeatable field needs: the posted body, and the base URL its add and
     /// remove controls submit to, see [`Self::rows_action`], and the agent search a picker runs as
-    /// its combobox is typed in, `search_path`.
-    fn rows<'a>(&'a self, search_path: &'a str) -> Rows<'a> {
+    /// its combobox is typed in, `search_path`, and the vocabulary search a discipline, place or
+    /// period picker runs, `vocabulary_path`.
+    fn rows<'a>(&'a self, search_path: &'a str, vocabulary_path: &'a str) -> Rows<'a> {
         Rows {
             posted: self.posted,
             submitted: self.submitted,
@@ -593,6 +620,7 @@ impl SectionView<'_> {
             // form's affiliations picker, which reuses these widgets.
             propose: true,
             search_path: Some(search_path),
+            vocabulary_path: Some(vocabulary_path),
             // A field RDU accepted renders no control to focus.
             focus: self
                 .focus_finding
@@ -825,6 +853,7 @@ fn form(view: &SectionView<'_>) -> Markup {
         .then(|| format!("{AUTOSAVE_NOT_COMBOBOX} && {}", datastar::post(view.action()).form()));
     let action = view.action();
     let agents_path = format!("{action}/agents");
+    let vocabulary_path = format!("{action}/vocabulary");
     html! {
         (persistent_box(view))
         h2 class="font-display text-xl mb-4" { (view.section.title) }
@@ -860,7 +889,7 @@ fn form(view: &SectionView<'_>) -> Markup {
                         field,
                         view.draft,
                         view.mode_of(field.id),
-                        view.rows(&agents_path),
+                        view.rows(&agents_path, &vocabulary_path),
                     )
                 })
                 @for message in view.errors_for(field.id) {

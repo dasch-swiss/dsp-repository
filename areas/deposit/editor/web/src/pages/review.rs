@@ -1190,6 +1190,29 @@ mod tests {
     }
 
     #[test]
+    fn the_review_editor_offers_a_stored_snsf_discipline_as_a_select() {
+        let submitted = json!([{ "en": "10404 Visual arts and Art history" }]);
+        let row = ReviewRow {
+            field: "disciplines",
+            registry: editor_core::form::registry::field("disciplines"),
+            published: None,
+            submitted: Some(&submitted),
+            substitute: None,
+            decision: None,
+            changed: true,
+        };
+
+        let out = editor(&row).into_string();
+
+        assert!(
+            out.contains(r#"id="disciplines.r0.snsf" name="disciplines.r0.snsf""#),
+            "no select"
+        );
+        assert!(out.contains(r#"<option value="10404" selected>"#), "the code is not selected");
+        assert!(!out.contains(".pick.q"), "a search box with no route behind it");
+    }
+
+    #[test]
     fn no_registry_field_id_begins_with_the_entity_decision_prefix() {
         // The collision ENTITY_DECISION_PREFIX's docs argue against, pinned.
         for section in editor_core::form::registry::sections_for(editor_core::form::registry::Audience::RduOnly) {

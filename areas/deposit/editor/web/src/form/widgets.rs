@@ -15,7 +15,7 @@
 //! depositor does not conclude the form lost it.
 
 use editor_core::agents::{Agent, AgentKind, AgentScope};
-use editor_core::disciplines::{self, SnsfDiscipline};
+use editor_core::disciplines::{self, snsf_text, SnsfDiscipline};
 use editor_core::draft::{ProjectDraft, UrlSlot};
 use editor_core::form::format::{Finding, ValueKind};
 use editor_core::form::registry::{source_label, Field, Obligation};
@@ -24,11 +24,14 @@ use editor_core::form::{
     SNSF_KIND, TEXT_KIND,
 };
 use editor_core::multilingual::{as_multilingual, is_language_map, is_language_tag, DraftMultilingual, UI_LANGUAGES};
+use editor_core::vocabulary::{self, List};
 use maud::{html, Markup, Render};
 use mosaic_tiles::badge::{badge, BadgeVariant};
 use mosaic_tiles::button::{button, ButtonType, ButtonVariant};
 use mosaic_tiles::checkbox_group::checkbox_group;
-use mosaic_tiles::combobox::{combobox, combobox_listbox, combobox_option, combobox_results, combobox_status};
+use mosaic_tiles::combobox::{
+    combobox, combobox_groups, combobox_listbox, combobox_option, combobox_results, combobox_status,
+};
 use mosaic_tiles::radio_group::radio_group;
 use mosaic_tiles::repeatable_list::repeatable_list;
 use mosaic_tiles::select::select;
@@ -42,8 +45,9 @@ use shared_metadata::project::CONTRIBUTOR_ROLES;
 
 use crate::form::INTENT;
 use crate::pages::section::{
-    add_agent_intent, added_agent, change_agent_intent, changed_agent, choose_agent_intent, chosen_agent,
-    propose_changes_intent, remove_role_intent, removed_role, FIND_AGENT, PROPOSE_ORGANIZATION, PROPOSE_PERSON, SUBMIT,
+    add_agent_intent, added_agent, change_agent_intent, changed_agent, choose_agent_intent, chosen_agent, pick_intent,
+    picked_entry, propose_changes_intent, remove_role_intent, removed_role, FIND_AGENT, FIND_ENTRY,
+    PROPOSE_ORGANIZATION, PROPOSE_PERSON, SUBMIT,
 };
 
 /// Whether the form is open for editing. A named type rather than a `bool`
@@ -350,6 +354,9 @@ pub struct Rows<'a> {
     /// depositor types. `None` leaves the combobox a plain search box that the Search button
     /// submits: the route behind it is not wired for the form.
     pub search_path: Option<&'a str>,
+    /// The section's vocabulary search (`GET {path}?for=<picker>&q=`); `None` renders the SNSF
+    /// select and the coverage rows' plain reference controls, with no search.
+    pub vocabulary_path: Option<&'a str>,
     /// The control that takes focus, by name: the first holding a finding on a refused submit's
     /// re-render.
     pub focus: Option<&'a str>,
@@ -840,6 +847,130 @@ pub(crate) fn agent_search_action(path: &str, unique: &str) -> String {
         .to_string()
 }
 
+/// The suffix of a vocabulary combobox's query under its row: `{prefix}.pick.q`.
+const PICK_QUERY_SUFFIX: &str = "pick.q";
+
+/// The most options a vocabulary search shows.
+const MAX_VOCABULARY_OPTIONS: usize = 25;
+
+/// The `unique` of the vocabulary search under the row `prefix`: `{prefix}.pick`.
+pub(crate) fn pick_unique(prefix: &str) -> String {
+    format!("{prefix}.pick")
+}
+
+/// The row prefix a [`pick_unique`] names, or `None` for any other name.
+pub(crate) fn pick_prefix(name: &str) -> Option<&str> {
+    name.strip_suffix(".pick")
+}
+
+/// What the row `prefix` posted in its vocabulary search box, or nothing.
+fn posted_query<'a>(field: &Field, prefix: &str, rows: Rows<'a>) -> &'a str {
+    let row_name = format!("{}.row", field.id);
+    rows.posted
+        .filter(|body| body.has(&row_name))
+        .and_then(|body| body.get(&format!("{prefix}.{PICK_QUERY_SUFFIX}")))
+        .unwrap_or_default()
+}
+
+/// The combobox over `list` for the row `prefix`, whose options post [`pick_intent`] and whose
+/// `unique` ([`pick_unique`]) [`vocabulary_results`] answers.
+fn vocabulary_search(
+    field: &Field,
+    prefix: &str,
+    list: List,
+    position: usize,
+    hint: &str,
+    query: &str,
+    rows: Rows<'_>,
+) -> Markup {
+    let unique = pick_unique(prefix);
+    let query_name = format!("{prefix}.{PICK_QUERY_SUFFIX}");
+    // A render answering this row's pick gives the box a new id, as the append search does after
+    // a choice: the morph drops the typed query only when it replaces the node.
+    let picked_here = rows
+        .submitted
+        .or(rows.posted)
+        .and_then(|body| body.get(INTENT))
+        .and_then(picked_entry)
+        .is_some_and(|(picked, _)| picked == prefix);
+    let id = match reset_token(picked_here) {
+        Some(token) => format!("{unique}-{token}"),
+        None => unique.clone(),
+    };
+    let (results, expanded) = vocabulary_matches(prefix, list, query);
+    let find = button(FIND_AGENT_BUTTON)
+        .variant(ButtonVariant::Secondary)
+        .button_type(ButtonType::Submit)
+        .name_value(INTENT, FIND_ENTRY)
+        .aria_label(format!("{} ({}, row {})", list.label(), field.label, position + 1))
+        .build();
+    let mut search = combobox(&query_name, row_label(list.label(), position))
+        .with_id(&id)
+        .results_id(agent_results_id(&unique))
+        .hint(hint)
+        .value(query)
+        .search_button(find)
+        .results(results)
+        .expanded(expanded);
+    if let Some(path) = rows.vocabulary_path {
+        search = search.search_action(agent_search_action(path, &unique));
+    }
+    if picked_here {
+        search = search.autofocus();
+    }
+    focus_wrapper(&id, search, picked_here)
+}
+
+/// The results of one vocabulary search, as the page and the search endpoint both render them,
+/// for the row `prefix`.
+pub(crate) fn vocabulary_results(prefix: &str, list: List, query: &str) -> Markup {
+    let (content, expanded) = vocabulary_matches(prefix, list, query);
+    combobox_results(&agent_results_id(&pick_unique(prefix)), content, expanded)
+}
+
+/// What [`vocabulary_results`] puts in the container, and whether it is open.
+fn vocabulary_matches(prefix: &str, list: List, query: &str) -> (Markup, bool) {
+    if query.trim().is_empty() || query.chars().count() > MAX_QUERY_CHARS {
+        return (html! {}, false);
+    }
+    let found = list.search(query);
+    if found.is_empty() {
+        return (combobox_status(format!("Nothing matches “{query}”.")), true);
+    }
+    let shown = &found[..found.len().min(MAX_VOCABULARY_OPTIONS)];
+    let option = |found: &vocabulary::Match| {
+        let content = html! {
+            span class="font-semibold" { (found.label) }
+            " "
+            span class="block text-sm" { (found.detail) }
+        };
+        combobox_option(content, INTENT, pick_intent(prefix, &found.value)).build()
+    };
+    let label = format!("Matches for “{query}”");
+    let listing = if shown.iter().any(|found| found.group.is_some()) {
+        let mut groups: Vec<(String, Vec<Markup>)> = Vec::new();
+        for found in shown {
+            let group = found.group.unwrap_or_default();
+            match groups.iter_mut().find(|(name, _)| name.as_str() == group) {
+                Some((_, options)) => options.push(option(found)),
+                None => groups.push((group.to_string(), vec![option(found)])),
+            }
+        }
+        combobox_groups(label, groups)
+    } else {
+        combobox_listbox(label, shown.iter().map(option))
+    };
+    let content = html! {
+        ({
+            combobox_status(
+                match_count_line(found.len(), shown.len(), found.len() > shown.len()),
+            )
+        })
+        (listing)
+    };
+    (content, true)
+}
+
 /// The one search under a list of agent rows, whose options append a row ([`add_agent_intent`]).
 ///
 /// `held` are the ids the rows already hold, which it does not offer again. The box must come
@@ -886,6 +1017,9 @@ fn append_search(field: &Field, held: &[&str], rows: Rows<'_>) -> Markup {
 /// - choose: the chosen id lands in its picker's value and that picker's search closes.
 /// - add-agent: one new row holding the agent is appended to the contributor or agent-id rows
 ///   `shape_of` names for the field; any other shape, or an unknown field, leaves the body alone.
+/// - pick: the pairs the list of the row's field posts for the picked value replace those of the
+///   same name (or are appended), and the row's search closes; a value the list does not hold and a
+///   field without a list leave the body alone.
 /// - remove-role: every `{prefix}.role` pair equal to the intent's role is dropped.
 pub(crate) fn apply_picker_intents(
     mut pairs: Vec<(String, String)>,
@@ -898,11 +1032,32 @@ pub(crate) fn apply_picker_intents(
         choose_agent(&mut pairs, unique, id);
     } else if let Some((field, id)) = added_agent(&intent) {
         append_agent(&mut pairs, field, id, shape_of(field));
+    } else if let Some((prefix, value)) = picked_entry(&intent) {
+        pick_entry(&mut pairs, prefix, value);
     } else if let Some((prefix, role)) = removed_role(&intent) {
         let role_name = format!("{prefix}.role");
         pairs.retain(|(name, value)| !(*name == role_name && value == role));
     }
     pairs
+}
+
+/// Rewrite the row `prefix` of a vocabulary field to the entry `value` the field's list holds.
+fn pick_entry(pairs: &mut Vec<(String, String)>, prefix: &str, value: &str) {
+    let field = prefix.split('.').next().unwrap_or_default();
+    let Some(list) = vocabulary::list_for(field) else {
+        return;
+    };
+    let Some(posted) = list.posted(prefix, value) else {
+        return;
+    };
+    for (name, value) in posted {
+        match pairs.iter_mut().find(|(held, _)| *held == name) {
+            Some((_, held)) => *held = value,
+            None => pairs.push((name, value)),
+        }
+    }
+    let query_name = format!("{prefix}.{PICK_QUERY_SUFFIX}");
+    pairs.retain(|(name, _)| name != &query_name);
 }
 
 fn choose_agent(pairs: &mut Vec<(String, String)>, unique: &str, id: &str) {
@@ -1330,9 +1485,14 @@ fn text_or_reference_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>, t
             None => held.map_or(TEXT_KIND, |row| stored_kind(field.id, row)),
         };
         let is_reference = current == REFERENCE_KIND;
-        let reference = reference_controls(field, &prefix, types, rows, |member| {
+        let controls = reference_controls(field, &prefix, types, rows, |member| {
             reference_member(posted, held.copied(), &prefix, member)
         });
+        let search = reference_search(field, &prefix, position, is_reference, rows);
+        let reference = html! {
+            @if let Some(search) = search { (search) }
+            (controls)
+        };
         let texts = match posted {
             Some(body) => {
                 let mut value = DraftMultilingual::new();
@@ -1365,7 +1525,7 @@ fn text_or_reference_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>, t
                 Some(body) => body.get(&format!("{prefix}.snsf")).unwrap_or_default().to_string(),
                 None => held_snsf.map(|held| held.code.clone()).unwrap_or_default(),
             };
-            snsf_controls(&prefix, &picked)
+            snsf_controls(field, &prefix, &picked, position, current == SNSF_KIND, rows)
         });
 
         list = list.row(
@@ -1407,9 +1567,27 @@ fn text_or_reference_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>, t
     }
 }
 
-/// A `disciplines` row's SNSF branch: every listed discipline, named first and
-/// ordered by name so native type-ahead finds it by name; the value is the code.
-fn snsf_controls(prefix: &str, picked: &str) -> Markup {
+/// A `disciplines` row's SNSF branch: the combobox and a hidden code, or a select without a search
+/// route.
+fn snsf_controls(field: &Field, prefix: &str, picked: &str, position: usize, active: bool, rows: Rows<'_>) -> Markup {
+    if rows.vocabulary_path.is_none() {
+        return snsf_select(prefix, picked);
+    }
+    let hint = match disciplines::snsf_discipline(picked).map(snsf_text) {
+        Some(chosen) => format!("Chosen: {chosen}. {}", List::Disciplines.hint()),
+        None => format!("{NO_DISCIPLINE_CHOSEN}. {}", List::Disciplines.hint()),
+    };
+    let query = if active { posted_query(field, prefix, rows) } else { "" };
+    let search = vocabulary_search(field, prefix, List::Disciplines, position, &hint, query, rows);
+    html! {
+        input type="hidden" name=(format!("{prefix}.snsf")) value=(picked);
+        (search)
+    }
+}
+
+/// Every listed discipline, named first and ordered by name so native type-ahead finds it by
+/// name; the value is the code.
+fn snsf_select(prefix: &str, picked: &str) -> Markup {
     let mut listed: Vec<&SnsfDiscipline> = disciplines::snsf().iter().collect();
     listed.sort_by_cached_key(|discipline| discipline.name.to_lowercase());
     html! {
@@ -1427,6 +1605,19 @@ fn snsf_controls(prefix: &str, picked: &str) -> Markup {
                 .selected(picked)
         })
     }
+}
+
+/// The search above the reference controls of the row `prefix`, for a field whose list is not the
+/// disciplines' and a section that routes the search. An inactive branch (`active` false) renders
+/// it without results.
+fn reference_search(field: &Field, prefix: &str, position: usize, active: bool, rows: Rows<'_>) -> Option<Markup> {
+    rows.vocabulary_path?;
+    let list = match field.vocabulary {
+        Some(List::Disciplines) | None => return None,
+        Some(list) => list,
+    };
+    let query = if active { posted_query(field, prefix, rows) } else { "" };
+    Some(vocabulary_search(field, prefix, list, position, list.hint(), query, rows))
 }
 
 /// One row's three reference controls, shared by every field that renders a
@@ -1501,13 +1692,17 @@ pub(crate) fn reference_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>
     for (position, key) in keys.iter().enumerate() {
         let prefix = format!("{}.{key}", field.id);
         let held = stored.get(position).copied();
-        let body = reference_controls(field, &prefix, types, rows, |member| {
+        let controls = reference_controls(field, &prefix, types, rows, |member| {
             reference_member(posted, held, &prefix, member)
         });
+        let search = reference_search(field, &prefix, position, true, rows);
         list = list.row(
             key,
             html! {
-                div class="flex flex-col gap-2" { (body) }
+                div class="flex flex-col gap-2" {
+                    @if let Some(search) = search { (search) }
+                    (controls)
+                }
             },
         );
     }
@@ -1757,9 +1952,12 @@ const DISCIPLINE_VARIANT_HINT: &str = "The SNSF list and the UNESCO nomenclature
                                        projects. Your own wording is kept as typed, per language. Switching saves \
                                        the form, and nothing you have entered in either is lost.";
 
-/// The label and placeholder of a `disciplines` row's SNSF select.
+/// The label of a `disciplines` row's SNSF select, offered where no search route is wired.
 const SNSF_LABEL: &str = "Discipline";
+
 const SNSF_PLACEHOLDER: &str = "Choose a discipline";
+
+const NO_DISCIPLINE_CHOSEN: &str = "Nothing chosen yet";
 
 /// The labels on a reference branch's three controls.
 const REFERENCE_TYPE_LABEL: &str = "Source";
@@ -2292,19 +2490,36 @@ mod tests {
             .collect()
     }
 
-    fn disciplines_rendered(rows: serde_json::Value) -> String {
+    /// Rows of a section that routes the vocabulary search.
+    fn routed() -> Rows<'static> {
+        Rows {
+            vocabulary_path: Some("/projects/0801d/sections/discovery/vocabulary"),
+            ..Rows::default()
+        }
+    }
+
+    fn disciplines_rendered_with(rows: serde_json::Value, form_rows: Rows<'_>) -> String {
         let field = editor_core::form::registry::field("disciplines").expect("disciplines is a known field");
         let mut draft = ProjectDraft::default();
         draft.set("disciplines", rows);
-        field_row(field, &draft, Mode::Editable, Rows::default()).into_string()
+        field_row(field, &draft, Mode::Editable, form_rows).into_string()
+    }
+
+    fn disciplines_rendered(rows: serde_json::Value) -> String {
+        disciplines_rendered_with(rows, routed())
     }
 
     #[test]
-    fn a_stored_snsf_row_in_any_language_renders_the_snsf_variant_with_its_code_selected() {
+    fn a_stored_snsf_row_in_any_language_renders_the_snsf_variant_with_its_code_posted() {
         let out = disciplines_rendered(serde_json::json!([{ "de": "10404 Kunstwissenschaften" }]));
 
         assert!(out.contains(r#"name="disciplines.r0.kind" value="snsf" checked"#), "{out}");
-        assert!(out.contains(r#"<option value="10404" selected"#), "{out}");
+        assert!(
+            out.contains(r#"<input type="hidden" name="disciplines.r0.snsf" value="10404">"#),
+            "{out}"
+        );
+        assert!(out.contains("10404 Visual arts and Art history"), "{out}");
+        assert!(out.contains(r#"name="disciplines.r0.pick.q""#), "{out}");
         // The wording is on offer if the depositor switches to their own, but
         // hidden with the reference branch until then.
         assert!(out.contains("10404 Kunstwissenschaften"), "{out}");
@@ -2320,6 +2535,48 @@ mod tests {
             branch_tag_around(&out, r#"name="disciplines.r0.ref.url""#).contains("hidden"),
             "{out}"
         );
+    }
+
+    #[test]
+    fn a_disciplines_row_offers_the_select_without_a_search_route_and_the_search_with_one() {
+        let stored = serde_json::json!([{ "de": "10404 Kunstwissenschaften" }]);
+
+        let plain = disciplines_rendered_with(stored.clone(), Rows::default());
+        assert!(
+            plain.contains(r#"id="disciplines.r0.snsf" name="disciplines.r0.snsf""#),
+            "no select"
+        );
+        assert!(
+            plain.contains(r#"<option value="10404" selected>"#),
+            "the stored code is not selected"
+        );
+        assert!(!plain.contains(".pick.q"), "a combobox without a route");
+
+        let searching = disciplines_rendered_with(stored, routed());
+        assert!(searching.contains(r#"name="disciplines.r0.pick.q""#), "{searching}");
+        assert!(!searching.contains(r#"id="disciplines.r0.snsf""#), "{searching}");
+        assert!(
+            searching.contains("Chosen: 10404 Visual arts and Art history. By name, code or research domain."),
+            "{searching}"
+        );
+    }
+
+    #[test]
+    fn every_field_with_a_vocabulary_renders_its_search_where_the_section_routes_one() {
+        let vocabulary_fields: Vec<&Field> = FIELDS.iter().filter(|field| field.vocabulary.is_some()).collect();
+        assert!(!vocabulary_fields.is_empty());
+        for field in vocabulary_fields {
+            let mut draft = ProjectDraft::default();
+            draft.set(field.id, serde_json::json!([{ "en": "Anything" }]));
+            let out = field_row(field, &draft, Mode::Editable, routed()).into_string();
+            assert!(
+                out.contains(&format!(r#"name="{}.r0.pick.q""#, field.id)),
+                "{}: {out}",
+                field.id
+            );
+            let plain = field_row(field, &draft, Mode::Editable, Rows::default()).into_string();
+            assert!(!plain.contains(".pick.q"), "{}: a combobox without a route", field.id);
+        }
     }
 
     /// The opening tag of the variant branch (`flex flex-col gap-2`) enclosing the control `marker`
@@ -2339,18 +2596,80 @@ mod tests {
     }
 
     #[test]
-    fn the_snsf_options_are_named_first_and_ordered_by_name() {
-        let out = disciplines_rendered(serde_json::json!([{ "en": "Medieval studies" }]));
-        assert!(out.contains("Visual arts and Art history (10404)"), "{out}");
-        let position = |label: &str| out.find(label).unwrap_or_else(|| panic!("{label} missing: {out}"));
+    fn a_discipline_query_groups_its_options_under_the_research_domain() {
+        let out = vocabulary_results("disciplines.r0", List::Disciplines, "visual arts").into_string();
+
+        assert!(out.contains(r#"id="disciplines.r0.pick-results""#), "{out}");
+        assert!(out.contains(r#"role="group""#), "{out}");
+        let domain = disciplines::snsf_discipline("10404")
+            .expect("10404 is listed")
+            .group
+            .replace('&', "&amp;");
+        assert!(out.contains(&format!(r#"aria-label="{domain}""#)), "{out}");
+        assert!(out.contains(r#"name="intent" value="pick:disciplines.r0:10404""#), "{out}");
+        assert!(out.contains("Visual arts and Art history"), "{out}");
+    }
+
+    #[test]
+    fn a_place_query_posts_the_pick_with_the_places_url() {
+        let switzerland = vocabulary::places()
+            .iter()
+            .find(|entry| entry.text == "Switzerland")
+            .expect("Switzerland is listed");
+        let out = vocabulary_results("spatialCoverage.r0", List::Places, "switz").into_string();
+
         assert!(
-            position("Ancient history and Classical studies (") < position("Ecclesiastical history ("),
+            out.contains(&format!(
+                r#"name="intent" value="pick:spatialCoverage.r0:{}""#,
+                switzerland.pick_value()
+            )),
             "{out}"
         );
-        assert!(
-            position("Ecclesiastical history (") < position("Visual arts and Art history ("),
-            "{out}"
+        assert!(out.contains("Switzerland"), "{out}");
+        assert!(!out.contains(r#"role="group""#), "{out}");
+    }
+
+    #[test]
+    fn a_render_answering_a_pick_replaces_the_rows_search_box() {
+        let field = editor_core::form::registry::field("spatialCoverage").expect("a known field");
+        let draft = ProjectDraft::default();
+        let entry = vocabulary::places().first().expect("places are bundled");
+        let url = entry.url.clone();
+        let body = FormBody::from_pairs(vec![
+            ("spatialCoverage.row".to_string(), "r0".to_string()),
+            (INTENT.to_string(), pick_intent("spatialCoverage.r0", &entry.pick_value())),
+        ]);
+        let answering =
+            field_row(field, &draft, Mode::Editable, Rows { posted: Some(&body), ..routed() }).into_string();
+        assert!(!answering.contains(r#"id="spatialCoverage.r0.pick""#), "{answering}");
+        assert!(answering.contains(r#"id="spatialCoverage.r0.pick-results""#), "{answering}");
+        assert!(answering.contains("autofocus"), "{answering}");
+
+        let mut draft = ProjectDraft::default();
+        draft.set(
+            "spatialCoverage",
+            serde_json::json!([{ "type": "Geonames", "url": url, "text": "Somewhere" }]),
         );
+        let plain = field_row(field, &draft, Mode::Editable, routed()).into_string();
+        assert!(plain.contains(r#"id="spatialCoverage.r0.pick""#), "{plain}");
+        assert!(!plain.contains("autofocus"), "{plain}");
+    }
+
+    #[test]
+    fn a_blank_vocabulary_query_renders_an_empty_container() {
+        let out = vocabulary_results("spatialCoverage.r0", List::Places, "  ").into_string();
+
+        assert!(out.contains(r#"id="spatialCoverage.r0.pick-results""#), "{out}");
+        assert!(!out.contains("role=\"option\""), "{out}");
+        assert!(!out.contains(r#"<p class="combobox-status""#), "{out}");
+    }
+
+    #[test]
+    fn a_vocabulary_query_without_a_match_says_so() {
+        let out = vocabulary_results("temporalCoverage.r0", List::Periods, "zzzzqqqq").into_string();
+
+        assert!(out.contains("Nothing matches “zzzzqqqq”."), "{out}");
+        assert!(!out.contains("role=\"option\""), "{out}");
     }
 
     #[test]
@@ -2359,6 +2678,8 @@ mod tests {
 
         assert!(out.contains(r#"name="disciplines.r0.kind" value="text" checked"#), "{out}");
         assert!(!out.contains(r#"<option value="10400""#), "{out}");
+        assert!(!out.contains(r#"name="disciplines.r0.snsf" value="1"#), "{out}");
+        assert!(out.contains("Nothing chosen yet"), "{out}");
     }
 
     #[test]
@@ -2366,10 +2687,25 @@ mod tests {
         let field = editor_core::form::registry::field("temporalCoverage").expect("a known field");
         let mut draft = ProjectDraft::default();
         draft.set("temporalCoverage", serde_json::json!([{ "en": "10404 Bronze Age" }]));
-        let out = field_row(field, &draft, Mode::Editable, Rows::default()).into_string();
+        let out = field_row(field, &draft, Mode::Editable, routed()).into_string();
 
         assert!(out.contains("A recognised entry"), "{out}");
         assert!(!out.contains("From the SNSF list"), "{out}");
+        let search = out.find(r#"name="temporalCoverage.r0.pick.q""#).expect("the period search");
+        let reference = out
+            .find(r#"name="temporalCoverage.r0.ref.url""#)
+            .expect("the reference controls");
+        assert!(search < reference, "the search comes before the fallback controls: {out}");
+        let text = out.find(r#"name="temporalCoverage.r0.text.en""#).expect("the text branch");
+        assert!(text > reference, "the text branch holds no search: {out}");
+    }
+
+    #[test]
+    fn a_query_matching_more_than_the_cap_shows_the_first_options_and_says_so() {
+        let out = vocabulary_results("spatialCoverage.r0", List::Places, "a").into_string();
+
+        assert_eq!(out.matches(r#"role="option""#).count(), MAX_VOCABULARY_OPTIONS, "{out}");
+        assert!(out.contains(&format!("showing the first {MAX_VOCABULARY_OPTIONS}")), "{out}");
     }
 
     fn legal_info_display_of(value: serde_json::Value) -> String {
@@ -2855,6 +3191,7 @@ mod tests {
             propose: true,
             focus: None,
             search_path: None,
+            vocabulary_path: None,
         };
 
         let out = agent_rows(field, &draft, rows).into_string();
@@ -2891,6 +3228,7 @@ mod tests {
             propose: false,
             focus: None,
             search_path: None,
+            vocabulary_path: None,
         };
 
         let out = agent_rows(field, &draft, rows).into_string();
@@ -2998,6 +3336,7 @@ mod tests {
                 propose: false,
                 focus: None,
                 search_path: None,
+                vocabulary_path: None,
             },
         )
         .into_string();
@@ -3063,6 +3402,7 @@ mod tests {
                 propose: true,
                 focus: None,
                 search_path: None,
+                vocabulary_path: None,
             },
         )
         .into_string();
@@ -3098,6 +3438,7 @@ mod tests {
             propose: true,
             focus: None,
             search_path: None,
+            vocabulary_path: None,
         };
 
         let out = attribution_rows(field, &draft, rows).into_string();
@@ -3129,6 +3470,7 @@ mod tests {
             propose: true,
             focus: None,
             search_path: None,
+            vocabulary_path: None,
         };
 
         let out = agent_rows(field, &draft, rows).into_string();
@@ -3159,6 +3501,7 @@ mod tests {
             propose: true,
             focus: None,
             search_path: None,
+            vocabulary_path: None,
         };
 
         let out = attribution_rows(field, &draft, rows).into_string();
@@ -3315,6 +3658,7 @@ mod tests {
                 propose: true,
                 focus: None,
                 search_path: None,
+                vocabulary_path: None,
             };
             let out = funding(field, &draft, rows).into_string();
             let controls = out.matches(r#"name="funding.r0.funder""#).count();
@@ -3411,6 +3755,46 @@ mod tests {
             ("intent", "add-agent:contactPoint:organization-008"),
         ]);
         assert_eq!(apply_picker_intents(contacts.clone(), shape_of), contacts);
+    }
+
+    #[test]
+    fn picking_a_discipline_sets_the_snsf_pairs_and_closes_the_search() {
+        let out = apply_picker_intents(
+            pairs(&[
+                ("disciplines.row", "r0"),
+                ("disciplines.r0.kind", "text"),
+                ("disciplines.r0.snsf", ""),
+                ("disciplines.r0.pick.q", "visual"),
+                ("intent", "pick:disciplines.r0:10404"),
+            ]),
+            shape_of,
+        );
+        let held = |name: &str| out.iter().find(|(held, _)| held == name).map(|(_, value)| value.as_str());
+        assert_eq!(held("disciplines.r0.kind"), Some("snsf"), "{out:?}");
+        assert_eq!(held("disciplines.r0.snsf"), Some("10404"), "{out:?}");
+        assert_eq!(held("disciplines.r0.pick.q"), None, "{out:?}");
+        assert!(out.iter().any(|(name, _)| name == "intent"), "the intent stays: {out:?}");
+    }
+
+    #[test]
+    fn picking_a_value_the_list_does_not_hold_changes_nothing() {
+        let body = pairs(&[
+            ("disciplines.row", "r0"),
+            ("disciplines.r0.kind", "text"),
+            ("disciplines.r0.pick.q", "visual"),
+            ("intent", "pick:disciplines.r0:10400"),
+        ]);
+        assert_eq!(apply_picker_intents(body.clone(), shape_of), body);
+    }
+
+    #[test]
+    fn picking_in_a_field_without_a_vocabulary_changes_nothing() {
+        let body = pairs(&[
+            ("keywords.row", "r0"),
+            ("keywords.r0.pick.q", "x"),
+            ("intent", "pick:keywords.r0:10404"),
+        ]);
+        assert_eq!(apply_picker_intents(body.clone(), shape_of), body);
     }
 
     #[test]
@@ -3882,6 +4266,7 @@ mod tests {
             adding: Some("contactPoint"),
             agents: Some(&scope),
             search_path: Some(path),
+            vocabulary_path: None,
             ..Rows::default()
         };
 

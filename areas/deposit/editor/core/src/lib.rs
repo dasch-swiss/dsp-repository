@@ -23,6 +23,7 @@ pub mod repository;
 pub mod review;
 pub mod status;
 pub mod submission;
+pub mod vocabulary;
 
 pub use repo_paths::{checkout_dpe_data_dir, DPE_DATA_DIR};
 

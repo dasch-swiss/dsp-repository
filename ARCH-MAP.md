@@ -136,7 +136,11 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `every_committed_temporal_coverage_resolves` and `the_corpus_is_the_whole_published_set`, all of
   which run on it because it is opened with `secrets.GH_TOKEN`; then **review**).
   The `Corpus`'s instance `OnceLock` caches load once per process and never invalidate.
-- **Fingerprint:** `e37556c5029d`
+  `scripts/build-coverage-vocabularies.py` reads `projects/`'s place and period references to derive the editor's
+  bundled picker options, so a new reference needs that regeneration (**static-analysis** — the editor's drift tests,
+  which also run on `editor-pull-requests`' pull requests: one publishing a place or period a depositor typed outside
+  the lists stays red until the bundles are regenerated on its branch).
+- **Fingerprint:** `776709312525`
 
 ### areas/access/server
 
@@ -210,7 +214,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   submit rules, the format findings computed from a draft at render (`editor_core::form::format`, in the
   handlers' `view()`), the submit and approve gate sequences (`editor_core::submission`,
   `editor_core::review`), validation, the canonical project and entity writers, a created project's seeded draft with its
-  derived `id`/`pid` (`editor_core::creation`), the persistence ports),
+  derived `id`/`pid` (`editor_core::creation`), the bundled vocabularies the pickers search
+  (`editor_core::disciplines` over `core/data/snsf-disciplines.json`, `editor_core::vocabulary` over
+  `core/data/{places,periods}.json`), the persistence ports),
   `editor-ports` (what the editor asks of identity: `Actor`,
   `Authenticator`, `UserDirectory` and their fakes), `editor-store` (the SQLite implementation
   of the persistence ports, the file `editor.sqlite`, and `LiveOpenWork` behind
@@ -244,11 +250,21 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `Forge`, `EditorPullRequest`, `CreatedProject`, `CreatedProjectRepository`, `Removal`,
   `editor_core::creation::{seed, reseed, shown, pid_for, pid_holder}`,
   `editor_core::form::registry::GIT_OWNED`, `editor_core::form::format::{findings, Finding, ValueKind, Member}`,
-  `editor_web::form::widgets::{format_message, format_hint}`
+  `editor_web::form::widgets::{format_message, format_hint}`,
+  `Agent.detail` (a person's affiliations or an organisation's alternative name, matched by `AgentScope::search`),
+  `agents::proposal_agent`, `form::submit::drop_agent`, `EntityProposalRepository::withdraw_rewriting_draft`,
+  `entity::origin::Origin`, `handlers::navigate`,
+  `editor_core::disciplines::{snsf, snsf_row, snsf_text, search}`, `form::{SNSF_KIND, stored_kind}`,
+  `registry::source_label`, `Field::vocabulary`, `editor_core::vocabulary::{List, Entry, Match, list_for, search}`,
+  the picker intents rewritten into posted pairs by `widgets::apply_picker_intents` (`choose-agent`, `add-agent`,
+  `pick`, `remove-role`) and those that re-render or redirect (`find-agent`, `change-agent`, `find-entry`,
+  `propose-changes`; `docs/src/editor/routing.md`), `widgets::Rows.vocabulary_path` (`None` on the entity form and the
+  review surface, which render the same controls without a search)
 - **Public interface:** the HTTP routes of `editor-web`'s route table, root-mounted on the
   editor's own hostname (`/` (a redirect), `/projects`, `/projects/{shortcode}`,
-  `/projects/{shortcode}/sections/{section}` and its row-action `POST`s,
-  `/projects/{shortcode}/entities/{proposal}` and its row-action `POST`s, `/review`, `/review/{shortcode}`,
+  `/projects/{shortcode}/sections/{section}` and its row-action `POST`s, the type-ahead fragments
+  `/projects/{shortcode}/sections/{section}/{agents,vocabulary}` (`GET`, never writing),
+  `/projects/{shortcode}/entities/{proposal}` and its row-action `POST`s, its `…/agents` fragment, `/review`, `/review/{shortcode}`,
   `/approved`, `/approved/{id}/discard`, `/states`, `/projects/new` and
   `/projects/{shortcode}/remove` (RDU only; `/projects/new` matches before `/projects/{shortcode}`,
   and `new` is refused as a shortcode),
@@ -267,7 +283,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `areas/deposit/server/src/router.rs`, `areas/deposit/editor/core/src/form.rs`,
   `areas/deposit/editor/store/src/lib.rs`. The kit is at its seven-file budget; the next reads
   are `core/src/form/registry.rs` (a form change), `core/src/status.rs` (project state), `core/src/creation.rs` (a created project),
-  `core/src/form/format.rs` (a format rule),
+  `core/src/form/format.rs` (a format rule), `core/src/vocabulary.rs` (a picker list),
   `ports/src/lib.rs` (what identity answers) and `docs/src/editor/{publishing-to-git,architecture}.md`.
 - **Depends on:** shared/metadata (`editor-core`, `editor-web`, `editor-pull-requests`),
   shared/rate-limit (`editor-web`), shared/telemetry (`editor-web`: `is_valid_traceparent`),
@@ -275,7 +291,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   modules/mosaic (`editor-web`), areas/deposit/shell (`editor-web`),
   areas/deposit/identity (`editor-store` on `identity-ports` alone, the port it answers;
   `editor-web` and `editor-core` on no identity crate; `editor-ports` on `std` alone); areas/access/dpe's corpus as data (see above),
-  never its code — `editor-pull-requests` additionally *writes* that corpus, through a pull request
+  never its code (the bundled `places.json` and `periods.json` are derived from that corpus's references plus a
+  ChronOntology mirror fetched at build time) — `editor-pull-requests` additionally *writes* that corpus, through a pull request
   and never at runtime (`docs/src/editor/publishing-to-git.md`); third-party: axum, maud, rusqlite
   (`bundled`) + deadpool-sqlite, tower_governor, url (`editor-core`, `form::format`),
   reqwest (`editor-pull-requests`), the OpenTelemetry API, insta
@@ -333,6 +350,26 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     `every_git_owned_member_is_a_display_only_field`, `a_git_owned_member_is_not_a_change`).
   - A created project is removable only while it has no submission and no approved record, checked
     inside `CreatedProjectRepository::remove`'s transaction (**structure**).
+  - Two request-derived redirect mechanisms: `deposit_shell::safe_next` (the sign-in destination) and
+    `entity::origin::Origin` (the entity page's return path, accepting only a registry section of the viewer's
+    audience and one of its agent-picker fields, else the project page, or the first section after a discard); on the enhanced path a redirect is
+    `handlers::navigate`, a `200` `text/javascript` body, because Datastar drops a followed `303`. A new
+    request-derived redirect reuses one of the two (**static-analysis** for `Origin` — handler tests of an invalid
+    target; otherwise **review**).
+  - The type-ahead fragments are `GET` and never write; they answer `200` with an empty results container for a blank or
+    over-long query and `404` for a field without a picker (**static-analysis** — handler tests).
+  - Which list a field searches is the registry's `Field::vocabulary`; `vocabulary::list_for` only reads it
+    (**structure**; the registry test `a_vocabulary_sits_on_a_field_that_holds_reference_rows` pins where a list may sit).
+  - `core/data/snsf-disciplines.json` was extracted once from the prototype's `SNSF_DOMAINS` and is the list's
+    source. `places.json` and `periods.json` are derived data with one writer, `scripts/build-coverage-vocabularies.py`
+    (from DPE's corpus, its slim `chronontology-periods.json`, which limits the periods offered to those submit
+    resolves, and the gitignored full mirror of `scripts/fetch-chronontology-periods.py`, needed only for a new
+    period). Drift tests pin them: every committed SNSF code (group codes allowed) and place (by GeoNames id and
+    label) is an option, every committed period reference is one verbatim, every period option resolves to a
+    structured date (**static-analysis**); that places and periods equal the script's output, never hand-edited (**review**).
+  - A pick posts `pick:{prefix}:{value}` and is rewritten into the row's own posted pairs before the appliers run,
+    so a pick and a typed value share one write path; each POST handler calls `apply_picker_intents` first
+    (**static-analysis** — the handler tests of a pick).
   - Known gap: `ReviewRoundRepository::approve` compares no version, so a depositor's proposal save
     landing between `review::approval`'s read and the approve transaction is approved unchecked;
     writes to an `Accepted` row are refused (**review**).
@@ -342,7 +379,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   guarded by its own `PRAGMA user_version`; identity's tables are in `identity.sqlite`
   (below). **Single writer:** `editor-store` through `editor-core`'s repository ports; several of
   `editor-web`'s handlers call the same port, serialized by the one writer connection, and every
-  multi-table transition is one repository method. `review_rounds` is never updated; its rows
+  multi-table transition is one repository method. The entity route's one draft write is
+  `EntityProposalRepository::withdraw_rewriting_draft` (discarding a New proposal withdraws it and drops its
+  references from the project draft, `form::submit::drop_agent`, in one transaction). `review_rounds` is never updated; its rows
   are deleted only by RDU's removal of a created project. `created_projects` is written by
   `CreatedProjectRepository`: `create` (`POST /projects/new`, with the seeded `drafts` row),
   `remove` (`POST /projects/{shortcode}/remove`, with its draft and review rounds, withdrawing
@@ -353,7 +392,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `Editor::start`), approve's own transaction, which supersedes the project's earlier record, so a
   project holds at most one, and RDU's discard
   (`POST /approved/{id}/discard`).
-- **Fingerprint:** `311d445e6510`
+- **Fingerprint:** `a54718712348`
 
 ### areas/deposit/shell
 
@@ -391,7 +430,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     serves from `areas/deposit/editor/public`. No compiler checks them against the route tables (**docs-only**, recorded in the
     crate doc).
   - One copy of the open-redirect allowlist: every request-derived redirect target goes through
-    `safe_next`, and `login_url` interpolates without encoding only because `safe_next` admits
+    `safe_next`, except the editor's entity return path (`entity::origin::Origin`, registry ids only; see
+    areas/deposit/editor), and `login_url` interpolates without encoding only because `safe_next` admits
     unreserved characters alone (**static-analysis** — the nine `sign_in.rs` tests pin both
     together; **review** for new callers, `REVIEW.md`).
   - Its Tailwind classes ship only through `@source '../../shell/**/*.rs'` in the editor's
@@ -557,7 +597,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   break when a tile changes.
 - **Key entities:** `ComponentBuilder`; constructors `badge`, `button`, `alert`, `card`, `link`,
   `table`, `tabs`, `text_field`, `select`, `textarea`, `checkbox_group`, `radio_group`,
-  `repeatable_list`, `icon`, `copy_button`, `loading`, `breadcrumb`; builders
+  `repeatable_list`, `icon`, `copy_button`, `loading`, `breadcrumb`, `combobox` (with `combobox_results`,
+  `combobox_listbox`, `combobox_groups`, `combobox_option`, `combobox_status`); builders
   `BadgeBuilder`, `ButtonBuilder`, `TextFieldBuilder`, …; variant enums with `css_class()`
   (`ButtonVariant`, `BadgeVariant`, `CardVariant`, `AlertVariant`, `InputType`); `IconData`;
   playground `router`, `COMPONENT_NAV`
@@ -578,7 +619,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `modules/mosaic/playground/style/main.css`)
 - **Boundary rules:**
   - Depends on no `shared-*` or service crate (**structure** — a dependency would be a Cargo
-    cycle for the services and is simply absent).
+    cycle for the services and is simply absent). The `combobox` tile takes the caller's Datastar
+    search expression as an opaque string, so Mosaic stays free of `shared-datastar` (**structure**).
   - Every `css_class()` returns a complete literal class string so Tailwind's scan sees it;
     stated in six places, enforced by nothing — a violation surfaces as unstyled markup at
     runtime (**docs-only**; candidate for promotion).
@@ -593,7 +635,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - Registration is in `tiles/src/components/mod.rs`, not `lib.rs`; `modules/mosaic/CLAUDE.md`
     and the `add-mosaic-component` skill say `lib.rs` — stale, fix on next touch (**docs-only**).
 - **Durable state:** none. The playground E2E suite is dormant (no recipe, no CI job runs it).
-- **Fingerprint:** `0f5ab607b19f`
+- **Fingerprint:** `e94f849f2763`
 
 ### shared/fair
 
@@ -1501,4 +1543,4 @@ Not code components; they span the repo and are staleness-exempt here:
   `README.md`, `CLAUDE.md`, `CONVENTIONS.md`, `REVIEW.md`, `CHANGELOG.md`, `LICENSE`,
   `CONTEXT.md`, `ARCH-MAP.md`, `shared/README.md`
 - **Agent configuration:** `.claude/**` (settings, the `add-mosaic-component` skill)
-- **Data tooling:** `scripts/**` — the two Python scripts that write DPE's lookup tables
+- **Data tooling:** `scripts/**` — the Python scripts that write DPE's lookup tables and the editor's bundled vocabularies (`core/data/*.json`)

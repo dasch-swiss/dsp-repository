@@ -219,6 +219,7 @@ fn every_form_section_a_depositor_sees_carries_none_of_the_forbidden_words() {
             notice: created.then_some(section::Notice::Discarded),
             posted: None,
             format_findings: Vec::new(),
+            findings_elsewhere: Vec::new(),
             submitted: None,
             adding_row: None,
             focus_finding: false,
@@ -412,6 +413,7 @@ fn the_proposal_notice_names_a_change_by_its_entity_and_a_new_proposal_by_no_id(
             created: false,
             focus_finding: false,
             format_findings: Vec::new(),
+            findings_elsewhere: Vec::new(),
             rows_action: format!("/projects/0801d/sections/{}/fields", section_def.id),
             awaiting_release: false,
         };
@@ -475,6 +477,7 @@ fn the_proposals_box_and_its_findings_name_each_proposal_and_carry_no_id() {
         created: false,
         focus_finding: false,
         format_findings: Vec::new(),
+        findings_elsewhere: Vec::new(),
         rows_action: format!("/projects/0801d/sections/{}/fields", section_def.id),
         awaiting_release: false,
     };

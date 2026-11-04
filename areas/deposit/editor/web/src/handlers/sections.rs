@@ -1937,10 +1937,10 @@ fn render_page(
     rendering: Rendering<'_>,
 ) -> Response {
     let stored = stored_of(context);
-    // Also said in the title: a live region filled at page load is not reliably
-    // announced (see `pages::section`). Read before `rendering` moves into `view`.
-    let prefix = rendering.notice.and_then(|notice| notice.title_prefix());
     let view = view(shortcode, context, &stored, rendering);
+    // Also said in the title: a live region filled at page load is not reliably
+    // announced (see `pages::section`).
+    let prefix = view.title_prefix();
     // The published name in the tab title where there is one: a browser with
     // eleven tabs open shows about twenty characters, and five of them being
     // "Proje" helps nobody.
@@ -2001,6 +2001,20 @@ fn view<'a>(
         let shown = format::findings(fields(), before, posted);
         format_findings.retain(|finding| shown.iter().any(|earlier| earlier.control == finding.control));
     }
+    // The rest of what submit's format check refuses, for the saved notice to count and
+    // link. From the stored draft, so each control is named as that section's `GET`
+    // names it; a save here cannot change another section's values.
+    let findings_elsewhere = match rendering.notice {
+        Some(page::Notice::Saved) => registry::sections_for(context.audience)
+            .filter(|section| section.id != context.section.id)
+            .flat_map(|section| {
+                format::findings(section.fields_for(context.audience), &context.draft, None)
+                    .into_iter()
+                    .map(move |finding| (section, finding))
+            })
+            .collect(),
+        _ => Vec::new(),
+    };
     page::SectionView {
         shortcode,
         project_name: context.name(),
@@ -2043,6 +2057,7 @@ fn view<'a>(
         agents: Some(&context.agents),
         posted,
         format_findings,
+        findings_elsewhere,
         submitted: context.posted,
         adding_row: rendering.adding_row,
         focus_finding: rendering.focus_finding,
@@ -3146,6 +3161,44 @@ mod tests {
             "named in another section's list: {elsewhere}"
         );
         assert!(elsewhere.contains(DATASET), "with a link to its section: {elsewhere}");
+    }
+
+    #[tokio::test]
+    async fn a_save_holding_a_value_submit_would_refuse_warns_and_links_it_from_every_section() {
+        let (_, app, session) = a_depositor_on("section-format-saved-notice").await;
+        let warning = "1 value needs fixing before you can submit for review.";
+        let save = format!("{UNFORMATTED_LINK}&{INTENT}={}", page::SAVE);
+
+        // The plain save's `GET`: the warning, a link to the control, and the count in the
+        // title, which is all a screen reader hears after the redirect.
+        let saved = as_session(&app, post(DATASET, &save), &session).await;
+        let target = location(&saved).expect("a redirect location");
+        let here = body_string(as_session(&app, get(&target), &session).await).await;
+        assert!(here.contains(warning), "{here}");
+        assert!(here.contains(r##"href="#additionalMaterial.r0""##), "{here}");
+        assert!(
+            title_of(&here).starts_with("Draft saved, 1 value needs fixing — "),
+            "{}",
+            title_of(&here)
+        );
+
+        // A save in another section counts the value too, linked to its section's control.
+        let overview = format!("name=A+New+Title&{INTENT}={}", page::SAVE);
+        let elsewhere = body_string(as_session(&app, enhanced(OVERVIEW, &overview), &session).await).await;
+        assert!(elsewhere.contains(warning), "{elsewhere}");
+        assert!(
+            elsewhere.contains(&format!(r#"href="{DATASET}#additionalMaterial.r0""#)),
+            "{elsewhere}"
+        );
+
+        // Fixed, the save is a plain success again.
+        let fixed = format!(
+            "additionalMaterial.row=r0&additionalMaterial.r0=https://www.dasch.swiss&{INTENT}={}",
+            page::SAVE
+        );
+        let clean = body_string(as_session(&app, enhanced(DATASET, &fixed), &session).await).await;
+        assert!(clean.contains("Draft saved."), "{clean}");
+        assert!(!clean.contains("needs fixing"), "{clean}");
     }
 
     #[tokio::test]

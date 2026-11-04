@@ -4,6 +4,7 @@ import {
   DEPOSITOR_STATE,
   NOTICE_SHORTCODE,
   RDU_STATE,
+  REFUSED_SUBMIT_SHORTCODE,
 } from "../playwright.config";
 
 test.use({ storageState: DEPOSITOR_STATE });
@@ -153,7 +154,7 @@ test.describe("a refused submit", () => {
 
       // A malformed link in another section is what the refusal is about; a re-run
       // finds the row already there.
-      await page.goto(`/projects/${NOTICE_SHORTCODE}/sections/dataset`);
+      await page.goto(`/projects/${REFUSED_SUBMIT_SHORTCODE}/sections/dataset`);
       const link = page.locator("#additionalMaterial input:not([type=hidden])");
       if ((await link.count()) === 0) {
         await page.locator("#additionalMaterial button.repeatable-add").click();
@@ -165,7 +166,9 @@ test.describe("a refused submit", () => {
 
       // Submit, then scroll the first field to the top edge of the viewport, where the
       // sticky region sits: what an in-page link or a Shift+Tab from below does.
-      await page.goto(`/projects/${NOTICE_SHORTCODE}/sections/overview`);
+      await page.goto(
+        `/projects/${REFUSED_SUBMIT_SHORTCODE}/sections/overview`,
+      );
       await page.getByRole("button", { name: "Submit for review" }).click();
       const status = noticeOf(page);
       await expect(

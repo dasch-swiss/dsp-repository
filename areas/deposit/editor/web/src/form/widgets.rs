@@ -32,7 +32,7 @@ use editor_core::multilingual::{
 use editor_core::vocabulary::{self, List};
 use maud::{html, Markup, Render};
 use mosaic_tiles::badge::{badge, BadgeVariant};
-use mosaic_tiles::button::{button, ButtonType, ButtonVariant};
+use mosaic_tiles::button::{button, ButtonSize, ButtonType, ButtonVariant};
 use mosaic_tiles::checkbox_group::checkbox_group;
 use mosaic_tiles::combobox::{
     combobox, combobox_groups, combobox_listbox, combobox_option, combobox_results, combobox_status,
@@ -89,10 +89,10 @@ pub(crate) const NO_VALUE: &str = "Not set";
 pub fn field_row(field: &Field, draft: &ProjectDraft, mode: Mode, rows: Rows<'_>) -> Markup {
     match (mode, field.shape) {
         (Mode::Editable, Some(shape)) => control(field, draft, shape, rows),
-        (Mode::Accepted, _) => stated(field, draft, Some(ACCEPTED_BY_RDU)),
+        (Mode::Accepted, _) => stated(field, draft, Some(ACCEPTED_BY_RDU), rows.label_hidden),
         // A locked field and a display-only one render the same way, which is
         // the point: neither posts, so neither can be cleared.
-        (Mode::ReadOnly, _) | (_, None) => stated(field, draft, None),
+        (Mode::ReadOnly, _) | (_, None) => stated(field, draft, None, rows.label_hidden),
     }
 }
 
@@ -100,12 +100,19 @@ pub fn field_row(field: &Field, draft: &ProjectDraft, mode: Mode, rows: Rows<'_>
 /// `<label>`: there is no control for one to point at, and a `for` naming
 /// nothing is worse than none. `pub(crate)` because `crate::entity` reuses this
 /// for a proposal that is no longer live.
-pub(crate) fn stated(field: &Field, draft: &ProjectDraft, why: Option<&str>) -> Markup {
+pub(crate) fn stated(field: &Field, draft: &ProjectDraft, why: Option<&str>, label_hidden: bool) -> Markup {
+    // Without an obligation no pill stays visible, so the whole label is sr-only: an empty
+    // visible element would still take its gap.
+    let (label_class, label) = match (label_hidden, field.obligation) {
+        (false, _) => ("field-label", labelled(field)),
+        (true, Some(_)) => ("field-label", name_hidden(field)),
+        (true, None) => ("sr-only", labelled(field)),
+    };
     let editable_but_unbuilt = !field.display_only && field.shape.is_none();
     let label_id = format!("{}-label", field.id);
     html! {
         div class="field" {
-            p class="field-label" id=(label_id) { (labelled(field)) }
+            p class=(label_class) id=(label_id) { (label) }
             (value_display(field, draft, &label_id))
             @if editable_but_unbuilt {
                 p class="field-hint" { (NOT_READ_YET) }
@@ -322,7 +329,7 @@ pub(crate) fn control(field: &Field, draft: &ProjectDraft, shape: Shape, rows: R
         // panicked, so a missing control does not take the whole section down.
         _ => {
             debug_assert!(false, "{} declares {shape:?} but no control", field.id);
-            stated(field, draft, None)
+            stated(field, draft, None, rows.label_hidden)
         }
     }
 }
@@ -371,6 +378,10 @@ pub struct Rows<'a> {
     /// by the render that answers a save or submit holding one; see
     /// [`editor_core::form::submit::lines_without_language`].
     pub without_language: &'a [LineWithoutLanguage],
+    /// The label repeats the section heading, so its name is for a screen reader only while the
+    /// obligation pill stays in view. Set by `pages::section::SectionView::rows`; only
+    /// `publications` and the display-only `stated` honour it, every other shape ignores it.
+    pub label_hidden: bool,
 }
 
 /// The keys of the rows to render for `field`, in display order: from the posted
@@ -739,7 +750,7 @@ fn slot_card(slot: &Slot<'_>, rows: Rows<'_>, inside: Markup, focus: bool) -> Ma
     let class = format!("flex flex-col gap-3 rounded-md border p-3 {border}");
     let change = button(CHANGE_AGENT_BUTTON)
         .variant(ButtonVariant::Secondary)
-        .class("px-2 py-1")
+        .size(ButtonSize::Compact)
         .name_value(INTENT, change_agent_intent(slot.unique))
         .aria_label(format!("{CHANGE_AGENT_BUTTON} {name} ({})", slot.row_context));
     let change = match focus {
@@ -1816,7 +1827,12 @@ fn publication_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Mark
     let stored = stored_rows(field, draft);
     let action = format!("{}/{}", rows.action, field.id);
     let noun = row_noun(field);
-    let mut list = repeatable_list(field.id, labelled(field), &action).item_noun(&noun);
+    let legend = if rows.label_hidden {
+        name_hidden(field)
+    } else {
+        labelled(field)
+    };
+    let mut list = repeatable_list(field.id, legend, &action).item_noun(&noun);
     for (position, key) in keys.iter().enumerate() {
         let prefix = format!("{}.{key}", field.id);
         let held = stored.get(position).copied();
@@ -2713,6 +2729,19 @@ pub(crate) fn multilingual(field: &Field, draft: &ProjectDraft, rows: u32) -> Ma
 pub(crate) fn labelled(field: &Field) -> Markup {
     html! {
         (field.label)
+        @if let Some(obligation) = field.obligation {
+            " "
+            span class=(pill_class(obligation)) { (obligation.label()) }
+        }
+    }
+}
+
+/// [`labelled`] with the name for a screen reader only and the obligation pill still in view; the
+/// accessible name is unchanged. With no obligation nothing is left in view: use the whole-label
+/// form (see [`stated`]).
+fn name_hidden(field: &Field) -> Markup {
+    html! {
+        span class="sr-only" { (field.label) }
         @if let Some(obligation) = field.obligation {
             " "
             span class=(pill_class(obligation)) { (obligation.label()) }
@@ -3700,6 +3729,7 @@ mod tests {
             propose: true,
             focus: None,
             without_language: &[],
+            label_hidden: false,
             search_path: None,
             vocabulary_path: None,
         };
@@ -3738,6 +3768,7 @@ mod tests {
             propose: false,
             focus: None,
             without_language: &[],
+            label_hidden: false,
             search_path: None,
             vocabulary_path: None,
         };
@@ -3847,6 +3878,7 @@ mod tests {
                 propose: false,
                 focus: None,
                 without_language: &[],
+                label_hidden: false,
                 search_path: None,
                 vocabulary_path: None,
             },
@@ -3914,6 +3946,7 @@ mod tests {
                 propose: true,
                 focus: None,
                 without_language: &[],
+                label_hidden: false,
                 search_path: None,
                 vocabulary_path: None,
             },
@@ -3951,6 +3984,7 @@ mod tests {
             propose: true,
             focus: None,
             without_language: &[],
+            label_hidden: false,
             search_path: None,
             vocabulary_path: None,
         };
@@ -3984,6 +4018,7 @@ mod tests {
             propose: true,
             focus: None,
             without_language: &[],
+            label_hidden: false,
             search_path: None,
             vocabulary_path: None,
         };
@@ -4016,6 +4051,7 @@ mod tests {
             propose: true,
             focus: None,
             without_language: &[],
+            label_hidden: false,
             search_path: None,
             vocabulary_path: None,
         };
@@ -4179,6 +4215,7 @@ mod tests {
                 propose: true,
                 focus: None,
                 without_language: &[],
+                label_hidden: false,
                 search_path: None,
                 vocabulary_path: None,
             };

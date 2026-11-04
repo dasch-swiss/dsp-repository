@@ -120,6 +120,8 @@
     --color-neutral-400: oklch(0.70 0.020 250.5);
     --color-neutral-500: oklch(0.59 0.026 250.5);
     --color-neutral-600: oklch(0.50 0.026 250.5);
+    /* select.css's chevron data-URI hard-codes this as `#404a55` (a data URI cannot
+       read a token): update that hex when changing this value. */
     --color-neutral-700: oklch(0.405 0.022 250.5);
     --color-neutral-800: oklch(0.33 0.018 250.5);
     --color-neutral-900: oklch(0.27 0.014 250.5);

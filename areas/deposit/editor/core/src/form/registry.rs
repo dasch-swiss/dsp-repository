@@ -191,6 +191,8 @@ impl Field {
 pub struct Section {
     /// The URL segment: `/projects/{shortcode}/sections/{id}`.
     pub id: &'static str,
+    /// A single-field section whose field label equals this title shows that label to screen
+    /// readers only.
     pub title: &'static str,
     /// Field ids, in display order. Every one resolves through [`field`].
     pub fields: &'static [&'static str],

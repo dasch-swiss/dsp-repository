@@ -3,6 +3,9 @@
 //!
 //! See `docs/src/mosaic/component-api-conventions.md`.
 //!
+//! `.align_middle()` is for rows of single lines or equal-height controls; a table of
+//! long, wrapping text keeps the default top alignment.
+//!
 //! ## Why the caption is required, and a `String` rather than `impl Render`
 //!
 //! It is the table's accessible name, rendered as a visually hidden `<caption>`
@@ -32,6 +35,7 @@ pub struct TableBuilder {
     head: Markup,
     body: Markup,
     extra_classes: String,
+    align_middle: bool,
     id: Option<String>,
     test_id: Option<String>,
 }
@@ -44,6 +48,7 @@ pub fn table(caption: impl Into<String>) -> TableBuilder {
         head: Markup::default(),
         body: Markup::default(),
         extra_classes: String::new(),
+        align_middle: false,
         id: None,
         test_id: None,
     }
@@ -68,12 +73,22 @@ impl TableBuilder {
         self
     }
 
+    /// Centre the cells vertically instead of top-aligning them.
+    pub fn align_middle(mut self) -> Self {
+        self.align_middle = true;
+        self
+    }
+
     fn markup(&self) -> Markup {
-        let class = if self.extra_classes.is_empty() {
-            "data-table".to_string()
-        } else {
-            format!("data-table {}", self.extra_classes)
-        };
+        let class = [
+            "data-table",
+            if self.align_middle { "data-table-middle" } else { "" },
+            self.extra_classes.as_str(),
+        ]
+        .into_iter()
+        .filter(|c| !c.is_empty())
+        .collect::<Vec<_>>()
+        .join(" ");
         html! {
             div class="data-table-scroll" role="region" aria-label=(self.caption) tabindex="0" {
                 table class=(class) id=[self.id.as_deref()] data-testid=[self.test_id.as_deref()] {

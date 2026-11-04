@@ -37,6 +37,24 @@ impl ButtonVariant {
     }
 }
 
+/// The button's size; `Compact` matches the height of a `badge-md`.
+#[derive(Clone, Copy, Debug, Default)]
+pub enum ButtonSize {
+    #[default]
+    Default,
+    Compact,
+}
+
+impl ButtonSize {
+    /// Complete, literal class string; empty for `Default`.
+    pub fn css_class(self) -> &'static str {
+        match self {
+            ButtonSize::Default => "",
+            ButtonSize::Compact => "btn-compact",
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default)]
 pub enum ButtonType {
     #[default]
@@ -61,6 +79,7 @@ impl ButtonType {
 pub struct ButtonBuilder {
     label: Markup,
     variant: ButtonVariant,
+    size: ButtonSize,
     button_type: ButtonType,
     form_action: Option<String>,
     name: Option<String>,
@@ -79,6 +98,7 @@ pub fn button(label: impl Render) -> ButtonBuilder {
     ButtonBuilder {
         label: label.render(),
         variant: ButtonVariant::default(),
+        size: ButtonSize::default(),
         button_type: ButtonType::default(),
         form_action: None,
         name: None,
@@ -96,6 +116,12 @@ impl ButtonBuilder {
     /// Set the visual variant (default `Primary`).
     pub fn variant(mut self, variant: ButtonVariant) -> Self {
         self.variant = variant;
+        self
+    }
+
+    /// Set the size (default `Default`).
+    pub fn size(mut self, size: ButtonSize) -> Self {
+        self.size = size;
         self
     }
 
@@ -169,11 +195,15 @@ impl ButtonBuilder {
     }
 
     fn markup(&self) -> Markup {
-        let class = if self.extra_classes.is_empty() {
-            self.variant.css_class().to_string()
-        } else {
-            format!("{} {}", self.variant.css_class(), self.extra_classes)
-        };
+        let class = [
+            self.variant.css_class(),
+            self.size.css_class(),
+            self.extra_classes.as_str(),
+        ]
+        .into_iter()
+        .filter(|part| !part.is_empty())
+        .collect::<Vec<_>>()
+        .join(" ");
         html! {
             button
                 class=(class)

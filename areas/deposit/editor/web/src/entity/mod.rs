@@ -446,6 +446,7 @@ impl EntityView<'_> {
             vocabulary_path: None,
             focus: None,
             without_language: &[],
+            label_hidden: false,
         }
     }
 
@@ -645,7 +646,7 @@ fn form(view: &EntityView<'_>) -> Markup {
 fn entity_field_row(field: &Field, draft: &ProjectDraft, mode: Mode, rows: Rows<'_>) -> Markup {
     if mode != Mode::Editable {
         // stated renders whatever Value is stored, whichever shape the field has.
-        return stated(field, draft, None);
+        return stated(field, draft, None, false);
     }
     match field.shape {
         Some(Shape::Text(_)) => scalar_text(field, draft, rows),

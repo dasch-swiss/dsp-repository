@@ -21,7 +21,7 @@ use editor_core::agents::AgentScope;
 use editor_core::draft::ProjectDraft;
 use editor_core::form::format::Finding;
 use editor_core::form::obligation::{section_progress, SectionProgress};
-use editor_core::form::registry::{sections_for, Audience, Section};
+use editor_core::form::registry::{sections_for, Audience, Field, Section};
 use editor_core::form::submit::LineWithoutLanguage;
 use editor_core::form::FormBody;
 use editor_core::proposals::{EntityProposal, ProposalKind};
@@ -614,6 +614,7 @@ impl SectionView<'_> {
     /// its combobox is typed in, `search_path`, and the vocabulary search a discipline, place or
     /// period picker runs, `vocabulary_path`.
     fn rows<'a>(&'a self, search_path: &'a str, vocabulary_path: &'a str) -> Rows<'a> {
+        let fields: Vec<&Field> = self.section.fields_for(self.audience).collect();
         Rows {
             posted: self.posted,
             submitted: self.submitted,
@@ -640,6 +641,7 @@ impl SectionView<'_> {
                 })
                 .flatten(),
             without_language: &self.without_language,
+            label_hidden: label_is_heading(self.section, &fields),
         }
     }
 }
@@ -848,6 +850,12 @@ fn status(view: &SectionView<'_>) -> Markup {
 
 const AUTOSAVE_NOT_COMBOBOX: &str = "!evt.target.matches('[role=combobox]')";
 
+/// Whether the one field a section shows repeats the section's heading, so its own label is
+/// only for a screen reader.
+fn label_is_heading(section: &Section, fields: &[&Field]) -> bool {
+    matches!(fields, [only] if only.label == section.title)
+}
+
 /// The section's fields, and the control that saves them.
 fn form(view: &SectionView<'_>) -> Markup {
     // Only on a form a save can change: a read-only one has no controls for
@@ -863,6 +871,7 @@ fn form(view: &SectionView<'_>) -> Markup {
     let action = view.action();
     let agents_path = format!("{action}/agents");
     let vocabulary_path = format!("{action}/vocabulary");
+    let fields: Vec<&Field> = view.section.fields_for(view.audience).collect();
     html! {
         (persistent_box(view))
         h2 class="font-display text-xl mb-4" { (view.section.title) }
@@ -890,7 +899,7 @@ fn form(view: &SectionView<'_>) -> Markup {
             @if let Some(baseline) = view.baseline {
                 input type="hidden" name=(BASELINE) value=(baseline);
             }
-            @for field in view.section.fields_for(view.audience) {
+            @for field in &fields {
                 // No obligation pill here: it is inside the field's own label, the only
                 // way it reaches a screen reader now that nothing is required.
                 ({
@@ -1494,6 +1503,115 @@ mod tests {
             region.contains("Temporal coverage"),
             "the field's label, not its member name: {region}"
         );
+    }
+
+    /// The opening tag of the `.field-label` element holding `label`.
+    fn label_tag<'a>(page: &'a str, label: &str) -> &'a str {
+        page.match_indices(r#"class="field-label"#)
+            .chain(page.match_indices(r#"class="field-label sr-only"#))
+            .find_map(|(at, _)| {
+                let end = at + page[at..].find('>')?;
+                page[end + 1..].starts_with(label).then(|| &page[at..end])
+            })
+            .unwrap_or_else(|| panic!("no {label:?} field label: {page}"))
+    }
+
+    /// Whether `label` is the opening content of an `sr-only` element.
+    fn label_is_screen_reader_only(page: &str, label: &str) -> bool {
+        page.match_indices(label).any(|(at, _)| {
+            let tag = &page[page[..at].rfind('<').unwrap_or(0)..at];
+            tag.ends_with('>') && tag.contains("sr-only")
+        })
+    }
+
+    #[test]
+    fn a_section_whose_only_field_repeats_its_heading_hides_the_label_for_sighted_readers_only() {
+        let draft = published_draft();
+        let out = page(&view(&draft, "publications", Audience::Everyone)).into_string();
+        let fieldset = out
+            .find(r#"<fieldset class="field field-group" id="publications""#)
+            .expect("the list");
+        let legend = out[fieldset..].find("<legend").expect("a legend") + fieldset;
+        assert!(
+            out[legend..].starts_with(r#"<legend class="field-label"><span class="sr-only">Publications</span>"#),
+            "{out}"
+        );
+        // Still the fieldset's first child, so the group keeps its name.
+        let opening_end = out[fieldset..].find('>').expect("end of the fieldset tag") + fieldset + 1;
+        assert_eq!(legend, opening_end, "{out}");
+    }
+
+    #[test]
+    fn the_obligation_pill_stays_in_view_when_the_label_is_hidden() {
+        let draft = published_draft();
+        let out = page(&view(&draft, "publications", Audience::Everyone)).into_string();
+        let legend = out.find("<legend").expect("a legend");
+        let legend = &out[legend..legend + out[legend..].find("</legend>").expect("a closed legend")];
+        let pill = legend.find("Optional").expect("the pill in the legend");
+        let hidden_end = legend.find("</span>").expect("the hidden name closes");
+        assert_eq!(legend.matches("sr-only").count(), 1, "{legend}");
+        assert!(hidden_end < pill, "the pill sits outside the hidden name: {legend}");
+    }
+
+    #[test]
+    fn a_field_rdu_accepted_keeps_its_pill_in_view_under_its_heading_too() {
+        let draft = published_draft();
+        let accepted = ["publications".to_string()];
+        let mut view = view(&draft, "publications", Audience::Everyone);
+        view.accepted_fields = &accepted;
+        let out = page(&view).into_string();
+        let label = out.find(r#"id="publications-label""#).expect("the stated label");
+        let label = &out[label..label + out[label..].find("</p>").expect("a closed label")];
+        assert!(label.contains(r#"<span class="sr-only">Publications</span>"#), "{label}");
+        assert!(label.contains("Optional") && !label.contains(r#"sr-only">Optional"#), "{label}");
+    }
+
+    #[test]
+    fn a_display_only_section_titled_like_its_field_hides_that_label_too() {
+        let draft = published_draft();
+        let out = page(&view(&draft, "legal", Audience::RduOnly)).into_string();
+        assert!(out.contains(r#"<p class="sr-only" id="legalInfo-label">Legal info"#), "{out}");
+        assert!(out.contains(r#"aria-labelledby="legalInfo-label""#), "{out}");
+    }
+
+    #[test]
+    fn a_label_that_differs_from_the_heading_or_shares_it_with_others_stays_visible() {
+        let draft = published_draft();
+        let image = page(&view(&draft, "image", Audience::Everyone)).into_string();
+        assert!(!label_tag(&image, "Project image credit").contains("sr-only"), "{image}");
+        let contributors = page(&view(&draft, "contributors", Audience::Everyone)).into_string();
+        assert!(
+            !contributors.contains(r#"<legend class="field-label sr-only""#),
+            "{contributors}"
+        );
+    }
+
+    #[test]
+    fn every_section_whose_single_field_repeats_its_title_renders_that_label_screen_reader_only() {
+        // Sweeps every section of this shape, so one whose widget ignores `label_hidden` fails
+        // here.
+        let draft = published_draft();
+        let mut checked = 0;
+        for audience in [Audience::Everyone, Audience::RduOnly] {
+            for section in editor_core::form::registry::SECTIONS {
+                let fields: Vec<_> = section.fields_for(audience).collect();
+                let [field] = fields[..] else { continue };
+                if field.label != section.title {
+                    continue;
+                }
+                checked += 1;
+                let out = page(&view(&draft, section.id, audience)).into_string();
+                assert!(
+                    label_is_screen_reader_only(&out, field.label),
+                    "{} ({audience:?}) renders its label visibly under a heading of the same words: \
+                     the widget for shape {:?} must honour `Rows::label_hidden` (keep the name \
+                     `sr-only`, leave the obligation pill in view): {out}",
+                    section.id,
+                    field.shape
+                );
+            }
+        }
+        assert!(checked >= 2, "Publications and Legal info are such sections");
     }
 
     #[test]

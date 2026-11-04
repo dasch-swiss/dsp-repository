@@ -1,7 +1,7 @@
 @layer components {
   /*
    * The list sits inside the `field-group` fieldset, so the legend, hint, error
-   * and the invalid left rule are already handled. What is here is the rows.
+   * and the invalid left rule are already handled; what is here is the rows.
    */
 
   .repeatable-rows {
@@ -42,11 +42,9 @@
     @apply text-neutral-600;
   }
 
-  /* Both controls are buttons rather than links, so they inherit `btn`; these
-   * only shrink them to a row-level action. */
   .repeatable-remove,
   .repeatable-add {
-    @apply shrink-0 px-3 py-1 text-sm;
+    @apply shrink-0;
   }
 
   .repeatable-add {

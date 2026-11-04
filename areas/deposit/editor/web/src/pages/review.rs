@@ -31,7 +31,7 @@ use editor_core::review::{Decision, DECISION_PREFIX};
 use maud::{html, Markup};
 use mosaic_tiles::alert::{alert, AlertVariant};
 use mosaic_tiles::badge::{badge, BadgeVariant};
-use mosaic_tiles::button::{button, ButtonType, ButtonVariant};
+use mosaic_tiles::button::{button, ButtonSize, ButtonType, ButtonVariant};
 use mosaic_tiles::link::link;
 use mosaic_tiles::radio_group::radio_group;
 use mosaic_tiles::table::{table, table_cell, table_head_cell};
@@ -151,7 +151,7 @@ fn pending_table(rows: &[QueueRow<'_>]) -> Markup {
         @for row in rows { (pending_row(row)) }
     };
     html! {
-        (table("Pending submissions").head(head).body(body))
+        (table("Pending submissions").align_middle().head(head).body(body))
     }
 }
 
@@ -212,6 +212,7 @@ fn review_control(row: &QueueRow<'_>) -> Markup {
                 button(label)
                     .button_type(ButtonType::Submit)
                     .variant(ButtonVariant::Primary)
+                    .size(ButtonSize::Compact)
                     .aria_label(format!("{label} {}", row.shortcode))
             })
         }
@@ -1392,6 +1393,7 @@ mod tests {
         assert!(out.contains(r#"<form method="post" action="/review/0801d""#), "{out}");
         assert!(out.contains(r#"value="claim""#), "{out}");
         assert!(!out.contains(r#"<a href="/review/0801d""#), "{out}");
+        assert!(out.contains("btn-compact"), "the queue's control is compact: {out}");
     }
 
     #[test]

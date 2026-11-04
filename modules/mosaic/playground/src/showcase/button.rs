@@ -1,7 +1,7 @@
 //! Button showcase. All examples are static renders.
 
 use maud::{html, Markup, Render};
-use mosaic_tiles::button::{button, ButtonType, ButtonVariant};
+use mosaic_tiles::button::{button, ButtonSize, ButtonType, ButtonVariant};
 use mosaic_tiles::icon::{icon, CopyPaste, IconChevronRight, IconSearch, Info, LinkExternal, Mail};
 
 use super::{example, page_header, page_layout};
@@ -19,6 +19,15 @@ fn examples() -> Markup {
                 "Button Variants",
                 "Available button styles: Primary, Secondary, Outline, Ghost, and Soft",
                 variants(),
+            )
+        })
+        ({
+            example(
+                "button-sizes",
+                "Compact Size",
+                "`.size(ButtonSize::Compact)` for a button inside a table row or other dense list; it is as tall as \
+                 a medium badge",
+                sizes(),
             )
         })
         ({
@@ -78,6 +87,15 @@ fn variants() -> Markup {
             (btn(ButtonVariant::Outline, "Outline Button"))
             (btn(ButtonVariant::Ghost, "Ghost Button"))
             (btn(ButtonVariant::Soft, "Soft Button"))
+        }
+    }
+}
+
+fn sizes() -> Markup {
+    html! {
+        div class="flex gap-4 items-center" {
+            (button("Default size"))
+            (button("Compact size").size(ButtonSize::Compact))
         }
     }
 }

@@ -29,4 +29,8 @@
   .data-table-cell {
     @apply border-b border-neutral-200 px-3 py-2 align-top;
   }
+
+  .data-table-middle .data-table-cell {
+    @apply align-middle;
+  }
 }

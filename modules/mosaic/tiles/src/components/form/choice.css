@@ -11,16 +11,40 @@
    * appears shifts every choice sideways at the moment the reader is looking for
    * what went wrong.
    *
+   * `-ml-3.5` is the rule (2px) plus the padding (12px): the rule hangs in the
+   * gutter and the content lands on the column edge, level with a plain field.
+   * The consuming layout needs at least 14px of gutter inline-start of the form,
+   * or the rule is clipped.
+   *
+   * Inside a repeatable row the gutter is only the row's 1px border plus its 12px
+   * padding, so the pull is capped at 12px, keeping the rule inside the row's
+   * border, with padding = pull - 2px to keep content level.
+   *
    * `min-inline-size: 0` is the fieldset-specific trap: a fieldset has a UA
    * `min-inline-size: min-content`, so unlike a div it refuses to shrink below
    * its widest child and pushes out of a grid column instead of wrapping.
    */
   .field-group {
-    @apply min-w-0 border-0 border-l-2 border-transparent pl-3;
+    @apply -ml-3.5 min-w-0 border-0 border-l-2 border-transparent pl-3;
+  }
+
+  .repeatable-row .field-group {
+    @apply -ml-3 pl-2.5;
   }
 
   .field-group[data-invalid='true'] {
     @apply border-danger-700;
+  }
+
+  /* Forced colours paints the transparent idle rule as a line on every group: Canvas hides it, CanvasText marks only the invalid one. */
+  @media (forced-colors: active) {
+    .field-group {
+      border-left-color: Canvas;
+    }
+
+    .field-group[data-invalid='true'] {
+      border-left-color: CanvasText;
+    }
   }
 
   .field-choices {

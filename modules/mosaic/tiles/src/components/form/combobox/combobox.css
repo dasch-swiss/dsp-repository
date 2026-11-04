@@ -1,11 +1,29 @@
 @layer components {
+  .combobox {
+    @apply flex flex-wrap gap-x-2 gap-y-1;
+  }
+
+  /* The 10rem basis is the input's floor: a narrower row wraps the button below
+   * instead of squeezing the input. */
+  .combobox > .field-input {
+    @apply min-w-0 flex-[1_1_10rem];
+  }
+
+  .combobox > .btn {
+    @apply shrink-0;
+  }
+
+  .combobox > .combobox-results {
+    @apply basis-full;
+  }
+
   /*
    * `:empty` hides the panel when the server or Escape leaves it with no children.
    * The option focus outline is inset because the panel scrolls and would clip it.
    * The detail line inside an option stays no lighter than neutral-600 (contrast).
    */
   .combobox-results {
-    @apply mt-1 max-h-72 overflow-y-auto rounded border border-neutral-500 bg-white shadow-md;
+    @apply max-h-72 overflow-y-auto rounded border border-neutral-500 bg-white shadow-md;
   }
 
   .combobox-results:empty {

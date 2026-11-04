@@ -643,7 +643,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - Registration is in `tiles/src/components/mod.rs`, not `lib.rs`; `modules/mosaic/CLAUDE.md`
     and the `add-mosaic-component` skill say `lib.rs` — stale, fix on next touch (**docs-only**).
 - **Durable state:** none. The playground E2E suite is dormant (no recipe, no CI job runs it).
-- **Fingerprint:** `e94f849f2763`
+- **Fingerprint:** `187b4146e63a`
 
 ### shared/fair
 

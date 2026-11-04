@@ -61,6 +61,16 @@ impl<'a> FieldShell<'a> {
         }
     }
 
+    /// The label's class: the one place a hidden label's `sr-only` is spelled,
+    /// for the `<label>` and the group's `<legend>` alike.
+    fn label_class(&self) -> &'static str {
+        if self.label_hidden {
+            "field-label sr-only"
+        } else {
+            "field-label"
+        }
+    }
+
     /// `aria-invalid`'s value, or `None` when the field is valid. A field is
     /// invalid exactly when it has a message, which is why the two cannot be set
     /// apart from each other.
@@ -85,14 +95,9 @@ impl<'a> FieldShell<'a> {
     pub fn render(&self, control: Markup) -> Markup {
         let hint_id = self.hint_id();
         let counter_id = self.counter_id();
-        let label_class = if self.label_hidden {
-            "field-label sr-only"
-        } else {
-            "field-label"
-        };
         html! {
             div class="field" {
-                label class=(label_class) for=(self.id) { (self.label) }
+                label class=(self.label_class()) for=(self.id) { (self.label) }
                 (control)
                 @if let Some(hint) = self.hint {
                     p class="field-hint" id=[hint_id.as_deref()] { (hint) }
@@ -147,7 +152,7 @@ pub(super) fn group_shell(
             aria-describedby=[described_by.as_deref()]
             data-invalid=[shell.aria_invalid()]
         {
-            legend class="field-label" { (legend) }
+            legend class=(shell.label_class()) { (legend) }
             @if let Some(hint) = hint {
                 p class="field-hint" id=[hint_id.as_deref()] { (hint) }
             }

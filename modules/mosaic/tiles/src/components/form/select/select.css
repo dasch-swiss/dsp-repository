@@ -1,16 +1,31 @@
 @layer components {
   /*
-   * The box is `field-input`, shared with the text field and textarea. What a
-   * `<select>` needs on top is a background of its own: `field-input` sets none,
-   * and a select rendered on a tinted surface would otherwise show the surface
-   * through the control, which reads as disabled.
-   *
-   * The native disclosure arrow is kept. Replacing it means `appearance: none`
-   * plus a background image, and the native control is the one that renders
-   * correctly in forced-colors mode and on a phone, where the picker is the
-   * platform's own.
+   * The background is opaque white: a tinted surface would show through and read
+   * as disabled. The chevron is inset 0.75rem like the text; `padding-right`
+   * reserves inset + 1rem arrow + gap.
+   * Arrow colour is neutral-700 (#404a55, 9:1 on white, above the 3:1 of SC 1.4.11).
+   * The doubled selector beats `.field-input`'s `px-3`, which is imported after this file.
    */
-  .field-select {
-    @apply max-w-full bg-white;
+  .field-input.field-select {
+    @apply max-w-full;
+    appearance: none;
+    background-color: white;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23404a55' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1rem 1rem;
+    padding-right: 2.25rem;
+  }
+
+  /*
+   * The chevron's fixed stroke colour ignores the user's system colours while the
+   * native arrow follows them, so the native control returns.
+   */
+  @media (forced-colors: active) {
+    .field-input.field-select {
+      appearance: auto;
+      background-image: none;
+      padding-right: 0.75rem;
+    }
   }
 }

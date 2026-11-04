@@ -1,4 +1,6 @@
 use maud::{html, Markup};
+use mosaic_tiles::badge::badge;
+use mosaic_tiles::button::{button, ButtonSize};
 use mosaic_tiles::link::link;
 use mosaic_tiles::table::{table, table_cell, table_cell_with_class, table_head_cell};
 
@@ -29,6 +31,14 @@ fn examples() -> Markup {
                 "Per-column cell classes",
                 "A monospace address column and a controls column that must not wrap.",
                 cell_classes(),
+            )
+        })
+        ({
+            example(
+                "table-middle",
+                "Vertically centred",
+                "`.align_middle()` for rows of single lines and controls of one height, so their centres line up.",
+                middle(),
             )
         })
         ({
@@ -105,6 +115,30 @@ fn cell_classes() -> Markup {
 fn controls() -> Markup {
     html! {
         div class="flex gap-3" { (link("Edit", "#")) (link("Remove", "#")) }
+    }
+}
+
+fn middle() -> Markup {
+    let head = html! {
+        tr {
+            (table_head_cell("Name"))
+            (table_head_cell("Role"))
+            th class="data-table-head-cell" scope="col" {
+                span class="sr-only" { "Actions" }
+            }
+        }
+    };
+    let body = html! {
+        @for row in &ROWS {
+            tr {
+                (table_cell(row.name))
+                (table_cell(badge(row.role)))
+                (table_cell(button("Open").size(ButtonSize::Compact)))
+            }
+        }
+    };
+    html! {
+        (table("Accounts, centred").align_middle().head(head).body(body))
     }
 }
 

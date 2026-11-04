@@ -31,7 +31,7 @@ use maud::{html, Markup, Render};
 
 use super::shell::group_shell;
 use crate::builder::ComponentBuilder;
-use crate::button::{button, ButtonVariant};
+use crate::button::{button, ButtonSize, ButtonVariant};
 
 /// One row: its opaque key and the caller's fields for it.
 struct Row {
@@ -174,7 +174,11 @@ impl RepeatableListBuilder {
         let id = self.resolved_id();
         let row_field = format!("{}.row", self.name);
         // The remove button's own classes, so the heading's spacer is exactly as wide.
-        let remove_spacer_class = format!("{} repeatable-remove", ButtonVariant::Secondary.css_class());
+        let remove_spacer_class = format!(
+            "{} {} repeatable-remove",
+            ButtonVariant::Secondary.css_class(),
+            ButtonSize::Compact.css_class()
+        );
         let add_label = self.add_label.clone().unwrap_or_else(|| {
             html! {
                 "Add"
@@ -207,6 +211,7 @@ impl RepeatableListBuilder {
                             ({
                                 button("Remove")
                                     .variant(ButtonVariant::Secondary)
+                                    .size(ButtonSize::Compact)
                                     .class("repeatable-remove")
                                     .form_action(
                                         format!("{}/{}/remove", self.rows_action, row.key),
@@ -223,6 +228,7 @@ impl RepeatableListBuilder {
                 ({
                     button(add_label)
                         .variant(ButtonVariant::Secondary)
+                        .size(ButtonSize::Compact)
                         .class("repeatable-add")
                         .form_action(format!("{}/add", self.rows_action))
                 })
@@ -293,7 +299,7 @@ mod tests {
         assert!(heading < out.find("<ol").expect("the rows"), "{out}");
         assert!(
             out[heading..].contains(
-                r#"<span class="btn btn-secondary repeatable-remove" aria-hidden="true">Remove</span>"#
+                r#"<span class="btn btn-secondary btn-compact repeatable-remove" aria-hidden="true">Remove</span>"#
             ),
             "{out}"
         );

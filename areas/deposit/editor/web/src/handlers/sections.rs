@@ -24,7 +24,7 @@ use axum::Form;
 use chrono::{DateTime, Utc};
 use editor_core::draft::ProjectDraft;
 use editor_core::form::registry::{self, Audience, Section};
-use editor_core::form::submit::over_cap;
+use editor_core::form::submit::{lines_still_without_language, lines_without_language, over_cap, LineWithoutLanguage};
 use editor_core::form::{apply, format, FormBody, Shape};
 use editor_core::proposals::{EntityProposal, ProposalFault, ProposalKind, ProposalOperation, ProposalStatus};
 use editor_core::records::{
@@ -147,6 +147,9 @@ fn unlisted_language_message(value: &str) -> String {
 const SUBMIT_REFUSED_SENTINEL: &str = "This project cannot be submitted yet: a field holds a word the repository \
                                        reserves for \"no value yet\". Your draft has been saved, and each one is \
                                        named below with a link to it.";
+
+const SUBMIT_REFUSED_LANGUAGE: &str = "This project cannot be submitted yet: a line has text but no language. Your \
+                                       draft has been saved without that line, which is marked below.";
 
 const SUBMIT_REFUSED_FORMAT: &str = "This project cannot be submitted yet: some values are not in the format they \
                                      need. Your draft has been saved, and each field that needs changing is named \
@@ -922,10 +925,39 @@ pub(crate) async fn act(
         };
     }
 
+    // Read off the body before the appliers run, which drop such a line. Only an explicit save or
+    // submit: an autosave fires before the select is reached, and a picker's intent is not a save.
+    let without_language = if matches!(intent, Intent::Save | Intent::Submit) && !keep_posted {
+        lines_without_language(context.audience, context.section, &context.accepted_fields, &body)
+    } else {
+        Vec::new()
+    };
+
     let record = match apply_and_store(&state, &user, &shortcode, &mut context, &headers, &body).await {
         Ok(record) => record,
         Err(response) => return response,
     };
+
+    // Render with the body: a redirect or a render without it would take the line off the screen.
+    if !without_language.is_empty() {
+        span.record("form.outcome", "language_missing");
+        tracing::info!(
+            fields.without_language = without_language.len(),
+            "re-rendered a write carrying a line with no language"
+        );
+        let rendering = Rendering {
+            notice: Some(if intent == Intent::Submit {
+                page::Notice::Refused(SUBMIT_REFUSED_LANGUAGE)
+            } else {
+                page::Notice::Saved
+            }),
+            without_language: &without_language,
+            keep_posted: true,
+            focus_finding: true,
+            ..Rendering::default()
+        };
+        return respond(&state, &user, &shortcode, &context, &headers, rendering);
+    }
 
     if intent == Intent::Save {
         span.record("form.outcome", "saved");
@@ -2088,9 +2120,10 @@ struct Rendering<'a> {
     /// failing, before the write. Rows match stored values by value, so a value typed
     /// into a row that equals one the field already held failing is flagged too.
     before_autosave: Option<&'a ProjectDraft>,
-    /// Whether the first control holding a format finding takes focus: set by the format
-    /// refusal, whose fix is at that control.
+    /// Whether the first control holding a finding takes focus: set by the format refusal and by
+    /// a write carrying a line with no language, whose fix is at that control.
     focus_finding: bool,
+    without_language: &'a [LineWithoutLanguage],
 }
 
 /// The section region, as the enhanced path's `datastar-patch-elements`.
@@ -2171,6 +2204,15 @@ fn view<'a>(
     // autosave's render, which hides a finding on a value typed since the last write;
     // a `GET` or a reload of the same draft shows it.
     let fields = || context.section.fields_for(context.audience);
+    // A save or submit flags every line with no language; any other render that keeps the body
+    // keeps the flags on lines still without one, so the autosave the save's click set off does
+    // not clear them.
+    let without_language = match (rendering.without_language, posted) {
+        ([], Some(body)) => {
+            lines_still_without_language(context.audience, context.section, &context.accepted_fields, body)
+        }
+        (lines, _) => lines.to_vec(),
+    };
     let mut format_findings = format::findings(fields(), &context.draft, posted);
     if let Some(before) = rendering.before_autosave {
         let shown = format::findings(fields(), before, posted);
@@ -2236,6 +2278,7 @@ fn view<'a>(
         submitted: context.posted,
         adding_row: rendering.adding_row,
         focus_finding: rendering.focus_finding,
+        without_language,
         rows_action: format!("/projects/{shortcode}/sections/{}/fields", context.section.id),
     }
 }
@@ -3226,6 +3269,121 @@ mod tests {
             "the row stays, on the branch just chosen: {body}"
         );
         assert_eq!(stored_draft(&state, "0801d").await.get("disciplines"), None);
+    }
+
+    /// A stored keyword, then a line typed in a new row whose language the depositor has not
+    /// reached yet.
+    const KEYWORD_WITHOUT_LANGUAGE: &str = "keywords.row=r0&keywords.r0.lang=en&keywords.r0.text=manuscripts\
+                                            &keywords.row=r1&keywords.r1.lang=&keywords.r1.text=Handschriften";
+    const LANGUAGE_ERROR: &str = "Choose a language for this line.";
+
+    #[tokio::test]
+    async fn an_autosave_keeps_a_typed_line_that_has_no_language_yet_and_stores_nothing_for_it() {
+        let (state, app, session) = a_depositor_on("section-autosave-no-language").await;
+
+        let body = body_string(as_session(&app, enhanced(DATASET, KEYWORD_WITHOUT_LANGUAGE), &session).await).await;
+
+        assert!(body.contains(r#"value="Handschriften""#), "the line stays on screen: {body}");
+        assert!(body.contains(r#"<option value="" selected>Choose language</option>"#), "{body}");
+        assert!(
+            !body.contains(LANGUAGE_ERROR),
+            "the depositor is still on the way to the select: {body}"
+        );
+        assert_eq!(
+            stored_draft(&state, "0801d").await.get("keywords"),
+            Some(&json!([{ "en": "manuscripts" }])),
+            "only the line with a language is stored"
+        );
+    }
+
+    #[tokio::test]
+    async fn an_explicit_save_stores_the_rest_and_keeps_the_line_with_an_error_on_its_language() {
+        let (state, app, session) = a_depositor_on("section-save-no-language").await;
+
+        let response = as_session(
+            &app,
+            post(DATASET, &format!("{KEYWORD_WITHOUT_LANGUAGE}&intent=save")),
+            &session,
+        )
+        .await;
+        assert_eq!(
+            response.status(),
+            StatusCode::OK,
+            "re-rendered, not redirected: the line is not stored"
+        );
+        let body = body_string(response).await;
+
+        assert!(body.contains(r#"value="Handschriften""#), "the line stays on screen: {body}");
+        assert_eq!(body.matches(LANGUAGE_ERROR).count(), 1, "{body}");
+        assert!(body.contains("it was not saved and is marked below"), "{body}");
+        let select = body.find(r#"id="keywords-r1-0-lang""#).expect("the flagged select");
+        let select_end = body[select..].find('>').expect("the tag ends") + select;
+        assert!(body[select..select_end].contains("aria-invalid"), "{body}");
+        assert!(body[select..select_end].contains("autofocus"), "focus goes to it: {body}");
+        assert_eq!(
+            stored_draft(&state, "0801d").await.get("keywords"),
+            Some(&json!([{ "en": "manuscripts" }])),
+            "everything storable was stored"
+        );
+    }
+
+    /// Clicking Save blurs the text box, so the form's debounced autosave fires a second after the
+    /// save's answer and re-renders the form from what the page then posts.
+    #[tokio::test]
+    async fn the_autosave_after_a_save_keeps_the_error_on_a_line_still_without_a_language() {
+        let (_state, app, session) = a_depositor_on("section-save-then-autosave-no-language").await;
+        let marker = r#"name="keywords.r1.lang-missing" value="0""#;
+
+        let save = enhanced(DATASET, &format!("{KEYWORD_WITHOUT_LANGUAGE}&intent=save"));
+        let saved = body_string(as_session(&app, save, &session).await).await;
+        assert_eq!(saved.matches(LANGUAGE_ERROR).count(), 1, "{saved}");
+        assert!(saved.contains(marker), "{saved}");
+
+        let autosave = enhanced(DATASET, &format!("{KEYWORD_WITHOUT_LANGUAGE}&keywords.r1.lang-missing=0"));
+        let autosaved = body_string(as_session(&app, autosave, &session).await).await;
+        assert_eq!(autosaved.matches(LANGUAGE_ERROR).count(), 1, "{autosaved}");
+        assert!(autosaved.contains(marker), "flagged again on the autosave after: {autosaved}");
+        assert!(autosaved.contains("it was not saved and is marked below"), "{autosaved}");
+        let select = autosaved.find(r#"id="keywords-r1-0-lang""#).expect("the flagged select");
+        let select_end = autosaved[select..].find('>').expect("the tag ends") + select;
+        assert!(
+            !autosaved[select..select_end].contains("autofocus"),
+            "an autosave moves no focus: {autosaved}"
+        );
+
+        let chosen = KEYWORD_WITHOUT_LANGUAGE.replace("keywords.r1.lang=&", "keywords.r1.lang=de&");
+        let autosave = enhanced(DATASET, &format!("{chosen}&keywords.r1.lang-missing=0"));
+        let fixed = body_string(as_session(&app, autosave, &session).await).await;
+        assert!(!fixed.contains(LANGUAGE_ERROR), "a language was chosen: {fixed}");
+        assert!(!fixed.contains("lang-missing"), "{fixed}");
+    }
+
+    #[tokio::test]
+    async fn submit_refuses_a_line_with_no_language_after_storing_the_draft_and_creates_nothing() {
+        let (state, app, session) = a_depositor_on("section-submit-no-language").await;
+
+        let response = as_session(
+            &app,
+            post(DATASET, &format!("{KEYWORD_WITHOUT_LANGUAGE}&intent=submit")),
+            &session,
+        )
+        .await;
+        assert_eq!(response.status(), StatusCode::OK, "a refusal re-renders");
+        let body = body_string(response).await;
+
+        assert!(body.contains(SUBMIT_REFUSED_LANGUAGE), "{body}");
+        assert_eq!(body.matches(LANGUAGE_ERROR).count(), 1, "{body}");
+        assert!(body.contains(r#"value="Handschriften""#), "the line stays on screen: {body}");
+        assert_eq!(
+            stored_draft(&state, "0801d").await.get("keywords"),
+            Some(&json!([{ "en": "manuscripts" }])),
+            "the draft write happens first"
+        );
+        assert_eq!(
+            SubmissionRepository::find_by_shortcode(&*state.editor, "0801d").await.unwrap(),
+            None,
+            "nothing was submitted"
+        );
     }
 
     #[tokio::test]

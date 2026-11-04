@@ -21,6 +21,19 @@
     @apply flex items-start gap-3 rounded border border-neutral-200 p-3;
   }
 
+  /*
+   * Laid out as a row is, borders and padding included, so the caller's columns
+   * line up with the rows' below it.
+   */
+  .repeatable-heading {
+    @apply flex items-end gap-3 border border-transparent px-3;
+  }
+
+  /* Keeps the remove button's width and none of its height. */
+  .repeatable-heading .repeatable-remove {
+    @apply invisible h-0 border-y-0 py-0;
+  }
+
   .repeatable-row-body {
     @apply flex min-w-0 flex-1 flex-col gap-2;
   }

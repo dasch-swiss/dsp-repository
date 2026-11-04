@@ -46,6 +46,7 @@ pub struct RepeatableListBuilder {
     legend: Markup,
     rows_action: String,
     rows: Vec<Row>,
+    heading: Option<Markup>,
     item_noun: String,
     add_label: Option<Markup>,
     add_hidden: bool,
@@ -80,6 +81,7 @@ pub fn repeatable_list(
         legend: legend.render(),
         rows_action: rows_action.into(),
         rows: Vec::new(),
+        heading: None,
         item_noun: DEFAULT_ITEM_NOUN.to_string(),
         add_label: None,
         add_hidden: false,
@@ -109,6 +111,15 @@ impl RepeatableListBuilder {
             "a row key becomes a path segment of the remove URL, so it must be [A-Za-z0-9_-]+, got {key:?}"
         );
         self.rows.push(Row { key, content: content.render() });
+        self
+    }
+
+    /// Column headings shown once above the rows, outside their boxes, for rows whose fields
+    /// share one layout. `heading` is laid out as a row body is, and a space as wide as the remove
+    /// button is kept beside it, so a grid shared by `heading` and each row lines up. Not shown
+    /// while the list has no rows.
+    pub fn heading(mut self, heading: impl Render) -> Self {
+        self.heading = Some(heading.render());
         self
     }
 
@@ -162,6 +173,8 @@ impl RepeatableListBuilder {
     fn markup(&self) -> Markup {
         let id = self.resolved_id();
         let row_field = format!("{}.row", self.name);
+        // The remove button's own classes, so the heading's spacer is exactly as wide.
+        let remove_spacer_class = format!("{} repeatable-remove", ButtonVariant::Secondary.css_class());
         let add_label = self.add_label.clone().unwrap_or_else(|| {
             html! {
                 "Add"
@@ -178,6 +191,14 @@ impl RepeatableListBuilder {
                     p class="repeatable-empty" { (message) }
                 }
             } @else {
+                @if let Some(heading) = &self.heading {
+                    div class="repeatable-heading" {
+                        div class="repeatable-row-body" { (heading) }
+                        // Holds the remove button's width; hidden from sight and from assistive
+                        // technology.
+                        span class=(remove_spacer_class) aria-hidden="true" { "Remove" }
+                    }
+                }
                 ol class="repeatable-rows" data-testid=[self.test_id.as_deref()] {
                     @for (position, row) in self.rows.iter().enumerate() {
                         li class="repeatable-row" {
@@ -262,6 +283,26 @@ mod tests {
         let second = out.find(r#"name="keywords.row" value="k2b9""#).expect("second row key");
         assert!(first < second, "{out}");
         assert_eq!(out.matches(r#"name="keywords.row""#).count(), 2, "{out}");
+    }
+
+    #[test]
+    fn a_heading_sits_once_above_the_rows_outside_every_row_box_and_not_on_an_empty_list() {
+        let out = keywords().heading("Keyword").build().into_string();
+        let heading = out.find(r#"<div class="repeatable-heading">"#).expect("the heading");
+        assert_eq!(out.matches("repeatable-heading").count(), 1, "{out}");
+        assert!(heading < out.find("<ol").expect("the rows"), "{out}");
+        assert!(
+            out[heading..].contains(
+                r#"<span class="btn btn-secondary repeatable-remove" aria-hidden="true">Remove</span>"#
+            ),
+            "{out}"
+        );
+
+        let empty = repeatable_list("keywords", "Keywords", ACTION)
+            .heading("Keyword")
+            .build()
+            .into_string();
+        assert!(!empty.contains("Keyword<"), "{empty}");
     }
 
     #[test]

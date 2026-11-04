@@ -140,6 +140,13 @@ pub fn is_language_tag(tag: &str) -> bool {
     (1..=3).contains(&tag.len()) && tag.bytes().all(|b| b.is_ascii_lowercase())
 }
 
+/// A posted language tag as the form stores it, or `None` when it is not a language code.
+#[must_use]
+pub fn normalized_language_tag(raw: &str) -> Option<String> {
+    let tag = raw.trim().to_ascii_lowercase();
+    is_language_tag(&tag).then_some(tag)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

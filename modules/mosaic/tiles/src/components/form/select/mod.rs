@@ -42,6 +42,8 @@ pub struct SelectBuilder {
     hint: Option<Markup>,
     error: Option<Markup>,
     required: bool,
+    label_hidden: bool,
+    autofocus: bool,
     id: Option<String>,
     test_id: Option<String>,
 }
@@ -60,6 +62,8 @@ pub fn select(name: impl Into<String>, label: impl Render) -> SelectBuilder {
         hint: None,
         error: None,
         required: false,
+        label_hidden: false,
+        autofocus: false,
         id: None,
         test_id: None,
     }
@@ -129,6 +133,20 @@ impl SelectBuilder {
         self
     }
 
+    /// Keep the label for assistive technology but take it out of the layout, for a field already
+    /// titled by what surrounds it. See [`super::text_field::TextFieldBuilder::label_hidden`].
+    pub fn label_hidden(mut self) -> Self {
+        self.label_hidden = true;
+        self
+    }
+
+    /// Focus the control on page load, and where the enhanced path morphs it in, by the
+    /// caller's `[autofocus]` lookup.
+    pub fn autofocus(mut self) -> Self {
+        self.autofocus = true;
+        self
+    }
+
     fn resolved_id(&self) -> &str {
         self.id.as_deref().unwrap_or(&self.name)
     }
@@ -149,7 +167,7 @@ impl SelectBuilder {
             label: &self.label,
             hint: self.hint.as_ref(),
             error: self.error.as_ref(),
-            label_hidden: false,
+            label_hidden: self.label_hidden,
         };
         let described_by = shell.described_by();
         let placeholder_selected = self.placeholder_selected();
@@ -162,6 +180,7 @@ impl SelectBuilder {
                 aria-invalid=[shell.aria_invalid()]
                 data-testid=[self.test_id.as_deref()]
                 required[self.required]
+                autofocus[self.autofocus]
             {
                 @if let Some(placeholder) = &self.placeholder {
                     option value="" selected[placeholder_selected] { (placeholder) }
@@ -299,6 +318,16 @@ mod tests {
         assert!(out.contains(r#"aria-invalid="true""#), "{out}");
         assert!(out.contains(r#"aria-describedby="status-hint status-error""#), "{out}");
         assert!(out.contains("Choose a status."), "{out}");
+    }
+
+    #[test]
+    fn a_hidden_label_still_names_the_select_but_leaves_the_layout() {
+        let out = status().label_hidden().build().into_string();
+        assert!(
+            out.contains(r#"<label class="field-label sr-only" for="status">Status</label>"#),
+            "{out}"
+        );
+        assert!(!status().build().into_string().contains("sr-only"));
     }
 
     #[test]

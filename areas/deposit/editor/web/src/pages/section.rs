@@ -22,6 +22,7 @@ use editor_core::draft::ProjectDraft;
 use editor_core::form::format::Finding;
 use editor_core::form::obligation::{section_progress, SectionProgress};
 use editor_core::form::registry::{sections_for, Audience, Section};
+use editor_core::form::submit::LineWithoutLanguage;
 use editor_core::form::FormBody;
 use editor_core::proposals::{EntityProposal, ProposalKind};
 use editor_core::records::ReviewOutcome;
@@ -496,6 +497,9 @@ pub struct SectionView<'a> {
     /// Whether the first control holding a format finding takes focus: a refused submit's
     /// re-render, as `/projects/new` focuses its refused field.
     pub focus_finding: bool,
+    /// Language-row lines posted with text and no language: every one on the save or submit that
+    /// found them, and on a later render that keeps the body, those still unfixed.
+    pub without_language: Vec<LineWithoutLanguage>,
     /// The agents an id field may refer to, borrowed from `EditorState`'s snapshot.
     pub agents: Option<&'a AgentScope<'a>>,
     /// Base URL a repeatable field's add and remove controls submit to: `/fields`
@@ -524,9 +528,10 @@ impl SectionView<'_> {
         }
     }
 
-    /// Values without their format anywhere in the project, which submit refuses.
+    /// Values without their format anywhere in the project and lines with no language, which
+    /// submit refuses.
     fn values_to_fix(&self) -> usize {
-        self.format_findings.len() + self.findings_elsewhere.len()
+        self.format_findings.len() + self.findings_elsewhere.len() + self.without_language.len()
     }
 
     /// Where a link to a finding goes: its control, on this page or on its section's.
@@ -622,15 +627,19 @@ impl SectionView<'_> {
             search_path: Some(search_path),
             vocabulary_path: Some(vocabulary_path),
             // A field RDU accepted renders no control to focus.
+            // A line without a language goes first: it is what a render that carries one is about.
             focus: self
                 .focus_finding
                 .then(|| {
-                    self.format_findings
-                        .iter()
-                        .find(|finding| !self.accepted_fields.iter().any(|accepted| accepted == finding.field.id))
+                    self.without_language.first().map(|line| line.control.as_str()).or_else(|| {
+                        self.format_findings
+                            .iter()
+                            .find(|finding| !self.accepted_fields.iter().any(|accepted| accepted == finding.field.id))
+                            .map(|finding| finding.control.as_str())
+                    })
                 })
-                .flatten()
-                .map(|finding| finding.control.as_str()),
+                .flatten(),
+            without_language: &self.without_language,
         }
     }
 }
@@ -1019,7 +1028,8 @@ fn needs_fixing(count: usize) -> String {
 
 /// The saved notice. A warning, not a success, while the draft holds a value submit would
 /// refuse: "Draft saved." beside a field's format error reads as all being well. Lists every
-/// such value, this section's too, each a link to its control, as an error summary does.
+/// such value, this section's too, each a link to its control, as an error summary does. A line
+/// with no language was not stored, so it is named in a sentence, not listed.
 fn saved_notice(view: &SectionView<'_>) -> Markup {
     let count = view.values_to_fix();
     if count == 0 {
@@ -1030,17 +1040,22 @@ fn saved_notice(view: &SectionView<'_>) -> Markup {
     let here = view.format_findings.iter().map(|finding| (view.section, finding));
     let elsewhere = view.findings_elsewhere.iter().map(|(section, finding)| (*section, finding));
     let body = html! {
+        @if !view.without_language.is_empty() {
+            p { "A line has text but no language: it was not saved and is marked below." }
+        }
         p { (needs_fixing(count)) " before you can submit for review." }
-        ul class="flex flex-col gap-2" {
-            @for (section, finding) in here.chain(elsewhere) {
-                li {
-                    a href=(view.finding_href(section, finding)) class="underline font-bold" {
-                        (finding.field.label)
+        @if count > view.without_language.len() {
+            ul class="flex flex-col gap-2" {
+                @for (section, finding) in here.chain(elsewhere) {
+                    li {
+                        a href=(view.finding_href(section, finding)) class="underline font-bold" {
+                            (finding.field.label)
+                        }
+                        " ("
+                        (section.title)
+                        "): "
+                        (format_message(finding.kind))
                     }
-                    " ("
-                    (section.title)
-                    "): "
-                    (format_message(finding.kind))
                 }
             }
         }
@@ -1426,6 +1441,7 @@ mod tests {
             submitted: None,
             adding_row: None,
             focus_finding: false,
+            without_language: Vec::new(),
             rows_action: format!("/projects/0801d/sections/{section_id}/fields"),
             awaiting_release: false,
             shortcode: "0801d",
@@ -1867,6 +1883,20 @@ mod tests {
         let live = out.find(r#"aria-live="polite""#).expect("the live region");
         let saved = out.find("Draft saved.").expect("the notice");
         assert!(live < saved, "the notice must be inside the region, not before it: {out}");
+    }
+
+    #[test]
+    fn a_save_that_dropped_a_line_without_a_language_is_not_announced_as_plain_success() {
+        let draft = published_draft();
+        let lines = vec![LineWithoutLanguage { line: 0, control: "keywords.r0.lang".to_string() }];
+        let mut view = view(&draft, "overview", Audience::Everyone);
+        view.without_language = lines;
+        view.notice = Some(Notice::Saved);
+        let out = region(&view).into_string();
+        assert!(out.contains("it was not saved and is marked below"), "{out}");
+        assert!(out.contains("1 value needs fixing"), "{out}");
+        assert!(!out.contains("Draft saved."), "the success alert says so: {out}");
+        assert_eq!(view.title_prefix().as_deref(), Some("Draft saved, 1 value needs fixing"));
     }
 
     #[test]

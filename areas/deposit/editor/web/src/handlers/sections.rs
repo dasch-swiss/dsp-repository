@@ -40,11 +40,12 @@ use editor_core::submission::SubmitRefusal;
 use shared_metadata::is_valid_shortcode;
 use uuid::Uuid;
 
+use crate::entity::origin::{entity_url, Origin};
 use crate::form::widgets::apply_picker_intents;
 use crate::form::INTENT;
 use crate::handlers::auth::{Account, Authenticated};
 use crate::handlers::{
-    agent_search_response, is_enhanced, picker_root, storage_error, AgentSearchParams, StorageSurface,
+    agent_search_response, is_enhanced, navigate, picker_root, storage_error, AgentSearchParams, StorageSurface,
 };
 use crate::pages::section as page;
 use crate::shell::EditorState;
@@ -168,8 +169,9 @@ const PROPOSE_REFUSED_UNKNOWN_ENTITY: &str = "No person or organisation was pick
 const PROPOSE_REFUSED_RACED: &str = "Something else claimed the same id at the same moment. Nothing was started \
                                      — try again.";
 
-/// The refusal a `Conflict` from [`EntityProposalRepository::create_change`] renders as: an
-/// ordinary double-click, since this project already holds a live proposal for that entity.
+/// The refusal a `Conflict` from [`EntityProposalRepository::create_change`] renders as: a
+/// concurrent request started a live proposal for that entity after this one read the project's
+/// proposals.
 const PROPOSE_REFUSED_ALREADY_LIVE: &str = "This project already has a change proposed for that person or \
                                             organisation. Nothing new was started — open the existing proposal \
                                             instead.";
@@ -208,7 +210,7 @@ fn unresolved_message(name: &str) -> String {
 }
 
 /// Which fields and sections this reader sees.
-fn audience_of(user: &Account) -> Audience {
+pub(crate) fn audience_of(user: &Account) -> Audience {
     if user.actor.is_rdu() {
         Audience::RduOnly
     } else {
@@ -581,6 +583,8 @@ async fn context<'a>(
 pub(crate) struct ShowParams {
     saved: Option<String>,
     done: Option<String>,
+    /// The entity proposal a discard on its own form just withdrew; see [`discarded_proposal`].
+    discarded_proposal: Option<String>,
 }
 
 /// `GET /projects/{shortcode}/sections/{section}`.
@@ -600,6 +604,11 @@ pub(crate) async fn show(
         .filter(|record| params.saved.as_deref() == Some(record.updated_at.to_rfc3339().as_str()))
         .map(|_| page::Notice::Saved)
         .or_else(|| done_notice(&context, &shortcode, params.done.as_deref()));
+    let discarded = params
+        .discarded_proposal
+        .as_deref()
+        .and_then(|id| discarded_proposal(&context, id));
+    let notice = notice.or(discarded.as_deref().map(page::Notice::ProposalDiscarded));
     render_page(
         &state,
         &user,
@@ -664,6 +673,27 @@ pub(crate) async fn agent_search(
     span.record("form.picker", tracing::field::display(unique));
 
     agent_search_response(unique, field, &context.draft, &context.agents, params.q.as_deref(), true)
+}
+
+/// The sentence confirming that this project's proposal for `entity_id` was discarded, while that
+/// still holds: the proposal the id resolves to is withdrawn, so a stale or bookmarked marker for a
+/// proposal started again since confirms nothing. Named from the proposal's own payload, since a
+/// withdrawn new entity no longer resolves through the agent scope.
+fn discarded_proposal(context: &Context<'_>, entity_id: &str) -> Option<String> {
+    let proposal = editor_core::proposals::proposal_for(&context.proposals, entity_id)?;
+    if proposal.status != ProposalStatus::Withdrawn {
+        return None;
+    }
+    let name = editor_core::agents::proposal_agent(&proposal)
+        .map(|agent| agent.label)
+        .filter(|label| !label.trim().is_empty() && label != entity_id);
+    let noun = proposal.kind.label().to_lowercase();
+    Some(match (proposal.operation, name) {
+        (ProposalOperation::Change, Some(name)) => format!("Your proposed changes to {name} were discarded."),
+        (ProposalOperation::Change, None) => format!("Your proposed changes to this {noun} were discarded."),
+        (ProposalOperation::New, Some(name)) => format!("Your proposed new {noun} {name} was discarded."),
+        (ProposalOperation::New, None) => format!("Your proposed new {noun} was discarded."),
+    })
 }
 
 /// The phase notice a `?done=...` marker names, rendered only while the project is still in the
@@ -1446,7 +1476,7 @@ async fn propose(
             let published_floor = state.agents.highest_id_number(kind);
             EntityProposalRepository::create_new(&*state.editor, &proposal, published_floor)
                 .await
-                .map(|created| (created.entity_id, kind, ProposalOperation::New))
+                .map(|created| (created.entity_id, kind))
         }
         Intent::ProposeChanges => {
             // Both "no id was posted" and "the posted id resolves to nobody" are the same refusal:
@@ -1458,12 +1488,24 @@ async fn propose(
             let resolved = body
                 .get(INTENT)
                 .and_then(page::proposed_entity)
-                .and_then(|id| context.agents.get(id).map(|agent| (id, agent)));
-            let Some((entity_id, agent)) = resolved else {
+                .and_then(|(field, id)| context.agents.get(id).map(|agent| (field, id, agent)));
+            let Some((field, entity_id, agent)) = resolved else {
                 span.record("form.outcome", "propose_unresolved_entity");
                 tracing::info!("refused a change proposal naming no resolvable entity");
                 return refused(state, user, shortcode, context, headers, PROPOSE_REFUSED_UNKNOWN_ENTITY);
             };
+            let origin = Origin::parse(context.audience, Some(section_id), Some(field));
+            // This project's live proposal for the entity, a change or the new entity itself, is
+            // what the depositor asked to open: the index allows one per entity, so starting a
+            // second would only be refused.
+            if context
+                .proposals
+                .iter()
+                .any(|proposal| proposal.is_live() && proposal.entity_id == entity_id)
+            {
+                span.record("form.outcome", "proposal_opened");
+                return opened(&headers, &entity_url(shortcode, entity_id, origin));
+            }
             let kind = match agent.kind {
                 editor_core::agents::AgentKind::Person => ProposalKind::Person,
                 editor_core::agents::AgentKind::Organization => ProposalKind::Organization,
@@ -1503,24 +1545,27 @@ async fn propose(
                 decided_at: None,
                 retired_at: None,
             };
-            EntityProposalRepository::create_change(&*state.editor, &proposal)
-                .await
-                .map(|()| (proposal.entity_id, kind, ProposalOperation::Change))
+            match EntityProposalRepository::create_change(&*state.editor, &proposal).await {
+                Ok(()) => {
+                    span.record("form.outcome", "proposed");
+                    tracing::info!(proposal.entity_id = %entity_id, proposal.kind = %kind, "started an entity proposal");
+                    return opened(&headers, &entity_url(shortcode, entity_id, origin));
+                }
+                Err(error) => Err(error),
+            }
         }
         _ => unreachable!("propose is dispatched to only for the three propose intents"),
     };
 
     match outcome {
-        Ok((entity_id, kind, operation)) => {
+        Ok((entity_id, kind)) => {
             span.record("form.outcome", "proposed");
             tracing::info!(proposal.entity_id = %entity_id, proposal.kind = %kind, "started an entity proposal");
-            proposed(
-                state, user, shortcode, section_id, context, headers, kind, operation, &entity_id,
-            )
-            .await
+            proposed(state, user, shortcode, section_id, context, headers, kind, &entity_id).await
         }
         // A refusal, not a 500. The intent says which unique index fired:
-        // `entity_proposals_live_per_entity` for `ProposeChanges` (a double-click),
+        // `entity_proposals_live_per_entity` for `ProposeChanges` (a concurrent request started
+        // one after this one read the proposals; a second press opens the first, above),
         // `entity_proposals_allocated_id` for the other two (an allocation race).
         Err(RepositoryError::Conflict { .. }) => {
             span.record("form.outcome", "propose_conflict");
@@ -1540,7 +1585,18 @@ async fn propose(
     }
 }
 
-/// Answer a started entity proposal by re-rendering the section with a notice that links to it.
+/// Open the entity form at `url` for a change proposal ([`navigate`] on the enhanced path). The
+/// draft is already stored, so leaving the section loses nothing typed.
+fn opened(headers: &HeaderMap, url: &str) -> Response {
+    if !is_enhanced(headers) {
+        return Redirect::to(url).into_response();
+    }
+    navigate(url)
+}
+
+/// Answer a started new entity proposal by re-rendering the section with a notice that links to
+/// it. A new person or organisation stays on the section, unlike a change ([`opened`]): its id is
+/// what the depositor chooses next in the search they started it from.
 ///
 /// Neither path redirects, unlike a save or a phase change. Datastar processes a body only on a
 /// 200, so a redirect the enhanced path followed would merge the entity form's whole page into the
@@ -1555,10 +1611,9 @@ async fn proposed(
     context: &Context<'_>,
     headers: HeaderMap,
     kind: ProposalKind,
-    operation: ProposalOperation,
     entity_id: &str,
 ) -> Response {
-    let notice = page::Notice::Proposed { kind, operation, entity_id };
+    let notice = page::Notice::Proposed { kind, entity_id };
     let signed_out_at = context.signed_out_at;
     // Re-resolved like `phase_changed`, so the picker and the proposals summary this same render
     // shows already carry what was just started — without it a depositor could not yet name the id
@@ -5353,7 +5408,8 @@ mod tests {
         let session = a_session(&state, user.id).await;
         let app = test_app(&state);
 
-        let response = as_session(&app, post(OVERVIEW, "intent=propose-changes:person-999"), &session).await;
+        let response =
+            as_session(&app, post(OVERVIEW, "intent=propose-changes:attributions:person-999"), &session).await;
         assert_eq!(response.status(), StatusCode::OK, "a refusal, not a 500");
         assert!(
             body_string(response).await.contains("nothing was started"),
@@ -5396,15 +5452,20 @@ mod tests {
 
         let rendered = body_string(as_session(&app, get(CONTRIBUTORS), &session).await).await;
         assert!(
-            rendered.contains(r#"value="propose-changes:person-001""#)
-                && rendered.contains(r#"value="propose-changes:organization-008""#),
+            rendered.contains(r#"value="propose-changes:attributions:person-001""#)
+                && rendered.contains(r#"value="propose-changes:attributions:organization-008""#),
             "both rows must offer their own control: {rendered}"
         );
         // Neither row may put the id in a field every submit carries.
         assert!(!rendered.contains(r#"name="propose.entity""#), "{rendered}");
 
         // Click the **second** row's control, exactly as the markup posts it.
-        as_session(&app, post(CONTRIBUTORS, "intent=propose-changes:organization-008"), &session).await;
+        as_session(
+            &app,
+            post(CONTRIBUTORS, "intent=propose-changes:attributions:organization-008"),
+            &session,
+        )
+        .await;
 
         let proposals = proposals_for(&state, "0801d").await;
         assert_eq!(proposals.len(), 1, "{proposals:?}");
@@ -5415,35 +5476,62 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn proposing_a_change_to_a_published_agent_names_it_by_its_name() {
-        let (state, _) = test_state("section-propose-changes-names-the-agent").await;
+    async fn proposing_a_change_opens_its_entity_form_carrying_the_card_it_came_from() {
+        let (state, _) = test_state("section-propose-changes-opens").await;
         let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
         let session = a_session(&state, user.id).await;
         let app = test_app(&state);
         const CONTRIBUTORS: &str = "/projects/0801d/sections/contributors";
-        const ID: &str = "organization-008";
-        let name = state.agents.get(ID).expect("a published agent").label.clone();
-        assert!(!name.is_empty() && name != ID, "the fixture agent must carry a name: {name:?}");
+        const TARGET: &str = "/projects/0801d/entities/organization-008?section=contributors&field=attributions";
+        let intent = "intent=propose-changes:attributions:organization-008";
 
+        let plain = as_session(&app, post(CONTRIBUTORS, intent), &session).await;
+        assert_eq!(plain.status(), StatusCode::SEE_OTHER);
+        assert_eq!(location(&plain).as_deref(), Some(TARGET));
+
+        // The second press opens the live proposal the first one started.
+        let enhanced = as_session(&app, enhanced(CONTRIBUTORS, intent), &session).await;
+        assert_eq!(enhanced.status(), StatusCode::OK, "Datastar processes only a 200");
+        assert_eq!(enhanced.headers()["content-type"], "text/javascript", "run once, as a script");
+        assert_eq!(body_string(enhanced).await, format!("window.location.assign(\"{TARGET}\")"));
+        assert_eq!(proposals_for(&state, "0801d").await.len(), 1, "one proposal, opened twice");
+    }
+
+    #[tokio::test]
+    async fn a_return_target_outside_the_registry_falls_back_to_the_project() {
+        let (state, _) = test_state("section-propose-changes-bad-origin").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
         as_session(
             &app,
-            post(
-                CONTRIBUTORS,
-                &format!("attributions.row=r0&attributions.r0.contributor={ID}&attributions.r0.role=Funder"),
-            ),
+            post(OVERVIEW, "intent=propose-changes:attributions:organization-008"),
             &session,
         )
         .await;
-        let response = as_session(&app, post(CONTRIBUTORS, &format!("intent=propose-changes:{ID}")), &session).await;
-        let rendered = body_string(response).await;
 
-        let escaped = maud::html! {
-            (name)
+        let page = |query: &str| format!("/projects/0801d/entities/organization-008?{query}");
+        let back = |rendered: &str| {
+            let start = rendered.find("Back to the project").expect("the back link");
+            rendered[..start]
+                .rsplit("href=\"")
+                .next()
+                .map(|rest| rest.split('"').next().unwrap_or_default().to_string())
+        };
+        let valid =
+            body_string(as_session(&app, get(&page("section=contributors&field=attributions")), &session).await).await;
+        assert_eq!(
+            back(&valid).as_deref(),
+            Some("/projects/0801d/sections/contributors#attributions-card-organization-008")
+        );
+        for query in [
+            "section=%2F%2Fevil.example",
+            "section=https://evil.example",
+            "section=nope&field=attributions",
+        ] {
+            let rendered = body_string(as_session(&app, get(&page(query)), &session).await).await;
+            assert_eq!(back(&rendered).as_deref(), Some("/projects/0801d"), "{query}");
         }
-        .into_string();
-        let lead = format!("A change to {escaped} (organisation) has been started.");
-        assert!(rendered.contains(&lead), "{rendered}");
-        assert!(!rendered.contains(&format!("A change to {ID} has been started.")), "{rendered}");
     }
 
     #[tokio::test]
@@ -5460,7 +5548,12 @@ mod tests {
             "the fixture agent must carry a name: {old_name:?}"
         );
 
-        as_session(&app, post(CONTRIBUTORS, &format!("intent=propose-changes:{ID}")), &session).await;
+        as_session(
+            &app,
+            post(CONTRIBUTORS, &format!("intent=propose-changes:attributions:{ID}")),
+            &session,
+        )
+        .await;
         let proposal = proposals_for(&state, "0801d").await.into_iter().next().expect("a proposal");
         let mut payload: Value = serde_json::from_str(&proposal.payload).expect("the seeded payload is JSON");
         payload["name"] = json!("Renamed By The Depositor");
@@ -5485,25 +5578,6 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn propose_changes_twice_for_one_entity_refuses_the_second_without_a_500() {
-        let (state, _) = test_state("section-propose-changes-twice").await;
-        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
-        let session = a_session(&state, user.id).await;
-        let app = test_app(&state);
-        let body = "intent=propose-changes:organization-008";
-
-        let first = as_session(&app, post(OVERVIEW, body), &session).await;
-        assert_eq!(first.status(), StatusCode::OK);
-
-        let second = as_session(&app, post(OVERVIEW, body), &session).await;
-        assert_eq!(second.status(), StatusCode::OK, "a refusal, not a 500");
-        assert!(body_string(second).await.contains("already has a change proposed"));
-
-        let proposals = proposals_for(&state, "0801d").await;
-        assert_eq!(proposals.len(), 1, "the second attempt created nothing: {proposals:?}");
-    }
-
-    #[tokio::test]
     async fn a_change_proposal_is_seeded_with_the_whole_published_entity_minus_its_id() {
         // Accepting a change proposal writes its payload as the entity file, so an unseeded
         // payload is data loss: `organization-001` carries a four-member `address` that no
@@ -5514,7 +5588,12 @@ mod tests {
         let session = a_session(&state, user.id).await;
         let app = test_app(&state);
 
-        as_session(&app, post(OVERVIEW, "intent=propose-changes:organization-001"), &session).await;
+        as_session(
+            &app,
+            post(OVERVIEW, "intent=propose-changes:attributions:organization-001"),
+            &session,
+        )
+        .await;
 
         let proposals = proposals_for(&state, "0801d").await;
         let payload: serde_json::Value =
@@ -5549,7 +5628,12 @@ mod tests {
         let session = a_session(&state, user.id).await;
         let app = test_app(&state);
 
-        as_session(&app, post(OVERVIEW, "intent=propose-changes:organization-065"), &session).await;
+        as_session(
+            &app,
+            post(OVERVIEW, "intent=propose-changes:attributions:organization-065"),
+            &session,
+        )
+        .await;
 
         let proposals = proposals_for(&state, "0801d").await;
         let payload: serde_json::Value = serde_json::from_str(&proposals[0].payload).expect("JSON");

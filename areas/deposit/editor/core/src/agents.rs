@@ -374,6 +374,14 @@ fn proposed_agent(proposal: &EntityProposal) -> Option<(Agent, Vec<String>)> {
     Some((Agent { id: proposal.entity_id.clone(), label, kind, detail }, affiliations))
 }
 
+/// The [`Agent`] a proposal's own payload names, whatever its status, or `None` when the payload
+/// does not parse. Unlike [`AgentScope`], which resolves only referenceable proposals, a withdrawn
+/// or rejected proposal still names its agent here.
+#[must_use]
+pub fn proposal_agent(proposal: &EntityProposal) -> Option<Agent> {
+    proposed_agent(proposal).map(|(agent, _)| agent)
+}
+
 /// Read one directory of agents of one kind, adding an error per file that did not load and per id
 /// already held.
 fn read_agents_into(
@@ -705,6 +713,35 @@ mod tests {
             decided_at: None,
             retired_at: None,
         }
+    }
+
+    #[test]
+    fn proposal_agent_names_a_withdrawn_proposal_that_the_scope_does_not_resolve() {
+        let payload = r#"{"givenNames":["Ada"],"familyNames":["Lovelace"],"jobTitles":[]}"#;
+        let proposal = entity_proposal(
+            ProposalKind::Person,
+            ProposalOperation::New,
+            "person-417",
+            payload,
+            ProposalStatus::Withdrawn,
+        );
+        let agent = proposal_agent(&proposal).expect("the payload parses");
+        assert_eq!(agent.id, "person-417");
+        assert_eq!(agent.label, "Ada Lovelace");
+        assert_eq!(agent.kind, AgentKind::Person);
+        assert_eq!(agent.detail, None);
+    }
+
+    #[test]
+    fn proposal_agent_is_none_for_a_payload_that_does_not_parse() {
+        let proposal = entity_proposal(
+            ProposalKind::Person,
+            ProposalOperation::New,
+            "person-417",
+            r#"{"givenNames":"not a list"}"#,
+            ProposalStatus::Withdrawn,
+        );
+        assert_eq!(proposal_agent(&proposal), None);
     }
 
     #[test]

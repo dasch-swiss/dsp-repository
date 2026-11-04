@@ -564,6 +564,18 @@ struct Slot<'a> {
     focus: bool,
     /// Draws the card in the Warning colour; see [`attribution_rows`].
     incomplete: bool,
+    /// The agent field the slot belongs to, which a card's propose control names so the entity form
+    /// can return to this card.
+    field: &'a str,
+    /// Whether the card carries [`card_anchor`]'s id: only the first card for an agent in its
+    /// field does, so the id stays unique where one agent fills two rows.
+    anchor: bool,
+}
+
+/// The id of the card holding `entity_id` in `field`, which the entity form's "Back to the
+/// project" link returns to.
+pub(crate) fn card_anchor(field: &str, entity_id: &str) -> String {
+    format!("{field}-card-{entity_id}")
 }
 
 /// One agent slot: a card when it holds an id and is not being changed, a search (a combobox over
@@ -653,8 +665,14 @@ fn slot_card(slot: &Slot<'_>, rows: Rows<'_>, inside: Markup, focus: bool) -> Ma
         true => change.autofocus(),
         false => change,
     };
+    let anchor = slot.anchor.then(|| card_anchor(slot.field, id));
     html! {
-        div class="flex flex-col gap-2" data-init=[focus.then_some(FOCUS_AUTOFOCUS)] {
+        // The margin keeps a card a link scrolled to clear of the sticky status region, as the
+        // section's fields do.
+        div id=[anchor]
+            class="flex flex-col gap-2 md:scroll-mt-[33vh]"
+            data-init=[focus.then_some(FOCUS_AUTOFOCUS)]
+        {
             input type="hidden" name=(slot.value_name) value=(id);
             div role="group" aria-label=(slot.label) class=(class) {
                 div class="flex flex-wrap items-start justify-between gap-3" {
@@ -679,7 +697,12 @@ fn slot_card(slot: &Slot<'_>, rows: Rows<'_>, inside: Markup, focus: bool) -> Ma
                             }
                         }
                     }
-                    (change)
+                    div class="flex flex-wrap items-center gap-2" {
+                        (change)
+                        @if rows.propose {
+                            (propose_controls(resolved, slot.field, id, slot.row_context))
+                        }
+                    }
                 }
                 (inside)
             }
@@ -953,11 +976,11 @@ pub(crate) fn agent_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) ->
             Some(body) if body.has(&row_name) => body.get(&format!("{}.{key}", field.id)).unwrap_or_default(),
             _ => stored.get(position).and_then(|row| row.as_str()).unwrap_or_default(),
         };
+        let anchor = !held.iter().any(|earlier| earlier == id.trim());
         if !id.trim().is_empty() {
             held.push(id.trim().to_string());
         }
         let name = format!("{}.{key}", field.id);
-        let resolved = rows.agents.and_then(|agents| agents.get(id.trim()));
         let row_context = format!("row {}", position + 1);
         let slot = Slot {
             value_name: &name,
@@ -967,13 +990,10 @@ pub(crate) fn agent_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) ->
             row_context: &row_context,
             focus: is_added_row(field, rows, position, keys.len()),
             incomplete: false,
+            field: field.id,
+            anchor,
         };
-        let body = html! {
-            div class="flex flex-col gap-2" {
-                (agent_picker(slot, rows, html! {}))
-                @if rows.propose { (propose_controls(resolved, id, &row_context)) }
-            }
-        };
+        let body = agent_picker(slot, rows, html! {});
         list = list.row(key, body);
     }
     if let Some(hint) = field.hint {
@@ -1001,7 +1021,7 @@ const fn propose_changes_label(kind: AgentKind) -> &'static str {
 /// empty renders nothing, since an unfilled picker is not "no match". `row_context`
 /// goes into each button's accessible name, as [`row_label`] numbers a row's
 /// control.
-fn propose_controls(resolved: Option<&Agent>, id: &str, row_context: &str) -> Markup {
+fn propose_controls(resolved: Option<&Agent>, field: &str, id: &str, row_context: &str) -> Markup {
     if id.trim().is_empty() {
         return html! {};
     }
@@ -1029,15 +1049,13 @@ fn propose_controls(resolved: Option<&Agent>, id: &str, row_context: &str) -> Ma
             }
             Some(agent) => {
                 @let label = propose_changes_label(agent.kind);
-                div class="flex flex-wrap items-center gap-2" {
-                    ({
-                        button(label)
-                            .variant(ButtonVariant::Secondary)
-                            .button_type(ButtonType::Submit)
-                            .name_value(INTENT, propose_changes_intent(id))
-                            .aria_label(format!("{label} ({row_context})"))
-                    })
-                }
+                ({
+                    button(label)
+                        .variant(ButtonVariant::Secondary)
+                        .button_type(ButtonType::Submit)
+                        .name_value(INTENT, propose_changes_intent(field, id))
+                        .aria_label(format!("{label} ({row_context})"))
+                })
             }
         }
     }
@@ -1088,6 +1106,7 @@ fn attribution_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Mark
                 .map(|roles| roles.iter().filter_map(Value::as_str).map(str::to_string).collect())
                 .unwrap_or_default(),
         };
+        let anchor = !agent_ids.iter().any(|earlier| earlier == contributor.trim());
         if !contributor.trim().is_empty() {
             agent_ids.push(contributor.trim().to_string());
         }
@@ -1111,16 +1130,10 @@ fn attribution_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Mark
             row_context: &row_context,
             focus: is_added_row(field, rows, position, keys.len()),
             incomplete,
+            field: field.id,
+            anchor,
         };
-        // The propose controls go below the role controls: sandwiched between the
-        // picker and the roles they read as an offer to propose the roles.
-        let body = html! {
-            div class="flex flex-col gap-3" {
-                (agent_picker(slot, rows, roles))
-                @if rows.propose { (propose_controls(resolved, &contributor, &row_context)) }
-            }
-        };
-        list = list.row(key, body);
+        list = list.row(key, agent_picker(slot, rows, roles));
     }
     if let Some(hint) = field.hint {
         list = list.hint(hint);
@@ -1531,6 +1544,7 @@ fn funding(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
     let keys = row_keys(field, draft, rows);
     let action = format!("{}/{}", rows.action, field.id);
     let mut list = repeatable_list(field.id, labelled(field), &action).item_noun("grant");
+    let mut seen: Vec<String> = Vec::new();
     for (position, key) in keys.iter().enumerate() {
         let prefix = format!("{}.{key}", field.id);
         let held = stored.get(position).copied();
@@ -1549,6 +1563,14 @@ fn funding(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
                 .map(|ids| ids.iter().filter_map(Value::as_str).map(str::to_string).collect())
                 .unwrap_or_default(),
         };
+        let anchors: Vec<bool> = funders
+            .iter()
+            .map(|id| {
+                let first = !seen.iter().any(|earlier| earlier == id.trim());
+                seen.push(id.trim().to_string());
+                first
+            })
+            .collect();
         list = list.row(
             key,
             html! {
@@ -1558,10 +1580,11 @@ fn funding(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
                     @for (index, id) in funders.iter().chain(std::iter::once(&String::new())).enumerate() {
                         ({
                             funder_control(
+                                field.id,
                                 &prefix,
                                 index,
                                 id,
-                                rows.agents.and_then(|agents| agents.get(id.trim())),
+                                anchors.get(index).copied().unwrap_or(false),
                                 &format!("funder {} of grant {}", index + 1, position + 1),
                                 rows,
                             )
@@ -1619,13 +1642,14 @@ fn funding(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
     }
 }
 
-/// One funder control, plus the propose controls beside it when `propose` is set.
-/// Its own function per the repo's rule on nested `html!` `maudfmt` cannot see.
+/// One funder control. Its own function per the repo's rule on nested `html!` `maudfmt` cannot
+/// see.
 fn funder_control(
+    field: &str,
     prefix: &str,
     index: usize,
     id: &str,
-    resolved: Option<&Agent>,
+    anchor: bool,
     row_context: &str,
     rows: Rows<'_>,
 ) -> Markup {
@@ -1637,23 +1661,18 @@ fn funder_control(
     // apply_funding collects them; only unique differs, for ids and the search box.
     let value_name = format!("{prefix}.funder");
     let unique = format!("{prefix}.funder-{index}");
-    html! {
-        div class="flex flex-col gap-2" {
-            ({
-                let slot = Slot {
-                    value_name: &value_name,
-                    unique: &unique,
-                    label,
-                    id,
-                    row_context,
-                    focus: false,
-                    incomplete: false,
-                };
-                agent_picker(slot, rows, html! {})
-            })
-            @if rows.propose { (propose_controls(resolved, id, row_context)) }
-        }
-    }
+    let slot = Slot {
+        value_name: &value_name,
+        unique: &unique,
+        label,
+        id,
+        row_context,
+        focus: false,
+        incomplete: false,
+        field,
+        anchor,
+    };
+    agent_picker(slot, rows, html! {})
 }
 
 /// Labels for the publication, funding and grant controls.
@@ -2709,7 +2728,10 @@ mod tests {
         assert!(out.contains("Propose a new organisation"), "{out}");
         assert!(out.contains("Propose changes"), "{out}");
         // The resolved id rides in the button's own value, so only the activated one posts it.
-        assert!(out.contains(r#"value="propose-changes:organization-008""#), "{out}");
+        assert!(
+            out.contains(r#"value="propose-changes:contactPoint:organization-008""#),
+            "{out}"
+        );
         // Nothing carries it in a field every row would post regardless of which
         // button was clicked.
         assert!(!out.contains(r#"name="propose.entity""#), "{out}");
@@ -2920,15 +2942,16 @@ mod tests {
     }
 
     #[test]
-    fn a_contributor_rows_propose_control_follows_its_roles_and_names_the_entity() {
-        // Between the picker and the roles, a bare "Propose changes" reads as an
-        // offer to propose the roles, which are project data.
+    fn a_contributor_card_carries_its_propose_control_and_one_anchor_per_agent() {
         let agents = agent_corpus();
         let scope = editor_core::agents::AgentScope::published_only(&agents);
         let mut draft = published_draft();
         draft.set(
             "attributions",
-            serde_json::json!([{ "contributor": "person-001", "contributorType": ["Author"] }]),
+            serde_json::json!([
+                { "contributor": "person-001", "contributorType": ["Author"] },
+                { "contributor": "person-001", "contributorType": ["Editor"] },
+            ]),
         );
         let field = editor_core::form::registry::field("attributions").expect("attributions is a known field");
         let rows = Rows {
@@ -2946,9 +2969,13 @@ mod tests {
         let out = attribution_rows(field, &draft, rows).into_string();
         let roles = out.find(ADD_ROLE_LABEL).expect("the add-another-role control");
         let propose = out.find("Propose changes").expect("the propose control");
-        assert!(propose > roles, "the propose control must follow the role controls: {out}");
-        // And it names the entity's kind, so the scope of the button is in the button.
+        assert!(propose < roles, "the propose control sits on the card, above the roles: {out}");
         assert!(out.contains("Propose changes to this person's details"), "{out}");
+        assert_eq!(
+            out.matches(r#"id="attributions-card-person-001""#).count(),
+            1,
+            "one anchor, though the agent fills two rows: {out}"
+        );
     }
 
     #[test]

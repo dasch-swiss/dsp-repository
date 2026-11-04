@@ -15,6 +15,11 @@ use uuid::Uuid;
 use crate::proposals::{EntityProposal, ProposalDecision};
 use crate::records::{ApprovedRecord, CreatedProject, DraftRecord, ReviewRound, Submission};
 
+/// A pure edit of a stored draft payload, `None` for no change: what
+/// [`EntityProposalRepository::withdraw_rewriting_draft`] applies inside its transaction, so the
+/// store never parses a payload.
+pub type DraftRewrite = Box<dyn FnOnce(&str) -> Option<String> + Send>;
+
 /// What can go wrong in a repository call.
 ///
 /// [`Self::Backend`] keeps the driver error as a `source` without naming its
@@ -253,6 +258,18 @@ pub trait EntityProposalRepository: Send + Sync {
     /// Discard a proposal the depositor abandoned. The row survives as a
     /// tombstone so its allocated id is never handed out again.
     async fn withdraw(&self, id: Uuid, at: DateTime<Utc>) -> Result<()>;
+
+    /// [`Self::withdraw`], and in the same transaction replace the payload of the proposal's
+    /// project draft with what `rewrite` returns for it (`None` leaves it), stamped `at` by `by`.
+    /// The draft is left alone while a submission short of approved exists, as every other draft
+    /// write is, and when there is no draft.
+    async fn withdraw_rewriting_draft(
+        &self,
+        id: Uuid,
+        at: DateTime<Utc>,
+        by: Option<Uuid>,
+        rewrite: DraftRewrite,
+    ) -> Result<()>;
 
     /// Stamp `retired_at` on an accepted `new`-entity proposal whose entity the
     /// startup reconciliation pass has observed in the published set.

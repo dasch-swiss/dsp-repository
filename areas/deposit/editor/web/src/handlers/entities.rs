@@ -1,10 +1,11 @@
 //! The entity form: `GET` and `POST /projects/{shortcode}/entities/{proposal}`.
 //!
 //! `{proposal}` is a proposal's **`entity_id`** (`person-417`, `organization-143`), not its row
-//! `id` — the same value `pages::section` links to and the propose controls post back under
-//! `propose.entity`. A project may hold more than one row for one `entity_id` over time (a
-//! withdrawn proposal, then a fresh one for the same entity), but never more than one *live* one
-//! (`entity_proposals_live_per_entity`); [`proposal_for`] picks the row a link resolves to.
+//! `id` — the same value `pages::section` links to and the propose-changes intent carries
+//! (`propose-changes:{field}:{entity_id}`). A project may hold more than one row for one
+//! `entity_id` over time (a withdrawn proposal, then a fresh one for the same entity), but never
+//! more than one *live* one (`entity_proposals_live_per_entity`); [`proposal_for`] picks the row a
+//! link resolves to.
 //!
 //! Same shape as `sections.rs`: [`context`] resolves a request in the order that module's own
 //! docs argue for — shape, then authorization, then anything that reads state — and a proposal
@@ -15,23 +16,26 @@ use axum::extract::{Path, Query, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Redirect, Response};
 use axum::Form;
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use editor_core::agents::AgentScope;
 use editor_core::draft::ProjectDraft;
-use editor_core::form::registry::Field;
+use editor_core::form::registry::{first_section, Field};
+use editor_core::form::submit::drop_agent;
 use editor_core::form::{apply, FormBody, Shape, WhenCleared};
-use editor_core::proposals::{proposal_for, EntityProposal, ProposalKind, ProposalStatus};
+use editor_core::proposals::{proposal_for, EntityProposal, ProposalKind, ProposalOperation, ProposalStatus};
 use editor_core::records::normalize_shortcode;
-use editor_core::repository::{EntityProposalRepository, RepositoryError};
+use editor_core::repository::{DraftRewrite, EntityProposalRepository, RepositoryError};
 use serde_json::Value;
 use shared_metadata::is_valid_shortcode;
 
 use crate::entity as page;
+use crate::entity::origin::{entity_url, Origin};
 use crate::form::widgets::apply_picker_intents;
 use crate::form::INTENT;
 use crate::handlers::auth::{Account, Authenticated};
+use crate::handlers::sections::audience_of;
 use crate::handlers::{
-    agent_search_response, is_enhanced, picker_root, storage_error, AgentSearchParams, StorageSurface,
+    agent_search_response, is_enhanced, navigate, picker_root, storage_error, AgentSearchParams, StorageSurface,
 };
 use crate::pages::section::{changed_agent, keeps_posted, FIND_AGENT};
 use crate::shell::EditorState;
@@ -57,7 +61,8 @@ struct Context<'a> {
     draft: ProjectDraft,
     agents: AgentScope<'a>,
     posted: Option<&'a FormBody>,
-    signed_out_at: DateTime<Utc>,
+    /// The section the proposal was opened from: the `GET`'s query, or a `POST`'s hidden inputs.
+    origin: Option<Origin>,
 }
 
 /// Resolve a request, or the response that refuses it. See the module docs for the ordering.
@@ -66,7 +71,6 @@ async fn context<'a>(
     user: &Account,
     shortcode: &str,
     entity_id: &str,
-    signed_out_at: DateTime<Utc>,
 ) -> Result<Context<'a>, Response> {
     if !is_valid_shortcode(shortcode) {
         return Err(crate::shell::not_found(State(state.clone())).await);
@@ -117,15 +121,16 @@ async fn context<'a>(
     });
     let agents = AgentScope::with_proposals(&state.agents, &proposals);
 
-    Ok(Context { proposal, draft, agents, posted: None, signed_out_at })
+    Ok(Context { proposal, draft, agents, posted: None, origin: None })
 }
 
-/// Whether this `GET` follows a plain-path save or discard, as `sections.rs::ShowParams` does for
-/// a section.
+/// Whether this `GET` follows a plain-path save, as `sections.rs::ShowParams` does for a section,
+/// and which section it was opened from ([`Origin`]).
 #[derive(Debug, serde::Deserialize)]
 pub(crate) struct ShowParams {
     saved: Option<String>,
-    done: Option<String>,
+    section: Option<String>,
+    field: Option<String>,
 }
 
 /// `GET /projects/{shortcode}/entities/{proposal}`.
@@ -135,16 +140,16 @@ pub(crate) async fn show(
     Path((shortcode, entity_id)): Path<(String, String)>,
     Query(params): Query<ShowParams>,
 ) -> Response {
-    let context = match context(&state, &user, &shortcode, &entity_id, user.signed_out_at()).await {
+    let mut context = match context(&state, &user, &shortcode, &entity_id).await {
         Ok(context) => context,
         Err(response) => return response,
     };
+    context.origin = Origin::parse(audience_of(&user), params.section.as_deref(), params.field.as_deref());
     let notice = params
         .saved
         .as_deref()
         .filter(|saved| *saved == context.proposal.updated_at.to_rfc3339())
-        .map(|_| page::Notice::Saved)
-        .or_else(|| done_notice(&context, params.done.as_deref()));
+        .map(|_| page::Notice::Saved);
     render_page(
         &state,
         &user,
@@ -152,16 +157,6 @@ pub(crate) async fn show(
         &context,
         Rendering { notice, ..Rendering::default() },
     )
-}
-
-/// The phase notice a `?done=...` marker names, rendered only while the proposal is still in the
-/// phase it describes — see [`ShowParams`]. `None` for an unrecognized value, or one whose phase
-/// has since moved on.
-fn done_notice(context: &Context<'_>, done: Option<&str>) -> Option<page::Notice<'static>> {
-    match done {
-        Some("discarded") if context.proposal.status == ProposalStatus::Withdrawn => Some(page::Notice::Discarded),
-        _ => None,
-    }
 }
 
 /// The field a search's `for` names, when it is a picker name this proposal's form renders: a
@@ -202,7 +197,7 @@ pub(crate) async fn agent_search(
     span.record("project.shortcode", tracing::field::display(&shortcode));
     span.record("form.entity", tracing::field::display(&entity_id));
 
-    let context = match context(&state, &user, &shortcode, &entity_id, user.signed_out_at()).await {
+    let context = match context(&state, &user, &shortcode, &entity_id).await {
         Ok(context) => context,
         Err(response) => return response,
     };
@@ -247,7 +242,7 @@ pub(crate) async fn act(
     span.record("project.shortcode", tracing::field::display(&shortcode));
     span.record("form.entity", tracing::field::display(&entity_id));
 
-    let mut context = match context(&state, &user, &shortcode, &entity_id, user.signed_out_at()).await {
+    let mut context = match context(&state, &user, &shortcode, &entity_id).await {
         Ok(context) => context,
         Err(response) => {
             span.record("form.outcome", "refused");
@@ -262,6 +257,7 @@ pub(crate) async fn act(
             .and_then(|field| field.shape)
     }));
     context.posted = Some(&body);
+    context.origin = Origin::posted(audience_of(&user), &body);
 
     // Anything this build does not know falls back to Save, matching
     // `sections.rs::act`'s own fallback: discarding is not undoable by the
@@ -343,18 +339,7 @@ pub(crate) async fn add_row(
     headers: HeaderMap,
     Form(pairs): Form<Vec<(String, String)>>,
 ) -> Response {
-    row_action(
-        &state,
-        &user,
-        &shortcode,
-        &entity_id,
-        &field_id,
-        headers,
-        pairs,
-        None,
-        user.signed_out_at(),
-    )
-    .await
+    row_action(&state, &user, &shortcode, &entity_id, &field_id, headers, pairs, None).await
 }
 
 /// `POST /projects/{shortcode}/entities/{proposal}/fields/{field}/{key}/remove` — drop one row.
@@ -365,18 +350,7 @@ pub(crate) async fn remove_row(
     headers: HeaderMap,
     Form(pairs): Form<Vec<(String, String)>>,
 ) -> Response {
-    row_action(
-        &state,
-        &user,
-        &shortcode,
-        &entity_id,
-        &field_id,
-        headers,
-        pairs,
-        Some(&key),
-        user.signed_out_at(),
-    )
-    .await
+    row_action(&state, &user, &shortcode, &entity_id, &field_id, headers, pairs, Some(&key)).await
 }
 
 /// Add or remove a row: the two differ only in what they do to the posted body, exactly the way
@@ -392,18 +366,18 @@ async fn row_action(
     headers: HeaderMap,
     pairs: Vec<(String, String)>,
     removing: Option<&str>,
-    signed_out_at: DateTime<Utc>,
 ) -> Response {
     let body = FormBody::from_pairs(match removing {
         Some(key) => FormBody::pairs_without_row(pairs, field_id, key),
         None => pairs,
     });
 
-    let mut context = match context(state, user, shortcode, entity_id, signed_out_at).await {
+    let mut context = match context(state, user, shortcode, entity_id).await {
         Ok(context) => context,
         Err(response) => return response,
     };
     context.posted = Some(&body);
+    context.origin = Origin::posted(audience_of(user), &body);
 
     // The field has to be one this proposal's kind actually renders, checked
     // against the same list the render side reads — an id naming another
@@ -469,46 +443,16 @@ async fn discard(
         return confirming(state, user, shortcode, context, headers);
     }
 
-    match EntityProposalRepository::withdraw(&*state.editor, context.proposal.id, Utc::now()).await {
+    match withdraw(state, user, context).await {
         Ok(()) => {
             tracing::info!(proposal.entity_id = %context.proposal.entity_id, "withdrew an entity proposal");
-            // Re-resolve so the rendering reflects the withdrawal it just
-            // made, the way `sections.rs::phase_changed` re-resolves after a
-            // write that moves the record between phases — overriding only
-            // the notice here would leave everything else describing the
-            // proposal as still live.
-            // The plain path **redirects**, like every other phase-changing write here and in
-            // `sections.rs::phase_changed`: a `POST` left in the history re-posts on refresh, and
-            // this one would then find the proposal already withdrawn and answer "no longer open,
-            // so there is nothing to discard" — a refusal surfacing from an ordinary reload. The
-            // enhanced path still renders the region, because Datastar processes a body only on a
-            // 200 and would merge a followed redirect's whole page into it.
-            if !is_enhanced(&headers) {
-                return redirect_with_notice(shortcode, context, Marker::Discarded);
+            // The plain path redirects, so a refresh re-issues the section's `GET` rather than
+            // re-posting a discard that would now refuse.
+            let target = discarded_target(user, shortcode, context);
+            if is_enhanced(&headers) {
+                return navigate(&target);
             }
-            match self::context(state, user, shortcode, &context.proposal.entity_id, context.signed_out_at).await {
-                Ok(fresh) => {
-                    let rendering = Rendering {
-                        notice: Some(page::Notice::Discarded),
-                        ..Rendering::default()
-                    };
-                    region(shortcode, &fresh, rendering)
-                }
-                // The write landed; only the re-read did not. Render what is
-                // already in hand rather than a redirect, which would send
-                // the reader to a `GET` this route always answers anyway.
-                Err(_) => {
-                    let rendering = Rendering {
-                        notice: Some(page::Notice::Discarded),
-                        ..Rendering::default()
-                    };
-                    if is_enhanced(&headers) {
-                        region(shortcode, context, rendering)
-                    } else {
-                        render_page(state, user, shortcode, context, rendering)
-                    }
-                }
-            }
+            Redirect::to(&target).into_response()
         }
         Err(error) => {
             tracing::error!(error = %error, "could not withdraw an entity proposal");
@@ -516,6 +460,36 @@ async fn discard(
         }
     }
 }
+
+/// Withdraw the proposal. A `New` one also leaves the project's draft in the same write: its id
+/// now resolves to nobody, so every row naming it would render "not found" and refuse the submit.
+async fn withdraw(state: &EditorState, user: &Account, context: &Context<'_>) -> Result<(), RepositoryError> {
+    let now = Utc::now();
+    if context.proposal.operation == ProposalOperation::Change {
+        return EntityProposalRepository::withdraw(&*state.editor, context.proposal.id, now).await;
+    }
+    let entity_id = context.proposal.entity_id.clone();
+    let rewrite: DraftRewrite = Box::new(move |payload| {
+        let mut draft: ProjectDraft = serde_json::from_str(payload).ok()?;
+        (drop_agent(&mut draft, &entity_id) > 0)
+            .then(|| serde_json::to_string(&draft).ok())
+            .flatten()
+    });
+    EntityProposalRepository::withdraw_rewriting_draft(&*state.editor, context.proposal.id, now, Some(user.id), rewrite)
+        .await
+}
+
+/// The section a discard returns to, carrying the marker `sections.rs::show` confirms it by. At
+/// its top rather than at the card: the confirmation is in the status region there, which scrolls
+/// away below `md`. With no origin, the project's first section.
+fn discarded_target(user: &Account, shortcode: &str, context: &Context<'_>) -> String {
+    let origin = context.origin.unwrap_or(Origin::section(first_section(audience_of(user))));
+    let marker = format!("{DISCARDED_PROPOSAL}={}", context.proposal.entity_id);
+    origin.section_url(shortcode, Some(&marker), None)
+}
+
+/// The query parameter naming the proposal a discard withdrew, read back by `sections.rs::show`.
+pub(crate) const DISCARDED_PROPOSAL: &str = "discarded_proposal";
 
 /// What a `POST` to this route is for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -620,7 +594,7 @@ fn over_of(status: ProposalStatus) -> Option<page::Over> {
 /// `keep_posted` is for the enhanced path only, see [`Rendering::keep_posted`].
 fn saved(shortcode: &str, context: &Context<'_>, headers: HeaderMap, keep_posted: bool) -> Response {
     if !is_enhanced(&headers) {
-        return redirect_with_notice(shortcode, context, Marker::Saved(context.proposal.updated_at));
+        return redirect_saved(shortcode, context);
     }
     region(
         shortcode,
@@ -650,30 +624,13 @@ fn confirming(
     render_page(state, user, shortcode, context, rendering)
 }
 
-/// A query-string marker for [`redirect_with_notice`]; [`ShowParams`] reads it back.
-enum Marker {
-    /// The stored proposal's `updated_at`.
-    Saved(DateTime<Utc>),
-    Discarded,
-}
-
-impl Marker {
-    fn into_query(self) -> String {
-        match self {
-            Marker::Saved(at) => format!("saved={}", urlencoding::encode(&at.to_rfc3339())),
-            Marker::Discarded => "done=discarded".to_string(),
-        }
-    }
-}
-
-/// Redirect to the entity form, carrying `marker` for the reloaded `GET`.
-fn redirect_with_notice(shortcode: &str, context: &Context<'_>, marker: Marker) -> Response {
-    Redirect::to(&format!(
-        "/projects/{shortcode}/entities/{}?{}",
-        context.proposal.entity_id,
-        marker.into_query()
-    ))
-    .into_response()
+/// Redirect to the entity form after a save, carrying the stored proposal's `updated_at` for the
+/// reloaded `GET` ([`ShowParams`]) and the origin, so "Back to the project" still returns there.
+fn redirect_saved(shortcode: &str, context: &Context<'_>) -> Response {
+    let url = entity_url(shortcode, &context.proposal.entity_id, context.origin);
+    let separator = if context.origin.is_some() { '&' } else { '?' };
+    let saved = urlencoding::encode(&context.proposal.updated_at.to_rfc3339()).into_owned();
+    Redirect::to(&format!("{url}{separator}saved={saved}")).into_response()
 }
 
 fn refused(
@@ -766,6 +723,7 @@ fn view<'a>(shortcode: &'a str, context: &'a Context<'a>, rendering: Rendering<'
         agents: Some(&context.agents),
         format_findings,
         rows_action: format!("/projects/{shortcode}/entities/{}/fields", context.proposal.entity_id),
+        origin: context.origin,
     }
 }
 
@@ -775,6 +733,7 @@ const SURFACE: StorageSurface = StorageSurface { log: "the entity form could not
 mod tests {
     use axum::body::Body;
     use axum::http::Request;
+    use editor_core::repository::DraftRepository;
     use editor_ports::Role;
     use serde_json::{json, Value};
     use tower::ServiceExt;
@@ -783,6 +742,14 @@ mod tests {
     use crate::fixtures::{
         a_session, a_user, body_string, get, location, post, test_app, test_state, title_of, with_cookie,
     };
+
+    fn enhanced(uri: &str, form: &str) -> Request<Body> {
+        let mut request = post(uri, form);
+        request
+            .headers_mut()
+            .insert(crate::handlers::DATASTAR_REQUEST, "true".parse().expect("a header value"));
+        request
+    }
 
     async fn as_session(app: &axum::Router, request: Request<Body>, session: &str) -> axum::response::Response {
         app.clone()
@@ -1050,7 +1017,12 @@ mod tests {
             &session,
         )
         .await;
-        as_session(&app, post(contributors, &format!("intent=propose-changes:{ID}")), &session).await;
+        as_session(
+            &app,
+            post(contributors, &format!("intent=propose-changes:attributions:{ID}")),
+            &session,
+        )
+        .await;
         let uri = format!("/projects/0801d/entities/{ID}");
 
         let before = body_string(as_session(&app, get(&uri), &session).await).await;
@@ -1190,6 +1162,10 @@ mod tests {
         let confirm = body_string(confirm).await;
         assert!(confirm.contains("cannot be undone"), "{confirm}");
         assert!(
+            confirm.contains("also taken out of this project's contributors, contact point and funding"),
+            "a new entity's references go with it, and the depositor is told: {confirm}"
+        );
+        assert!(
             confirm.contains(&format!("proposal for Person {entity_id} removes")),
             "{confirm}"
         );
@@ -1202,17 +1178,169 @@ mod tests {
         // A 303 on the plain path, like every other phase-changing write: a `POST` left in the
         // history re-posts on refresh, and this one would then find the proposal already withdrawn
         // and answer "no longer open, so there is nothing to discard" — a refusal surfacing from
-        // an ordinary reload.
+        // an ordinary reload. Opened from no section, it returns to the first one.
         let discard = as_session(&app, post(&uri, "intent=discard"), &session).await;
         assert_eq!(discard.status(), StatusCode::SEE_OTHER);
         let target = location(&discard).expect("a redirect location");
-        assert_eq!(target, format!("{uri}?done=discarded"));
+        assert_eq!(
+            target,
+            format!("/projects/0801d/sections/overview?discarded_proposal={entity_id}")
+        );
         assert_eq!(proposals_for(&state, "0801d").await[0].status, ProposalStatus::Withdrawn);
 
         let reloaded = body_string(as_session(&app, get(&target), &session).await).await;
         let live = reloaded.find(r#"aria-live="polite""#).expect("the live region");
-        assert!(reloaded[live..].contains("discarded"), "{reloaded}");
-        assert!(title_of(&reloaded).starts_with("Discarded — "), "{}", title_of(&reloaded));
+        assert!(
+            reloaded[live..].contains("Your proposed new person was discarded."),
+            "{reloaded}"
+        );
+        assert!(
+            title_of(&reloaded).starts_with("Proposal discarded — "),
+            "{}",
+            title_of(&reloaded)
+        );
+        assert!(
+            !reloaded.contains("Proposed persons and organisations"),
+            "the entry left the box: {reloaded}"
+        );
+    }
+
+    /// Start a change to `organization-008` from its contributor card, as the card's control posts
+    /// it, and return the entity form's URL the section redirected to.
+    async fn a_change_from_the_card(app: &axum::Router, session: &str) -> String {
+        let contributors = "/projects/0801d/sections/contributors";
+        as_session(
+            app,
+            post(
+                contributors,
+                "attributions.row=r0&attributions.r0.contributor=organization-008&attributions.r0.role=Funder",
+            ),
+            session,
+        )
+        .await;
+        let opened = as_session(
+            app,
+            post(contributors, "intent=propose-changes:attributions:organization-008"),
+            session,
+        )
+        .await;
+        location(&opened).expect("the section opens the entity form")
+    }
+
+    #[tokio::test]
+    async fn a_discarded_change_returns_to_its_card_with_one_confirmation_naming_it() {
+        let (state, _) = test_state("entity-discard-returns").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        let name = state.agents.get("organization-008").expect("a published agent").label.clone();
+        let opened = a_change_from_the_card(&app, &session).await;
+        let uri = "/projects/0801d/entities/organization-008";
+        let returned = "/projects/0801d/sections/contributors?discarded_proposal=organization-008";
+
+        let form = body_string(as_session(&app, get(&opened), &session).await).await;
+        assert!(form.contains(r#"name="section" value="contributors""#), "{form}");
+        assert!(form.contains(r#"name="field" value="attributions""#), "{form}");
+        let discard = as_session(
+            &app,
+            enhanced(uri, "section=contributors&field=attributions&intent=discard"),
+            &session,
+        )
+        .await;
+        assert_eq!(discard.status(), StatusCode::OK, "Datastar processes only a 200");
+        assert_eq!(body_string(discard).await, format!("window.location.assign(\"{returned}\")"));
+
+        let section = body_string(as_session(&app, get(returned), &session).await).await;
+        let escaped = maud::html! {
+            (name)
+        }
+        .into_string();
+        assert_eq!(
+            section.matches("Your proposed changes to").count(),
+            1,
+            "one confirmation: {section}"
+        );
+        assert!(
+            section.contains(&format!("Your proposed changes to {escaped} were discarded.")),
+            "{section}"
+        );
+        assert!(
+            section.contains(r#"id="attributions-card-organization-008""#),
+            "the anchor exists: {section}"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_save_keeps_the_return_target() {
+        let (state, _) = test_state("entity-save-keeps-origin").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        a_change_from_the_card(&app, &session).await;
+        let uri = "/projects/0801d/entities/organization-008";
+
+        let saved = as_session(
+            &app,
+            post(uri, "section=contributors&field=attributions&name=Renamed"),
+            &session,
+        )
+        .await;
+        let target = location(&saved).expect("a redirect location");
+        assert!(target.contains("?section=contributors&field=attributions&saved="), "{target}");
+        let reloaded = body_string(as_session(&app, get(&target), &session).await).await;
+        assert!(
+            reloaded.contains(r#"href="/projects/0801d/sections/contributors#attributions-card-organization-008""#),
+            "{reloaded}"
+        );
+    }
+
+    #[tokio::test]
+    async fn discarding_a_new_proposal_drops_the_rows_naming_it() {
+        let (state, _) = test_state("entity-discard-new-drops-rows").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        let entity_id = a_person_proposal(&app, &state, &session, "0801d").await;
+        let contributors = "/projects/0801d/sections/contributors";
+        as_session(
+            &app,
+            post(
+                contributors,
+                &format!(
+                    "attributions.row=r0&attributions.r0.contributor={entity_id}&attributions.r0.role=Author\
+                     &attributions.row=r1&attributions.r1.contributor=person-001&attributions.r1.role=Editor\
+                     &contactPoint.row=r0&contactPoint.r0={entity_id}"
+                ),
+            ),
+            &session,
+        )
+        .await;
+
+        let uri = format!("/projects/0801d/entities/{entity_id}");
+        as_session(&app, post(&uri, "intent=discard"), &session).await;
+
+        let draft = DraftRepository::find(&*state.editor, "0801d").await.unwrap().expect("a draft");
+        let draft: Value = serde_json::from_str(&draft.payload).expect("JSON");
+        assert!(!draft.to_string().contains(&entity_id), "{draft}");
+        assert_eq!(draft["attributions"][0]["contributor"], "person-001", "{draft}");
+    }
+
+    #[tokio::test]
+    async fn a_discard_marker_for_a_proposal_that_is_still_live_confirms_nothing() {
+        let (state, _) = test_state("entity-discard-marker-stale").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        let entity_id = a_person_proposal(&app, &state, &session, "0801d").await;
+
+        let uri = format!("/projects/0801d/sections/overview?discarded_proposal={entity_id}");
+        let rendered = body_string(as_session(&app, get(&uri), &session).await).await;
+        assert!(!rendered.contains("was discarded"), "{rendered}");
+        assert!(
+            !title_of(&rendered).starts_with("Proposal discarded"),
+            "{}",
+            title_of(&rendered)
+        );
     }
 
     #[tokio::test]
@@ -1269,45 +1397,6 @@ mod tests {
         let live = empty_marker.find(r#"aria-live="polite""#).expect("the live region");
         assert!(!empty_marker[live..].contains("Saved."), "{empty_marker}");
         assert!(!title_of(&empty_marker).starts_with("Saved — "), "{}", title_of(&empty_marker));
-    }
-
-    #[tokio::test]
-    async fn a_done_discarded_marker_renders_no_notice_while_the_proposal_is_still_live() {
-        // No stale case to test, unlike the section form's: nothing in this form's handlers makes
-        // a withdrawn proposal live again.
-        let (state, _) = test_state("entity-discard-notice-live").await;
-        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
-        let session = a_session(&state, user.id).await;
-        let app = test_app(&state);
-        let entity_id = a_person_proposal(&app, &state, &session, "0801d").await;
-        let uri = format!("/projects/0801d/entities/{entity_id}");
-
-        let response = as_session(&app, get(&format!("{uri}?done=discarded")), &session).await;
-        assert_eq!(response.status(), StatusCode::OK);
-        let body = body_string(response).await;
-        let live = body.find(r#"aria-live="polite""#).expect("the live region");
-        assert!(!body[live..].contains("discarded"), "{body}");
-    }
-
-    #[tokio::test]
-    async fn a_discard_on_the_datastar_path_renders_the_region_rather_than_redirecting() {
-        // The other half of the two-rendering contract: Datastar processes a body only on a 200, so
-        // a redirect it followed would merge the whole page into the region.
-        let (state, _) = test_state("entity-discard-enhanced").await;
-        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
-        let session = a_session(&state, user.id).await;
-        let app = test_app(&state);
-        let entity_id = a_person_proposal(&app, &state, &session, "0801d").await;
-
-        // Built from the shared `post` helper so the CSRF headers match every other test's, with
-        // only the header Datastar's bundle adds on top.
-        let mut request = post(&format!("/projects/0801d/entities/{entity_id}"), "intent=discard");
-        request
-            .headers_mut()
-            .insert("datastar-request", "true".parse().expect("a header value"));
-        let response = as_session(&app, request, &session).await;
-        assert_eq!(response.status(), StatusCode::OK);
-        assert_eq!(proposals_for(&state, "0801d").await[0].status, ProposalStatus::Withdrawn);
     }
 
     #[tokio::test]

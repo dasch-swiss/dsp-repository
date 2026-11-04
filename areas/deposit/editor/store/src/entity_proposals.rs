@@ -14,9 +14,9 @@ use chrono::{DateTime, Utc};
 use editor_core::proposals::{
     format_entity_id, next_entity_id, EntityProposal, ProposalDecision, ProposalKind, ProposalOperation, ProposalStatus,
 };
-use editor_core::records::normalize_shortcode;
-use editor_core::repository::{EntityProposalRepository, RepositoryError, Result};
-use rusqlite::{params, Row, Transaction};
+use editor_core::records::{normalize_shortcode, SubmissionState};
+use editor_core::repository::{DraftRewrite, EntityProposalRepository, RepositoryError, Result};
+use rusqlite::{params, OptionalExtension, Row, Transaction};
 use uuid::Uuid;
 
 use super::mapping::{optional_parsed_column, optional_uuid_column, parsed_column, uuid_column, OptionalRow};
@@ -224,6 +224,60 @@ impl EntityProposalRepository for Database {
         Ok(())
     }
 
+    async fn withdraw_rewriting_draft(
+        &self,
+        id: Uuid,
+        at: DateTime<Utc>,
+        by: Option<Uuid>,
+        rewrite: DraftRewrite,
+    ) -> Result<()> {
+        let withdrawn = self
+            .write(move |tx| {
+                let shortcode: Option<String> = tx
+                    .query_row(
+                        "UPDATE entity_proposals SET status = ?2, updated_at = ?3 WHERE id = ?1 RETURNING shortcode",
+                        params![id.to_string(), ProposalStatus::Withdrawn.as_str(), at],
+                        |row| row.get(0),
+                    )
+                    .optional()?;
+                let Some(shortcode) = shortcode else {
+                    return Ok(false);
+                };
+                // The lock `sections.rs` derives from the submission: a pending review owns the
+                // draft until it ends.
+                let pending: bool = tx.query_row(
+                    "SELECT EXISTS (SELECT 1 FROM submissions WHERE shortcode = ?1 AND state IN (?2, ?3))",
+                    params![
+                        shortcode,
+                        SubmissionState::Submitted.as_str(),
+                        SubmissionState::InReview.as_str()
+                    ],
+                    |row| row.get(0),
+                )?;
+                if pending {
+                    return Ok(true);
+                }
+                let payload: Option<String> = tx
+                    .query_row("SELECT payload FROM drafts WHERE shortcode = ?1", params![shortcode], |row| {
+                        row.get(0)
+                    })
+                    .optional()?;
+                if let Some(rewritten) = payload.and_then(|payload| rewrite(&payload)) {
+                    tx.execute(
+                        "UPDATE drafts SET payload = ?2, updated_by = ?3, updated_at = ?4 WHERE shortcode = ?1",
+                        params![shortcode, rewritten, by.map(|by| by.to_string()), at],
+                    )?;
+                }
+                Ok(true)
+            })
+            .await
+            .map_err(|e| e.into_repository_error(ENTITY))?;
+        if !withdrawn {
+            return Err(RepositoryError::NotFound { entity: ENTITY });
+        }
+        Ok(())
+    }
+
     async fn retire(&self, id: Uuid, at: DateTime<Utc>) -> Result<bool> {
         let updated = self
             .write(move |tx| {
@@ -272,6 +326,95 @@ mod tests {
             decided_at: None,
             retired_at: None,
         }
+    }
+
+    fn a_draft(shortcode: &str, payload: &str) -> editor_core::records::DraftRecord {
+        editor_core::records::DraftRecord {
+            shortcode: shortcode.to_string(),
+            payload: payload.to_string(),
+            updated_by: None,
+            created_at: at(9),
+            updated_at: at(9),
+        }
+    }
+
+    fn rewrite() -> DraftRewrite {
+        Box::new(|_| Some("rewritten".to_string()))
+    }
+
+    #[tokio::test]
+    async fn test_withdraw_rewriting_draft_withdraws_and_rewrites_the_draft_in_one_write() {
+        use editor_core::repository::DraftRepository;
+        let db = test_db("entity-proposals-withdraw-rewrite").await;
+        let proposal = EntityProposalRepository::create_new(
+            &db,
+            &a_proposal("0801", "", ProposalKind::Person, ProposalOperation::New),
+            416,
+        )
+        .await
+        .unwrap();
+        DraftRepository::upsert(&db, &a_draft("0801", "original")).await.unwrap();
+        let by = Uuid::new_v4();
+
+        EntityProposalRepository::withdraw_rewriting_draft(&db, proposal.id, at(12), Some(by), rewrite())
+            .await
+            .unwrap();
+
+        let found = EntityProposalRepository::find(&db, proposal.id).await.unwrap().unwrap();
+        assert_eq!(found.status, ProposalStatus::Withdrawn);
+        let draft = DraftRepository::find(&db, "0801").await.unwrap().unwrap();
+        assert_eq!(draft.payload, "rewritten");
+        assert_eq!(draft.updated_by, Some(by));
+        assert_eq!(draft.updated_at, at(12));
+    }
+
+    #[tokio::test]
+    async fn test_withdraw_rewriting_draft_leaves_a_draft_under_review_alone() {
+        use editor_core::records::{Submission, SubmissionState};
+        use editor_core::repository::{DraftRepository, SubmissionRepository};
+        let db = test_db("entity-proposals-withdraw-rewrite-pending").await;
+        let proposal = EntityProposalRepository::create_new(
+            &db,
+            &a_proposal("0801", "", ProposalKind::Person, ProposalOperation::New),
+            416,
+        )
+        .await
+        .unwrap();
+        DraftRepository::upsert(&db, &a_draft("0801", "original")).await.unwrap();
+        SubmissionRepository::create(
+            &db,
+            &Submission {
+                id: Uuid::new_v4(),
+                shortcode: "0801".to_string(),
+                payload: "original".to_string(),
+                state: SubmissionState::InReview,
+                submitted_by: None,
+                submitted_at: at(11),
+                reviewed_by: None,
+                reviewed_at: None,
+                reviewer_note: None,
+                review_state: None,
+            },
+        )
+        .await
+        .unwrap();
+
+        EntityProposalRepository::withdraw_rewriting_draft(&db, proposal.id, at(12), None, rewrite())
+            .await
+            .unwrap();
+
+        let found = EntityProposalRepository::find(&db, proposal.id).await.unwrap().unwrap();
+        assert_eq!(found.status, ProposalStatus::Withdrawn);
+        assert_eq!(DraftRepository::find(&db, "0801").await.unwrap().unwrap().payload, "original");
+    }
+
+    #[tokio::test]
+    async fn test_withdraw_rewriting_draft_of_an_unknown_proposal_is_not_found() {
+        let db = test_db("entity-proposals-withdraw-rewrite-unknown").await;
+        let error = EntityProposalRepository::withdraw_rewriting_draft(&db, Uuid::new_v4(), at(12), None, rewrite())
+            .await
+            .unwrap_err();
+        assert!(matches!(error, RepositoryError::NotFound { .. }), "{error:?}");
     }
 
     #[tokio::test]

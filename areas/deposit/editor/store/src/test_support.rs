@@ -13,8 +13,8 @@ use chrono::{DateTime, Utc};
 use editor_core::proposals::{EntityProposal, ProposalDecision};
 use editor_core::records::{ApprovedRecord, CreatedProject, DraftRecord, ReviewRound, Submission};
 use editor_core::repository::{
-    ApprovedRecordRepository, CreatedProjectRepository, DraftRepository, EntityProposalRepository, Removal,
-    RepositoryError, Result, ReviewRoundRepository, SubmissionRepository, Transition,
+    ApprovedRecordRepository, CreatedProjectRepository, DraftRepository, DraftRewrite, EntityProposalRepository,
+    Removal, RepositoryError, Result, ReviewRoundRepository, SubmissionRepository, Transition,
 };
 use rusqlite::params;
 use uuid::Uuid;
@@ -417,6 +417,16 @@ impl EntityProposalRepository for FaultyStore {
 
     async fn withdraw(&self, id: Uuid, at: DateTime<Utc>) -> Result<()> {
         EntityProposalRepository::withdraw(&*self.inner, id, at).await
+    }
+
+    async fn withdraw_rewriting_draft(
+        &self,
+        id: Uuid,
+        at: DateTime<Utc>,
+        by: Option<Uuid>,
+        rewrite: DraftRewrite,
+    ) -> Result<()> {
+        EntityProposalRepository::withdraw_rewriting_draft(&*self.inner, id, at, by, rewrite).await
     }
 
     async fn retire(&self, id: Uuid, at: DateTime<Utc>) -> Result<bool> {

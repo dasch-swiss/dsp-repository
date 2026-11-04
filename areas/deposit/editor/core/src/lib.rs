@@ -9,6 +9,7 @@ pub mod agents;
 pub mod approved_records_api;
 pub mod canonical;
 pub mod creation;
+pub mod disciplines;
 pub mod draft;
 pub mod form;
 pub mod json;

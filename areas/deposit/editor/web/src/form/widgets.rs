@@ -15,11 +15,13 @@
 //! depositor does not conclude the form lost it.
 
 use editor_core::agents::{Agent, AgentKind, AgentScope};
+use editor_core::disciplines::{self, SnsfDiscipline};
 use editor_core::draft::{ProjectDraft, UrlSlot};
 use editor_core::form::format::{Finding, ValueKind};
-use editor_core::form::registry::{Field, Obligation};
+use editor_core::form::registry::{source_label, Field, Obligation};
 use editor_core::form::{
-    stored_row_key, ChoiceSet, FormBody, Shape, GRANTS_KIND, MAX_VALUES_PER_FIELD, REFERENCE_KIND,
+    stored_kind, stored_row_key, ChoiceSet, FormBody, Shape, GRANTS_KIND, MAX_VALUES_PER_FIELD, REFERENCE_KIND,
+    SNSF_KIND, TEXT_KIND,
 };
 use editor_core::multilingual::{as_multilingual, is_language_map, is_language_tag, DraftMultilingual, UI_LANGUAGES};
 use maud::{html, Markup, Render};
@@ -1317,12 +1319,17 @@ fn text_or_reference_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>, t
         let prefix = format!("{}.{key}", field.id);
         let held = stored.get(position);
 
-        // A stored row is a reference when it has a URL, the same test
-        // ProjectDraft::coverage_shapes applies.
-        let is_reference = match posted {
-            Some(body) => body.get(&format!("{prefix}.kind")) == Some(REFERENCE_KIND),
-            None => held.and_then(|row| row.get("url")).is_some(),
+        let is_disciplines = field.id == disciplines::FIELD;
+        let held_snsf = held.copied().filter(|_| is_disciplines).and_then(disciplines::snsf_row);
+        let current = match posted {
+            Some(body) => match body.get(&format!("{prefix}.kind")) {
+                Some(REFERENCE_KIND) => REFERENCE_KIND,
+                Some(SNSF_KIND) if is_disciplines => SNSF_KIND,
+                _ => TEXT_KIND,
+            },
+            None => held.map_or(TEXT_KIND, |row| stored_kind(field.id, row)),
         };
+        let is_reference = current == REFERENCE_KIND;
         let reference = reference_controls(field, &prefix, types, rows, |member| {
             reference_member(posted, held.copied(), &prefix, member)
         });
@@ -1339,7 +1346,27 @@ fn text_or_reference_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>, t
                 .map(|row| as_multilingual(row))
                 .unwrap_or_default(),
         };
-        let current = if is_reference { REFERENCE_KIND } else { TEXT_KIND };
+        let options: &[(&str, &str)] = if is_disciplines {
+            &[
+                (SNSF_KIND, "From the SNSF list"),
+                (REFERENCE_KIND, "From the UNESCO nomenclature"),
+                (TEXT_KIND, "My own wording"),
+            ]
+        } else {
+            &[(REFERENCE_KIND, "A recognised entry"), (TEXT_KIND, "My own wording")]
+        };
+        let hint = if is_disciplines {
+            DISCIPLINE_VARIANT_HINT
+        } else {
+            VARIANT_HINT
+        };
+        let snsf_branch = is_disciplines.then(|| {
+            let picked = match posted {
+                Some(body) => body.get(&format!("{prefix}.snsf")).unwrap_or_default().to_string(),
+                None => held_snsf.map(|held| held.code.clone()).unwrap_or_default(),
+            };
+            snsf_controls(&prefix, &picked)
+        });
 
         list = list.row(
             key,
@@ -1347,16 +1374,16 @@ fn text_or_reference_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>, t
                 div class="flex flex-col gap-3" {
                     ({
                         radio_group(format!("{prefix}.kind"), VARIANT_LABEL)
-                            .options([
-                                (REFERENCE_KIND, "A recognised entry"),
-                                (TEXT_KIND, "My own wording"),
-                            ])
+                            .options(options.iter().copied())
                             .selected(current)
-                            .hint(VARIANT_HINT)
+                            .hint(hint)
                             .inline()
                     })
+                    @if let Some(snsf_branch) = snsf_branch {
+                        div hidden[current != SNSF_KIND] class="flex flex-col gap-2" { (snsf_branch) }
+                    }
                     div hidden[!is_reference] class="flex flex-col gap-2" { (reference) }
-                    div hidden[is_reference] class="flex flex-col gap-2" {
+                    div hidden[current != TEXT_KIND] class="flex flex-col gap-2" {
                         @for tag in UI_LANGUAGES.iter().copied().chain(texts.extra_tags()) {
                             ({
                                 text_field(
@@ -1380,6 +1407,28 @@ fn text_or_reference_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>, t
     }
 }
 
+/// A `disciplines` row's SNSF branch: every listed discipline, named first and
+/// ordered by name so native type-ahead finds it by name; the value is the code.
+fn snsf_controls(prefix: &str, picked: &str) -> Markup {
+    let mut listed: Vec<&SnsfDiscipline> = disciplines::snsf().iter().collect();
+    listed.sort_by_cached_key(|discipline| discipline.name.to_lowercase());
+    html! {
+        ({
+            select(format!("{prefix}.snsf"), SNSF_LABEL)
+                .placeholder(SNSF_PLACEHOLDER)
+                .options(
+                    listed
+                        .into_iter()
+                        .map(|discipline| (
+                            discipline.code.clone(),
+                            format!("{} ({})", discipline.name, discipline.code),
+                        )),
+                )
+                .selected(picked)
+        })
+    }
+}
+
 /// One row's three reference controls, shared by every field that renders a
 /// reference so their names and labels cannot drift.
 fn reference_controls(
@@ -1392,7 +1441,7 @@ fn reference_controls(
     html! {
         ({
             select(format!("{prefix}.ref.type"), REFERENCE_TYPE_LABEL)
-                .options(types.iter().map(|kind| (*kind, *kind)))
+                .options(types.iter().map(|kind| (*kind, source_label(kind))))
                 .selected(value("type"))
         })
         ({
@@ -1695,10 +1744,6 @@ const FUNDING_TEXT_HINT: &str = "For example, \"No funding\".";
 /// [`GRANTS_KIND`].
 const FUNDING_TEXT_KIND: &str = "text";
 
-/// The discriminant value meaning "free text", the counterpart of
-/// [`REFERENCE_KIND`].
-const TEXT_KIND: &str = "text";
-
 /// The legend on a row's variant chooser.
 const VARIANT_LABEL: &str = "How this is recorded";
 
@@ -1706,6 +1751,15 @@ const VARIANT_LABEL: &str = "How this is recorded";
 const VARIANT_HINT: &str = "A recognised entry carries a link the repository can resolve, which is what makes the \
                             value comparable across projects. Your own wording is kept as typed, per language. \
                             Switching saves the form, and nothing you have entered in either is lost.";
+
+/// The variant hint on a `disciplines` row, which offers the SNSF list as well.
+const DISCIPLINE_VARIANT_HINT: &str = "The SNSF list and the UNESCO nomenclature make the value comparable across \
+                                       projects. Your own wording is kept as typed, per language. Switching saves \
+                                       the form, and nothing you have entered in either is lost.";
+
+/// The label and placeholder of a `disciplines` row's SNSF select.
+const SNSF_LABEL: &str = "Discipline";
+const SNSF_PLACEHOLDER: &str = "Choose a discipline";
 
 /// The labels on a reference branch's three controls.
 const REFERENCE_TYPE_LABEL: &str = "Source";
@@ -2236,6 +2290,86 @@ mod tests {
             .fields_for(audience)
             .map(|field| field_row(field, draft, Mode::Editable, Rows::default()).into_string())
             .collect()
+    }
+
+    fn disciplines_rendered(rows: serde_json::Value) -> String {
+        let field = editor_core::form::registry::field("disciplines").expect("disciplines is a known field");
+        let mut draft = ProjectDraft::default();
+        draft.set("disciplines", rows);
+        field_row(field, &draft, Mode::Editable, Rows::default()).into_string()
+    }
+
+    #[test]
+    fn a_stored_snsf_row_in_any_language_renders_the_snsf_variant_with_its_code_selected() {
+        let out = disciplines_rendered(serde_json::json!([{ "de": "10404 Kunstwissenschaften" }]));
+
+        assert!(out.contains(r#"name="disciplines.r0.kind" value="snsf" checked"#), "{out}");
+        assert!(out.contains(r#"<option value="10404" selected"#), "{out}");
+        // The wording is on offer if the depositor switches to their own, but
+        // hidden with the reference branch until then.
+        assert!(out.contains("10404 Kunstwissenschaften"), "{out}");
+        assert!(
+            !branch_tag_around(&out, r#"name="disciplines.r0.snsf""#).contains("hidden"),
+            "{out}"
+        );
+        assert!(
+            branch_tag_around(&out, r#"name="disciplines.r0.text.en""#).contains("hidden"),
+            "{out}"
+        );
+        assert!(
+            branch_tag_around(&out, r#"name="disciplines.r0.ref.url""#).contains("hidden"),
+            "{out}"
+        );
+    }
+
+    /// The opening tag of the variant branch (`flex flex-col gap-2`) enclosing the control `marker`
+    /// names.
+    fn branch_tag_around<'a>(out: &'a str, marker: &str) -> &'a str {
+        let at = out.find(marker).unwrap_or_else(|| panic!("{marker} not rendered: {out}"));
+        let before = &out[..at];
+        let start = [
+            "<div hidden class=\"flex flex-col gap-2\">",
+            "<div class=\"flex flex-col gap-2\">",
+        ]
+        .into_iter()
+        .filter_map(|tag| before.rfind(tag).map(|start| (start, tag)))
+        .max_by_key(|(start, _)| *start)
+        .expect("a variant branch encloses the control");
+        &before[start.0..start.0 + start.1.len()]
+    }
+
+    #[test]
+    fn the_snsf_options_are_named_first_and_ordered_by_name() {
+        let out = disciplines_rendered(serde_json::json!([{ "en": "Medieval studies" }]));
+        assert!(out.contains("Visual arts and Art history (10404)"), "{out}");
+        let position = |label: &str| out.find(label).unwrap_or_else(|| panic!("{label} missing: {out}"));
+        assert!(
+            position("Ancient history and Classical studies (") < position("Ecclesiastical history ("),
+            "{out}"
+        );
+        assert!(
+            position("Ecclesiastical history (") < position("Visual arts and Art history ("),
+            "{out}"
+        );
+    }
+
+    #[test]
+    fn a_stored_group_code_row_renders_as_own_wording() {
+        let out = disciplines_rendered(serde_json::json!([{ "en": "10400 Art studies" }]));
+
+        assert!(out.contains(r#"name="disciplines.r0.kind" value="text" checked"#), "{out}");
+        assert!(!out.contains(r#"<option value="10400""#), "{out}");
+    }
+
+    #[test]
+    fn temporal_coverage_keeps_its_two_variants() {
+        let field = editor_core::form::registry::field("temporalCoverage").expect("a known field");
+        let mut draft = ProjectDraft::default();
+        draft.set("temporalCoverage", serde_json::json!([{ "en": "10404 Bronze Age" }]));
+        let out = field_row(field, &draft, Mode::Editable, Rows::default()).into_string();
+
+        assert!(out.contains("A recognised entry"), "{out}");
+        assert!(!out.contains("From the SNSF list"), "{out}");
     }
 
     fn legal_info_display_of(value: serde_json::Value) -> String {

@@ -45,8 +45,8 @@ use shared_metadata::is_placeholder;
 use shared_metadata::utils::Multilingual;
 
 use crate::draft::{ProjectDraft, UrlSlot};
-use crate::languages;
 use crate::multilingual::{is_language_tag, DraftMultilingual};
+use crate::{disciplines, languages};
 
 /// The longest a language tag may be, and the longest an opaque row key may be.
 ///
@@ -902,13 +902,33 @@ pub(crate) fn apply_attribution_rows(body: &FormBody, draft: &mut ProjectDraft, 
 /// have.
 pub const REFERENCE_KIND: &str = "reference";
 
+/// The discriminant a `disciplines` row posts to pick from the SNSF list, code at `{prefix}.snsf`.
+/// A row whose code is empty or unlisted is not stored; any other field reads the value as text.
+pub const SNSF_KIND: &str = "snsf";
+
+/// The discriminant of a free-text row.
+pub const TEXT_KIND: &str = "text";
+
+/// The variant a stored row is shown and re-posted as: a reference when it has a
+/// `url` (the test `ProjectDraft::coverage_shapes` applies too), an SNSF pick when it is a
+/// `disciplines` row that [`disciplines::snsf_row`] recognises, free text otherwise.
+pub fn stored_kind(field: &str, row: &Value) -> &'static str {
+    if row.get("url").is_some() {
+        REFERENCE_KIND
+    } else if field == disciplines::FIELD && disciplines::snsf_row(row).is_some() {
+        SNSF_KIND
+    } else {
+        TEXT_KIND
+    }
+}
+
 /// Apply a submitted list of reference-or-text rows to `field`.
 ///
 /// Rows come from `{field}.row`; each row carries a discriminant at
 /// `{field}.<key>.kind`, a reference at `{field}.<key>.ref.{type,url,label}`,
-/// and free text at `{field}.<key>.text.<tag>`. The text branch is namespaced
-/// under `.text.` because [`FormBody::entries`] reads every dotted suffix under
-/// a prefix as a language tag.
+/// and free text at `{field}.<key>.text.<tag>`. A `disciplines` row may also post
+/// `kind=snsf` (see [`SNSF_KIND`]). The text branch is namespaced under `.text.` because
+/// [`FormBody::entries`] reads every dotted suffix under a prefix as a language tag.
 ///
 /// Only the discriminant narrows. The inactive branch is rendered `hidden`, not
 /// `disabled`, so both candidates arrive on every save; reading the values
@@ -919,30 +939,62 @@ pub(crate) fn apply_text_or_reference_rows(body: &FormBody, draft: &mut ProjectD
         return;
     }
     let stored = stored_strings(draft, field);
+    let is_disciplines = field == disciplines::FIELD;
+    // Stored SNSF rows, each handed back at most once to a row posting its code.
+    let mut unused: Vec<Value> = if is_disciplines {
+        draft
+            .get(field)
+            .and_then(Value::as_array)
+            .map(|rows| {
+                rows.iter()
+                    .filter(|row| disciplines::snsf_row(row).is_some())
+                    .cloned()
+                    .collect()
+            })
+            .unwrap_or_default()
+    } else {
+        Vec::new()
+    };
 
     let mut rows: Vec<Value> = Vec::new();
     for key in body.rows(field) {
         let prefix = format!("{field}.{key}");
-        if body.get(&format!("{prefix}.kind")) == Some(REFERENCE_KIND) {
+        let kind = body.get(&format!("{prefix}.kind"));
+        if kind == Some(REFERENCE_KIND) {
             // Shared with `apply_reference_rows`, so the two cannot disagree
             // about what a reference is.
             if let Some(row) = reference_row(body, &stored, &prefix, types) {
                 rows.push(row);
             }
-        } else {
-            let mut value = DraftMultilingual::new();
-            for (tag, text) in body.entries(&format!("{prefix}.text")) {
-                if let Some(text) = resolve_against(&stored, text) {
-                    value.set(&tag.to_ascii_lowercase(), &text);
-                }
+            continue;
+        }
+        if is_disciplines && kind == Some(SNSF_KIND) {
+            let picked = body.get(&format!("{prefix}.snsf")).and_then(disciplines::snsf_discipline);
+            if let Some(discipline) = picked {
+                // An unchanged pick keeps the stored row as it is, whatever
+                // language it was written in.
+                let held = unused
+                    .iter()
+                    .position(|row| disciplines::snsf_row(row).is_some_and(|held| held.code == discipline.code));
+                rows.push(match held {
+                    Some(at) => unused.remove(at),
+                    None => serde_json::json!({ "en": disciplines::snsf_text(discipline) }),
+                });
             }
-            let contract = value.to_contract();
-            if contract.is_empty() {
-                continue;
+            continue;
+        }
+        let mut value = DraftMultilingual::new();
+        for (tag, text) in body.entries(&format!("{prefix}.text")) {
+            if let Some(text) = resolve_against(&stored, text) {
+                value.set(&tag.to_ascii_lowercase(), &text);
             }
-            if let Ok(row) = serde_json::to_value(&contract) {
-                rows.push(row);
-            }
+        }
+        let contract = value.to_contract();
+        if contract.is_empty() {
+            continue;
+        }
+        if let Ok(row) = serde_json::to_value(&contract) {
+            rows.push(row);
         }
     }
     if rows.is_empty() {
@@ -2136,6 +2188,104 @@ mod tests {
             SOURCES,
         );
         assert_eq!(draft.get("temporalCoverage"), Some(&json!([{ "en": "A period " }])));
+    }
+
+    // --- disciplines: the SNSF variant ------------------------------------
+
+    const UNESCO: &[&str] = &["Skos"];
+
+    fn apply_disciplines(draft: &mut ProjectDraft, pairs: &[(&str, &str)]) {
+        apply_text_or_reference_rows(&body(pairs), draft, "disciplines", UNESCO);
+    }
+
+    #[test]
+    fn an_snsf_pick_is_stored_as_text_with_its_code() {
+        let mut draft = draft();
+        apply_disciplines(
+            &mut draft,
+            &[
+                ("disciplines.row", "r0"),
+                ("disciplines.r0.kind", "snsf"),
+                ("disciplines.r0.snsf", "10404"),
+            ],
+        );
+        assert_eq!(
+            draft.get("disciplines"),
+            Some(&json!([{ "en": "10404 Visual arts and Art history" }]))
+        );
+    }
+
+    #[test]
+    fn an_unchanged_snsf_code_keeps_the_stored_row_verbatim() {
+        let mut draft = draft();
+        draft.set(
+            "disciplines",
+            json!([{ "de": "10404 Kunstwissenschaften" }, { "fr": "10404 Histoire de l'art" }]),
+        );
+        apply_disciplines(
+            &mut draft,
+            &[
+                ("disciplines.row", "r0"),
+                ("disciplines.r0.kind", "snsf"),
+                ("disciplines.r0.snsf", "10404"),
+                ("disciplines.row", "r1"),
+                ("disciplines.r1.kind", "snsf"),
+                ("disciplines.r1.snsf", "10404"),
+                ("disciplines.row", "r2"),
+                ("disciplines.r2.kind", "snsf"),
+                ("disciplines.r2.snsf", "10404"),
+            ],
+        );
+        assert_eq!(
+            draft.get("disciplines"),
+            Some(&json!([
+                { "de": "10404 Kunstwissenschaften" },
+                { "fr": "10404 Histoire de l'art" },
+                { "en": "10404 Visual arts and Art history" }
+            ])),
+            "each stored row is used once, earliest first"
+        );
+    }
+
+    #[test]
+    fn an_snsf_row_with_no_listed_code_is_not_stored() {
+        for pick in ["", "99999"] {
+            let mut draft = draft();
+            apply_disciplines(
+                &mut draft,
+                &[
+                    ("disciplines.row", "r0"),
+                    ("disciplines.r0.kind", "snsf"),
+                    ("disciplines.r0.snsf", pick),
+                    ("disciplines.r0.text.en", "Medieval studies"),
+                    ("disciplines.row", "r1"),
+                    ("disciplines.r1.kind", "text"),
+                    ("disciplines.r1.text.en", "Archaeology"),
+                ],
+            );
+            assert_eq!(
+                draft.get("disciplines"),
+                Some(&json!([{ "en": "Archaeology" }])),
+                "pick {pick:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn the_snsf_kind_is_text_on_any_other_field() {
+        let mut draft = draft();
+        apply_text_or_reference_rows(
+            &body(&[
+                ("temporalCoverage.row", "r0"),
+                ("temporalCoverage.r0.kind", "snsf"),
+                ("temporalCoverage.r0.snsf", "10404"),
+                ("temporalCoverage.r0.text.en", "Bronze Age"),
+            ]),
+            &mut draft,
+            "temporalCoverage",
+            SOURCES,
+        );
+        assert_eq!(draft.get("temporalCoverage"), Some(&json!([{ "en": "Bronze Age" }])));
     }
 
     // --- the last three shapes --------------------------------------------

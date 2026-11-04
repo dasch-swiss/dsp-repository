@@ -12,9 +12,10 @@
 use std::path::PathBuf;
 
 use editor_core::canonical::{write_draft, write_project};
+use editor_core::disciplines;
 use editor_core::draft::ProjectDraft;
 use editor_core::form::registry::{Field, FIELDS};
-use editor_core::form::{apply, FormBody, Shape};
+use editor_core::form::{apply, stored_kind, FormBody, Shape, REFERENCE_KIND};
 use editor_core::multilingual::{DraftMultilingual, UI_LANGUAGES};
 use serde_json::Value;
 use shared_metadata::project::ProjectRaw;
@@ -158,11 +159,19 @@ fn untouched_submit(draft: &ProjectDraft) -> FormBody {
                     let key = format!("r{position}");
                     let prefix = format!("{}.{key}", field.id);
                     pairs.push((format!("{}.row", field.id), key.clone()));
-                    let is_reference = row.get("url").is_some();
-                    pairs.push((
-                        format!("{prefix}.kind"),
-                        if is_reference { "reference" } else { "text" }.to_string(),
-                    ));
+                    let kind = stored_kind(field.id, row);
+                    let is_reference = kind == REFERENCE_KIND;
+                    pairs.push((format!("{prefix}.kind"), kind.to_string()));
+                    // `disciplines` offers a third variant, the SNSF list: the select
+                    // posts the code, and every disciplines row carries the control.
+                    if field.id == disciplines::FIELD {
+                        pairs.push((
+                            format!("{prefix}.snsf"),
+                            disciplines::snsf_row(row)
+                                .map(|discipline| discipline.code.clone())
+                                .unwrap_or_default(),
+                        ));
+                    }
                     // The reference branch, empty on a text row.
                     for (member, name) in [("type", "type"), ("url", "url"), ("text", "label")] {
                         pairs.push((
@@ -358,6 +367,37 @@ fn the_corpus_really_does_carry_the_placeholders_this_test_is_about() {
         sentinels >= 100,
         "expected the corpus to carry many placeholders, found {sentinels}"
     );
+}
+
+#[test]
+fn the_untouched_body_posts_an_snsf_code_for_a_row_not_written_in_english() {
+    // Canary: the byte-identical test covers the verbatim-keep path only while the corpus holds
+    // an SNSF row whose text is not under `en`.
+    let mut posted = 0;
+    for path in project_files() {
+        let raw: ProjectRaw = serde_json::from_str(&std::fs::read_to_string(&path).expect("readable")).expect("parses");
+        let draft = ProjectDraft::from_raw(&raw);
+        let body = untouched_submit(&draft);
+        let rows = draft
+            .get(disciplines::FIELD)
+            .and_then(Value::as_array)
+            .cloned()
+            .unwrap_or_default();
+        for (position, row) in rows.iter().enumerate() {
+            let Some(discipline) = disciplines::snsf_row(row) else {
+                continue;
+            };
+            if row.get("en").is_some() {
+                continue;
+            }
+            assert_eq!(
+                body.get(&format!("disciplines.r{position}.snsf")),
+                Some(discipline.code.as_str())
+            );
+            posted += 1;
+        }
+    }
+    assert!(posted > 0, "no committed project records an SNSF discipline outside `en`");
 }
 
 #[test]

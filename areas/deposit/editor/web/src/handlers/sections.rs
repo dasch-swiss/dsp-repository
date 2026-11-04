@@ -3152,9 +3152,9 @@ mod tests {
         );
     }
 
-    /// A Disciplines row switched to "A recognised entry" before its link is typed, as the
-    /// autosave posts it: no intent.
-    const RECOGNISED_ENTRY_WITHOUT_LINK: &str = "disciplines.row=r0&disciplines.r0.kind=reference\
+    /// A Disciplines row switched to "From the UNESCO nomenclature" before its link is typed, as
+    /// the autosave posts it: no intent.
+    const UNESCO_ENTRY_WITHOUT_LINK: &str = "disciplines.row=r0&disciplines.r0.kind=reference\
                                                  &disciplines.r0.ref.type=Skos&disciplines.r0.ref.url=\
                                                  &disciplines.r0.ref.label=&disciplines.r0.text.en=";
 
@@ -3162,7 +3162,7 @@ mod tests {
     async fn an_autosave_keeps_a_row_that_is_still_being_filled_in() {
         let (state, app, session) = a_depositor_on("section-autosave-row").await;
 
-        let response = as_session(&app, enhanced(DATASET, RECOGNISED_ENTRY_WITHOUT_LINK), &session).await;
+        let response = as_session(&app, enhanced(DATASET, UNESCO_ENTRY_WITHOUT_LINK), &session).await;
         let body = body_string(response).await;
 
         assert!(
@@ -3170,6 +3170,51 @@ mod tests {
             "the row stays, on the branch just chosen: {body}"
         );
         assert_eq!(stored_draft(&state, "0801d").await.get("disciplines"), None);
+    }
+
+    #[tokio::test]
+    async fn disciplines_from_the_snsf_list_and_the_unesco_nomenclature_are_stored_and_survive_a_resave() {
+        let (state, app, session) = a_depositor_on("section-disciplines-snsf").await;
+        let picks = format!(
+            "disciplines.row=r0&disciplines.r0.kind=snsf&disciplines.r0.snsf=10404\
+             &disciplines.row=r1&disciplines.r1.kind=reference&disciplines.r1.ref.type=Skos\
+             &disciplines.r1.ref.url={}&disciplines.r1.ref.label=Fine+arts",
+            urlencoding("http://skos.um.es/unesco6/5506")
+        );
+
+        let response = as_session(&app, post(DATASET, &picks), &session).await;
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
+        let expected = json!([
+            { "en": "10404 Visual arts and Art history" },
+            { "type": "Skos", "url": "http://skos.um.es/unesco6/5506", "text": "Fine arts" }
+        ]);
+        let stored = stored_draft(&state, "0801d").await;
+        assert_eq!(stored.get("disciplines"), Some(&expected));
+
+        let dataset = registry::sections_for(Audience::RduOnly)
+            .into_iter()
+            .find(|section| section.id == "dataset")
+            .expect("the dataset section");
+        let response = as_session(&app, post(DATASET, &untouched_body(&stored, dataset)), &session).await;
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
+        assert_eq!(stored_draft(&state, "0801d").await.get("disciplines"), Some(&expected));
+
+        let response = as_session(&app, post(DATASET, &format!("{picks}&intent=submit")), &session).await;
+        assert_eq!(location(&response).as_deref(), Some(&format!("{DATASET}?done=submitted")[..]));
+        let submission = SubmissionRepository::find_by_shortcode(&*state.editor, "0801d")
+            .await
+            .unwrap()
+            .expect("a pending submission");
+        let submitted: ProjectDraft = serde_json::from_str(&submission.payload).expect("the payload is a draft");
+        assert_eq!(submitted.get("disciplines"), Some(&expected));
+        let written = write_draft(&submitted).expect("the submission writes");
+        let project: ProjectRaw = serde_json::from_str(&written).expect("the written draft is a project");
+        assert_eq!(project.disciplines.len(), 2);
+        assert!(matches!(project.disciplines[0], shared_metadata::project::Discipline::Text(_)));
+        assert!(matches!(
+            project.disciplines[1],
+            shared_metadata::project::Discipline::Reference(_)
+        ));
     }
 
     #[test]
@@ -3425,7 +3470,7 @@ mod tests {
     async fn an_explicit_save_still_drops_a_row_with_nothing_storable() {
         let (_state, app, session) = a_depositor_on("section-save-drops-row").await;
 
-        let form = format!("{RECOGNISED_ENTRY_WITHOUT_LINK}&{INTENT}={}", page::SAVE);
+        let form = format!("{UNESCO_ENTRY_WITHOUT_LINK}&{INTENT}={}", page::SAVE);
         let body = body_string(as_session(&app, enhanced(DATASET, &form), &session).await).await;
 
         assert!(!body.contains(r#"name="disciplines.r0.kind""#), "{body}");
@@ -6154,11 +6199,19 @@ mod tests {
                         let key = format!("r{position}");
                         let prefix = format!("{}.{key}", field.id);
                         pairs.push((format!("{}.row", field.id), key.clone()));
-                        let is_reference = row.get("url").is_some();
-                        pairs.push((
-                            format!("{prefix}.kind"),
-                            if is_reference { "reference" } else { "text" }.to_string(),
-                        ));
+                        let kind = editor_core::form::stored_kind(field.id, row);
+                        let is_reference = kind == editor_core::form::REFERENCE_KIND;
+                        pairs.push((format!("{prefix}.kind"), kind.to_string()));
+                        // `disciplines` offers a third variant, the SNSF list: the select
+                        // posts the code, and every disciplines row carries the control.
+                        if field.id == editor_core::disciplines::FIELD {
+                            pairs.push((
+                                format!("{prefix}.snsf"),
+                                editor_core::disciplines::snsf_row(row)
+                                    .map(|discipline| discipline.code.clone())
+                                    .unwrap_or_default(),
+                            ));
+                        }
                         // The reference branch, empty on a text row.
                         for (member, name) in [("type", "type"), ("url", "url"), ("text", "label")] {
                             pairs.push((

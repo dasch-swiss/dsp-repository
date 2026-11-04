@@ -50,9 +50,18 @@ const PLACE_SOURCES: &[&str] = &["Geonames", "Pleiades", "Gazetteer", "URL"];
 /// `URL` stays because a committed entry uses it.
 const PERIOD_SOURCES: &[&str] = &["Chronontology", "Periodo", "URL"];
 
-/// The authority sources a `disciplines` reference may come from. Every committed reference is
-/// `Skos` — the SNSF and UNESCO vocabularies are both published as SKOS.
+/// The authority sources a `disciplines` reference may come from: the UNESCO nomenclature, `Skos`.
+/// SNSF disciplines are recorded as text with a leading code, not as references.
 const DISCIPLINE_SOURCES: &[&str] = &["Skos"];
+
+/// What a reference source is called in the form: `Skos` is the UNESCO
+/// nomenclature (only `disciplines` offers it), every other source its own name.
+pub fn source_label(kind: &str) -> &str {
+    match kind {
+        "Skos" => "UNESCO nomenclature",
+        other => other,
+    }
+}
 
 const PUBLICATION_PID: &[Member] = &[Member {
     posted: "pid",
@@ -412,8 +421,8 @@ pub const FIELDS: &[Field] = &[
     hinted(
         "disciplines",
         "Disciplines",
-        "At least one. For a recognised entry, paste the link to the discipline in the SNSF or UNESCO list; \
-         if nothing fits, add your own wording.",
+        "At least one. Choose from the SNSF list, or paste the link to the discipline in the UNESCO \
+         nomenclature; if nothing fits, add your own wording.",
         Required,
         Everyone,
         Some(TextOrReferenceRows(DISCIPLINE_SOURCES)),

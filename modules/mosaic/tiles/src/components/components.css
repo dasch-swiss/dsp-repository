@@ -20,6 +20,7 @@
 @import './table/table.css';
 @import './tabs/tabs.css';
 @import './form/choice.css';
+@import './form/combobox/combobox.css';
 @import './form/repeatable_list/repeatable_list.css';
 @import './form/select/select.css';
 @import './form/text_field/text_field.css';

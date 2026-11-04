@@ -67,6 +67,7 @@ pub struct ButtonBuilder {
     value: Option<String>,
     aria_label: Option<String>,
     disabled: bool,
+    autofocus: bool,
     extra_classes: String,
     id: Option<String>,
     test_id: Option<String>,
@@ -84,6 +85,7 @@ pub fn button(label: impl Render) -> ButtonBuilder {
         value: None,
         aria_label: None,
         disabled: false,
+        autofocus: false,
         extra_classes: String::new(),
         id: None,
         test_id: None,
@@ -153,6 +155,13 @@ impl ButtonBuilder {
         self
     }
 
+    /// Ask for focus when the page loads. A browser honours `autofocus` only then,
+    /// so a fragment morphed in later needs the caller's own focus call.
+    pub fn autofocus(mut self) -> Self {
+        self.autofocus = true;
+        self
+    }
+
     /// Append extra utility classes after the variant classes.
     pub fn class(mut self, classes: impl Into<String>) -> Self {
         self.extra_classes = classes.into();
@@ -177,6 +186,7 @@ impl ButtonBuilder {
                 id=[self.id.as_deref()]
                 data-testid=[self.test_id.as_deref()]
                 disabled[self.disabled]
+                autofocus[self.autofocus]
             { (self.label) }
         }
     }
@@ -253,6 +263,14 @@ mod tests {
         let out = button("Remove").aria_label("Remove keyword 2").build().into_string();
         assert!(out.contains(r#"aria-label="Remove keyword 2""#), "{out}");
         assert!(out.contains(">Remove</button>"), "{out}");
+    }
+
+    #[test]
+    fn autofocus_renders_only_when_asked_for() {
+        let on = button("Change").autofocus().build().into_string();
+        assert!(on.contains(" autofocus"), "{on}");
+        let off = button("Change").build().into_string();
+        assert!(!off.contains("autofocus"), "{off}");
     }
 
     #[test]

@@ -18,6 +18,7 @@ use axum::Form;
 use chrono::{DateTime, Utc};
 use editor_core::agents::AgentScope;
 use editor_core::draft::ProjectDraft;
+use editor_core::form::registry::Field;
 use editor_core::form::{apply, FormBody, Shape, WhenCleared};
 use editor_core::proposals::{proposal_for, EntityProposal, ProposalKind, ProposalStatus};
 use editor_core::records::normalize_shortcode;
@@ -26,9 +27,13 @@ use serde_json::Value;
 use shared_metadata::is_valid_shortcode;
 
 use crate::entity as page;
+use crate::form::widgets::apply_picker_intents;
 use crate::form::INTENT;
 use crate::handlers::auth::{Account, Authenticated};
-use crate::handlers::{is_enhanced, storage_error, StorageSurface};
+use crate::handlers::{
+    agent_search_response, is_enhanced, picker_root, storage_error, AgentSearchParams, StorageSurface,
+};
+use crate::pages::section::{changed_agent, keeps_posted, FIND_AGENT};
 use crate::shell::EditorState;
 
 const SAVE_REFUSED_NOT_LIVE: &str = "This proposal is no longer open, so it cannot be changed.";
@@ -159,7 +164,65 @@ fn done_notice(context: &Context<'_>, done: Option<&str>) -> Option<page::Notice
     }
 }
 
-/// `POST /projects/{shortcode}/entities/{proposal}` — save the proposal, or discard it.
+/// The field a search's `for` names, when it is a picker name this proposal's form renders: a
+/// [`picker_root`] that is one of its kind's fields and whose shape has an agent picker.
+fn picker_field(context: &Context<'_>, name: &str) -> Option<&'static Field> {
+    let root = picker_root(name)?;
+    page::fields_for(context.proposal.kind)
+        .iter()
+        .find(|field| field.id == root)
+        .filter(|field| field.shape.is_some_and(Shape::has_agent_picker))
+}
+
+/// `GET /projects/{shortcode}/entities/{proposal}/agents?for=<picker>&q=<query>`: the results of
+/// one type-ahead search, as the fragment the combobox's results container is morphed to.
+///
+/// Reads and never writes, like `sections.rs::agent_search`, whose answer-200-for-every-`q`
+/// contract it keeps. The access checks are [`show`]'s, through [`context`]. No propose buttons:
+/// this form dispatches none of the propose intents.
+#[tracing::instrument(
+    skip_all,
+    fields(
+        otel.kind = "internal",
+        otel.name = "entity agent search",
+        auth.actor = tracing::field::Empty,
+        project.shortcode = tracing::field::Empty,
+        form.entity = tracing::field::Empty,
+        form.picker = tracing::field::Empty,
+    )
+)]
+pub(crate) async fn agent_search(
+    State(state): State<EditorState>,
+    Authenticated(user): Authenticated,
+    Path((shortcode, entity_id)): Path<(String, String)>,
+    Query(params): Query<AgentSearchParams>,
+) -> Response {
+    let span = tracing::Span::current();
+    span.record("auth.actor", tracing::field::display(user.id));
+    span.record("project.shortcode", tracing::field::display(&shortcode));
+    span.record("form.entity", tracing::field::display(&entity_id));
+
+    let context = match context(&state, &user, &shortcode, &entity_id, user.signed_out_at()).await {
+        Ok(context) => context,
+        Err(response) => return response,
+    };
+    let Some((unique, field)) = params
+        .r#for
+        .as_deref()
+        .and_then(|unique| picker_field(&context, unique).map(|field| (unique, field)))
+    else {
+        return crate::shell::not_found(State(state.clone())).await;
+    };
+    span.record("form.picker", tracing::field::display(unique));
+
+    agent_search_response(unique, field, &context.draft, &context.agents, params.q.as_deref(), false)
+}
+
+/// `POST /projects/{shortcode}/entities/{proposal}` — save the proposal, discard it, or re-render
+/// it for an agent picker's find or change.
+///
+/// A choice, an append and a role removal save like any other write; on the enhanced path they
+/// keep the posted body in the answer (see [`Rendering::keep_posted`]).
 #[tracing::instrument(
     skip_all,
     fields(
@@ -184,7 +247,6 @@ pub(crate) async fn act(
     span.record("project.shortcode", tracing::field::display(&shortcode));
     span.record("form.entity", tracing::field::display(&entity_id));
 
-    let body = FormBody::from_pairs(pairs);
     let mut context = match context(&state, &user, &shortcode, &entity_id, user.signed_out_at()).await {
         Ok(context) => context,
         Err(response) => {
@@ -192,6 +254,13 @@ pub(crate) async fn act(
             return response;
         }
     };
+    // After the context, which says which kind's fields name the shape an appended agent goes into.
+    let body = FormBody::from_pairs(apply_picker_intents(pairs, |name| {
+        page::fields_for(context.proposal.kind)
+            .iter()
+            .find(|field| field.id == name)
+            .and_then(|field| field.shape)
+    }));
     context.posted = Some(&body);
 
     // Anything this build does not know falls back to Save, matching
@@ -200,9 +269,15 @@ pub(crate) async fn act(
     let intent = match body.get(INTENT) {
         Some(page::DISCARD) => Intent::Discard,
         Some(page::DISCARD_CONFIRM) => Intent::ConfirmDiscard,
+        Some(FIND_AGENT) => Intent::FindAgent,
+        // Opening a card's search is a re-render like a search: a redirect would lose it.
+        Some(value) if changed_agent(value).is_some() => Intent::FindAgent,
         _ => Intent::Save,
     };
     span.record("form.intent", tracing::field::display(intent.as_str()));
+    // A picker's choice, an appended agent and a removed role keep the posted body on the enhanced
+    // path, as the rest of the form may hold a row that is not storable yet.
+    let keep_posted = body.get(INTENT).is_some_and(keeps_posted);
 
     if intent == Intent::Discard || intent == Intent::ConfirmDiscard {
         return discard(&state, &user, &shortcode, &context, headers, intent).await;
@@ -225,10 +300,27 @@ pub(crate) async fn act(
     let now = Utc::now();
     match EntityProposalRepository::update_payload(&*state.editor, context.proposal.id, &payload, now).await {
         Ok(()) => {
-            span.record("form.outcome", "saved");
+            span.record(
+                "form.outcome",
+                if intent == Intent::FindAgent {
+                    "searched"
+                } else {
+                    "saved"
+                },
+            );
             tracing::info!("saved an entity proposal");
             context.proposal.updated_at = now;
-            saved(&shortcode, &context, headers)
+            // A search stores the body exactly as a save does, then re-renders it with the query
+            // still in the box: `saved` redirects on the plain path, which would drop it.
+            if intent == Intent::FindAgent {
+                let rendering = Rendering { keep_posted: true, ..Rendering::default() };
+                return if is_enhanced(&headers) {
+                    region(&shortcode, &context, rendering)
+                } else {
+                    render_page(&state, &user, &shortcode, &context, rendering)
+                };
+            }
+            saved(&shortcode, &context, headers, keep_posted)
         }
         // Decided since `context` read it: the store refuses the write.
         Err(RepositoryError::NotFound { .. }) => {
@@ -431,6 +523,7 @@ enum Intent {
     Save,
     Discard,
     ConfirmDiscard,
+    FindAgent,
 }
 
 impl Intent {
@@ -442,6 +535,7 @@ impl Intent {
             // filtering `form.intent = "discard-confirm"` to count discard confirmations across
             // both forms would otherwise silently miss every one from this route.
             Self::ConfirmDiscard => page::DISCARD_CONFIRM,
+            Self::FindAgent => "find-agent",
         }
     }
 }
@@ -523,14 +617,19 @@ fn over_of(status: ProposalStatus) -> Option<page::Over> {
 
 /// A successful save: a redirect on the plain path, the patched region on the enhanced one.
 /// `act` sets `updated_at` to the stored stamp before calling this, so the marker matches the row.
-fn saved(shortcode: &str, context: &Context<'_>, headers: HeaderMap) -> Response {
+/// `keep_posted` is for the enhanced path only, see [`Rendering::keep_posted`].
+fn saved(shortcode: &str, context: &Context<'_>, headers: HeaderMap, keep_posted: bool) -> Response {
     if !is_enhanced(&headers) {
         return redirect_with_notice(shortcode, context, Marker::Saved(context.proposal.updated_at));
     }
     region(
         shortcode,
         context,
-        Rendering { notice: Some(page::Notice::Saved), ..Rendering::default() },
+        Rendering {
+            notice: Some(page::Notice::Saved),
+            keep_posted,
+            ..Rendering::default()
+        },
     )
 }
 
@@ -607,8 +706,10 @@ struct Rendering<'a> {
     confirming: Option<page::Confirmation>,
     adding_row: Option<&'a str>,
     /// Whether this render must preserve the posted editing state — set for a
-    /// refusal and a row action, and deliberately not for a successful save,
-    /// matching `sections.rs::Rendering::keep_posted`'s own reasoning.
+    /// refusal, a row action and a find or a change (which re-render the body, query and
+    /// open search included), and for a picker's choice, an append or a role removal on the
+    /// enhanced path of a save. Deliberately not for a plain save, matching
+    /// `sections.rs::Rendering::keep_posted`'s own reasoning.
     keep_posted: bool,
 }
 
@@ -1242,6 +1343,215 @@ mod tests {
             ProposalStatus::Withdrawn,
             "still withdrawn, not re-decided"
         );
+    }
+
+    const AFFILIATION: &str = "organization-002";
+
+    /// A person proposal holding one affiliation, `organization-008`, and its page URI.
+    async fn a_person_affiliated(label: &str) -> (crate::fixtures::TestState, axum::Router, String, String) {
+        let (state, _) = test_state(label).await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+        let entity_id = a_person_proposal(&app, &state, &session, "0801d").await;
+        let uri = format!("/projects/0801d/entities/{entity_id}");
+        as_session(
+            &app,
+            post(&uri, "affiliations.row=r0&affiliations.r0=organization-008"),
+            &session,
+        )
+        .await;
+        (state, app, session, uri)
+    }
+
+    fn label_query(state: &EditorState, id: &str) -> String {
+        crate::fixtures::urlencode(&state.agents.get(id).expect("a published agent").label)
+    }
+
+    #[tokio::test]
+    async fn a_search_on_the_entity_form_stores_the_body_and_re_renders_without_redirecting() {
+        let (state, app, session, uri) = a_person_affiliated("entity-find-agent").await;
+        let query = label_query(&state, AFFILIATION);
+        let body = format!(
+            "affiliations.row=r0&affiliations.r0=organization-008&affiliations.new.q={query}&intent=find-agent"
+        );
+
+        for enhanced in [false, true] {
+            let mut request = post(&uri, &body);
+            if enhanced {
+                request
+                    .headers_mut()
+                    .insert("datastar-request", "true".parse().expect("a header value"));
+            }
+            let response = as_session(&app, request, &session).await;
+            assert_eq!(response.status(), StatusCode::OK, "enhanced={enhanced}");
+            assert_eq!(location(&response), None, "enhanced={enhanced}");
+            let page = body_string(response).await;
+            assert!(
+                page.contains(&format!("add-agent:affiliations:{AFFILIATION}")),
+                "enhanced={enhanced}: the search offers matches: {page}"
+            );
+            assert!(
+                page.contains(&format!(r#"value="{}""#, state.agents.get(AFFILIATION).unwrap().label)),
+                "{page}"
+            );
+        }
+        assert_eq!(
+            stored_payload(&state, "0801d").await["affiliations"],
+            json!(["organization-008"]),
+            "a search stores the body and changes no reference"
+        );
+    }
+
+    #[tokio::test]
+    async fn adding_an_affiliation_appends_it_and_choosing_one_replaces_it() {
+        let (state, app, session, uri) = a_person_affiliated("entity-add-choose-agent").await;
+
+        as_session(
+            &app,
+            post(
+                &uri,
+                &format!(
+                    "affiliations.row=r0&affiliations.r0=organization-008&intent=add-agent:affiliations:{AFFILIATION}"
+                ),
+            ),
+            &session,
+        )
+        .await;
+        assert_eq!(
+            stored_payload(&state, "0801d").await["affiliations"],
+            json!(["organization-008", AFFILIATION])
+        );
+
+        let mut enhanced = post(
+            &uri,
+            &format!(
+                "affiliations.row=r0&affiliations.r0=organization-008&affiliations.r0.q=x\
+                 &intent=choose-agent:affiliations.r0:{AFFILIATION}"
+            ),
+        );
+        enhanced
+            .headers_mut()
+            .insert("datastar-request", "true".parse().expect("a header value"));
+        let response = as_session(&app, enhanced, &session).await;
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            stored_payload(&state, "0801d").await["affiliations"],
+            json!([AFFILIATION]),
+            "the chosen id replaces the row's"
+        );
+    }
+
+    #[tokio::test]
+    async fn changing_an_affiliation_re_renders_with_the_search_open_and_never_redirects() {
+        let (state, app, session, uri) = a_person_affiliated("entity-change-agent").await;
+
+        let response = as_session(
+            &app,
+            post(
+                &uri,
+                "affiliations.row=r0&affiliations.r0=organization-008&intent=change-agent:affiliations.r0",
+            ),
+            &session,
+        )
+        .await;
+        assert_eq!(response.status(), StatusCode::OK, "a redirect would lose the open search");
+        assert_eq!(location(&response), None);
+        let page = body_string(response).await;
+        assert!(page.contains(r#"aria-controls="affiliations.r0-results""#), "{page}");
+        assert_eq!(
+            stored_payload(&state, "0801d").await["affiliations"],
+            json!(["organization-008"]),
+            "stored like a search"
+        );
+    }
+
+    #[tokio::test]
+    async fn the_entity_agent_search_answers_options_and_writes_nothing() {
+        let (state, app, session, uri) = a_person_affiliated("entity-agent-fragment").await;
+        let before = proposals_for(&state, "0801d").await;
+        let agents = format!("{uri}/agents");
+
+        let held = label_query(&state, "organization-008");
+        let response = as_session(&app, get(&format!("{agents}?for=affiliations.new&q={held}")), &session).await;
+        assert_eq!(response.status(), StatusCode::OK);
+        let content_type = response.headers().get("content-type").and_then(|value| value.to_str().ok());
+        assert!(
+            content_type.is_some_and(|value| value.starts_with("text/html")),
+            "{content_type:?}"
+        );
+        let fragment = body_string(response).await;
+        assert!(!fragment.contains("<html"), "the fragment only: {fragment}");
+        assert!(
+            !fragment.contains("add-agent:affiliations:organization-008"),
+            "an affiliation the payload holds is not offered again: {fragment}"
+        );
+
+        let other = label_query(&state, AFFILIATION);
+        let fragment =
+            body_string(as_session(&app, get(&format!("{agents}?for=affiliations.new&q={other}")), &session).await)
+                .await;
+        assert!(
+            fragment.contains(&format!(r#"value="add-agent:affiliations:{AFFILIATION}""#)),
+            "{fragment}"
+        );
+
+        let card =
+            body_string(as_session(&app, get(&format!("{agents}?for=affiliations.r0&q={other}")), &session).await)
+                .await;
+        assert!(
+            card.contains(&format!(r#"value="choose-agent:affiliations.r0:{AFFILIATION}""#)),
+            "{card}"
+        );
+
+        let nothing =
+            body_string(as_session(&app, get(&format!("{agents}?for=affiliations.new&q=zzzzqqqq")), &session).await)
+                .await;
+        assert!(nothing.contains("Nothing matches"), "{nothing}");
+        assert!(
+            !nothing.contains("Propose a new"),
+            "the entity page offers no propose controls: {nothing}"
+        );
+        assert!(!nothing.contains(r#"value="propose-"#), "{nothing}");
+
+        assert_eq!(
+            proposals_for(&state, "0801d").await,
+            before,
+            "a search changes neither payload nor stamp"
+        );
+    }
+
+    #[tokio::test]
+    async fn the_entity_agent_search_refuses_a_picker_the_proposal_does_not_have() {
+        let (_state, app, session, uri) = a_person_affiliated("entity-agent-fragment-refused").await;
+        for target in [
+            "for=nope.new",
+            "for=a%27b",
+            "for=",
+            "",
+            // A field of this kind that has no agent picker.
+            "for=givenNames.new",
+        ] {
+            let response = as_session(&app, get(&format!("{uri}/agents?{target}&q=org")), &session).await;
+            assert_eq!(response.status(), StatusCode::NOT_FOUND, "{target}");
+        }
+        let long = format!("affiliations.{}", "r".repeat(200));
+        let response = as_session(&app, get(&format!("{uri}/agents?for={long}&q=org")), &session).await;
+        assert_eq!(response.status(), StatusCode::NOT_FOUND, "a name over 200 characters");
+    }
+
+    #[tokio::test]
+    async fn the_entity_agent_search_has_the_reach_rules_of_the_entity_page() {
+        let (state, app, _session, uri) = a_person_affiliated("entity-agent-fragment-reach").await;
+        let stranger = a_user(&state, "e@example.test", "Another Depositor", Role::Depositor, &["0803"]).await;
+        let stranger_session = a_session(&state, stranger.id).await;
+        let response = as_session(
+            &app,
+            get(&format!("{uri}/agents?for=affiliations.new&q=org")),
+            &stranger_session,
+        )
+        .await;
+        assert_eq!(response.status(), StatusCode::FORBIDDEN);
     }
 
     #[test]

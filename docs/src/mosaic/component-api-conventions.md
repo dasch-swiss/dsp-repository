@@ -217,7 +217,7 @@ to a builder.
 
 Convergence is complete. The builders — `alert`, `badge`, `button`, `card`,
 `link`, `tab`, `table`, and the form tiles `text_field`, `textarea`, `select`,
-`checkbox_group`, `radio_group` and `repeatable_list` — follow these conventions;
+`checkbox_group`, `radio_group`, `repeatable_list` and `combobox` — follow these conventions;
 all of them except `tab` implement the `ComponentBuilder` trait in
 `tiles/src/builder.rs` (`tab` is a 3-element compound with no single id target).
 `breadcrumb`/`breadcrumb_current`, the container `tabs`/`breadcrumb`, and the

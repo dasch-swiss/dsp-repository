@@ -7,6 +7,7 @@ import {
   TYPED_SHORTCODE,
   VARIANT_SHORTCODE,
 } from "../playwright.config";
+import { appendAgent, openRoles } from "./support/agents";
 
 test.use({ storageState: DEPOSITOR_STATE });
 
@@ -40,7 +41,12 @@ const rowCount = (page: Page, field: string) =>
     .locator(`fieldset#${field} > ol.repeatable-rows > li.repeatable-row`)
     .count();
 
-/** Every field on this page that renders an Add control, by field name. */
+/**
+ * Every field on this page that renders an Add control, by field name.
+ *
+ * `attributions` and `contactPoint` render none: their rows are appended by the
+ * search under the cards, which `agent-picker.spec.ts` drives, Remove included.
+ */
 async function addableFields(page: Page): Promise<string[]> {
   const actions = await page
     .locator('[formaction$="/add"]')
@@ -58,7 +64,10 @@ test.describe("row controls change the row count", () => {
     }) => {
       await page.goto(sectionUrl(DEPOSITOR_SHORTCODE, section));
       const fields = await addableFields(page);
-      test.skip(fields.length === 0, `${section} renders no repeatable fields`);
+      test.skip(
+        fields.length === 0,
+        `${section} renders no field with an Add control`,
+      );
 
       for (const field of fields) {
         const before = await rowCount(page, field);
@@ -410,15 +419,17 @@ test.describe("an \"Add another\" value lands, clears, and can be removed", () =
 
     await page.goto(sectionUrl(VARIANT_SHORTCODE, "contributors"));
     if ((await rowCount(page, "attributions")) === 0) {
-      await page.locator('[formaction$="/fields/attributions/add"]').click();
-      await expect.poll(() => rowCount(page, "attributions")).toBe(1);
+      await appendAgent(page, "attributions");
     }
+    // Closed while the row holds a role, so open it before reaching in.
+    await openRoles(row(page));
     await expect(custom(page)).toHaveCount(0);
     await saveAfter(page, () => add(page).fill("Gardener"));
 
     await expect(add(page)).toHaveValue("");
     await expect(custom(page)).toBeChecked();
 
+    await openRoles(row(page));
     await saveAfter(page, () => custom(page).uncheck());
     await page.goto(sectionUrl(VARIANT_SHORTCODE, "contributors"));
     await expect(custom(page)).toHaveCount(0);

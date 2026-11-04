@@ -47,6 +47,15 @@ fn examples() -> Markup {
         })
         ({
             example(
+                "button-autofocus",
+                "Autofocus",
+                "`.autofocus()` asks for focus when the page loads; a browser honours it only then, so a fragment \
+                 morphed in later needs its own focus call",
+                autofocus(),
+            )
+        })
+        ({
+            example(
                 "button-with_icons",
                 "Buttons with Icons",
                 "Buttons combined with icon components",
@@ -142,5 +151,11 @@ fn intents() -> Markup {
                     .name_value("intent", "accept-all")
             })
         }
+    }
+}
+
+fn autofocus() -> Markup {
+    html! {
+        (button("Focused on load").variant(ButtonVariant::Secondary).autofocus())
     }
 }

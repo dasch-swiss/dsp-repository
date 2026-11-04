@@ -87,6 +87,11 @@ pub(crate) fn routes() -> Vec<Route> {
             "/projects/{shortcode}/sections/{section}",
             get(crate::handlers::sections::show).post(crate::handlers::sections::act),
         ),
+        // The agent pickers' type-ahead: a fragment, so a `GET` that never writes.
+        (
+            "/projects/{shortcode}/sections/{section}/agents",
+            get(crate::handlers::sections::agent_search),
+        ),
         // Adding and removing a row of a repeatable field. Under the section's
         // own URL, and handled by the same module, so a row action resolves
         // through one `context()` — the audience gate, the lock check and the
@@ -107,6 +112,11 @@ pub(crate) fn routes() -> Vec<Route> {
         (
             "/projects/{shortcode}/entities/{proposal}",
             get(crate::handlers::entities::show).post(crate::handlers::entities::act),
+        ),
+        // The affiliations picker's type-ahead: a fragment, so a `GET` that never writes.
+        (
+            "/projects/{shortcode}/entities/{proposal}/agents",
+            get(crate::handlers::entities::agent_search),
         ),
         (
             "/projects/{shortcode}/entities/{proposal}/fields/{field}/add",

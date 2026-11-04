@@ -16,7 +16,7 @@ use crate::published::LoadError;
 
 /// One agent as a form needs it: the id it is stored as, and a name to show.
 ///
-/// Do not split this into an enum per kind: every consumer needs the same two
+/// Do not split this into an enum per kind: every consumer needs the same
 /// fields from both, so a variant per kind buys a match at each call site and
 /// no invariant.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -26,6 +26,9 @@ pub struct Agent {
     /// What a reader is shown.
     pub label: String,
     pub kind: AgentKind,
+    /// One line telling two agents of one name apart: a person's affiliation organisations, an
+    /// organisation's alternative name. `None` where there is nothing to say.
+    pub detail: Option<String>,
 }
 
 /// Which set an agent came from.
@@ -75,9 +78,22 @@ impl Agents {
     pub fn load_from(persons: &Path, organizations: &Path) -> (Self, Vec<LoadError>) {
         let mut by_id = BTreeMap::new();
         let mut bodies = BTreeMap::new();
+        let mut affiliations = BTreeMap::new();
         let mut errors = Vec::new();
         for (dir, kind) in [(persons, AgentKind::Person), (organizations, AgentKind::Organization)] {
-            read_agents_into(dir, kind, &mut by_id, &mut bodies, &mut errors);
+            read_agents_into(dir, kind, &mut by_id, &mut bodies, &mut affiliations, &mut errors);
+        }
+        // Only now: a person's affiliations name organizations that may load after it.
+        for (id, ids) in &affiliations {
+            let detail = affiliation_detail(ids, |organization| {
+                by_id
+                    .get(organization)
+                    .filter(|agent| agent.kind == AgentKind::Organization)
+                    .map(|agent| agent.label.clone())
+            });
+            if let Some(agent) = by_id.get_mut(id) {
+                agent.detail = detail;
+            }
         }
         (Self { by_id, bodies }, errors)
     }
@@ -170,11 +186,31 @@ impl<'a> AgentScope<'a> {
     /// contributes nothing either.
     #[must_use]
     pub fn with_proposals(published: &'a Agents, proposals: &[EntityProposal]) -> Self {
-        let proposed = proposals
+        let mut proposed: Vec<(Agent, Vec<String>)> = proposals
             .iter()
             .filter(|proposal| proposal.is_referenceable())
             .filter_map(proposed_agent)
             .collect();
+        // After every proposal is parsed: a person may be affiliated with an organization proposed
+        // later in the list.
+        let organizations: BTreeMap<String, String> = proposed
+            .iter()
+            .filter(|(agent, _)| agent.kind == AgentKind::Organization)
+            .map(|(agent, _)| (agent.id.clone(), agent.label.clone()))
+            .collect();
+        for (agent, ids) in &mut proposed {
+            if agent.kind == AgentKind::Person {
+                agent.detail = affiliation_detail(ids, |organization| {
+                    organizations.get(organization).cloned().or_else(|| {
+                        published
+                            .get(organization)
+                            .filter(|agent| agent.kind == AgentKind::Organization)
+                            .map(|agent| agent.label.clone())
+                    })
+                });
+            }
+        }
+        let proposed = proposed.into_iter().map(|(agent, _)| agent).collect();
         Self { published, proposed }
     }
 
@@ -244,22 +280,32 @@ impl<'a> AgentScope<'a> {
         self.published.is_empty() && self.proposed.is_empty()
     }
 
-    /// The agents whose name or id contains `query`, case-insensitively, at most
-    /// [`SEARCH_LIMIT`] of them, in [`Self::all`]'s order.
+    /// The agents whose name, id or detail contains `query`, case-insensitively, at most
+    /// [`SEARCH_LIMIT`] of them, in [`Self::all`]'s order. Ids in `exclude` are not agents of this
+    /// search: they count toward neither the cap nor the total.
     ///
-    /// The id is matched too, so pasting one works. Capped rather than paged: a
+    /// The id is matched too, so pasting one works, and the detail, so a person is found by an
+    /// affiliation. Capped rather than paged: a
     /// query matching more than this has not been narrowed yet, and the count is
     /// reported so the form can say so. Paging a picker would need a per-row
     /// cursor that survives a re-render.
     #[must_use]
-    pub fn search(&self, query: &str) -> AgentMatches<'_> {
+    pub fn search(&self, query: &str, exclude: &[&str]) -> AgentMatches<'_> {
         let needle = query.trim().to_lowercase();
         if needle.is_empty() {
             return AgentMatches { found: Vec::new(), total: 0 };
         }
         let mut matching: Vec<&Agent> = self
             .all()
-            .filter(|agent| agent.label.to_lowercase().contains(&needle) || agent.id.to_lowercase().contains(&needle))
+            .filter(|agent| !exclude.contains(&agent.id.as_str()))
+            .filter(|agent| {
+                agent.label.to_lowercase().contains(&needle)
+                    || agent.id.to_lowercase().contains(&needle)
+                    || agent
+                        .detail
+                        .as_ref()
+                        .is_some_and(|detail| detail.to_lowercase().contains(&needle))
+            })
             .collect();
         let total = matching.len();
         matching.truncate(SEARCH_LIMIT);
@@ -303,28 +349,29 @@ impl<'a> AgentMatches<'a> {
     }
 }
 
-/// One proposal's [`Agent`], or `None` when its payload does not parse into the
-/// shape its [`ProposalKind`] promises; the caller skips it, since a half-filled
-/// proposal is normal.
+/// One proposal's [`Agent`] and, for a person, the affiliation ids its detail is resolved from
+/// (empty for an organization), or `None` when its payload does not parse into the shape its
+/// [`ProposalKind`] promises; the caller skips it, since a half-filled proposal is normal.
 ///
 /// `entity_id` is written into the payload before parsing and overwrites any
 /// `id` there, so the column stays authoritative.
-fn proposed_agent(proposal: &EntityProposal) -> Option<Agent> {
+fn proposed_agent(proposal: &EntityProposal) -> Option<(Agent, Vec<String>)> {
     let mut payload: serde_json::Value = serde_json::from_str(&proposal.payload).ok()?;
     payload
         .as_object_mut()?
         .insert("id".to_string(), serde_json::Value::String(proposal.entity_id.clone()));
-    let (label, kind) = match proposal.kind {
+    let (label, kind, detail, affiliations) = match proposal.kind {
         ProposalKind::Person => {
             let person: Person = serde_json::from_value(payload).ok()?;
-            (person_label(&person), AgentKind::Person)
+            (person_label(&person), AgentKind::Person, None, person.affiliations)
         }
         ProposalKind::Organization => {
             let organization: Organization = serde_json::from_value(payload).ok()?;
-            (organization.name, AgentKind::Organization)
+            let detail = organization_detail(&organization);
+            (organization.name, AgentKind::Organization, detail, Vec::new())
         }
     };
-    Some(Agent { id: proposal.entity_id.clone(), label, kind })
+    Some((Agent { id: proposal.entity_id.clone(), label, kind, detail }, affiliations))
 }
 
 /// Read one directory of agents of one kind, adding an error per file that did not load and per id
@@ -334,6 +381,7 @@ fn read_agents_into(
     kind: AgentKind,
     by_id: &mut BTreeMap<String, Agent>,
     bodies: &mut BTreeMap<String, serde_json::Value>,
+    affiliations: &mut BTreeMap<String, Vec<String>>,
     errors: &mut Vec<LoadError>,
 ) {
     let paths = match read_dir_sorted(dir) {
@@ -345,11 +393,14 @@ fn read_agents_into(
     };
     for file in paths {
         match read_agent(&file, kind) {
-            Ok((agent, _)) if by_id.contains_key(&agent.id) => errors.push(LoadError::File {
+            Ok((agent, _, _)) if by_id.contains_key(&agent.id) => errors.push(LoadError::File {
                 path: file,
                 message: format!("{} is already loaded; this file was ignored", agent.id),
             }),
-            Ok((agent, body)) => {
+            Ok((agent, body, person_affiliations)) => {
+                if kind == AgentKind::Person {
+                    affiliations.insert(agent.id.clone(), person_affiliations);
+                }
                 bodies.insert(agent.id.clone(), body);
                 by_id.insert(agent.id.clone(), agent);
             }
@@ -371,21 +422,28 @@ fn read_dir_sorted(dir: &Path) -> Result<Vec<PathBuf>, String> {
     Ok(paths)
 }
 
-/// One agent and the file body it came from.
+/// One agent, the file body it came from and, for a person, its affiliation ids.
 ///
 /// The body is returned beside the parsed agent rather than re-read later: this function already
-/// holds the bytes, and a second read could see a different file.
-fn read_agent(path: &Path, kind: AgentKind) -> Result<(Agent, serde_json::Value), String> {
+/// holds the bytes, and a second read could see a different file. The affiliations are returned
+/// rather than resolved because the organizations are not all loaded yet.
+fn read_agent(path: &Path, kind: AgentKind) -> Result<(Agent, serde_json::Value, Vec<String>), String> {
     let json = std::fs::read_to_string(path).map_err(|error| error.to_string())?;
     let body: serde_json::Value = serde_json::from_str(&json).map_err(|error| error.to_string())?;
     match kind {
         AgentKind::Person => {
             let person: Person = serde_json::from_str(&json).map_err(|error| error.to_string())?;
-            Ok((Agent { label: person_label(&person), id: person.id, kind }, body))
+            let label = person_label(&person);
+            Ok((Agent { label, id: person.id, kind, detail: None }, body, person.affiliations))
         }
         AgentKind::Organization => {
             let organization: Organization = serde_json::from_str(&json).map_err(|error| error.to_string())?;
-            Ok((Agent { label: organization.name, id: organization.id, kind }, body))
+            let detail = organization_detail(&organization);
+            Ok((
+                Agent { label: organization.name, id: organization.id, kind, detail },
+                body,
+                Vec::new(),
+            ))
         }
     }
 }
@@ -407,6 +465,22 @@ fn person_label(person: &Person) -> String {
     } else {
         name
     }
+}
+
+/// An organization's alternative name: the English one, else the first, `None` when none is
+/// non-blank.
+fn organization_detail(organization: &Organization) -> Option<String> {
+    let names = organization.alternative_name.as_ref()?;
+    let present = |name: &&String| !name.trim().is_empty();
+    let name = names.get("en").filter(present).or_else(|| names.values().find(present))?;
+    Some(name.trim().to_string())
+}
+
+/// The labels of the organizations `ids` name, in `ids`' order, joined into one line; an id
+/// `label_of` cannot resolve is skipped and none resolving is `None`.
+fn affiliation_detail(ids: &[String], label_of: impl Fn(&str) -> Option<String>) -> Option<String> {
+    let labels: Vec<String> = ids.iter().filter_map(|id| label_of(id)).collect();
+    (!labels.is_empty()).then(|| labels.join(", "))
 }
 
 #[cfg(test)]
@@ -459,7 +533,7 @@ mod tests {
         let (agents, _) = committed();
         let scope = AgentScope::published_only(&agents);
 
-        let by_name = scope.search("dokumentationsbibliothek");
+        let by_name = scope.search("dokumentationsbibliothek", &[]);
         assert!(!by_name.is_empty(), "a committed organisation is named this");
         assert!(
             by_name.offered().iter().any(|agent| agent.id == "organization-008"),
@@ -468,18 +542,34 @@ mod tests {
         );
 
         // Case-insensitively, and by id too, so pasting one still works.
-        assert_eq!(scope.search("ORGANIZATION-008").offered().len(), 1);
+        assert_eq!(scope.search("ORGANIZATION-008", &[]).offered().len(), 1);
 
         // A blank query is a picker nobody has searched yet, not "everything".
-        assert!(scope.search("").is_empty());
-        assert!(scope.search("   ").is_empty());
+        assert!(scope.search("", &[]).is_empty());
+        assert!(scope.search("   ", &[]).is_empty());
 
         // A query that matches half the store is capped, and says so, rather than rendering a
         // `<select>` of hundreds. "a" appears in almost every name.
-        let broad = scope.search("a");
+        let broad = scope.search("a", &[]);
         assert!(broad.truncated(), "{} matches", broad.total());
         assert_eq!(broad.offered().len(), SEARCH_LIMIT);
         assert!(broad.total() > SEARCH_LIMIT);
+    }
+
+    #[test]
+    fn an_excluded_agent_counts_toward_neither_the_cap_nor_the_total() {
+        let (agents, _) = committed();
+        let scope = AgentScope::published_only(&agents);
+        let broad = scope.search("a", &[]);
+        let first: Vec<&str> = broad.offered().iter().take(3).map(|agent| agent.id.as_str()).collect();
+
+        let narrowed = scope.search("a", &first);
+        assert_eq!(narrowed.total(), broad.total() - first.len());
+        assert_eq!(narrowed.offered().len(), SEARCH_LIMIT, "the cap refills from further down");
+        assert!(narrowed.offered().iter().all(|agent| !first.contains(&agent.id.as_str())));
+
+        let only = scope.search("ORGANIZATION-008", &["organization-008"]);
+        assert!(only.is_empty());
     }
 
     #[test]
@@ -762,5 +852,151 @@ mod tests {
         // `the_committed_entity_store_loads_without_errors` and its siblings already pin.
         assert_eq!(ids.first(), Some(&"organization-001"));
         assert_eq!(ids.last(), Some(&"person-417"));
+    }
+
+    /// A store in a fresh temp directory: `(persons, organizations)` file bodies by file name.
+    fn store_in(name: &str, persons: &[(&str, &str)], organizations: &[(&str, &str)]) -> Agents {
+        let dir = std::env::temp_dir().join(name);
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("persons")).expect("subdir");
+        std::fs::create_dir_all(dir.join("organizations")).expect("subdir");
+        for (file, body) in persons {
+            std::fs::write(dir.join("persons").join(file), body).expect("write");
+        }
+        for (file, body) in organizations {
+            std::fs::write(dir.join("organizations").join(file), body).expect("write");
+        }
+        let (agents, errors) = Agents::load_from(&dir.join("persons"), &dir.join("organizations"));
+        assert!(errors.is_empty(), "{errors:?}");
+        let _ = std::fs::remove_dir_all(&dir);
+        agents
+    }
+
+    const ORGANIZATION_ONE: &str = r#"{"id":"organization-1","name":"Universität Basel","url":"https://example.org/","alternativeName":{"de":"Uni Basel","en":"University of Basel"}}"#;
+    const ORGANIZATION_TWO: &str = r#"{"id":"organization-2","name":"ETH Zürich","url":"https://example.org/"}"#;
+    const PERSON_AFFILIATED_WITH_BOTH: &str = r#"{"id":"person-1","givenNames":["Ada"],"familyNames":["Lovelace"],"jobTitles":[],"affiliations":["organization-2","organization-missing","organization-1"]}"#;
+
+    #[test]
+    fn a_published_persons_detail_names_its_affiliation_organizations_in_order() {
+        let agents = store_in(
+            "editor-agents-detail-person",
+            &[
+                ("person-1.json", PERSON_AFFILIATED_WITH_BOTH),
+                (
+                    "person-2.json",
+                    r#"{"id":"person-2","givenNames":["Ada"],"familyNames":["Lovelace"],"jobTitles":[],"affiliations":["organization-missing"]}"#,
+                ),
+            ],
+            &[
+                ("organization-1.json", ORGANIZATION_ONE),
+                ("organization-2.json", ORGANIZATION_TWO),
+            ],
+        );
+        assert_eq!(
+            agents.get("person-1").and_then(|agent| agent.detail.as_deref()),
+            Some("ETH Zürich, Universität Basel"),
+            "the person's order, the unresolvable id skipped"
+        );
+        assert_eq!(agents.get("person-2").expect("loaded").detail, None, "nothing resolves");
+    }
+
+    #[test]
+    fn an_organizations_detail_is_its_english_alternative_name() {
+        let agents = store_in(
+            "editor-agents-detail-organization",
+            &[],
+            &[
+                ("organization-1.json", ORGANIZATION_ONE),
+                ("organization-2.json", ORGANIZATION_TWO),
+                (
+                    "organization-3.json",
+                    r#"{"id":"organization-3","name":"C","url":"https://example.org/","alternativeName":{"de":"Dritte","fr":"Troisième"}}"#,
+                ),
+                (
+                    "organization-4.json",
+                    r#"{"id":"organization-4","name":"D","url":"https://example.org/","alternativeName":{"en":"  "}}"#,
+                ),
+            ],
+        );
+        let detail = |id: &str| agents.get(id).expect("loaded").detail.clone();
+        assert_eq!(detail("organization-1").as_deref(), Some("University of Basel"));
+        assert_eq!(
+            detail("organization-3").as_deref(),
+            Some("Dritte"),
+            "no English: the first value"
+        );
+        assert_eq!(detail("organization-2"), None, "no alternative name");
+        assert_eq!(detail("organization-4"), None, "a blank one");
+    }
+
+    #[test]
+    fn a_blank_alternative_name_is_skipped_before_one_is_chosen() {
+        let agents = store_in(
+            "editor-agents-detail-blank",
+            &[],
+            &[(
+                "organization-1.json",
+                r#"{"id":"organization-1","name":"A","url":"https://example.org/","alternativeName":{"en":"  ","de":"Uni Basel"}}"#,
+            )],
+        );
+        assert_eq!(
+            agents.get("organization-1").and_then(|agent| agent.detail.as_deref()),
+            Some("Uni Basel")
+        );
+    }
+
+    #[test]
+    fn a_search_for_an_affiliation_organizations_name_finds_the_person() {
+        let agents = store_in(
+            "editor-agents-detail-search",
+            &[("person-1.json", PERSON_AFFILIATED_WITH_BOTH)],
+            &[
+                ("organization-1.json", ORGANIZATION_ONE),
+                ("organization-2.json", ORGANIZATION_TWO),
+            ],
+        );
+        let scope = AgentScope::published_only(&agents);
+        let found = scope.search("eth zür", &[]);
+        let ids: Vec<&str> = found.offered().iter().map(|agent| agent.id.as_str()).collect();
+        // The organization itself matches by label, the person by detail, in `all`'s id order.
+        assert_eq!(ids, ["organization-2", "person-1"]);
+        assert!(scope
+            .search("University of Basel", &[])
+            .offered()
+            .iter()
+            .any(|agent| agent.id == "organization-1"));
+    }
+
+    #[test]
+    fn a_proposed_person_carries_the_name_of_the_proposed_organization_it_is_affiliated_with() {
+        let agents = store_in(
+            "editor-agents-detail-proposed",
+            &[],
+            &[("organization-1.json", ORGANIZATION_ONE)],
+        );
+        let organization = entity_proposal(
+            ProposalKind::Organization,
+            ProposalOperation::New,
+            "organization-417",
+            r#"{"name":"Proposed Institute","url":"https://example.org/","alternativeName":{"en":"PI"}}"#,
+            ProposalStatus::Submitted,
+        );
+        let person = entity_proposal(
+            ProposalKind::Person,
+            ProposalOperation::New,
+            "person-417",
+            r#"{"givenNames":["Ada"],"familyNames":["Lovelace"],"jobTitles":[],"affiliations":["organization-417","organization-1"]}"#,
+            ProposalStatus::Submitted,
+        );
+        let scope = AgentScope::with_proposals(&agents, &[person, organization]);
+        assert_eq!(
+            scope.get("person-417").and_then(|agent| agent.detail.as_deref()),
+            Some("Proposed Institute, Universität Basel"),
+            "the proposed organization by its proposed name, the published one by its published name"
+        );
+        assert_eq!(
+            scope.get("organization-417").and_then(|agent| agent.detail.as_deref()),
+            Some("PI")
+        );
     }
 }

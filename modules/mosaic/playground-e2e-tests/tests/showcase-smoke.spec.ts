@@ -17,6 +17,7 @@ const ROUTES = [
   "button",
   "card",
   "checkbox-group",
+  "combobox",
   "copy-button",
   "icon",
   "link",

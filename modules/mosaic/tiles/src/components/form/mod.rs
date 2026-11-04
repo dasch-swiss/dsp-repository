@@ -14,6 +14,7 @@ mod choice;
 mod shell;
 
 pub mod checkbox_group;
+pub mod combobox;
 pub mod radio_group;
 pub mod repeatable_list;
 pub mod select;

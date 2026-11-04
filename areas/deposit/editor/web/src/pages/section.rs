@@ -65,7 +65,7 @@ pub const DISCARD: &str = "discard";
 pub const DISCARD_CONFIRM: &str = "discard-confirm";
 
 /// Run the agent pickers' searches and re-render, changing nothing else. One
-/// intent for every picker because every search box posts with the form; it
+/// intent for every Search button because each posts with the form; it
 /// re-renders with the posted body kept, which carries the query back.
 pub const FIND_AGENT: &str = "find-agent";
 
@@ -106,7 +106,7 @@ pub fn proposed_entity(intent: &str) -> Option<&str> {
         .filter(|entity_id| !entity_id.is_empty())
 }
 
-/// The intent a picker's choose button posts, ahead of the picker's `unique`
+/// The intent a replace-search option posts, ahead of the picker's `unique`
 /// and the chosen agent id: `choose-agent:{unique}:{id}`.
 const CHOOSE_AGENT: &str = "choose-agent";
 
@@ -126,6 +126,79 @@ pub fn chosen_agent(intent: &str) -> Option<(&str, &str)> {
         .strip_prefix(PROPOSE_CHANGES_SEPARATOR)?
         .split_once(PROPOSE_CHANGES_SEPARATOR)
         .filter(|(unique, agent_id)| !unique.is_empty() && !agent_id.is_empty())
+}
+
+/// The intent an append search's option posts: `add-agent:{field}:{agent_id}`.
+const ADD_AGENT: &str = "add-agent";
+
+/// The intent value appending a new row holding `agent_id` to the picker field `field` posts. No
+/// field id contains a colon, and [`PROPOSE_CHANGES_SEPARATOR`] says no entity id does.
+#[must_use]
+pub fn add_agent_intent(field: &str, agent_id: &str) -> String {
+    format!("{ADD_AGENT}{PROPOSE_CHANGES_SEPARATOR}{field}{PROPOSE_CHANGES_SEPARATOR}{agent_id}")
+}
+
+/// The field and agent id a posted intent carries, or `None` when it is not an add or either
+/// part is empty.
+#[must_use]
+pub fn added_agent(intent: &str) -> Option<(&str, &str)> {
+    intent
+        .strip_prefix(ADD_AGENT)?
+        .strip_prefix(PROPOSE_CHANGES_SEPARATOR)?
+        .split_once(PROPOSE_CHANGES_SEPARATOR)
+        .filter(|(field, agent_id)| !field.is_empty() && !agent_id.is_empty())
+}
+
+/// The intent a card's Change control posts: `change-agent:{unique}`. It opens the search on an
+/// existing card and, like [`FIND_AGENT`], stores the body and re-renders without a redirect.
+const CHANGE_AGENT: &str = "change-agent";
+
+/// The intent value opening the search on the card of the picker named `unique`.
+#[must_use]
+pub fn change_agent_intent(unique: &str) -> String {
+    format!("{CHANGE_AGENT}{PROPOSE_CHANGES_SEPARATOR}{unique}")
+}
+
+/// The picker a posted intent opens the search on, or `None` when it is not a change or the
+/// picker is empty.
+#[must_use]
+pub fn changed_agent(intent: &str) -> Option<&str> {
+    intent
+        .strip_prefix(CHANGE_AGENT)?
+        .strip_prefix(PROPOSE_CHANGES_SEPARATOR)
+        .filter(|unique| !unique.is_empty())
+}
+
+/// The intent a contributor role chip's Remove posts: `remove-role:{prefix}:{role}`.
+const REMOVE_ROLE: &str = "remove-role";
+
+/// The intent value removing the role `role` of the contributor row `prefix`
+/// (`attributions.r0`). The role rides as text, not as a position: the chips follow the held
+/// order and the posted `{prefix}.role` pairs follow the checkboxes' document order, so an index
+/// would name a different role in each.
+#[must_use]
+pub fn remove_role_intent(prefix: &str, role: &str) -> String {
+    format!("{REMOVE_ROLE}{PROPOSE_CHANGES_SEPARATOR}{prefix}{PROPOSE_CHANGES_SEPARATOR}{role}")
+}
+
+/// The row prefix and role a posted intent carries, or `None` when it is not a role removal or
+/// either part is empty. Split on the first colon after the verb: a prefix never holds one, a
+/// custom role may.
+#[must_use]
+pub fn removed_role(intent: &str) -> Option<(&str, &str)> {
+    intent
+        .strip_prefix(REMOVE_ROLE)?
+        .strip_prefix(PROPOSE_CHANGES_SEPARATOR)?
+        .split_once(PROPOSE_CHANGES_SEPARATOR)
+        .filter(|(prefix, role)| !prefix.is_empty() && !role.is_empty())
+}
+
+/// Whether a posted intent keeps the body on the enhanced path of a write: the choice, the append
+/// and the role removal edit the form's rows, and the rest of the form may hold a row that is not
+/// storable yet. Find and change re-render the body in any case.
+#[must_use]
+pub fn keeps_posted(intent: &str) -> bool {
+    chosen_agent(intent).is_some() || added_agent(intent).is_some() || removed_role(intent).is_some()
 }
 
 /// The name a form posts the draft revision it was rendered from under. The
@@ -501,8 +574,9 @@ impl SectionView<'_> {
     }
 
     /// What a repeatable field needs: the posted body, and the base URL its add and
-    /// remove controls submit to; see [`Self::rows_action`].
-    fn rows(&self) -> Rows<'_> {
+    /// remove controls submit to, see [`Self::rows_action`], and the agent search a picker runs as
+    /// its combobox is typed in, `search_path`.
+    fn rows<'a>(&'a self, search_path: &'a str) -> Rows<'a> {
         Rows {
             posted: self.posted,
             submitted: self.submitted,
@@ -513,6 +587,7 @@ impl SectionView<'_> {
             // The section form dispatches all three propose intents, unlike the entity
             // form's affiliations picker, which reuses these widgets.
             propose: true,
+            search_path: Some(search_path),
             // A field RDU accepted renders no control to focus.
             focus: self
                 .focus_finding
@@ -722,13 +797,22 @@ fn status(view: &SectionView<'_>) -> Markup {
     }
 }
 
+const AUTOSAVE_NOT_COMBOBOX: &str = "!evt.target.matches('[role=combobox]')";
+
 /// The section's fields, and the control that saves them.
 fn form(view: &SectionView<'_>) -> Markup {
     // Only on a form a save can change: a read-only one has no controls for
     // change to fire from, and advertising a save the handler would refuse is
     // worse than none.
-    let autosave = view.locked.is_none().then(|| datastar::post(view.action()).form());
+    //
+    // A combobox's `change` is its own: the search it types ahead is not an edit, and its choice
+    // posts as an intent, so an autosave in between would only replace the box under the cursor.
+    let autosave = view
+        .locked
+        .is_none()
+        .then(|| format!("{AUTOSAVE_NOT_COMBOBOX} && {}", datastar::post(view.action()).form()));
     let action = view.action();
+    let agents_path = format!("{action}/agents");
     html! {
         (persistent_box(view))
         h2 class="font-display text-xl mb-4" { (view.section.title) }
@@ -759,7 +843,14 @@ fn form(view: &SectionView<'_>) -> Markup {
             @for field in view.section.fields_for(view.audience) {
                 // No obligation pill here: it is inside the field's own label, the only
                 // way it reaches a screen reader now that nothing is required.
-                (field_row(field, view.draft, view.mode_of(field.id), view.rows()))
+                ({
+                    field_row(
+                        field,
+                        view.draft,
+                        view.mode_of(field.id),
+                        view.rows(&agents_path),
+                    )
+                })
                 @for message in view.errors_for(field.id) {
                     (alert(message).variant(AlertVariant::Warning))
                 }
@@ -1240,6 +1331,41 @@ mod tests {
         SCOPE.get_or_init(|| AgentScope::published_only(published_agents()))
     }
 
+    #[test]
+    fn an_add_agent_intent_round_trips_and_a_garbled_one_is_nothing() {
+        let intent = add_agent_intent("attributions", "person-001");
+        assert_eq!(intent, "add-agent:attributions:person-001");
+        assert_eq!(added_agent(&intent), Some(("attributions", "person-001")));
+        assert_eq!(added_agent("add-agent:attributions:"), None);
+        assert_eq!(added_agent("add-agent::person-001"), None);
+        assert_eq!(added_agent("add-agent:attributions"), None);
+        assert_eq!(added_agent("choose-agent:attributions:person-001"), None);
+    }
+
+    #[test]
+    fn a_change_agent_intent_round_trips_and_a_garbled_one_is_nothing() {
+        let intent = change_agent_intent("attributions.r0.contributor");
+        assert_eq!(intent, "change-agent:attributions.r0.contributor");
+        assert_eq!(changed_agent(&intent), Some("attributions.r0.contributor"));
+        assert_eq!(changed_agent("change-agent:"), None);
+        assert_eq!(changed_agent("change-agent"), None);
+        assert_eq!(changed_agent("add-agent:attributions:person-001"), None);
+    }
+
+    #[test]
+    fn a_remove_role_intent_round_trips_and_a_garbled_one_is_nothing() {
+        let intent = remove_role_intent("attributions.r0", "Author");
+        assert_eq!(intent, "remove-role:attributions.r0:Author");
+        assert_eq!(removed_role(&intent), Some(("attributions.r0", "Author")));
+        // A custom role may hold a colon: the split is on the first one after the prefix.
+        let custom = remove_role_intent("attributions.r0", "Editor: volume 2");
+        assert_eq!(removed_role(&custom), Some(("attributions.r0", "Editor: volume 2")));
+        assert_eq!(removed_role("remove-role::Author"), None);
+        assert_eq!(removed_role("remove-role:attributions.r0:"), None);
+        assert_eq!(removed_role("remove-role:attributions.r0"), None);
+        assert_eq!(removed_role("change-agent:attributions.r0"), None);
+    }
+
     /// A draft over a real committed project, so the fields under test hold what the corpus
     /// actually holds rather than what a fixture assumes.
     pub(super) fn published_draft() -> ProjectDraft {
@@ -1364,20 +1490,52 @@ mod tests {
         assert!(clashes.is_empty(), "duplicate element ids: {clashes:?}");
     }
 
+    /// The opening tags in `out` that carry a `data-on:input` trigger. Maud escapes `<` inside an
+    /// attribute value, so splitting on it finds only tags.
+    fn input_triggers(out: &str) -> Vec<&str> {
+        out.split('<')
+            .filter(|tag| tag.contains("data-on:input"))
+            .map(|tag| tag.split('>').next().unwrap_or(tag))
+            .collect()
+    }
+
     #[test]
     fn an_editable_form_autosaves_on_change_and_a_locked_one_does_not() {
         // change rather than input: the response patches the whole region, so a
-        // mid-keystroke trigger would patch the field being typed into. Nothing on
-        // a read-only form.
+        // mid-keystroke trigger would patch the field being typed into. The one
+        // keystroke trigger is a combobox's search, which reads and morphs only its
+        // own results. Nothing on a read-only form.
         let draft = published_draft();
-        let editable = page(&view(&draft, "overview", Audience::Everyone)).into_string();
-        assert!(editable.contains("data-on:change__debounce.1s"), "{editable}");
-        assert!(!editable.contains("data-on:input"), "never on every keystroke: {editable}");
+        let overview = page(&view(&draft, "overview", Audience::Everyone)).into_string();
+        assert!(overview.contains("data-on:change__debounce.1s"), "{overview}");
+        let contributors = page(&view(&draft, "contributors", Audience::Everyone)).into_string();
+        assert!(contributors.contains("data-on:change__debounce.1s"), "{contributors}");
+        // A combobox's change never autosaves; every other control's does.
+        assert!(
+            contributors
+                .contains("data-on:change__debounce.1s=\"!evt.target.matches('[role=combobox]') &amp;&amp; @post("),
+            "{contributors}"
+        );
+
+        for out in [&overview, &contributors] {
+            for tag in input_triggers(out) {
+                let name = tag.split("name=\"").nth(1).and_then(|rest| rest.split('"').next());
+                assert!(
+                    tag.contains(r#"role="combobox""#) && name.is_some_and(|name| name.ends_with(".q")),
+                    "only a combobox search types ahead, never the form or a field control: <{tag}>"
+                );
+                assert!(tag.contains("data-on:input__debounce.300ms=\"@get("), "and it reads: <{tag}>");
+                assert!(!tag.contains("@post("), "<{tag}>");
+            }
+        }
+        assert!(input_triggers(&overview).is_empty(), "{overview}");
+        assert!(!input_triggers(&contributors).is_empty(), "{contributors}");
 
         let mut locked = view(&draft, "overview", Audience::Everyone);
         locked.locked = Some(Locked::Submitted);
         let out = page(&locked).into_string();
         assert!(!out.contains("data-on:change"), "{out}");
+        assert!(!out.contains("data-on:input"), "{out}");
     }
 
     #[test]
@@ -1503,20 +1661,32 @@ mod tests {
             }
         }
 
-        // On a section that has an agent field, every picker carries its own search box and the
-        // id rides in a hidden input, which is what keeps an untouched save byte-exact.
+        // On a section that has an agent field, a filled slot is a card that opens its search, each
+        // list has one append search, and the id rides in a hidden input, which is what keeps an
+        // untouched save byte-exact.
         let contributors = page(&view(&draft, "contributors", Audience::Everyone)).into_string();
         assert!(
             contributors.contains(r#"<input type="hidden" name="contactPoint.r0" value="organization-008">"#),
             "the id posts from a hidden input: {contributors}"
         );
         assert!(
-            contributors.contains(r#"name="contactPoint.r0.q""#),
-            "the picker offers a search: {contributors}"
+            contributors.contains(r#"value="change-agent:contactPoint.r0""#),
+            "the card offers the search: {contributors}"
         );
+        for list in ["attributions", "contactPoint"] {
+            assert!(
+                contributors.contains(&format!(r#"name="{list}.new.q""#)),
+                "{list} offers an append search: {contributors}"
+            );
+        }
         assert!(
             contributors.contains(r#"value="find-agent""#),
             "and a control to run it: {contributors}"
+        );
+        assert!(
+            contributors
+                .contains("data-on:input__debounce.300ms=\"@get('/projects/0801d/sections/contributors/agents?for="),
+            "the section runs the search as the box is typed in: {contributors}"
         );
 
         let image = page(&view(&draft, "image", Audience::Everyone)).into_string();

@@ -16,9 +16,11 @@
 //!
 //! ## Add and remove are server round-trips
 //!
-//! Both controls are submit buttons carrying a `formaction`, so the **whole form
-//! body is posted** and the server re-renders the list: nothing typed elsewhere
-//! is lost, the server keeps owning form state, and it works with no JavaScript.
+//! The add button (omitted by [`RepeatableListBuilder::without_add`]) and each
+//! row's remove button are submit buttons carrying a `formaction`, so the **whole
+//! form body is posted** and the server re-renders the list: nothing typed
+//! elsewhere is lost, the server keeps owning form state, and it works with no
+//! JavaScript.
 //!
 //! Deliberately not `<button type="submit" name="…" value="…">`: a form
 //! submitted programmatically (`new FormData(form)`) does **not** include the
@@ -46,6 +48,7 @@ pub struct RepeatableListBuilder {
     rows: Vec<Row>,
     item_noun: String,
     add_label: Option<Markup>,
+    add_hidden: bool,
     empty_message: Option<Markup>,
     hint: Option<Markup>,
     error: Option<Markup>,
@@ -64,7 +67,9 @@ const DEFAULT_ITEM_NOUN: &str = "item";
 /// `rows_action` is a base URL: the add button posts to `{rows_action}/add` and
 /// a row's remove button to `{rows_action}/{key}/remove`. It is a constructor
 /// argument rather than an option because a list with no way to add or remove a
-/// row is not this tile — that is a list.
+/// row is not this tile — that is a list. The add button is the exception: it
+/// can be left out with [`RepeatableListBuilder::without_add`] when the caller
+/// supplies its own way to add a row.
 pub fn repeatable_list(
     name: impl Into<String>,
     legend: impl Render,
@@ -77,6 +82,7 @@ pub fn repeatable_list(
         rows: Vec::new(),
         item_noun: DEFAULT_ITEM_NOUN.to_string(),
         add_label: None,
+        add_hidden: false,
         empty_message: None,
         hint: None,
         error: None,
@@ -116,6 +122,14 @@ impl RepeatableListBuilder {
     /// Set the add button's visible text (default "Add").
     pub fn add_label(mut self, label: impl Render) -> Self {
         self.add_label = Some(label.render());
+        self
+    }
+
+    /// Render no add button, for a list whose rows are added by a control the
+    /// caller places beside it (a search that appends a row). The add URL stays
+    /// routed, and the remove buttons stay.
+    pub fn without_add(mut self) -> Self {
+        self.add_hidden = true;
         self
     }
 
@@ -184,12 +198,14 @@ impl RepeatableListBuilder {
                     }
                 }
             }
-            ({
-                button(add_label)
-                    .variant(ButtonVariant::Secondary)
-                    .class("repeatable-add")
-                    .form_action(format!("{}/add", self.rows_action))
-            })
+            @if !self.add_hidden {
+                ({
+                    button(add_label)
+                        .variant(ButtonVariant::Secondary)
+                        .class("repeatable-add")
+                        .form_action(format!("{}/add", self.rows_action))
+                })
+            }
         };
         group_shell(id, &self.legend, self.hint.as_ref(), self.error.as_ref(), body)
     }
@@ -268,6 +284,26 @@ mod tests {
         let out = keywords().build().into_string();
         assert!(out.contains(&format!(r#"formaction="{ACTION}/add""#)), "{out}");
         assert!(out.contains("Add a keyword"), "{out}");
+    }
+
+    #[test]
+    fn a_list_without_an_add_button_keeps_its_rows_and_their_remove_buttons() {
+        let out = keywords().without_add().build().into_string();
+        assert!(!out.contains("Add a keyword"), "{out}");
+        assert!(!out.contains(&format!(r#"formaction="{ACTION}/add""#)), "{out}");
+        assert_eq!(out.matches(r#"type="submit""#).count(), 2, "{out}");
+        assert!(out.contains(&format!(r#"formaction="{ACTION}/k7f3/remove""#)), "{out}");
+        let empty = repeatable_list("keywords", "Keywords", ACTION)
+            .without_add()
+            .empty_message("No keywords yet.")
+            .build()
+            .into_string();
+        assert!(empty.contains("No keywords yet."), "{empty}");
+        assert!(!empty.contains(r#"type="submit""#), "{empty}");
+        assert!(
+            empty.contains(r#"<input type="hidden" name="keywords.row" value="">"#),
+            "{empty}"
+        );
     }
 
     #[test]

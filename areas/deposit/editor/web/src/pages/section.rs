@@ -35,7 +35,7 @@ use shared_datastar as datastar;
 
 use crate::entity::origin::{entity_url, Origin};
 use crate::entity::{entity_labels, Precedence};
-use crate::form::widgets::{field_row, format_message, Mode, Rows, FOCUS_AUTOFOCUS};
+use crate::form::widgets::{field_row, finding_message, Mode, Rows, FOCUS_AUTOFOCUS};
 use crate::form::INTENT;
 
 /// The id the enhanced path's patch targets. Also the anchor a save returns to.
@@ -1054,7 +1054,7 @@ fn saved_notice(view: &SectionView<'_>) -> Markup {
                         " ("
                         (section.title)
                         "): "
-                        (format_message(finding.kind))
+                        (finding_message(finding))
                     }
                 }
             }
@@ -1559,8 +1559,9 @@ mod tests {
     fn an_editable_form_autosaves_on_change_and_a_locked_one_does_not() {
         // change rather than input: the response patches the whole region, so a
         // mid-keystroke trigger would patch the field being typed into. The one
-        // keystroke trigger is a combobox's search, which reads and morphs only its
-        // own results. Nothing on a read-only form.
+        // keystroke triggers are a combobox's search, which reads and morphs only its
+        // own results, and a length counter, which only sets a local signal.
+        // Nothing on a read-only form.
         let draft = published_draft();
         let overview = page(&view(&draft, "overview", Audience::Everyone)).into_string();
         assert!(overview.contains("data-on:change__debounce.1s"), "{overview}");
@@ -1575,6 +1576,14 @@ mod tests {
 
         for out in [&overview, &contributors] {
             for tag in input_triggers(out) {
+                if tag.contains("data-signals=\"{_count_") {
+                    assert!(tag.contains("data-on:input=\"$_count_"), "<{tag}>");
+                    assert!(tag.contains("data-on:input__debounce.500ms=\"$_announce_"), "<{tag}>");
+                    for action in ["@post(", "@get(", "@put(", "@patch(", "@delete("] {
+                        assert!(!tag.contains(action), "<{tag}>");
+                    }
+                    continue;
+                }
                 let name = tag.split("name=\"").nth(1).and_then(|rest| rest.split('"').next());
                 assert!(
                     tag.contains(r#"role="combobox""#) && name.is_some_and(|name| name.ends_with(".q")),
@@ -1584,7 +1593,12 @@ mod tests {
                 assert!(!tag.contains("@post("), "<{tag}>");
             }
         }
-        assert!(input_triggers(&overview).is_empty(), "{overview}");
+        assert!(
+            input_triggers(&overview)
+                .iter()
+                .all(|tag| tag.contains("data-signals=\"{_count_")),
+            "{overview}"
+        );
         assert!(!input_triggers(&contributors).is_empty(), "{contributors}");
 
         let mut locked = view(&draft, "overview", Audience::Everyone);

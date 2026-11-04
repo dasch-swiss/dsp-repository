@@ -73,6 +73,7 @@ const PERSON_FIELDS: &[Field] = &[
         shape: Some(Shape::StringRows),
         format: &[],
         vocabulary: None,
+        max_chars: None,
     },
     Field {
         id: "familyNames",
@@ -84,6 +85,7 @@ const PERSON_FIELDS: &[Field] = &[
         shape: Some(Shape::StringRows),
         format: &[],
         vocabulary: None,
+        max_chars: None,
     },
     Field {
         id: "jobTitles",
@@ -98,6 +100,7 @@ const PERSON_FIELDS: &[Field] = &[
         shape: Some(Shape::StringRows),
         format: &[],
         vocabulary: None,
+        max_chars: None,
     },
     Field {
         id: "affiliations",
@@ -109,6 +112,7 @@ const PERSON_FIELDS: &[Field] = &[
         shape: Some(Shape::AgentRows),
         format: &[],
         vocabulary: None,
+        max_chars: None,
     },
     Field {
         id: "sameAs",
@@ -120,6 +124,7 @@ const PERSON_FIELDS: &[Field] = &[
         shape: Some(Shape::ReferenceRows(SAME_AS_TYPES)),
         format: format::REFERENCE_LINK,
         vocabulary: None,
+        max_chars: None,
     },
     Field {
         id: "email",
@@ -133,6 +138,7 @@ const PERSON_FIELDS: &[Field] = &[
         shape: Some(Shape::Text(editor_core::form::WhenCleared::Drop)),
         format: &[],
         vocabulary: None,
+        max_chars: None,
     },
 ];
 
@@ -150,6 +156,7 @@ const ORGANIZATION_FIELDS: &[Field] = &[
         shape: Some(Shape::Text(editor_core::form::WhenCleared::Drop)),
         format: &[],
         vocabulary: None,
+        max_chars: None,
     },
     Field {
         id: "url",
@@ -161,6 +168,7 @@ const ORGANIZATION_FIELDS: &[Field] = &[
         shape: Some(Shape::Text(editor_core::form::WhenCleared::Drop)),
         format: format::LINK,
         vocabulary: None,
+        max_chars: None,
     },
     Field {
         id: "alternativeName",
@@ -172,6 +180,7 @@ const ORGANIZATION_FIELDS: &[Field] = &[
         shape: Some(Shape::Multilingual),
         format: &[],
         vocabulary: None,
+        max_chars: None,
     },
     Field {
         id: "sameAs",
@@ -183,6 +192,7 @@ const ORGANIZATION_FIELDS: &[Field] = &[
         shape: Some(Shape::ReferenceRows(SAME_AS_TYPES)),
         format: format::REFERENCE_LINK,
         vocabulary: None,
+        max_chars: None,
     },
     Field {
         id: "email",
@@ -194,6 +204,7 @@ const ORGANIZATION_FIELDS: &[Field] = &[
         shape: Some(Shape::Text(editor_core::form::WhenCleared::Drop)),
         format: &[],
         vocabulary: None,
+        max_chars: None,
     },
 ];
 
@@ -394,7 +405,7 @@ pub struct EntityView<'a> {
     pub posted: Option<&'a FormBody>,
     pub adding_row: Option<&'a str>,
     pub agents: Option<&'a AgentScope<'a>>,
-    /// Format findings on the proposed entity, each keyed by the control it renders
+    /// Findings on the proposed entity, each keyed by the control it renders
     /// on, as the section form's are.
     pub format_findings: Vec<Finding>,
     /// Base URL a repeatable field's add and remove controls submit to —
@@ -1232,7 +1243,7 @@ mod tests {
             posted: None,
             adding_row: None,
             agents: None,
-            format_findings: format::findings(ORGANIZATION_FIELDS.iter(), &draft, None),
+            format_findings: format::findings(ORGANIZATION_FIELDS.iter(), &draft, None, None),
             rows_action: "/projects/0801d/entities/organization-900/fields".to_string(),
             origin: None,
         };

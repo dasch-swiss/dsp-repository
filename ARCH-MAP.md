@@ -250,8 +250,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `routes`, `route_paths`, `reconcile_published`,
   `Forge`, `EditorPullRequest`, `CreatedProject`, `CreatedProjectRepository`, `Removal`,
   `editor_core::creation::{seed, reseed, shown, pid_for, pid_holder}`,
-  `editor_core::form::registry::GIT_OWNED`, `editor_core::form::format::{findings, Finding, ValueKind, Member}`,
-  `editor_web::form::widgets::{format_message, format_hint}`,
+  `editor_core::form::registry::GIT_OWNED`, `editor_core::form::format::{findings, Finding, FindingKind, ValueKind, Member}`,
+  `editor_core::form::registry::Field::max_chars`, `editor_core::review::published_draft`,
+  `editor_web::form::widgets::{format_message, format_hint, finding_message}`,
   `Agent.detail` (a person's affiliations or an organisation's alternative name, matched by `AgentScope::search`),
   `agents::proposal_agent`, `form::submit::drop_agent`, `EntityProposalRepository::withdraw_rewriting_draft`,
   `entity::origin::Origin`, `handlers::navigate`,
@@ -343,9 +344,11 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     `deposit-server`'s.
   - `editor-ports` depends on `std` alone: on no workspace crate but `shared-*`
     (**static-analysis** — `check-capability-deps.sh`), on no third-party crate (**static-analysis** — the same script).
-  - A format finding never stops a save: it is computed from the draft at every render and never
-    stored; submit refuses one in the viewer's fields, approve in every field, RDU-only included
+  - A finding (format or length) never stops a save: it is computed from the draft at every render and never
+    stored; submit refuses one in the viewer's fields, approve in every field, RDU-only included; a
+    length finding is exempt where the value equals the published one
     (**static-analysis** — `sections.rs`'s autosave and Save/Add/Submit parity tests).
+  - The missing-language check, `form::submit::{lines_without_language, LineWithoutLanguage}`, lives beside `form::format::findings` because the applier drops a multilingual line with no language, so the stored draft cannot say it was typed; such a line is refused at submit (and flagged on Save) by that check and is not a Finding.
   - `GIT_OWNED` members (`howToCite`, `legalInfo`) are not compared for a published project, and the
     pull-request run takes them from the published file (`with_git_owned`) (**static-analysis** —
     `every_git_owned_member_is_a_display_only_field`, `a_git_owned_member_is_not_a_change`).
@@ -532,7 +535,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Paths:** `:(glob)areas/deposit/server/**`
 - **Purpose:** `deposit-server`, the Deposit Area's composition root and its one binary
   (`areas/deposit/ADR-0004`): configuration loading and validation, observability, the
-  security-header, CSRF and OTel layers, the untraced routes, the page-URL normalizer built from both web crates' route paths, and
+  security-header, CSRF, request-body-limit and OTel layers, the untraced routes, the page-URL normalizer built from both web crates' route paths, and
   the fallback 404. It
   opens identity's store, then the editor's, constructs the adapters, starts `Identity` and then
   `Editor`, and merges their routers; it holds no business logic. Its tests are the ones that

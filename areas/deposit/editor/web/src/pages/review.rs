@@ -23,6 +23,7 @@
 //! unset a field the contract requires. Accept and edit-in-place still apply.
 
 use editor_core::draft::ProjectDraft;
+use editor_core::form::format;
 use editor_core::form::registry::Field;
 use editor_core::proposals::{EntityProposal, ProposalDecision, ProposalKind, ProposalOperation};
 use editor_core::records::SubmissionState;
@@ -1056,9 +1057,15 @@ fn editor(row: &ReviewRow<'_>) -> Markup {
     if let Some(value) = row.outgoing() {
         outgoing.set(field.id, value.clone());
     }
-    // Rows::default(): no posted body and no add/remove action, since a reviewer
-    // looks at what was submitted.
-    control(field, &outgoing, shape, crate::form::widgets::Rows::default())
+    // The published side exempts a value already published from the length finding.
+    let mut published = ProjectDraft::default();
+    if let Some(value) = row.published {
+        published.set(field.id, value.clone());
+    }
+    let findings = format::findings(std::iter::once(field), &outgoing, None, Some(&published));
+    // No posted body and no add/remove action, since a reviewer looks at what was submitted.
+    let rows = crate::form::widgets::Rows { format_findings: &findings, ..Default::default() };
+    control(field, &outgoing, shape, rows)
 }
 
 /// Accept / revert / undecided for one field. A radio group, not buttons: the

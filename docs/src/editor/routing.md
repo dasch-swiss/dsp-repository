@@ -85,13 +85,15 @@ Four things about the enhanced path fail quietly if changed:
 
 ## Request middleware
 
-Three layers wrap the app, in this order from the outside in:
+Three layers wrap the app, in this order from the outside in, and a fourth, the request body limit, wraps the traced routes only:
 
 1. **Security headers** — `Content-Security-Policy: frame-ancestors 'none'`, `X-Frame-Options: DENY` and `X-Content-Type-Options: nosniff` on every response, set outside CSRF so its refusals carry them too. See [Authentication](./authentication.md#framing) for why framing is refused. There is no full CSP: Google Fonts and the vendored Datastar would need an allowlist, a separate decision. The combobox tile's inline `onkeydown` handler would need a hash or a rewrite into a Datastar `data-on:keydown` under a strict `script-src`. HSTS is not the app's to set.
 2. **CSRF** — `Sec-Fetch-Site: same-origin` is required on every non-`GET`/`HEAD` request, failing closed on everything else including an absent header. It is applied in `build_app` **after every route**, so the positional traced/untraced split cannot route around it: inside `build_router` it would have missed `/telemetry/collect`, the only pre-auth POST in the app, with no test failing. See [Authentication](./authentication.md#csrf) for why `SameSite` and `__Host-` do not close this.
 3. **OTel** — the traced/untraced split below.
 
-Access control is **not** a fourth layer. It is two extractors, `Authenticated` and `Rdu`, and that is the design rather than an omission: a handler that names one cannot run without the check, because the argument is what runs it, and a handler that names neither is visibly public at the point anyone reads its signature. A middleware over a sub-router would have added a second positional invariant of exactly the shape this module already regrets — the traced/untraced split is invisible in the route table and reversible by moving one line — and here the failure mode is an unauthenticated route rather than a missing span. See [Authentication](./authentication.md#authorization).
+The body limit is `DefaultBodyLimit::max(256 KiB)` on every editor and identity route, in place of axum's 2 MiB default. The largest committed project (29 KB of JSON) form-encodes to about 40 KB as a whole and a request posts one section or one entity; the text inputs carry no `maxlength`, so the limit is what bounds a stored value. `/healthz` and the telemetry beacon are outside it (the beacon has its own limits).
+
+Access control is **not** a layer. It is two extractors, `Authenticated` and `Rdu`, and that is the design rather than an omission: a handler that names one cannot run without the check, because the argument is what runs it, and a handler that names neither is visibly public at the point anyone reads its signature. A middleware over a sub-router would have added a second positional invariant of exactly the shape this module already regrets — the traced/untraced split is invisible in the route table and reversible by moving one line — and here the failure mode is an unauthenticated route rather than a missing span. See [Authentication](./authentication.md#authorization).
 
 ## Traced and untraced routes
 

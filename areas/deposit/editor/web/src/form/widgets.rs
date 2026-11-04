@@ -14,10 +14,12 @@
 //! note rather than silence for a field whose widget has not landed, so a
 //! depositor does not conclude the form lost it.
 
+use std::borrow::Cow;
+
 use editor_core::agents::{Agent, AgentKind, AgentScope};
 use editor_core::disciplines::{self, snsf_text, SnsfDiscipline};
 use editor_core::draft::{ProjectDraft, UrlSlot};
-use editor_core::form::format::{Finding, ValueKind};
+use editor_core::form::format::{Finding, FindingKind, ValueKind};
 use editor_core::form::registry::{source_label, Field, Obligation};
 use editor_core::form::submit::LineWithoutLanguage;
 use editor_core::form::{
@@ -311,8 +313,8 @@ pub(crate) fn control(field: &Field, draft: &ProjectDraft, shape: Shape, rows: R
         // four long lines competing with the fields around them.
         "accessRights.accessRights" => dropdown(field, draft, choices(shape)),
         "dataPublicationYear" => year(field, draft),
-        "shortDescription" => long_text(field, draft, 2, Some(SHORT_DESCRIPTION_MAX)),
-        "provenance" | "imageCredit" => long_text(field, draft, 3, None),
+        "shortDescription" => long_text(field, draft, rows, 2),
+        "provenance" | "imageCredit" => long_text(field, draft, rows, 3),
         "description" => multilingual(field, draft, 5),
         "abstract" => multilingual(field, draft, 2),
         // Unreachable while the registry and this dispatch agree, which
@@ -326,7 +328,7 @@ pub(crate) fn control(field: &Field, draft: &ProjectDraft, shape: Shape, rows: R
 }
 
 /// What a control needs beyond the draft: the posted body, where a repeatable
-/// field's add and remove controls submit to, and the format findings. A named type
+/// field's add and remove controls submit to, and the findings. A named type
 /// because several are `Option`-ish and a positional list would let call sites
 /// scramble them silently.
 #[derive(Debug, Clone, Copy, Default)]
@@ -347,7 +349,7 @@ pub struct Rows<'a> {
     /// The agents an id field may refer to. `None` renders the id bare, which is
     /// what a deployment with no data directory looks like.
     pub agents: Option<&'a AgentScope<'a>>,
-    /// Format findings, each keyed by the name of the control it renders on.
+    /// Findings, each keyed by the name of the control it renders on.
     pub format_findings: &'a [Finding],
     /// Whether an agent id also renders the controls that start an entity
     /// proposal. Defaults to `false`: the entity form's `affiliations` field reuses
@@ -398,7 +400,7 @@ pub(crate) fn format_field(
     lead: Option<&str>,
     rows: Rows<'_>,
 ) -> TextFieldBuilder {
-    let finding = rows.format_findings.iter().find(|finding| finding.control == name);
+    let (finding, focus) = finding_on(rows, &name);
     let hint = [lead, kind.map(format_hint)]
         .into_iter()
         .flatten()
@@ -407,12 +409,17 @@ pub(crate) fn format_field(
     let control = text_field(name, label).input_type(InputType::Text);
     let control = if hint.is_empty() { control } else { control.hint(hint) };
     match finding {
-        Some(finding) if rows.focus == Some(finding.control.as_str()) => {
-            control.error(format_message(finding.kind)).autofocus()
-        }
-        Some(finding) => control.error(format_message(finding.kind)),
+        Some(finding) if focus => control.error(finding_message(finding)).autofocus(),
+        Some(finding) => control.error(finding_message(finding)),
         None => control,
     }
+}
+
+/// The finding on the control posting under `name`, and whether that control takes the
+/// focus a refused submit asks for.
+fn finding_on<'a>(rows: Rows<'a>, name: &str) -> (Option<&'a Finding>, bool) {
+    let finding = rows.format_findings.iter().find(|finding| finding.control == name);
+    (finding, finding.is_some() && rows.focus == Some(name))
 }
 
 /// The kind of `field`'s value its control posts under `posted` (see
@@ -455,6 +462,17 @@ pub const fn format_message(kind: ValueKind) -> &'static str {
         }
         ValueKind::LinkOrNotAccessible => {
             "Enter a full web address, such as https://www.dasch.swiss, or “not accessible”."
+        }
+    }
+}
+
+/// What a finding is told, standing alone like [`format_message`]: the field's label
+/// names what is too long, since a screen reader reads it without one.
+pub fn finding_message(finding: &Finding) -> Cow<'static, str> {
+    match finding.kind {
+        FindingKind::Format(kind) => Cow::Borrowed(format_message(kind)),
+        FindingKind::TooLong { max } => {
+            Cow::Owned(format!("{} must be {max} characters or fewer.", finding.field.label))
         }
     }
 }
@@ -2545,10 +2563,6 @@ fn dropdown(field: &Field, draft: &ProjectDraft, values: &[&str]) -> Markup {
     }
 }
 
-/// The character bound the registry's hint states ("Up to 200 characters"), so
-/// the control enforces what the reader was told.
-const SHORT_DESCRIPTION_MAX: u32 = 200;
-
 /// The value a scalar control shows: the stored string, with a placeholder
 /// sentinel rendered as empty. The rule the untouched-save guarantee rests on:
 /// each sentinel renders empty and posts empty, and `apply_text` recognises that
@@ -2595,16 +2609,71 @@ fn year(field: &Field, draft: &ProjectDraft) -> Markup {
     }
 }
 
-fn long_text(field: &Field, draft: &ProjectDraft, rows: u32, maxlength: Option<u32>) -> Markup {
-    let mut control = textarea(field.id, labelled(field)).rows(rows).value(scalar_value(field, draft));
+/// A textarea; where the registry caps the field, a live "characters remaining"
+/// counter under it. No `maxlength`: a longer value can be typed or pasted and the
+/// server's length finding answers it.
+fn long_text(field: &Field, draft: &ProjectDraft, rows: Rows<'_>, lines: u32) -> Markup {
+    let (finding, focus) = finding_on(rows, field.id);
+    let value = scalar_value(field, draft);
+    let mut control = textarea(field.id, labelled(field)).rows(lines).value(value);
     if let Some(hint) = field.hint {
         control = control.hint(hint);
     }
-    if let Some(maxlength) = maxlength {
-        control = control.maxlength(maxlength);
+    if let Some(finding) = finding {
+        control = control.error(finding_message(finding));
+        if focus {
+            control = control.autofocus();
+        }
     }
+    let Some(max) = field.max_chars else {
+        return html! {
+            (control)
+        };
+    };
+    // Unicode scalar values on both sides (the server's `chars().count()`, the
+    // client's spread), never UTF-16 units, over the trimmed value the server
+    // stores. The server renders the count signal, so it is right on load and
+    // after every morph.
+    let key = field.id.replace(|c: char| !c.is_ascii_alphanumeric(), "_");
+    let (count, announce) = (format!("_count_{key}"), format!("_announce_{key}"));
+    let stored = i64::try_from(value.chars().count()).unwrap_or(i64::MAX);
+    let remaining = i64::try_from(max).unwrap_or(i64::MAX) - stored;
+    let sentence = |signal: &str| {
+        format!(
+            "'You have ' + Math.abs(${signal}) + (Math.abs(${signal}) === 1 ? ' character ' : ' characters ') + \
+             (${signal} < 0 ? 'too many' : 'remaining')"
+        )
+    };
+    let signals = format!("{{{count}: {remaining}}}");
+    let recount = format!("${count} = {max} - [...evt.target.value.trim()].length");
+    let announce_after_pause = format!("${announce} = ${count}");
+    let announce_signals = format!("{{{announce}: ''}}");
+    let visible = sentence(&count);
+    let over = format!("${count} < 0");
+    let spoken = format!("${announce} === '' ? '' : {}", sentence(&announce));
+    let counter = html! {
+        // Hidden until Datastar runs, so no JavaScript means no counter; data-show
+        // lifts it again after a morph restores the inline style.
+        span
+            style="display: none"
+            aria-hidden="true"
+            data-show="true"
+            data-text=(visible)
+            data-class:field-error=(over) {}
+        // Spoken after a typing pause, empty until the first one; a morph of the
+        // form leaves its text alone.
+        span
+            class="sr-only"
+            aria-live="polite"
+            data-ignore-morph=""
+            data-signals=(announce_signals)
+            data-text=(spoken) {}
+    };
     html! {
-        (control)
+        div data-signals=(signals)
+            data-on:input=(recount)
+            "data-on:input__debounce.500ms"=(announce_after_pause)
+        { (control.counter(counter)) }
     }
 }
 
@@ -2664,7 +2733,7 @@ const fn pill_class(obligation: Obligation) -> &'static str {
 #[cfg(test)]
 mod tests {
     use editor_core::draft::ProjectDraft;
-    use editor_core::form::registry::{sections_for, Audience, Section, FIELDS, SECTIONS};
+    use editor_core::form::registry::{sections_for, Audience, Section, FIELDS, SECTIONS, SHORT_DESCRIPTION_MAX};
 
     use super::*;
 
@@ -3213,6 +3282,69 @@ mod tests {
             let control = control_tag(&out, "textarea", &format!(r#"name="description.{tag}""#));
             assert!(control.contains(&format!(r#"lang="{tag}""#)), "{control}");
         }
+    }
+
+    fn short_description_rendered(value: &str) -> String {
+        let field = editor_core::form::registry::field("shortDescription").expect("shortDescription is a known field");
+        let mut draft = ProjectDraft::default();
+        draft.set("shortDescription", serde_json::json!(value));
+        field_row(field, &draft, Mode::Editable, Rows::default()).into_string()
+    }
+
+    #[test]
+    fn short_description_counts_scalar_values_and_stops_nobody_at_the_cap() {
+        // 3 x "é" + one emoji: 4 scalars, but 5 UTF-16 units and 9 bytes.
+        let out = short_description_rendered("ééé\u{1F600}");
+        let remaining = SHORT_DESCRIPTION_MAX - 4;
+        assert!(
+            out.contains(&format!(r#"data-signals="{{_count_shortDescription: {remaining}}}""#)),
+            "{out}"
+        );
+        let over = short_description_rendered(&"x".repeat(SHORT_DESCRIPTION_MAX + 12));
+        assert!(over.contains(r#"data-signals="{_count_shortDescription: -12}""#), "{over}");
+        assert!(!over.contains("maxlength"), "{over}");
+    }
+
+    #[test]
+    fn the_spoken_count_waits_for_a_pause_and_leaves_the_morph_alone() {
+        let out = short_description_rendered("");
+        let tag = |start: &str| {
+            let rest = out.split(start).nth(1).unwrap_or_else(|| panic!("{start} is there: {out}"));
+            rest.split('>').next().unwrap_or(rest).to_string()
+        };
+        let visible = tag(r#"<span style="display: none""#);
+        assert!(visible.contains(r#"aria-hidden="true""#), "{visible}");
+        let spoken = tag(r#"<span class="sr-only""#);
+        assert!(spoken.contains(r#"aria-live="polite""#), "{spoken}");
+        assert!(spoken.contains("data-ignore-morph"), "{spoken}");
+        assert!(
+            spoken.contains("data-text=\"$_announce_shortDescription === '' ? ''"),
+            "{spoken}"
+        );
+
+        let wrapper = tag(&format!(
+            r#"<div data-signals="{{_count_shortDescription: {SHORT_DESCRIPTION_MAX}}}""#
+        ));
+        assert!(
+            wrapper.contains(&format!(
+                "data-on:input=\"$_count_shortDescription = {SHORT_DESCRIPTION_MAX} - [...evt.target.value.trim()].length\""
+            )),
+            "{wrapper}"
+        );
+        assert!(
+            wrapper
+                .contains("data-on:input__debounce.500ms=\"$_announce_shortDescription = $_count_shortDescription\""),
+            "{wrapper}"
+        );
+        assert!(!wrapper.contains('@'), "{wrapper}");
+    }
+
+    #[test]
+    fn an_uncapped_long_text_has_no_counter() {
+        let field = editor_core::form::registry::field("provenance").expect("provenance is a known field");
+        let out = field_row(field, &ProjectDraft::default(), Mode::Editable, Rows::default()).into_string();
+        assert!(out.contains("<textarea"), "{out}");
+        assert!(!out.contains("_count_"), "{out}");
     }
 
     #[test]
@@ -3939,7 +4071,7 @@ mod tests {
         let findings = [Finding {
             field,
             control: "spatialCoverage.r1.ref.url".to_string(),
-            kind: ValueKind::Link,
+            kind: FindingKind::Format(ValueKind::Link),
         }];
         let rows = Rows { action: "/x", format_findings: &findings, ..Rows::default() };
 
@@ -3966,7 +4098,7 @@ mod tests {
             ("publications", "publications.r0.pid", ValueKind::DoiOrLink),
         ] {
             let field = editor_core::form::registry::field(id).expect("a known field");
-            let findings = editor_core::form::format::findings(std::iter::once(field), &draft, None);
+            let findings = editor_core::form::format::findings(std::iter::once(field), &draft, None, None);
             let rows = Rows { action: "/x", format_findings: &findings, ..Rows::default() };
             let out = field_row(field, &draft, Mode::Editable, rows).into_string();
             let input = input_named(&out, control).expect("the control holding the value");
@@ -3980,7 +4112,11 @@ mod tests {
     fn renders_finding(field: &'static Field, member: &editor_core::form::format::Member) -> bool {
         let control = editor_core::form::format::control_name(field, "r0", member);
         let body = editor_core::form::FormBody::from_pairs(vec![(format!("{}.row", field.id), "r0".to_string())]);
-        let findings = [Finding { field, control: control.clone(), kind: member.kind }];
+        let findings = [Finding {
+            field,
+            control: control.clone(),
+            kind: FindingKind::Format(member.kind),
+        }];
         let rows = Rows {
             posted: Some(&body),
             action: "/x",
@@ -4462,12 +4598,12 @@ mod tests {
     fn a_query_over_the_cap_renders_empty_results() {
         let agents = agent_corpus();
         let scope = editor_core::agents::AgentScope::published_only(&agents);
-        let long = "a".repeat(201);
+        let long = "a".repeat(MAX_QUERY_CHARS + 1);
         let out = agent_results("attributions.new", &long, &scope, &[], true).into_string();
         assert!(out.contains("setAttribute('aria-expanded','false')"), "{out}");
         assert!(!out.contains("role=\"option\""), "{out}");
         assert!(!out.contains("Nothing matches"), "{out}");
-        let at_cap = "a".repeat(200);
+        let at_cap = "a".repeat(MAX_QUERY_CHARS);
         let out = agent_results("attributions.new", &at_cap, &scope, &[], true).into_string();
         assert!(out.contains("data-combobox-status"), "a query at the cap is searched: {out}");
     }
@@ -5011,6 +5147,35 @@ mod tests {
     }
 
     #[test]
+    fn every_capped_field_renders_its_counter_and_marks_a_value_over_its_cap() {
+        let capped: Vec<&'static Field> = FIELDS.iter().filter(|field| field.max_chars.is_some()).collect();
+        assert!(!capped.is_empty());
+        for field in capped {
+            let max = field.max_chars.expect("capped");
+            let counter = format!("{}-counter", field.id);
+
+            let empty = ProjectDraft::default();
+            let findings = editor_core::form::format::findings(std::iter::once(field), &empty, None, None);
+            let rows = Rows { action: "/x", format_findings: &findings, ..Rows::default() };
+            let out = field_row(field, &empty, Mode::Editable, rows).into_string();
+            assert!(out.contains(&format!(r#"id="{counter}""#)), "{}: {out}", field.id);
+            assert!(described_by_of(&out, field.id).contains(&counter), "{}: {out}", field.id);
+
+            let mut over = ProjectDraft::default();
+            over.set(field.id, serde_json::json!("x".repeat(max + 1)));
+            let findings = editor_core::form::format::findings(std::iter::once(field), &over, None, None);
+            let rows = Rows { action: "/x", format_findings: &findings, ..Rows::default() };
+            let out = field_row(field, &over, Mode::Editable, rows).into_string();
+            let control = out
+                .split("<textarea")
+                .find(|control| control.contains(&format!(r#"name="{}""#, field.id)))
+                .unwrap_or_else(|| panic!("{}: no textarea: {out}", field.id));
+            let opening = control.split('>').next().unwrap_or(control);
+            assert!(opening.contains(r#"aria-invalid="true""#), "{}: {opening}", field.id);
+        }
+    }
+
+    #[test]
     fn a_link_list_says_its_format_once_and_each_row_shows_an_example() {
         let field =
             editor_core::form::registry::field("additionalMaterial").expect("additionalMaterial is a known field");
@@ -5049,7 +5214,7 @@ mod tests {
         let findings = [Finding {
             field,
             control: "additionalMaterial.r1".to_string(),
-            kind: ValueKind::Link,
+            kind: FindingKind::Format(ValueKind::Link),
         }];
         let rows = Rows { action: "/x", format_findings: &findings, ..Rows::default() };
         let out = field_row(field, &draft, Mode::Editable, rows).into_string();

@@ -26,6 +26,13 @@ The action an attribute carries (`@get(...)`, `@post(...)`) is built with `share
 
 No stored user text goes into a Datastar expression or signal value, since Datastar compiles both as JavaScript and its rewrite of them is not string-aware; render only server-computed booleans or numbers.
 
+The rest of the conventions the editor's markup relies on:
+
+- **Local signals start with `_`** (`_swiss`, `_count_<field>`, `_announce_<field>`). They are never posted: the form body is what the server reads.
+- **`data-signals` re-initialises a signal on a morph only when its attribute value changes.** The server therefore renders the value a signal should have, such as the remaining character count, rather than leaving the client to carry it across a morph.
+- **`data-show` with an inline `style="display: none"` is the pre-boot guard**, for an element that must stay hidden until Datastar runs, such as the character counter, which without JavaScript would show a count that never updates. The Canton select in the address group has no guard: without JavaScript it must be usable, so it is always in the HTML and `data-show="$_swiss"` hides it once Datastar runs.
+- **`data-ignore-morph` goes on a live region whose text a morph must not rewrite.** The character counter's spoken `aria-live` span uses it, so a morph of the form does not re-announce or reset a count that is only spoken after a typing pause.
+
 ## Styling
 
 `areas/deposit/editor/style/main.css` is the single Tailwind entry, built by `just css-editor` (dev) or `just css-editor-release` (content-hashed). It imports the design tokens and the `mosaic-tiles` component barrel.

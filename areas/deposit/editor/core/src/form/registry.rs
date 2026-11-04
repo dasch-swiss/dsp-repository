@@ -153,6 +153,9 @@ pub struct Field {
     pub format: &'static [Member],
     /// The bundled list this field's rows are searched in, or `None` for a field without a picker.
     pub vocabulary: Option<List>,
+    /// The most characters, counted as Unicode scalar values, a stored value may hold
+    /// before submit refuses it. A longer value is still stored.
+    pub max_chars: Option<usize>,
 }
 
 impl Field {
@@ -162,6 +165,10 @@ impl Field {
 
     pub const fn vocabulary(self, list: List) -> Self {
         Self { vocabulary: Some(list), ..self }
+    }
+
+    const fn capped(self, max: usize) -> Self {
+        Self { max_chars: Some(max), ..self }
     }
 
     /// Whether a depositor may change this field.
@@ -212,6 +219,7 @@ const fn hinted(
         shape,
         format: &[],
         vocabulary: None,
+        max_chars: None,
     }
 }
 
@@ -229,8 +237,12 @@ const fn shown(id: &'static str, label: &'static str, hint: Option<&'static str>
         shape: None,
         format: &[],
         vocabulary: None,
+        max_chars: None,
     }
 }
+
+/// The most characters a short description may hold.
+pub const SHORT_DESCRIPTION_MAX: usize = 200;
 
 /// Every field the form knows, in no particular order — [`SECTIONS`] decides
 /// display order.
@@ -287,7 +299,8 @@ pub const FIELDS: &[Field] = &[
         Required,
         Everyone,
         Some(REQUIRED_STRING),
-    ),
+    )
+    .capped(SHORT_DESCRIPTION_MAX),
     hinted(
         "description",
         "Description",
@@ -1308,6 +1321,16 @@ mod tests {
                 Some(List::Disciplines) => field.id == crate::disciplines::FIELD,
             };
             assert!(fits, "{}: {:?} cannot pick into {:?}", field.id, field.vocabulary, field.shape);
+        }
+    }
+
+    #[test]
+    fn a_capped_fields_hint_states_its_cap() {
+        let capped: Vec<&Field> = FIELDS.iter().filter(|field| field.max_chars.is_some()).collect();
+        assert!(!capped.is_empty());
+        for field in capped {
+            let max = field.max_chars.expect("capped").to_string();
+            assert!(field.hint.is_some_and(|hint| hint.contains(&max)), "{}", field.id);
         }
     }
 }

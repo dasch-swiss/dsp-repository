@@ -97,8 +97,8 @@ How a posted body is read back into a Draft for one Field (`form::Shape`): a sca
 **Obligation**:
 Whether a Field is required, and the count the rail shows; refusal happens at submit, never at save.
 
-**Format finding**:
-A stored value without the format its kind needs, a web address, a DOI or web address, or a plan link or `not accessible` (`form::format::Finding`): computed from the Draft at every render and shown on its control, never stored, and refused only at submit and, over every field, at approve.
+**Finding**:
+A stored value the form would refuse (`form::format::Finding`), of two kinds. Format: a value without the format its kind needs, a web address, a DOI or web address, or a plan link or `not accessible`. Too long: a value over its field's character cap (`Field::max_chars`), counted in Unicode scalar values, unless it equals the published value. Computed from the Draft at every render and shown on its control, never stored, and refused only at submit and, over every field, at approve. A line with text and no language is not a Finding: the missing-language check in `form::submit` (`lines_without_language`) refuses it at submit.
 _Avoid_: validation error, format error (a finding stops no save).
 
 **Vocabulary pick**:

@@ -23,6 +23,7 @@ use axum::response::{IntoResponse, Redirect, Response};
 use axum::Form;
 use chrono::{DateTime, Utc};
 use editor_core::draft::ProjectDraft;
+use editor_core::form::format::FindingKind;
 use editor_core::form::registry::{self, Audience, Section};
 use editor_core::form::submit::{lines_still_without_language, lines_without_language, over_cap, LineWithoutLanguage};
 use editor_core::form::{apply, format, FormBody, Shape};
@@ -151,9 +152,11 @@ const SUBMIT_REFUSED_SENTINEL: &str = "This project cannot be submitted yet: a f
 const SUBMIT_REFUSED_LANGUAGE: &str = "This project cannot be submitted yet: a line has text but no language. Your \
                                        draft has been saved without that line, which is marked below.";
 
+/// The refusal a value without its format, or over its field's character limit, renders as.
 const SUBMIT_REFUSED_FORMAT: &str = "This project cannot be submitted yet: some values are not in the format they \
-                                     need. Your draft has been saved, and each field that needs changing is named \
-                                     beside it, or below with a link when it is in another section.";
+                                     need or are longer than their limit. Your draft has been saved, and each \
+                                     field that needs changing is named beside it, or below with a link when it \
+                                     is in another section.";
 
 /// The field-level error a field holding a format finding renders as. The control
 /// itself says which value and why, where the field has one.
@@ -298,6 +301,8 @@ struct Context<'a> {
     round: Option<RoundStrings>,
     /// The published project's name, for the heading and the tab title.
     project_name: Option<&'a str>,
+    /// What the published project holds, for the value a length finding exempts.
+    published: Option<ProjectDraft>,
     /// The registration, for a project RDU created and the published set does not carry yet.
     created: Option<CreatedProject>,
 }
@@ -575,6 +580,7 @@ async fn context<'a>(
         proposals,
         posted: None,
         project_name: published.map(|project| project.name.as_str()),
+        published: published.map(ProjectDraft::from_raw),
         created,
     })
 }
@@ -1326,7 +1332,7 @@ async fn submit(
 ) -> Response {
     let span = tracing::Span::current();
 
-    let published = state.published.get(shortcode).map(ProjectDraft::from_raw);
+    let published = context.published.as_ref();
     if let Err(refusal) = editor_core::submission::check(
         context.audience,
         &context.draft,
@@ -1334,7 +1340,7 @@ async fn submit(
         &context.proposals,
         &state.temporal.periods,
         &state.temporal.enrichment,
-        published.as_ref(),
+        published,
     ) {
         return match refusal {
             SubmitRefusal::Unanswered(unanswered) => {
@@ -1400,7 +1406,7 @@ async fn submit(
                 span.record("form.outcome", "format");
                 tracing::info!(
                     fields.format = findings.len(),
-                    "refused a submission holding a value without its format"
+                    "refused a submission holding a value without its format or over its limit"
                 );
                 // Each field once, unless this section shows the finding at its control. One RDU
                 // accepted renders as text with no control, so it gets the error here too.
@@ -1413,7 +1419,11 @@ async fn submit(
                 let mut errors: Vec<(String, String)> = Vec::new();
                 for finding in findings.iter().filter(|finding| !shown.contains(&finding.field.id)) {
                     if !errors.iter().any(|(named, _)| named == finding.field.id) {
-                        errors.push((finding.field.id.to_string(), FORMAT_FIELD_MESSAGE.to_string()));
+                        let message = match finding.kind {
+                            FindingKind::Format(_) => FORMAT_FIELD_MESSAGE.to_string(),
+                            FindingKind::TooLong { .. } => crate::form::widgets::finding_message(finding).into_owned(),
+                        };
+                        errors.push((finding.field.id.to_string(), message));
                     }
                 }
                 let rendering = Rendering {
@@ -2204,6 +2214,7 @@ fn view<'a>(
     // autosave's render, which hides a finding on a value typed since the last write;
     // a `GET` or a reload of the same draft shows it.
     let fields = || context.section.fields_for(context.audience);
+    let published = context.published.as_ref();
     // A save or submit flags every line with no language; any other render that keeps the body
     // keeps the flags on lines still without one, so the autosave the save's click set off does
     // not clear them.
@@ -2213,9 +2224,9 @@ fn view<'a>(
         }
         (lines, _) => lines.to_vec(),
     };
-    let mut format_findings = format::findings(fields(), &context.draft, posted);
+    let mut format_findings = format::findings(fields(), &context.draft, posted, published);
     if let Some(before) = rendering.before_autosave {
-        let shown = format::findings(fields(), before, posted);
+        let shown = format::findings(fields(), before, posted, published);
         format_findings.retain(|finding| shown.iter().any(|earlier| earlier.control == finding.control));
     }
     // The rest of what submit's format check refuses, for the saved notice to count and
@@ -2225,7 +2236,8 @@ fn view<'a>(
         Some(page::Notice::Saved) => registry::sections_for(context.audience)
             .filter(|section| section.id != context.section.id)
             .flat_map(|section| {
-                format::findings(section.fields_for(context.audience), &context.draft, None)
+                let fields = || section.fields_for(context.audience);
+                format::findings(fields(), &context.draft, None, published)
                     .into_iter()
                     .map(move |finding| (section, finding))
             })
@@ -2295,6 +2307,7 @@ mod tests {
     use axum::body::Body;
     use axum::http::Request;
     use editor_core::canonical::{write_draft, write_project};
+    use editor_core::form::registry::SHORT_DESCRIPTION_MAX;
     use editor_core::published::PublishedProjects;
     use editor_core::repository::ApprovedRecordRepository;
     use editor_ports::Role;
@@ -3579,6 +3592,134 @@ mod tests {
         assert!(!clean.contains("needs fixing"), "{clean}");
     }
 
+    fn over_the_cap() -> String {
+        "x".repeat(SHORT_DESCRIPTION_MAX + 50)
+    }
+
+    fn too_long_message() -> String {
+        format!("Short description must be {SHORT_DESCRIPTION_MAX} characters or fewer.")
+    }
+
+    fn marks_textarea(body: &str, control: &str) -> bool {
+        body.split("<textarea")
+            .find(|textarea| textarea.contains(&format!(r#"name="{control}""#)))
+            .is_some_and(|textarea| textarea.contains(r#"aria-invalid="true""#))
+    }
+
+    #[tokio::test]
+    async fn a_value_over_the_cap_is_stored_flagged_at_the_control_and_counted_in_the_saved_notice() {
+        let (state, app, session) = a_depositor_on("section-too-long-save").await;
+        let save = format!("shortDescription={}&{INTENT}={}", over_the_cap(), page::SAVE);
+
+        let saved = as_session(&app, post(OVERVIEW, &save), &session).await;
+        assert_eq!(saved.status(), StatusCode::SEE_OTHER);
+        let target = location(&saved).expect("a redirect location");
+        let body = body_string(as_session(&app, get(&target), &session).await).await;
+
+        assert_eq!(
+            stored_draft(&state, "0801d").await.get("shortDescription"),
+            Some(&serde_json::json!(over_the_cap())),
+            "no hard stop: the whole paste is kept"
+        );
+        assert!(marks_textarea(&body, "shortDescription"), "{body}");
+        assert!(body.contains(&too_long_message()), "{body}");
+        assert!(
+            body.contains("1 value needs fixing before you can submit for review."),
+            "{body}"
+        );
+        assert!(body.contains(r##"href="#shortDescription""##), "{body}");
+        assert!(
+            title_of(&body).starts_with("Draft saved, 1 value needs fixing — "),
+            "{}",
+            title_of(&body)
+        );
+
+        let elsewhere = format!("name=A+New+Title&{INTENT}={}", page::SAVE);
+        let body = body_string(as_session(&app, enhanced(DATASET, &elsewhere), &session).await).await;
+        assert!(body.contains("1 value needs fixing"), "{body}");
+        assert!(body.contains(&format!(r#"href="{OVERVIEW}#shortDescription""#)), "{body}");
+    }
+
+    #[tokio::test]
+    async fn submitting_a_value_over_the_cap_is_refused_at_the_control_and_nothing_is_submitted() {
+        let (state, app, session) = a_depositor_on("section-too-long-submit").await;
+        let submit = format!("shortDescription={}&{INTENT}={}", over_the_cap(), page::SUBMIT);
+
+        for (path, request) in [
+            ("plain", post(OVERVIEW, &submit)),
+            ("enhanced", enhanced(OVERVIEW, &submit)),
+        ] {
+            let body = body_string(as_session(&app, request, &session).await).await;
+            assert!(body.contains(SUBMIT_REFUSED_FORMAT), "{path}: {body}");
+            assert!(marks_textarea(&body, "shortDescription"), "{path}: {body}");
+            assert!(body.contains(&too_long_message()), "{path}: {body}");
+            assert!(body.contains(" autofocus"), "{path}: focus moves to the control: {body}");
+        }
+        assert_eq!(
+            SubmissionRepository::find_by_shortcode(&*state.editor, "0801d").await.unwrap(),
+            None
+        );
+    }
+
+    #[tokio::test]
+    async fn a_refused_submit_focuses_an_over_cap_value_ahead_of_a_later_bad_link() {
+        let (_, app, session) = a_depositor_on("section-too-long-focus-order").await;
+        let submit = format!(
+            "shortDescription={}&secondaryUrl=not-a-link&{INTENT}={}",
+            over_the_cap(),
+            page::SUBMIT
+        );
+
+        for (path, request) in [
+            ("plain", post(OVERVIEW, &submit)),
+            ("enhanced", enhanced(OVERVIEW, &submit)),
+        ] {
+            let body = body_string(as_session(&app, request, &session).await).await;
+            assert!(body.contains(SUBMIT_REFUSED_FORMAT), "{path}: {body}");
+            assert_eq!(body.matches(" autofocus").count(), 1, "{path}: one control only: {body}");
+            let textarea = body
+                .split("<textarea")
+                .find(|textarea| textarea.contains(r#"name="shortDescription""#))
+                .expect("the textarea");
+            let textarea = textarea.split("</textarea>").next().unwrap();
+            assert!(textarea.contains(" autofocus"), "{path}: {textarea}");
+            let url = body
+                .split("<input")
+                .find(|input| input.contains(r#"name="secondaryUrl""#))
+                .expect("the secondaryUrl control");
+            assert!(!url.split('>').next().unwrap().contains("autofocus"), "{path}: {url}");
+        }
+    }
+
+    #[tokio::test]
+    async fn a_project_published_over_the_cap_still_submits_an_unrelated_change() {
+        let (state, _) = test_state("section-too-long-published").await;
+        let published = state.published.get("0850").expect("0850 is committed");
+        let kept = published.short_description.clone();
+        assert!(kept.chars().count() > SHORT_DESCRIPTION_MAX, "0850 is published over the cap");
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0850"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        let submit = format!(
+            "name=An+unrelated+new+title&shortDescription={}&{INTENT}={}",
+            urlencoding(&kept),
+            page::SUBMIT
+        );
+        let body =
+            body_string(as_session(&app, post("/projects/0850/sections/overview", &submit), &session).await).await;
+
+        assert!(!body.contains(SUBMIT_REFUSED_FORMAT), "{body}");
+        assert!(!marks_textarea(&body, "shortDescription"), "{body}");
+        assert!(
+            SubmissionRepository::find_by_shortcode(&*state.editor, "0850")
+                .await
+                .unwrap()
+                .is_some(),
+            "the submission went through: {body}"
+        );
+    }
+
     #[tokio::test]
     async fn a_refused_submit_focuses_the_first_control_holding_a_finding_and_a_save_does_not() {
         let (_, app, session) = a_depositor_on("section-format-focus").await;
@@ -3677,6 +3818,22 @@ mod tests {
         assert_eq!(
             stored_draft(&state, "0801d").await.get("additionalMaterial"),
             Some(&serde_json::json!(["www.dasch.swiss"]))
+        );
+    }
+
+    #[tokio::test]
+    async fn an_autosave_stores_a_short_description_over_its_cap_whole_and_shows_no_error_for_it() {
+        let (state, app, session) = a_depositor_on("section-cap-autosave").await;
+        let over = over_the_cap();
+
+        let body =
+            body_string(as_session(&app, enhanced(OVERVIEW, &format!("shortDescription={over}")), &session).await)
+                .await;
+
+        assert!(!marks_textarea(&body, "shortDescription"), "{body}");
+        assert_eq!(
+            stored_draft(&state, "0801d").await.get("shortDescription"),
+            Some(&serde_json::json!(over))
         );
     }
 

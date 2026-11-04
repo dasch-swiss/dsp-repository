@@ -342,6 +342,7 @@ fn the_entity_page_and_its_discard_confirmation_name_the_entity_instead_of_its_i
         let draft = serde_json::from_str::<ProjectDraft>(&proposal.payload).expect("a stored payload");
         for confirming in [None, Some(Confirmation::Discard)] {
             let view = EntityView {
+                origin: None,
                 shortcode: "0801d",
                 proposal: &proposal,
                 over: None,
@@ -375,16 +376,16 @@ fn the_entity_page_and_its_discard_confirmation_name_the_entity_instead_of_its_i
 }
 
 #[test]
-fn the_proposal_notice_names_a_change_by_its_entity_and_a_new_proposal_by_no_id() {
+fn the_new_proposal_notice_names_no_id() {
     let published = published();
     let raw = published.get("0801d").expect("the fixture project");
     let draft = ProjectDraft::from_raw(raw);
     let agents = agents();
     let scope = AgentScope::published_only(&agents);
     let section_def = registry::sections_for(Audience::Everyone).next().expect("a section");
-    for (kind, operation, entity_id) in [
-        (ProposalKind::Organization, ProposalOperation::Change, "organization-008"),
-        (ProposalKind::Person, ProposalOperation::New, "person-900"),
+    for (kind, entity_id) in [
+        (ProposalKind::Organization, "organization-900"),
+        (ProposalKind::Person, "person-900"),
     ] {
         let view = section::SectionView {
             shortcode: "0801d",
@@ -405,7 +406,7 @@ fn the_proposal_notice_names_a_change_by_its_entity_and_a_new_proposal_by_no_id(
             signed_out_at: None,
             baseline: None,
             saved_at: None,
-            notice: Some(section::Notice::Proposed { kind, operation, entity_id }),
+            notice: Some(section::Notice::Proposed { kind, entity_id }),
             posted: None,
             submitted: None,
             adding_row: None,
@@ -420,7 +421,7 @@ fn the_proposal_notice_names_a_change_by_its_entity_and_a_new_proposal_by_no_id(
         let markup = section::page(&view).into_string();
         assert!(
             internal_identifiers_in(&markup).is_empty(),
-            "{:?} in the {operation:?} notice:\n{markup}",
+            "{:?} in the {kind:?} notice:\n{markup}",
             internal_identifiers_in(&markup)
         );
     }

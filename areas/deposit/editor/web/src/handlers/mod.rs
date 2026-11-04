@@ -31,6 +31,21 @@ pub(crate) fn is_enhanced(headers: &HeaderMap) -> bool {
     headers.contains_key(DATASTAR_REQUEST)
 }
 
+/// The enhanced path's answer to a write whose result is another page, where the plain path
+/// answers `303`: Datastar processes a body only on a 200, and runs a `text/javascript` one as a
+/// script, once per response.
+pub(crate) fn navigate(url: &str) -> axum::response::Response {
+    use axum::response::IntoResponse;
+    // A JSON string is a JavaScript string literal, so the URL cannot end the expression.
+    let target = serde_json::to_string(url).unwrap_or_default();
+    (
+        axum::http::StatusCode::OK,
+        [(axum::http::header::CONTENT_TYPE, "text/javascript")],
+        format!("window.location.assign({target})"),
+    )
+        .into_response()
+}
+
 /// What a surface calls itself when storage does not answer: the full log
 /// message, and the noun the problem page uses ("page" or "form").
 pub(crate) struct StorageSurface {

@@ -220,12 +220,7 @@ pub fn unresolved_agents(
 ) -> Vec<(&'static Field, String)> {
     sections_for(audience)
         .flat_map(|section| section.fields_for(audience))
-        .filter(|field| {
-            matches!(
-                field.shape,
-                Some(Shape::AgentRows | Shape::AttributionRows | Shape::FundingRows)
-            )
-        })
+        .filter(|field| field.shape.is_some_and(Shape::has_agent_picker))
         .flat_map(|field| {
             let rows = draft
                 .get(field.id)
@@ -241,6 +236,55 @@ pub fn unresolved_agents(
                 .collect::<Vec<(&'static Field, String)>>()
         })
         .collect()
+}
+
+/// Removes every reference to agent `id` from the draft and returns how many it removed: an id in
+/// `AgentRows`, an `AttributionRows` row naming it as `contributor` (the row goes), a
+/// `FundingRows` grant listing it in `funders` (the grant stays, even with no funder left).
+///
+/// A field left empty is removed rather than stored as `[]`.
+pub fn drop_agent(draft: &mut ProjectDraft, id: &str) -> usize {
+    let mut removed = 0;
+    for field in sections_for(Audience::RduOnly)
+        .flat_map(|section| section.fields_for(Audience::RduOnly))
+        .filter(|field| field.shape.is_some_and(Shape::has_agent_picker))
+    {
+        let Some(Value::Array(rows)) = draft.get(field.id) else {
+            continue;
+        };
+        let mut rows = rows.clone();
+        let before = removed;
+        rows.retain_mut(|row| match row {
+            Value::String(held) => {
+                let keep = held != id;
+                removed += usize::from(!keep);
+                keep
+            }
+            Value::Object(object) if object.contains_key("contributor") => {
+                let keep = object.get("contributor").and_then(Value::as_str) != Some(id);
+                removed += usize::from(!keep);
+                keep
+            }
+            Value::Object(object) => {
+                if let Some(Value::Array(funders)) = object.get_mut("funders") {
+                    let held = funders.len();
+                    funders.retain(|funder| funder.as_str() != Some(id));
+                    removed += held - funders.len();
+                }
+                true
+            }
+            _ => true,
+        });
+        if removed == before {
+            continue;
+        }
+        if rows.is_empty() {
+            draft.remove(field.id);
+        } else {
+            draft.set(field.id, Value::Array(rows));
+        }
+    }
+    removed
 }
 
 /// Every agent id one row of an agent-bearing field holds: a bare string for
@@ -658,6 +702,52 @@ mod tests {
         // 0801d's own contributors are refused too, which is the point: every
         // field that refers to an agent is checked, not just the one edited.
         assert!(refused.iter().any(|(field, _)| *field == "attributions"), "{refused:?}");
+    }
+
+    #[test]
+    fn drop_agent_removes_every_reference_and_keeps_what_else_the_fields_hold() {
+        let mut draft = draft();
+        draft.set(
+            "attributions",
+            json!([
+                { "contributor": "person-417", "roles": ["Researcher"] },
+                { "contributor": "person-001", "roles": ["Researcher"] },
+            ]),
+        );
+        draft.set("contactPoint", json!(["person-417"]));
+        draft.set(
+            "funding",
+            json!([{ "funders": ["person-417", "organization-002"], "number": "1" }]),
+        );
+
+        assert_eq!(drop_agent(&mut draft, "person-417"), 3);
+
+        assert_eq!(
+            draft.get("attributions"),
+            Some(&json!([{ "contributor": "person-001", "roles": ["Researcher"] }]))
+        );
+        assert_eq!(draft.get("contactPoint"), None, "an emptied field is removed, not stored as []");
+        assert_eq!(
+            draft.get("funding"),
+            Some(&json!([{ "funders": ["organization-002"], "number": "1" }]))
+        );
+    }
+
+    #[test]
+    fn drop_agent_keeps_a_grant_whose_only_funder_it_removes() {
+        let mut draft = draft();
+        draft.set("funding", json!([{ "funders": ["person-417"], "number": "1" }]));
+        assert_eq!(drop_agent(&mut draft, "person-417"), 1);
+        assert_eq!(draft.get("funding"), Some(&json!([{ "funders": [], "number": "1" }])));
+    }
+
+    #[test]
+    fn drop_agent_on_an_id_held_nowhere_changes_nothing() {
+        let mut draft = draft();
+        let before = serde_json::to_string(&draft.to_raw().expect("the corpus draft is valid")).expect("serialize");
+        assert_eq!(drop_agent(&mut draft, "person-99999"), 0);
+        let after = serde_json::to_string(&draft.to_raw().expect("still valid")).expect("serialize");
+        assert_eq!(before, after);
     }
 
     #[test]

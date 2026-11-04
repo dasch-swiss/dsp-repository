@@ -8,17 +8,20 @@
 //! fields of the same shape; the one new shape is `address_group`, a flat group
 //! of scalar members.
 
+pub mod origin;
+
 use editor_core::agents::AgentScope;
 use editor_core::draft::ProjectDraft;
 use editor_core::form::format::{self, Finding};
 use editor_core::form::registry::{Audience, Field, Obligation};
 use editor_core::form::{FormBody, Shape};
-use editor_core::proposals::{EntityProposal, ProposalKind};
+use editor_core::proposals::{EntityProposal, ProposalKind, ProposalOperation};
 use maud::{html, Markup};
 use mosaic_tiles::alert::{alert, AlertVariant};
 use mosaic_tiles::button::{button, ButtonType, ButtonVariant};
 use mosaic_tiles::link::link;
 use mosaic_tiles::text_field::{text_field, InputType};
+use origin::Origin;
 use serde_json::Value;
 use shared_datastar as datastar;
 
@@ -253,11 +256,11 @@ impl Over {
     }
 }
 
-/// What the `POST` that led to this rendering did.
+/// What the `POST` that led to this rendering did. A discard has no notice here: it returns to the
+/// section the proposal was opened from, which says so.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Notice<'a> {
     Saved,
-    Discarded,
     /// The write was refused, and why.
     Refused(&'a str),
 }
@@ -266,8 +269,6 @@ pub enum Notice<'a> {
 /// and [`Notice::title_prefix`] so a wording change cannot update one and not
 /// the other.
 const SAVED_TITLE: &str = "Saved";
-/// Short form of [`Notice::Discarded`]; see [`SAVED_TITLE`].
-const DISCARDED_TITLE: &str = "Discarded";
 /// The prefix for a write that did not land, [`Notice::Refused`].
 const NOT_SAVED_TITLE: &str = "Not saved";
 
@@ -277,7 +278,6 @@ impl Notice<'_> {
     pub fn title_prefix(&self) -> Option<&'static str> {
         match self {
             Notice::Saved => Some(SAVED_TITLE),
-            Notice::Discarded => Some(DISCARDED_TITLE),
             Notice::Refused(_) => Some(NOT_SAVED_TITLE),
         }
     }
@@ -312,6 +312,9 @@ pub struct EntityView<'a> {
     /// Base URL a repeatable field's add and remove controls submit to —
     /// `/projects/{shortcode}/entities/{entity_id}/fields`.
     pub rows_action: String,
+    /// The section this proposal was opened from, which "Back to the project" returns to and the
+    /// form posts back so a save's redirect keeps it.
+    pub origin: Option<Origin>,
 }
 
 impl EntityView<'_> {
@@ -441,11 +444,15 @@ pub(crate) fn entity_labels<'a>(
 
 fn heading(view: &EntityView<'_>) -> Markup {
     let label = entity_label(view.proposal.kind, &view.proposal.entity_id, view.agents, Precedence::Proposed);
+    let back = match view.origin {
+        Some(origin) => origin.section_url(view.shortcode, None, Some(&view.proposal.entity_id)),
+        None => format!("/projects/{}", view.shortcode),
+    };
     html! {
         div class="mb-6" {
             h1 class="font-display text-2xl mb-1" { (label) }
             p class="text-gray-600" {
-                a href={ "/projects/" (view.shortcode) } class="underline" { "Back to the project" }
+                a href=(back) class="underline" { "Back to the project" }
             }
         }
     }
@@ -472,13 +479,6 @@ fn status(view: &EntityView<'_>) -> Markup {
             @match view.notice {
                 Some(Notice::Saved) => {
                     (alert(format!("{SAVED_TITLE}.")).variant(AlertVariant::Success))
-                }
-                Some(Notice::Discarded) => {
-                    ({
-                        alert("This proposal has been discarded and is no longer live.")
-                            .variant(AlertVariant::Success)
-                            .title(DISCARDED_TITLE)
-                    })
                 }
                 Some(Notice::Refused(message)) => { (alert(message).variant(AlertVariant::Warning)) }
                 None => {}
@@ -515,6 +515,12 @@ fn form(view: &EntityView<'_>) -> Markup {
             class="flex flex-col gap-6 mt-6"
             data-on:submit=(datastar::post(&action).submitter_first().form())
         {
+            @if let Some(origin) = view.origin {
+                input type="hidden" name=(origin::SECTION) value=(origin.section.id);
+                @if let Some(field) = origin.field {
+                    input type="hidden" name=(origin::FIELD) value=(field.id);
+                }
+            }
             @for field in view.fields() {
                 ({
                     entity_field_row(
@@ -613,6 +619,9 @@ fn controls(view: &EntityView<'_>) -> Markup {
                     " removes it. It cannot be undone. The record stays on \
                      file as a placeholder, so nothing published while this proposal was live can end up naming \
                      a different person or organisation."
+                    @if view.proposal.operation == ProposalOperation::New {
+                        " It is also taken out of this project's contributors, contact point and funding."
+                    }
                 }
                 div class="flex items-center gap-4" {
                     ({
@@ -626,7 +635,7 @@ fn controls(view: &EntityView<'_>) -> Markup {
         } @else {
             div class="flex flex-wrap items-center gap-4" {
                 ({
-                    button("Save")
+                    button("Save draft")
                         .button_type(ButtonType::Submit)
                         .name_value(INTENT, SAVE)
                 })
@@ -891,6 +900,7 @@ mod tests {
             agents: None,
             format_findings: Vec::new(),
             rows_action: "/projects/0801d/entities/person-001/fields".to_string(),
+            origin: None,
         }
     }
 
@@ -951,6 +961,7 @@ mod tests {
             agents: None,
             format_findings: format::findings(ORGANIZATION_FIELDS.iter(), &draft, None),
             rows_action: "/projects/0801d/entities/organization-900/fields".to_string(),
+            origin: None,
         };
         let out = form(&view).into_string();
         let marked: Vec<&str> = out

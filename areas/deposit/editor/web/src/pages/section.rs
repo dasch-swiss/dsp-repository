@@ -23,7 +23,7 @@ use editor_core::form::format::Finding;
 use editor_core::form::obligation::{section_progress, SectionProgress};
 use editor_core::form::registry::{sections_for, Audience, Section};
 use editor_core::form::FormBody;
-use editor_core::proposals::{EntityProposal, ProposalKind, ProposalOperation};
+use editor_core::proposals::{EntityProposal, ProposalKind};
 use editor_core::records::ReviewOutcome;
 use maud::{html, Markup};
 use mosaic_tiles::alert::{alert, AlertVariant};
@@ -32,7 +32,8 @@ use mosaic_tiles::link::link;
 use serde_json::Value;
 use shared_datastar as datastar;
 
-use crate::entity::{entity_label, entity_labels, Precedence};
+use crate::entity::origin::{entity_url, Origin};
+use crate::entity::{entity_labels, Precedence};
 use crate::form::widgets::{field_row, format_message, Mode, Rows, FOCUS_AUTOFOCUS};
 use crate::form::INTENT;
 
@@ -75,9 +76,10 @@ pub const PROPOSE_PERSON: &str = "propose-person";
 /// Start a proposal for a new organisation.
 pub const PROPOSE_ORGANIZATION: &str = "propose-organization";
 
-/// Propose a change to an entity this project already references. The entity
-/// rides in the intent value (`propose-changes:person-417`) via
-/// [`propose_changes_intent`] and [`proposed_entity`].
+/// Propose a change to an entity this project already references. The card's field and the entity
+/// ride in the intent value (`propose-changes:attributions:person-417`) via
+/// [`propose_changes_intent`] and [`proposed_entity`]; the field is where the entity form returns
+/// to.
 ///
 /// It must not move to a field of its own: a section renders every resolved
 /// agent row inside one `<form>`, so a per-row field shares one name across all
@@ -85,25 +87,26 @@ pub const PROPOSE_ORGANIZATION: &str = "propose-organization";
 /// its name and value, natively and through `SubmitEvent.submitter`.
 pub const PROPOSE_CHANGES: &str = "propose-changes";
 
-/// The separator between [`PROPOSE_CHANGES`] and the entity id: no entity id
-/// contains a colon.
+/// The separator between [`PROPOSE_CHANGES`], the field id and the entity id: neither a field id
+/// nor an entity id contains a colon.
 const PROPOSE_CHANGES_SEPARATOR: char = ':';
 
-/// The intent value a "Propose changes" control on `entity_id`'s row posts.
+/// The intent value a "Propose changes" control on `entity_id`'s card in `field` posts.
 #[must_use]
-pub fn propose_changes_intent(entity_id: &str) -> String {
-    format!("{PROPOSE_CHANGES}{PROPOSE_CHANGES_SEPARATOR}{entity_id}")
+pub fn propose_changes_intent(field: &str, entity_id: &str) -> String {
+    format!("{PROPOSE_CHANGES}{PROPOSE_CHANGES_SEPARATOR}{field}{PROPOSE_CHANGES_SEPARATOR}{entity_id}")
 }
 
-/// The entity id a posted intent carries, or `None` when it is not a
-/// propose-changes intent. An empty id answers `None`: naming the verb with no
+/// The field and entity id a posted intent carries, or `None` when it is not a
+/// propose-changes intent. An empty entity id answers `None`: naming the verb with no
 /// entity has asked for nothing.
 #[must_use]
-pub fn proposed_entity(intent: &str) -> Option<&str> {
+pub fn proposed_entity(intent: &str) -> Option<(&str, &str)> {
     intent
         .strip_prefix(PROPOSE_CHANGES)?
-        .strip_prefix(PROPOSE_CHANGES_SEPARATOR)
-        .filter(|entity_id| !entity_id.is_empty())
+        .strip_prefix(PROPOSE_CHANGES_SEPARATOR)?
+        .split_once(PROPOSE_CHANGES_SEPARATOR)
+        .filter(|(_, entity_id)| !entity_id.is_empty())
 }
 
 /// The intent a replace-search option posts, ahead of the picker's `unique`
@@ -328,16 +331,15 @@ pub enum Notice<'a> {
     /// Somebody else saved the draft while this form was open. Carries their
     /// name where it is known, so the reader can go and ask rather than guess.
     Changed { by: Option<&'a str>, at: &'a str },
-    /// A proposal was started or a change proposed; links to the entity form, which
-    /// is where the depositor fills it in.
-    Proposed {
-        kind: ProposalKind,
-        operation: ProposalOperation,
-        entity_id: &'a str,
-    },
+    /// A new person or organisation was proposed; links to the entity form, which is where the
+    /// depositor fills it in. A change opens that form instead of answering here.
+    Proposed { kind: ProposalKind, entity_id: &'a str },
     /// The write was refused, and why: the whole-form kind. Field-level errors are
     /// [`SectionView::errors`], which name a control the reader can fix.
     Refused(&'a str),
+    /// One of this project's entity proposals was discarded on its own form, which returned here.
+    /// Carries the sentence naming it, built where the withdrawn proposal is in hand.
+    ProposalDiscarded(&'a str),
 }
 
 /// Short form of [`Notice::Saved`], shared between its alert text in [`status`]
@@ -350,6 +352,8 @@ const SUBMITTED_TITLE: &str = "Sent to RDU";
 const WITHDRAWN_TITLE: &str = "Submission withdrawn";
 /// Short form of [`Notice::Discarded`]; see [`SAVED_TITLE`].
 const DISCARDED_TITLE: &str = "Draft discarded";
+/// Short form of [`Notice::ProposalDiscarded`]; see [`SAVED_TITLE`].
+const PROPOSAL_DISCARDED_TITLE: &str = "Proposal discarded";
 /// The prefix for a write that did not land: [`Notice::Refused`] and [`Notice::Changed`].
 const NOT_SAVED_TITLE: &str = "Not saved";
 
@@ -363,6 +367,7 @@ impl Notice<'_> {
             Notice::Submitted => Some(SUBMITTED_TITLE),
             Notice::Withdrawn => Some(WITHDRAWN_TITLE),
             Notice::Discarded => Some(DISCARDED_TITLE),
+            Notice::ProposalDiscarded(_) => Some(PROPOSAL_DISCARDED_TITLE),
             Notice::Refused(_) | Notice::Changed { .. } => Some(NOT_SAVED_TITLE),
             Notice::Proposed { .. } => None,
         }
@@ -779,8 +784,15 @@ fn status(view: &SectionView<'_>) -> Markup {
                 }
                 Some(Notice::Discarded) => { (discarded_notice(view.created)) }
                 Some(Notice::Changed { by, at }) => { (changed_notice(by, at)) }
-                Some(Notice::Proposed { kind, operation, entity_id }) => {
-                    (proposed_notice(view, kind, operation, entity_id))
+                Some(Notice::Proposed { kind, entity_id }) => {
+                    (proposed_notice(view, kind, entity_id))
+                }
+                Some(Notice::ProposalDiscarded(message)) => {
+                    ({
+                        alert(message)
+                            .variant(AlertVariant::Success)
+                            .title(PROPOSAL_DISCARDED_TITLE)
+                    })
                 }
                 Some(Notice::Refused(message)) => { (alert(message).variant(AlertVariant::Warning)) }
                 None => {}
@@ -1033,28 +1045,20 @@ fn errors_elsewhere(view: &SectionView<'_>) -> Markup {
 
 /// The link onward identifies the proposal: a new one is not named by an id, since it has no
 /// name yet.
-fn proposed_notice(
-    view: &SectionView<'_>,
-    kind: ProposalKind,
-    operation: ProposalOperation,
-    entity_id: &str,
-) -> Markup {
-    let noun = kind.label().to_lowercase();
-    let lead = match operation {
-        ProposalOperation::New => format!("A new {noun} has been started."),
-        ProposalOperation::Change => {
-            format!(
-                "A change to {} has been started.",
-                entity_label(kind, entity_id, view.agents, Precedence::Proposed)
-            )
-        }
-    };
+fn proposed_notice(view: &SectionView<'_>, kind: ProposalKind, entity_id: &str) -> Markup {
+    let lead = format!("A new {} has been started.", kind.label().to_lowercase());
     let body = html! {
         p { (lead) }
         p class="mt-2" {
-            a href={ "/projects/" (view.shortcode) "/entities/" (entity_id) } class="underline" {
-                "Open it to fill in the details"
-            }
+            a   href=({
+                    entity_url(
+                        view.shortcode,
+                        entity_id,
+                        Some(Origin::section(view.section)),
+                    )
+                })
+                class="underline"
+            { "Open it to fill in the details" }
             "."
         }
     };
@@ -1132,7 +1136,13 @@ fn proposals_summary(view: &SectionView<'_>) -> Markup {
             ul class="flex flex-col gap-1" {
                 @for (proposal, label) in live.iter().zip(labels) {
                     li {
-                        a   href={ "/projects/" (view.shortcode) "/entities/" (proposal.entity_id) }
+                        a   href=({
+                                entity_url(
+                                    view.shortcode,
+                                    &proposal.entity_id,
+                                    Some(Origin::section(view.section)),
+                                )
+                            })
                             class="underline font-bold"
                         { (label) }
                     }
@@ -1310,6 +1320,7 @@ mod tests {
     use editor_core::agents::{AgentScope, Agents};
     use editor_core::draft::ProjectDraft;
     use editor_core::form::registry::section;
+    use editor_core::proposals::ProposalOperation;
     use serde_json::json;
 
     use super::*;
@@ -2026,29 +2037,13 @@ mod tests {
     }
 
     #[test]
-    fn a_new_proposal_notice_names_no_id_and_a_change_notice_names_the_entity() {
+    fn a_new_proposal_notice_names_no_id() {
         let draft = published_draft();
-        let mut view = view(&draft, "contributors", Audience::Everyone);
-        let new = proposed_notice(&view, ProposalKind::Person, ProposalOperation::New, "person-900").into_string();
+        let view = view(&draft, "contributors", Audience::Everyone);
+        let new = proposed_notice(&view, ProposalKind::Person, "person-900").into_string();
         assert!(new.contains("A new person has been started."), "{new}");
-        assert!(!new.contains("started as"), "{new}");
         // The id is in the link's target, not in anything read.
         assert!(!new.replace("/entities/person-900", "").contains("person-900"), "{new}");
-
-        let proposals = [a_live_proposal(
-            ProposalKind::Person,
-            ProposalOperation::New,
-            "person-900",
-            ADA,
-        )];
-        let scope = AgentScope::with_proposals(published_agents(), &proposals);
-        view.agents = Some(&scope);
-        let change =
-            proposed_notice(&view, ProposalKind::Person, ProposalOperation::Change, "person-900").into_string();
-        assert!(
-            change.contains("A change to Ada Lovelace (person) has been started."),
-            "{change}"
-        );
     }
 }
 

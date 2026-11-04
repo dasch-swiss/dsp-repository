@@ -1,0 +1,22 @@
+@layer components {
+  /*
+   * `:empty` hides the panel when the server or Escape leaves it with no children.
+   * The option focus outline is inset because the panel scrolls and would clip it.
+   * The detail line inside an option stays no lighter than neutral-600 (contrast).
+   */
+  .combobox-results {
+    @apply mt-1 max-h-72 overflow-y-auto rounded border border-neutral-500 bg-white shadow-md;
+  }
+
+  .combobox-results:empty {
+    @apply hidden;
+  }
+
+  .combobox-status {
+    @apply px-3 py-2 text-sm text-neutral-600;
+  }
+
+  .combobox-option {
+    @apply block w-full cursor-pointer px-3 py-2 text-left text-neutral-900 hover:bg-neutral-100 focus-visible:bg-neutral-100 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary-600;
+  }
+}

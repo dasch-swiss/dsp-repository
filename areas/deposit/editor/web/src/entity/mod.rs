@@ -327,7 +327,9 @@ impl EntityView<'_> {
         }
     }
 
-    fn rows(&self) -> Rows<'_> {
+    /// `search_path` is the agent search a picker runs as its combobox is typed in
+    /// ([`Self::agents_path`]); a read-only rendering has no picker to type in.
+    fn rows<'a>(&'a self, search_path: Option<&'a str>) -> Rows<'a> {
         Rows {
             posted: self.posted,
             submitted: None,
@@ -338,12 +340,18 @@ impl EntityView<'_> {
             // Never the propose controls: this route dispatches none of the propose
             // intents, so they would be dead controls; see Rows::propose.
             propose: false,
+            search_path,
             focus: None,
         }
     }
 
     fn action(&self) -> String {
         format!("/projects/{}/entities/{}", self.shortcode, self.proposal.entity_id)
+    }
+
+    /// The path of this proposal's type-ahead search, `GET {action}/agents`.
+    fn agents_path(&self) -> String {
+        format!("{}/agents", self.action())
     }
 }
 
@@ -486,7 +494,7 @@ fn locked(view: &EntityView<'_>, over: Over) -> Markup {
         (alert(over.message()).variant(AlertVariant::Info).title(over.heading()))
         div class="flex flex-col gap-6 mt-6" {
             @for field in view.fields() {
-                (entity_field_row(field, view.draft, Mode::ReadOnly, view.rows()))
+                (entity_field_row(field, view.draft, Mode::ReadOnly, view.rows(None)))
             }
             @if view.proposal.kind == ProposalKind::Organization { (address_group(view, true)) }
         }
@@ -496,6 +504,7 @@ fn locked(view: &EntityView<'_>, over: Over) -> Markup {
 /// The proposal's fields, and the controls that save or discard it.
 fn form(view: &EntityView<'_>) -> Markup {
     let action = view.action();
+    let agents_path = view.agents_path();
     html! {
         // Posts the submitter's formAction: this form carries add and remove
         // controls, and posting the form's action would make each a plain save.
@@ -507,7 +516,14 @@ fn form(view: &EntityView<'_>) -> Markup {
             data-on:submit=(datastar::post(&action).submitter_first().form())
         {
             @for field in view.fields() {
-                (entity_field_row(field, view.draft, view.mode(), view.rows()))
+                ({
+                    entity_field_row(
+                        field,
+                        view.draft,
+                        view.mode(),
+                        view.rows(Some(&agents_path)),
+                    )
+                })
             }
             @if view.proposal.kind == ProposalKind::Organization { (address_group(view, false)) }
             (controls(view))

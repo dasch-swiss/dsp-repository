@@ -14,7 +14,7 @@
 //! note rather than silence for a field whose widget has not landed, so a
 //! depositor does not conclude the form lost it.
 
-use editor_core::agents::{Agent, AgentKind, AgentMatches, AgentScope};
+use editor_core::agents::{Agent, AgentKind, AgentScope};
 use editor_core::draft::{ProjectDraft, UrlSlot};
 use editor_core::form::format::{Finding, ValueKind};
 use editor_core::form::registry::{Field, Obligation};
@@ -22,9 +22,11 @@ use editor_core::form::{
     stored_row_key, ChoiceSet, FormBody, Shape, GRANTS_KIND, MAX_VALUES_PER_FIELD, REFERENCE_KIND,
 };
 use editor_core::multilingual::{as_multilingual, is_language_map, is_language_tag, DraftMultilingual, UI_LANGUAGES};
-use maud::{html, Markup};
+use maud::{html, Markup, Render};
+use mosaic_tiles::badge::{badge, BadgeVariant};
 use mosaic_tiles::button::{button, ButtonType, ButtonVariant};
 use mosaic_tiles::checkbox_group::checkbox_group;
+use mosaic_tiles::combobox::{combobox, combobox_listbox, combobox_option, combobox_results, combobox_status};
 use mosaic_tiles::radio_group::radio_group;
 use mosaic_tiles::repeatable_list::repeatable_list;
 use mosaic_tiles::select::select;
@@ -32,12 +34,14 @@ use mosaic_tiles::text_field::{text_field, InputType, TextFieldBuilder};
 use mosaic_tiles::textarea::textarea;
 use mosaic_tiles::ComponentBuilder;
 use serde_json::Value;
+use shared_datastar as datastar;
 use shared_metadata::is_placeholder;
 use shared_metadata::project::CONTRIBUTOR_ROLES;
 
 use crate::form::INTENT;
 use crate::pages::section::{
-    choose_agent_intent, chosen_agent, propose_changes_intent, FIND_AGENT, PROPOSE_ORGANIZATION, PROPOSE_PERSON,
+    add_agent_intent, added_agent, change_agent_intent, changed_agent, choose_agent_intent, chosen_agent,
+    propose_changes_intent, remove_role_intent, removed_role, FIND_AGENT, PROPOSE_ORGANIZATION, PROPOSE_PERSON, SUBMIT,
 };
 
 /// Whether the form is open for editing. A named type rather than a `bool`
@@ -340,6 +344,10 @@ pub struct Rows<'a> {
     /// button there would fall through to a save. Only the section form turns
     /// this on.
     pub propose: bool,
+    /// The section's agent search (`GET {path}?for=<picker>&q=`) a picker's combobox runs as the
+    /// depositor types. `None` leaves the combobox a plain search box that the Search button
+    /// submits: the route behind it is not wired for the form.
+    pub search_path: Option<&'a str>,
     /// The control that takes focus, by name: the first holding a finding on a refused submit's
     /// re-render.
     pub focus: Option<&'a str>,
@@ -530,172 +538,391 @@ pub(crate) fn string_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -
 /// `editor_core::form`, so the query rides along in the body and is never stored.
 const QUERY_SUFFIX: &str = "q";
 
-/// The label on a picker's search box, and on the button that runs it.
-const FIND_AGENT_LABEL: &str = "Find a person or organisation";
-const FIND_AGENT_HINT: &str = "Search by name, then choose from the matches. Part of a name is enough.";
+/// The Search button's accessible name, which the visible "Search" alone would leave
+/// identical across every row. It starts with that text (WCAG 2.5.3).
+const FIND_AGENT_LABEL: &str = "Search for a person or organisation";
 const FIND_AGENT_BUTTON: &str = "Search";
 
-/// One agent picker: what the row refers to now, and the way to change it.
-///
-/// A search, not a `<datalist>` or a `<select>` of everything: a datalist
-/// filters its options against what the box already holds, so with the full id
-/// in the box it offers nothing, and a select of all agents on a project with
-/// dozens of contributors would be megabytes. A search narrows first and then
-/// offers one choose button per match.
-///
-/// `value_name` posts always, from a hidden input holding the current id, and
-/// nothing else the appliers read, so an untouched save round-trips
-/// byte-for-byte. A choose button posts the [`choose_agent_intent`], which
-/// [`apply_agent_choice`] writes into `value_name` before the body is applied.
-/// `value_name` is shared by every funder control in a grant, which is how
-/// `apply_funding` collects them; `unique` distinguishes them for element ids,
-/// the search box and the choice.
-///
-/// `focus` marks a row an Add just created, and the picker a choice was just
-/// made in: its search box takes focus, by `autofocus` on a full page and by
-/// `data-init` where the enhanced path morphs the row in, since a browser
-/// honours `autofocus` only at page load.
-fn agent_picker(
-    value_name: &str,
-    unique: &str,
-    label: &str,
-    id: &str,
-    row_context: &str,
-    focus: bool,
-    rows: Rows<'_>,
-) -> Markup {
-    let id = id.trim();
-    let resolved = rows.agents.and_then(|agents| agents.get(id));
-    let query_name = format!("{unique}.{QUERY_SUFFIX}");
-    let query = rows
-        .posted
-        .and_then(|body| body.get(&query_name))
-        .unwrap_or_default()
-        .to_string();
-    let matches = rows
-        .agents
-        .filter(|_| !query.trim().is_empty())
-        .map(|agents| agents.search(&query));
-    let chosen_here = rows
-        .posted
-        .and_then(|body| body.get(INTENT))
-        .and_then(chosen_agent)
-        .is_some_and(|(picker, _)| picker == unique);
-    let focus = focus || chosen_here;
-    let hint = match resolved {
-        Some(agent) => format!("{FIND_AGENT_HINT} Choosing a match replaces {}.", agent.label),
-        None => FIND_AGENT_HINT.to_string(),
-    };
-    let search = {
-        let field = text_field(&query_name, FIND_AGENT_LABEL)
-            .input_type(InputType::Text)
-            .value(&query)
-            .hint(hint)
-            .with_id(format!("{unique}-{QUERY_SUFFIX}"));
-        match focus {
-            true => field.autofocus(),
-            false => field,
-        }
-    };
+const ADD_AGENT_LABEL: &str = "Add a person or organisation";
+const ADD_AGENT_HINT: &str = "Search by name or affiliation.";
+const ADD_AGENT_FIND_LABEL: &str = "Search to add a person or organisation";
 
+const CHANGE_AGENT_BUTTON: &str = "Change";
+
+struct Slot<'a> {
+    /// The name the current id posts under, from a hidden input. Shared by every funder in a
+    /// grant, which is how `apply_funding` collects them.
+    value_name: &'a str,
+    /// Distinguishes slots for element ids, the search box and the choice; a funder's is the
+    /// shared name plus its position ([`funder_control`]).
+    unique: &'a str,
+    label: &'a str,
+    id: &'a str,
+    /// Goes into every button's accessible name: two rows can hold the same agent.
+    row_context: &'a str,
+    /// A row the `/add` URL just created: its search takes focus.
+    focus: bool,
+    /// Draws the card in the Warning colour; see [`attribution_rows`].
+    incomplete: bool,
+}
+
+/// One agent slot: a card when it holds an id and is not being changed, a search (a combobox over
+/// the agents) when it is empty or being changed. Why a search and not a list of every agent, and
+/// how the two states post: `docs/src/editor/project-form.md`.
+///
+/// Invariants: `value_name` posts always, from a hidden input holding the current id, in both
+/// states, so an untouched save round-trips byte-for-byte and a change abandoned with Escape keeps
+/// the stored choice. `inside` renders in both states, because it holds controls that post (a
+/// contributor's roles). Focus follows the depositor: an opened search takes it, and so does the
+/// Change button of a card whose choice was just made, by `autofocus` on a full page and by
+/// `data-init` where the enhanced path morphs the slot in, since a browser honours `autofocus`
+/// only at page load.
+fn agent_picker(slot: Slot<'_>, rows: Rows<'_>, inside: Markup) -> Markup {
+    let query_name = format!("{}.{QUERY_SUFFIX}", slot.unique);
+    let intent = rows.posted.and_then(|body| body.get(INTENT));
+    let opened = intent.and_then(changed_agent) == Some(slot.unique);
+    let chosen_here = intent.and_then(chosen_agent).is_some_and(|(picker, _)| picker == slot.unique);
+    let searching = slot.id.trim().is_empty() || opened || rows.posted.is_some_and(|body| body.has(&query_name));
+    match searching {
+        true => slot_search(&slot, &query_name, rows, inside, slot.focus || opened),
+        false => slot_card(&slot, rows, inside, chosen_here),
+    }
+}
+
+fn slot_search(slot: &Slot<'_>, query_name: &str, rows: Rows<'_>, inside: Markup, autofocus: bool) -> Markup {
+    let query = rows.posted.and_then(|body| body.get(query_name)).unwrap_or_default();
+    let current = slot.id.trim();
+    let (results, expanded) = match rows.agents {
+        Some(scope) => results_for(slot.unique, query, scope, &[], rows.propose),
+        None => (html! {}, false),
+    };
+    let mut search = combobox(query_name, slot.label)
+        .with_id(agent_query_id(slot.unique))
+        .results_id(agent_results_id(slot.unique))
+        .value(query)
+        .search_button(find_button(FIND_AGENT_LABEL, slot.row_context))
+        .results(results)
+        .expanded(expanded);
+    if !current.is_empty() {
+        let name = rows
+            .agents
+            .and_then(|agents| agents.get(current))
+            .map_or(current, |agent| agent.label.as_str());
+        search = search.hint(format!("Choosing a match replaces {name}."));
+    }
+    if let Some(path) = rows.search_path {
+        search = search.search_action(agent_search_action(path, slot.unique));
+    }
+    if autofocus {
+        search = search.autofocus();
+    }
+    html! {
+        div class="flex flex-col gap-2" data-init=[autofocus.then_some(FOCUS_AUTOFOCUS)] {
+            input type="hidden" name=(slot.value_name) value=(slot.id.trim());
+            (search)
+            (inside)
+        }
+    }
+}
+
+/// The find-agent Search button: the no-JavaScript way to run the search in the box before it.
+fn find_button(aria_label: &str, context: &str) -> Markup {
+    button(FIND_AGENT_BUTTON)
+        .variant(ButtonVariant::Secondary)
+        .button_type(ButtonType::Submit)
+        .name_value(INTENT, FIND_AGENT)
+        .aria_label(format!("{aria_label} ({context})"))
+        .build()
+}
+
+fn slot_card(slot: &Slot<'_>, rows: Rows<'_>, inside: Markup, focus: bool) -> Markup {
+    let id = slot.id.trim();
+    let resolved = rows.agents.and_then(|agents| agents.get(id));
+    let name = resolved.map_or(id, |agent| agent.label.as_str());
+    let border = match slot.incomplete {
+        true => "border-warning-600",
+        false => "border-neutral-500",
+    };
+    let class = format!("flex flex-col gap-3 rounded-md border p-3 {border}");
+    let change = button(CHANGE_AGENT_BUTTON)
+        .variant(ButtonVariant::Secondary)
+        .class("px-2 py-1")
+        .name_value(INTENT, change_agent_intent(slot.unique))
+        .aria_label(format!("{CHANGE_AGENT_BUTTON} {name} ({})", slot.row_context));
+    let change = match focus {
+        true => change.autofocus(),
+        false => change,
+    };
     html! {
         div class="flex flex-col gap-2" data-init=[focus.then_some(FOCUS_AUTOFOCUS)] {
-            input type="hidden" name=(value_name) value=(id);
-            p class="text-sm" {
-                (label)
-                ": "
-                @match resolved {
-                    Some(agent) => {
-                        strong { (agent.label) }
-                        " ("
-                        (agent.kind.label())
-                        ")"
+            input type="hidden" name=(slot.value_name) value=(id);
+            div role="group" aria-label=(slot.label) class=(class) {
+                div class="flex flex-wrap items-start justify-between gap-3" {
+                    div class="flex min-w-0 flex-col gap-1" {
+                        @match resolved {
+                            Some(agent) => {
+                                p {
+                                    span class="font-semibold" { (agent.label) }
+                                    " "
+                                    (badge(agent.kind.label()).variant(BadgeVariant::Secondary))
+                                }
+                                @if let Some(detail) = &agent.detail {
+                                    p class="text-sm text-neutral-600" { (detail) }
+                                }
+                            }
+                            None => {
+                                p {
+                                    strong { (id) }
+                                    " — "
+                                    (UNRESOLVED_AGENT)
+                                }
+                            }
+                        }
                     }
-                    None if id.is_empty() => {
-                        span class="text-neutral-600" { "nobody chosen yet" }
-                    }
-                    None => {
-                        strong { (id) }
-                        " — "
-                        (UNRESOLVED_AGENT)
-                    }
+                    (change)
                 }
-            }
-            div class="flex flex-wrap items-end gap-2" {
-                (search)
-                ({
-                    button(FIND_AGENT_BUTTON)
-                        .variant(ButtonVariant::Secondary)
-                        .button_type(ButtonType::Submit)
-                        .name_value(INTENT, FIND_AGENT)
-                        .aria_label(format!("{FIND_AGENT_LABEL} ({row_context})"))
-                })
-            }
-            @if let Some(found) = matches.as_ref().filter(|found| !found.is_empty()) {
-                (agent_matches(unique, row_context, found))
-            }
-            // Said here and not only at submit: the form is where it can be fixed.
-            @if matches.as_ref().is_some_and(AgentMatches::is_empty) {
-                p class="text-sm" {
-                    "Nothing matches “"
-                    (query)
-                    "”. Check the spelling, or propose a new entry below."
-                }
+                (inside)
             }
         }
     }
 }
 
-/// A search's matches, one choose button each, under a line counting them.
-/// `row_context` goes into each button's accessible name: two rows can list the
-/// same agent.
-fn agent_matches(unique: &str, row_context: &str, found: &AgentMatches<'_>) -> Markup {
-    let offered = found.offered();
-    let count_id = format!("{unique}-matches");
-    let count = match found.truncated() {
-        true => format!(
-            "{} matches, showing the first {}. Add a word to narrow it.",
-            found.total(),
-            offered.len(),
-        ),
-        false => format!("{} match{}.", found.total(), if found.total() == 1 { "" } else { "es" }),
-    };
-    html! {
-        p class="text-sm" id=(count_id) { (count) }
-        ul class="flex flex-col items-start gap-1" aria-labelledby=(count_id) {
-            @for agent in offered {
-                li {
-                    @let name = format!("{} ({})", agent.label, agent.kind.label());
+fn match_count_line(total: usize, shown: usize, truncated: bool) -> String {
+    match truncated {
+        true => format!("{total} matches, showing the first {shown}. Add a word to narrow it."),
+        false => format!("{total} match{}.", if total == 1 { "" } else { "es" }),
+    }
+}
+
+/// The id of a picker's search input. Stable for a slot's search; the append search renames its
+/// own on a reset ([`append_search`]), which is why the results container is addressed by
+/// [`agent_results_id`] instead.
+pub(crate) fn agent_query_id(unique: &str) -> String {
+    format!("{unique}-{QUERY_SUFFIX}")
+}
+
+/// The id of a picker's results container: what the input's `aria-controls` names and what the
+/// search endpoint's fragment replaces, whatever the input's own id is.
+pub(crate) fn agent_results_id(unique: &str) -> String {
+    format!("{unique}-results")
+}
+
+/// The longest query [`agent_results`] searches for. The search endpoint answers a longer one with
+/// nothing rather than an error: a 4xx on a type-ahead fires the page's telemetry error listener.
+const MAX_QUERY_CHARS: usize = 200;
+
+/// The results of one type-ahead search, as the page and the search endpoint both render them.
+///
+/// `unique` names the picker; one [`append_unique`] makes is the append search under `{field}`,
+/// whose options add a row ([`add_agent_intent`]), and any other replaces the agent on its card
+/// ([`choose_agent_intent`]). `exclude` ids are not offered. `propose` adds the two propose
+/// buttons to an empty result, where the section form dispatches them.
+pub(crate) fn agent_results(
+    unique: &str,
+    query: &str,
+    scope: &AgentScope<'_>,
+    exclude: &[&str],
+    propose: bool,
+) -> Markup {
+    let (content, expanded) = results_for(unique, query, scope, exclude, propose);
+    combobox_results(&agent_results_id(unique), content, expanded)
+}
+
+/// What [`agent_results`] puts in the container, and whether it is open. The combobox builder
+/// wraps its own results in the container, so a page render passes it this and not the container.
+fn results_for(unique: &str, query: &str, scope: &AgentScope<'_>, exclude: &[&str], propose: bool) -> (Markup, bool) {
+    if query.trim().is_empty() || query.chars().count() > MAX_QUERY_CHARS {
+        return (html! {}, false);
+    }
+    let found = scope.search(query, exclude);
+    let shown = found.offered();
+    if shown.is_empty() {
+        let content = html! {
+            ({
+                combobox_status(
+                    html! {
+                        "Nothing matches “"(query) "”."
+                    },
+                )
+            })
+            @if propose {
+                p class="text-sm" { "Not in the list? Propose a new person or organisation" }
+                div class="flex flex-wrap gap-2" {
                     ({
-                        button(&name)
+                        button("Propose a new person")
                             .variant(ButtonVariant::Secondary)
-                            .name_value(INTENT, choose_agent_intent(unique, &agent.id))
-                            .aria_label(format!("{name}, choose for {row_context}"))
+                            .button_type(ButtonType::Submit)
+                            .name_value(INTENT, PROPOSE_PERSON)
+                    })
+                    ({
+                        button("Propose a new organisation")
+                            .variant(ButtonVariant::Secondary)
+                            .button_type(ButtonType::Submit)
+                            .name_value(INTENT, PROPOSE_ORGANIZATION)
                     })
                 }
             }
-        }
+        };
+        return (content, false);
     }
+    let append_to = appended_field(unique);
+    let options = shown.iter().map(|agent| {
+        let value = match append_to {
+            Some(field) => add_agent_intent(field, &agent.id),
+            None => choose_agent_intent(unique, &agent.id),
+        };
+        let content = html! {
+            span class="font-semibold" { (agent.label) }
+            " "
+            (badge(agent.kind.label()).variant(BadgeVariant::Secondary))
+            @if let Some(detail) = &agent.detail {
+                span class="block text-sm" { (detail) }
+            }
+        };
+        combobox_option(content, INTENT, value).build()
+    });
+    let content = html! {
+        ({
+            combobox_status(
+                match_count_line(found.total(), shown.len(), found.truncated()),
+            )
+        })
+        (combobox_listbox(format!("Matches for “{query}”"), options))
+    };
+    (content, true)
 }
 
-/// Write a posted choice into its picker's value and drop that picker's search.
-/// The intent stays in the body: [`agent_picker`] and the handler read it.
-pub(crate) fn apply_agent_choice(mut pairs: Vec<(String, String)>) -> Vec<(String, String)> {
-    let Some((unique, id)) = pairs
-        .iter()
-        .find(|(name, _)| name == INTENT)
-        .and_then(|(_, intent)| chosen_agent(intent))
-        .map(|(unique, id)| (unique.to_string(), id.to_string()))
-    else {
+/// The `unique` of the append search under the list of agents `field`: how an option knows to
+/// append a row ([`add_agent_intent`]) and not to replace an agent.
+pub(crate) fn append_unique(field: &str) -> String {
+    format!("{field}{APPEND_SUFFIX}")
+}
+
+/// The field an append search's `unique` ([`append_unique`]) appends to, or `None` for any other
+/// picker. Appending is valid only for `AttributionRows` and `AgentRows`; the caller checks the
+/// field's shape.
+pub(crate) fn appended_field(unique: &str) -> Option<&str> {
+    unique.strip_suffix(APPEND_SUFFIX)
+}
+
+const APPEND_SUFFIX: &str = ".new";
+
+/// The Datastar expression a combobox's input runs as the depositor types: a `GET` of `path`
+/// (the section's agent search) for the picker `unique`, carrying the input's value as `q`.
+pub(crate) fn agent_search_action(path: &str, unique: &str) -> String {
+    datastar::get(format!("{path}?for={unique}&q="))
+        .plus_js("encodeURIComponent(evt.target.value)")
+        .to_string()
+}
+
+/// The one search under a list of agent rows, whose options append a row ([`add_agent_intent`]).
+///
+/// `held` are the ids the rows already hold, which it does not offer again. The box must come
+/// back empty after an add, and the Datastar morph keeps typed text unless the node is replaced,
+/// so its id changes only on the response to an add (see [`reset_token`]): a response to anything
+/// else, an autosave landing mid-typing included, would replace the node and drop keystrokes. Focus
+/// stays on it through an add (see [`FOCUS_IF_LOST`]).
+fn append_search(field: &Field, held: &[&str], rows: Rows<'_>) -> Markup {
+    let unique = append_unique(field.id);
+    let query_name = format!("{unique}.{QUERY_SUFFIX}");
+    let added_here = rows
+        .submitted
+        .or(rows.posted)
+        .and_then(|body| body.get(INTENT))
+        .and_then(added_agent)
+        .is_some_and(|(added_to, _)| added_to == field.id);
+    let id = add_box_id(&agent_query_id(&unique), held.len(), reset_token(added_here).as_deref());
+    let focus = added_here && rows.adding.is_none();
+    let query = rows.posted.and_then(|body| body.get(&query_name)).unwrap_or_default();
+    let (results, expanded) = match rows.agents {
+        Some(scope) => results_for(&unique, query, scope, held, rows.propose),
+        None => (html! {}, false),
+    };
+    let mut search = combobox(&query_name, ADD_AGENT_LABEL)
+        .with_id(&id)
+        .results_id(agent_results_id(&unique))
+        .hint(ADD_AGENT_HINT)
+        .value(query)
+        .search_button(find_button(ADD_AGENT_FIND_LABEL, field.label))
+        .results(results)
+        .expanded(expanded);
+    if let Some(path) = rows.search_path {
+        search = search.search_action(agent_search_action(path, &unique));
+    }
+    if focus {
+        search = search.autofocus();
+    }
+    focus_wrapper(&id, search, focus)
+}
+
+/// Rewrite the raw pairs a posted picker intent describes, before [`FormBody::from_pairs`]
+/// reads them. The intent stays in the body: [`agent_picker`] and the handler read it.
+///
+/// - choose: the chosen id lands in its picker's value and that picker's search closes.
+/// - add-agent: one new row holding the agent is appended to the contributor or agent-id rows
+///   `shape_of` names for the field; any other shape, or an unknown field, leaves the body alone.
+/// - remove-role: every `{prefix}.role` pair equal to the intent's role is dropped.
+pub(crate) fn apply_picker_intents(
+    mut pairs: Vec<(String, String)>,
+    shape_of: impl Fn(&str) -> Option<Shape>,
+) -> Vec<(String, String)> {
+    let Some(intent) = pairs.iter().find(|(name, _)| name == INTENT).map(|(_, intent)| intent.clone()) else {
         return pairs;
     };
-    let (value_name, slot) = value_slot(&unique);
+    if let Some((unique, id)) = chosen_agent(&intent) {
+        choose_agent(&mut pairs, unique, id);
+    } else if let Some((field, id)) = added_agent(&intent) {
+        append_agent(&mut pairs, field, id, shape_of(field));
+    } else if let Some((prefix, role)) = removed_role(&intent) {
+        let role_name = format!("{prefix}.role");
+        pairs.retain(|(name, value)| !(*name == role_name && value == role));
+    }
+    pairs
+}
+
+fn choose_agent(pairs: &mut Vec<(String, String)>, unique: &str, id: &str) {
+    let (value_name, slot) = value_slot(unique);
     if let Some((_, value)) = pairs.iter_mut().filter(|(name, _)| name == value_name).nth(slot) {
-        *value = id;
+        *value = id.to_string();
     }
     let query_name = format!("{unique}.{QUERY_SUFFIX}");
     pairs.retain(|(name, _)| name != &query_name);
-    pairs
+}
+
+/// Append a row holding `id` to `field`, which `shape` must say holds contributors or agent ids.
+///
+/// The row keeps the keys the body already carries and takes the smallest free one, so the row
+/// the picker's own Add would have made and this one cannot collide. An id the field already
+/// holds appends nothing: the same agent twice is never what a depositor meant. Nor does a field
+/// already at [`MAX_VALUES_PER_FIELD`] rows.
+fn append_agent(pairs: &mut Vec<(String, String)>, field: &str, id: &str, shape: Option<Shape>) {
+    if !matches!(shape, Some(Shape::AttributionRows | Shape::AgentRows)) {
+        return;
+    }
+    let value_name = |key: &str| match shape {
+        Some(Shape::AttributionRows) => format!("{field}.{key}.contributor"),
+        _ => format!("{field}.{key}"),
+    };
+    let query_name = format!("{}.{QUERY_SUFFIX}", append_unique(field));
+    pairs.retain(|(name, _)| name != &query_name);
+    // The empty-list sentinel: with a real row beside it the applier would read it as a row.
+    let row_name = format!("{field}.row");
+    pairs.retain(|(name, value)| !(*name == row_name && value.is_empty()));
+
+    let body = FormBody::from_pairs(pairs.clone());
+    let keys: Vec<String> = body.rows(field).into_iter().map(str::to_string).collect();
+    if keys.len() >= MAX_VALUES_PER_FIELD {
+        return;
+    }
+    let held = keys
+        .iter()
+        .any(|key| body.all(&value_name(key)).any(|value| value.trim() == id));
+    if held {
+        return;
+    }
+    let key = next_row_key(&keys);
+    pairs.push((row_name, key.clone()));
+    pairs.push((value_name(&key), id.to_string()));
 }
 
 /// The name a picker's value posts under, and which of its values is the picker's:
@@ -708,35 +935,42 @@ fn value_slot(unique: &str) -> (&str, usize) {
         .unwrap_or((unique, 0))
 }
 
-/// A list of agent ids as editable rows, each resolved to a name through [`agent_picker`].
+/// A list of agent ids as editable rows, each a card (see [`agent_picker`]), with one search under
+/// the list that appends a row ([`append_search`]) instead of an Add button.
 pub(crate) fn agent_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
     let keys = row_keys(field, draft, rows);
     let stored = stored_rows(field, draft);
     let action = format!("{}/{}", rows.action, field.id);
     let noun = row_noun(field);
-    let mut list = repeatable_list(field.id, labelled(field), &action).item_noun(&noun);
+    let mut list = repeatable_list(field.id, labelled(field), &action)
+        .item_noun(&noun)
+        .without_add()
+        .empty_message(format!("No {} yet. Search below to add one.", field.label.to_lowercase()));
+    let mut held: Vec<String> = Vec::new();
     for (position, key) in keys.iter().enumerate() {
         let row_name = format!("{}.row", field.id);
         let id = match rows.posted {
             Some(body) if body.has(&row_name) => body.get(&format!("{}.{key}", field.id)).unwrap_or_default(),
             _ => stored.get(position).and_then(|row| row.as_str()).unwrap_or_default(),
         };
+        if !id.trim().is_empty() {
+            held.push(id.trim().to_string());
+        }
         let name = format!("{}.{key}", field.id);
         let resolved = rows.agents.and_then(|agents| agents.get(id.trim()));
         let row_context = format!("row {}", position + 1);
+        let slot = Slot {
+            value_name: &name,
+            unique: &name,
+            label: &row_label(AGENT_ID_LABEL, position),
+            id,
+            row_context: &row_context,
+            focus: is_added_row(field, rows, position, keys.len()),
+            incomplete: false,
+        };
         let body = html! {
             div class="flex flex-col gap-2" {
-                ({
-                    agent_picker(
-                        &name,
-                        &name,
-                        &row_label(AGENT_ID_LABEL, position),
-                        id,
-                        &row_context,
-                        is_added_row(field, rows, position, keys.len()),
-                        rows,
-                    )
-                })
+                (agent_picker(slot, rows, html! {}))
                 @if rows.propose { (propose_controls(resolved, id, &row_context)) }
             }
         };
@@ -745,8 +979,10 @@ pub(crate) fn agent_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) ->
     if let Some(hint) = field.hint {
         list = list.hint(hint);
     }
+    let held: Vec<&str> = held.iter().map(String::as_str).collect();
     html! {
         (list)
+        (append_search(field, &held, rows))
     }
 }
 
@@ -807,17 +1043,22 @@ fn propose_controls(resolved: Option<&Agent>, id: &str, row_context: &str) -> Ma
     }
 }
 
-/// A list of contributor rows: an agent picker plus that contributor's roles as a
-/// checkbox group over the offered vocabulary unioned with what the row holds,
-/// plus a text input for one more. Open for the reason `dataLanguage` is: the
-/// corpus spells the same role several ways. Group and input post under
+/// A list of contributor rows, each a card (see [`agent_picker`]) that holds that contributor's
+/// roles, with one search under the list that appends a row ([`append_search`]) instead of an Add
+/// button. Roles are the checkbox group over the offered vocabulary unioned with what the row
+/// holds, plus a text input for one more ([`roles_section`]); open for the reason `dataLanguage`
+/// is: the corpus spells the same role several ways. Group and input post under
 /// `{field}.{key}.role`, so `FormBody::all` collects them together.
 fn attribution_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
     let keys = row_keys(field, draft, rows);
     let stored = stored_rows(field, draft);
     let action = format!("{}/{}", rows.action, field.id);
     let noun = row_noun(field);
-    let mut list = repeatable_list(field.id, labelled(field), &action).item_noun(&noun);
+    let mut list = repeatable_list(field.id, labelled(field), &action)
+        .item_noun(&noun)
+        .without_add()
+        .empty_message(NO_CONTRIBUTORS);
+    let mut agent_ids: Vec<String> = Vec::new();
     for (position, key) in keys.iter().enumerate() {
         let row_name = format!("{}.row", field.id);
         let posted = rows.posted.filter(|body| body.has(&row_name));
@@ -847,49 +1088,35 @@ fn attribution_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Mark
                 .map(|roles| roles.iter().filter_map(Value::as_str).map(str::to_string).collect())
                 .unwrap_or_default(),
         };
-        let mut options: Vec<&str> = CONTRIBUTOR_ROLES.to_vec();
-        for role in &held {
-            if !options.contains(&role.as_str()) {
-                options.push(role);
-            }
+        if !contributor.trim().is_empty() {
+            agent_ids.push(contributor.trim().to_string());
         }
         let contributor_name = format!("{prefix}.contributor");
         let resolved = rows.agents.and_then(|agents| agents.get(contributor.trim()));
         let row_context = format!("row {}", position + 1);
+        let who = resolved.map_or_else(
+            || match contributor.trim().is_empty() {
+                true => "this contributor".to_string(),
+                false => contributor.trim().to_string(),
+            },
+            |agent| agent.label.clone(),
+        );
+        let incomplete = held.is_empty() && !contributor.trim().is_empty() && may_flag_incomplete(rows);
+        let roles = roles_section(&prefix, &who, &held, incomplete, rows);
+        let slot = Slot {
+            value_name: &contributor_name,
+            unique: &contributor_name,
+            label: &row_label(AGENT_ID_LABEL, position),
+            id: &contributor,
+            row_context: &row_context,
+            focus: is_added_row(field, rows, position, keys.len()),
+            incomplete,
+        };
         // The propose controls go below the role controls: sandwiched between the
         // picker and the roles they read as an offer to propose the roles.
         let body = html! {
             div class="flex flex-col gap-3" {
-                ({
-                    agent_picker(
-                        &contributor_name,
-                        &contributor_name,
-                        &row_label(AGENT_ID_LABEL, position),
-                        &contributor,
-                        &row_context,
-                        is_added_row(field, rows, position, keys.len()),
-                        rows,
-                    )
-                })
-                ({
-                    checkbox_group(format!("{prefix}.role"), ROLE_GROUP_LABEL)
-                        .options(options.iter().map(|role| (*role, *role)))
-                        .checked(held.iter().map(String::as_str))
-                })
-                ({
-                    let name = format!("{prefix}.role");
-                    let typed = add_text_posted(rows, &name);
-                    let id = add_box_id(
-                        &name,
-                        held.len(),
-                        reset_token(typed).as_deref(),
-                    );
-                    let input = text_field(name, ADD_ROLE_LABEL)
-                        .input_type(InputType::Text)
-                        .hint(ADD_ROLE_HINT)
-                        .with_id(&id);
-                    add_box(&id, input, typed && rows.adding.is_none())
-                })
+                (agent_picker(slot, rows, roles))
                 @if rows.propose { (propose_controls(resolved, &contributor, &row_context)) }
             }
         };
@@ -898,9 +1125,157 @@ fn attribution_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Mark
     if let Some(hint) = field.hint {
         list = list.hint(hint);
     }
+    let held: Vec<&str> = agent_ids.iter().map(String::as_str).collect();
     html! {
         (list)
+        (append_search(field, &held, rows))
     }
+}
+
+const NO_CONTRIBUTORS: &str = "No contributors yet. Search below to add the people and organisations involved.";
+
+/// A held role's chip: display only, so it has the look of a tag and not of a control.
+const ROLE_CHIP: &str =
+    "inline-flex items-center gap-1 rounded-full border border-neutral-500 bg-neutral-50 py-0.5 pl-3 pr-1 text-sm";
+
+const ROLE_REQUIRED: &str = "Choose at least one role";
+
+/// Whether this render may tell a contributor with no role to choose one. Only a render of the
+/// stored draft (a `GET`, an explicit save) or the answer to a refused submit: the response to the
+/// choice or add that just made the contributor would scold a depositor who has not had a chance
+/// to pick one.
+fn may_flag_incomplete(rows: Rows<'_>) -> bool {
+    rows.posted.is_none() || rows.submitted.and_then(|body| body.get(INTENT)) == Some(SUBMIT)
+}
+
+/// One contributor's roles: the held ones as display-only chips, each with a Remove, then the
+/// controls that actually post them.
+///
+/// The checkbox group is the only source of truth for roles; a chip's Remove posts
+/// [`remove_role_intent`], which [`apply_picker_intents`] applies to the body. The `<details>` is
+/// open while no role is held, and keeps whatever state the depositor gave it across a morph
+/// (`data-preserve-attr`) while one is: without that, ticking a role would autosave and collapse
+/// the group under their hands, and with it on an empty row the server's `open` would never win
+/// back after the last role is removed.
+fn roles_section(prefix: &str, who: &str, held: &[String], incomplete: bool, rows: Rows<'_>) -> Markup {
+    let mut options: Vec<&str> = CONTRIBUTOR_ROLES.to_vec();
+    for role in held {
+        if !options.contains(&role.as_str()) {
+            options.push(role);
+        }
+    }
+    let name = format!("{prefix}.role");
+    let summary = match held.is_empty() {
+        true => "Choose roles",
+        false => "Change roles",
+    };
+    let required_id = format!("{prefix}-roles-required");
+    let focus = removed_role_focus(prefix, held, rows);
+    let summary_focus = focus == Some(RoleFocus::Summary);
+    // A chip's focus rides on a wrapper whose id changes with every such response: a morph reruns
+    // `data-init` only on a node it replaces, and a second Remove would otherwise find the same
+    // attribute already in place.
+    let chips_id = matches!(focus, Some(RoleFocus::Chip(_)))
+        .then(|| reset_token(true).map(|token| format!("{prefix}-roles-{token}")))
+        .flatten();
+    html! {
+        div class="flex flex-col gap-2" {
+            @if !held.is_empty() {
+                div id=[chips_id.as_deref()]
+                    data-init=[chips_id.as_deref().map(|_| FOCUS_AUTOFOCUS)]
+                {
+                    ul aria-label=(format!("Roles of {who}")) class="flex flex-wrap gap-2" {
+                        @for (index, role) in held.iter().enumerate() {
+                            li class=(ROLE_CHIP) {
+                                span { (role) }
+                                ({
+                                    let remove = button("×")
+                                        .variant(ButtonVariant::Ghost)
+                                        .class("min-h-6 min-w-6")
+                                        .name_value(INTENT, remove_role_intent(prefix, role))
+                                        .aria_label(format!("Remove role {role} from {who}"));
+                                    match focus == Some(RoleFocus::Chip(index)) {
+                                        true => remove.autofocus(),
+                                        false => remove,
+                                    }
+                                })
+                            }
+                        }
+                    }
+                }
+            }
+            @if incomplete {
+                p id=(required_id) class="text-sm text-warning-800" { (ROLE_REQUIRED) }
+            }
+            details
+                open[held.is_empty()]
+                data-preserve-attr=[(!held.is_empty()).then_some("open")]
+                data-init=[summary_focus.then_some(FOCUS_AUTOFOCUS)]
+            {
+                summary
+                    class="cursor-pointer text-sm"
+                    aria-describedby=[incomplete.then_some(required_id.as_str())]
+                    autofocus[summary_focus]
+                { (summary) }
+                div class="mt-2 flex flex-col gap-3" {
+                    ({
+                        checkbox_group(&name, ROLE_GROUP_LABEL)
+                            .options(options.iter().map(|role| (*role, *role)))
+                            .checked(held.iter().map(String::as_str))
+                    })
+                    ({
+                        let typed = add_text_posted(rows, &name);
+                        let id = add_box_id(
+                            &name,
+                            held.len(),
+                            reset_token(typed).as_deref(),
+                        );
+                        let input = text_field(&name, ADD_ROLE_LABEL)
+                            .input_type(InputType::Text)
+                            .hint(ADD_ROLE_HINT)
+                            .with_id(&id);
+                        add_box(&id, input, typed && rows.adding.is_none())
+                    })
+                }
+            }
+        }
+    }
+}
+
+/// What takes focus on the response to a role chip's Remove.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RoleFocus {
+    /// The Remove button of the chip at this position.
+    Chip(usize),
+    /// The `<details>` summary: no chip is left.
+    Summary,
+}
+
+/// Where focus goes when this response answers a Remove of one of `prefix`'s roles: the chip now
+/// at the removed one's position, else the one before it, else the roles summary.
+///
+/// The body no longer holds the removed role, and a response lists the roles in checkbox order
+/// (the vocabulary's, then any other in the order held), so the position is where the removed role
+/// sorts among those still held; a custom role sorts after the vocabulary ones.
+fn removed_role_focus(prefix: &str, held: &[String], rows: Rows<'_>) -> Option<RoleFocus> {
+    let intent = rows.submitted.or(rows.posted)?.get(INTENT)?;
+    let (from, removed) = removed_role(intent)?;
+    if from != prefix {
+        return None;
+    }
+    let rank = |role: &str| {
+        CONTRIBUTOR_ROLES
+            .iter()
+            .position(|known| *known == role)
+            .unwrap_or(CONTRIBUTOR_ROLES.len())
+    };
+    let removed_rank = rank(removed);
+    let at = held.iter().filter(|role| rank(role) < removed_rank).count();
+    Some(match (at < held.len(), at) {
+        (true, _) => RoleFocus::Chip(at),
+        (false, 0) => RoleFocus::Summary,
+        (false, _) => RoleFocus::Chip(at - 1),
+    })
 }
 
 /// The reference types a shape offers, or none for any other shape.
@@ -1264,7 +1639,18 @@ fn funder_control(
     let unique = format!("{prefix}.funder-{index}");
     html! {
         div class="flex flex-col gap-2" {
-            (agent_picker(&value_name, &unique, label, id, row_context, false, rows))
+            ({
+                let slot = Slot {
+                    value_name: &value_name,
+                    unique: &unique,
+                    label,
+                    id,
+                    row_context,
+                    focus: false,
+                    incomplete: false,
+                };
+                agent_picker(slot, rows, html! {})
+            })
             @if rows.propose { (propose_controls(resolved, id, row_context)) }
         }
     }
@@ -1609,8 +1995,14 @@ fn add_text_posted(rows: Rows<'_>, name: &str) -> bool {
 /// [`FOCUS_IF_LOST`]): a depositor who Tabbed on keeps their place.
 fn add_box(id: &str, input: TextFieldBuilder, focus: bool) -> Markup {
     let input = if focus { input.autofocus() } else { input };
+    focus_wrapper(id, input, focus)
+}
+
+/// `content` in the wrapper [`add_box`] describes; the caller marks the input inside it
+/// `autofocus`.
+fn focus_wrapper(id: &str, content: impl Render, focus: bool) -> Markup {
     html! {
-        div id=(format!("focus-{id}")) data-init=[focus.then_some(FOCUS_IF_LOST)] { (input) }
+        div id=(format!("focus-{id}")) data-init=[focus.then_some(FOCUS_IF_LOST)] { (content) }
     }
 }
 
@@ -2309,6 +2701,7 @@ mod tests {
             format_findings: &[],
             propose: true,
             focus: None,
+            search_path: None,
         };
 
         let out = agent_rows(field, &draft, rows).into_string();
@@ -2341,6 +2734,7 @@ mod tests {
             format_findings: &[],
             propose: false,
             focus: None,
+            search_path: None,
         };
 
         let out = agent_rows(field, &draft, rows).into_string();
@@ -2360,22 +2754,13 @@ mod tests {
     }
 
     #[test]
-    fn a_search_lists_choose_buttons_below_the_box_and_keeps_the_stored_id_posting() {
+    fn a_changed_slot_lists_choose_buttons_below_the_box_and_keeps_the_stored_id_posting() {
         let agents = agent_corpus();
         let scope = editor_core::agents::AgentScope::published_only(&agents);
         let mut draft = published_draft();
         draft.set("contactPoint", serde_json::json!(["organization-008"]));
         let field = editor_core::form::registry::field("contactPoint").expect("contactPoint is a known field");
-        let fresh = Rows {
-            submitted: None,
-            posted: None,
-            action: "/x",
-            adding: None,
-            agents: Some(&scope),
-            format_findings: &[],
-            propose: false,
-            focus: None,
-        };
+        let fresh = Rows { action: "/x", agents: Some(&scope), ..Rows::default() };
         let hidden = r#"<input type="hidden" name="contactPoint.r0" value="organization-008">"#;
 
         let quiet = agent_rows(field, &draft, fresh).into_string();
@@ -2392,32 +2777,33 @@ mod tests {
         let search = out.find(r#"name="contactPoint.r0.q""#).expect("search box");
         let first = out.find(r#"value="choose-agent:contactPoint.r0:"#).expect("choose buttons");
         assert!(search < first, "the matches are below the search box: {out}");
-        assert!(
-            out.contains("Choosing a match replaces Dokumentationsbibliothek St. Moritz."),
-            "{out}"
-        );
+        assert!(out.contains(r#"value="Universität""#), "the query comes back: {out}");
+        assert!(!out.contains("Keep "), "no way to keep the old choice but Escape: {out}");
     }
 
     #[test]
     fn a_choice_is_written_into_its_own_picker_and_closes_its_search() {
-        let pairs = |list: &[(&str, &str)]| -> Vec<(String, String)> {
-            list.iter().map(|(name, value)| (name.to_string(), value.to_string())).collect()
-        };
-        let row = apply_agent_choice(pairs(&[
-            ("attributions.r1.contributor", ""),
-            ("attributions.r1.contributor.q", "Rita"),
-            ("intent", "choose-agent:attributions.r1.contributor:person-025"),
-        ]));
+        let row = apply_picker_intents(
+            pairs(&[
+                ("attributions.r1.contributor", ""),
+                ("attributions.r1.contributor.q", "Rita"),
+                ("intent", "choose-agent:attributions.r1.contributor:person-025"),
+            ]),
+            shape_of,
+        );
         assert!(row.contains(&("attributions.r1.contributor".to_string(), "person-025".to_string())));
         assert!(!row.iter().any(|(name, _)| name == "attributions.r1.contributor.q"), "{row:?}");
 
         // Funders share one name; the choice lands on the funder searched in, not the first.
-        let funders = apply_agent_choice(pairs(&[
-            ("funding.r0.funder", "organization-002"),
-            ("funding.r0.funder", ""),
-            ("funding.r0.funder-1.q", "SNF"),
-            ("intent", "choose-agent:funding.r0.funder-1:organization-128"),
-        ]));
+        let funders = apply_picker_intents(
+            pairs(&[
+                ("funding.r0.funder", "organization-002"),
+                ("funding.r0.funder", ""),
+                ("funding.r0.funder-1.q", "SNF"),
+                ("intent", "choose-agent:funding.r0.funder-1:organization-128"),
+            ]),
+            shape_of,
+        );
         let ids: Vec<&str> = funders
             .iter()
             .filter(|(name, _)| name == "funding.r0.funder")
@@ -2427,19 +2813,22 @@ mod tests {
     }
 
     #[test]
-    fn after_a_choice_the_picker_shows_the_chosen_agent_with_its_search_closed_and_focused() {
+    fn after_a_choice_the_picker_shows_the_chosen_agent_as_a_card_with_its_change_button_focused() {
         let agents = agent_corpus();
         let scope = editor_core::agents::AgentScope::published_only(&agents);
         let field = editor_core::form::registry::field("contactPoint").expect("contactPoint is a known field");
-        let body = editor_core::form::FormBody::from_pairs(apply_agent_choice(vec![
-            ("contactPoint.row".to_string(), "r0".to_string()),
-            ("contactPoint.r0".to_string(), String::new()),
-            ("contactPoint.r0.q".to_string(), "Universität".to_string()),
-            (
-                "intent".to_string(),
-                "choose-agent:contactPoint.r0:organization-008".to_string(),
-            ),
-        ]));
+        let body = editor_core::form::FormBody::from_pairs(apply_picker_intents(
+            vec![
+                ("contactPoint.row".to_string(), "r0".to_string()),
+                ("contactPoint.r0".to_string(), String::new()),
+                ("contactPoint.r0.q".to_string(), "Universität".to_string()),
+                (
+                    "intent".to_string(),
+                    "choose-agent:contactPoint.r0:organization-008".to_string(),
+                ),
+            ],
+            shape_of,
+        ));
         let out = agent_rows(
             field,
             &published_draft(),
@@ -2452,11 +2841,16 @@ mod tests {
                 format_findings: &[],
                 propose: false,
                 focus: None,
+                search_path: None,
             },
         )
         .into_string();
         assert!(out.contains("Dokumentationsbibliothek St. Moritz"), "{out}");
-        assert!(out.contains(" autofocus"), "focus returns to the search box: {out}");
+        assert!(
+            out.contains("autofocus>Change</button>"),
+            "focus goes to the card's Change button: {out}"
+        );
+        assert!(!out.contains(r#"name="contactPoint.r0.q""#), "the search is closed: {out}");
     }
 
     #[test]
@@ -2467,14 +2861,10 @@ mod tests {
         draft.set("contactPoint", serde_json::json!(["organization-008"]));
         let field = editor_core::form::registry::field("contactPoint").expect("contactPoint is a known field");
         let rows = Rows {
-            submitted: None,
-            posted: None,
             action: "/x",
             adding: Some("contactPoint"),
             agents: Some(&scope),
-            format_findings: &[],
-            propose: false,
-            focus: None,
+            ..Rows::default()
         };
 
         let added = agent_rows(field, &draft, rows).into_string();
@@ -2482,14 +2872,14 @@ mod tests {
         assert_eq!(added.matches(" autofocus").count(), 1, "{added}");
         assert!(added.find(" autofocus") > added.find(r#"name="contactPoint.r1.q""#), "{added}");
         assert_eq!(
-            added.matches("data-init").count(),
+            added.matches(FOCUS_AUTOFOCUS).count(),
             1,
             "the enhanced path focuses it too: {added}"
         );
 
         let plain = agent_rows(field, &draft, Rows { adding: None, ..rows }).into_string();
         assert!(!plain.contains("autofocus"), "{plain}");
-        assert!(!plain.contains("data-init"), "{plain}");
+        assert!(!plain.contains(FOCUS_AUTOFOCUS), "{plain}");
     }
 
     #[test]
@@ -2516,6 +2906,7 @@ mod tests {
                 format_findings: &[],
                 propose: true,
                 focus: None,
+                search_path: None,
             },
         )
         .into_string();
@@ -2549,6 +2940,7 @@ mod tests {
             format_findings: &[],
             propose: true,
             focus: None,
+            search_path: None,
         };
 
         let out = attribution_rows(field, &draft, rows).into_string();
@@ -2575,6 +2967,7 @@ mod tests {
             format_findings: &[],
             propose: true,
             focus: None,
+            search_path: None,
         };
 
         let out = agent_rows(field, &draft, rows).into_string();
@@ -2604,6 +2997,7 @@ mod tests {
             format_findings: &[],
             propose: true,
             focus: None,
+            search_path: None,
         };
 
         let out = attribution_rows(field, &draft, rows).into_string();
@@ -2759,6 +3153,7 @@ mod tests {
                 format_findings: &[],
                 propose: true,
                 focus: None,
+                search_path: None,
             };
             let out = funding(field, &draft, rows).into_string();
             let controls = out.matches(r#"name="funding.r0.funder""#).count();
@@ -2771,5 +3166,866 @@ mod tests {
                 posted.push(("funding.r0.funder".to_string(), String::new()));
             }
         }
+    }
+
+    fn pairs(list: &[(&str, &str)]) -> Vec<(String, String)> {
+        list.iter().map(|(name, value)| (name.to_string(), value.to_string())).collect()
+    }
+
+    fn shape_of(name: &str) -> Option<Shape> {
+        editor_core::form::registry::field(name).and_then(|field| field.shape)
+    }
+
+    #[test]
+    fn adding_an_agent_appends_a_contributor_row_under_the_next_free_key() {
+        let out = apply_picker_intents(
+            pairs(&[
+                ("attributions.row", "r0"),
+                ("attributions.r0.contributor", "person-001"),
+                ("attributions.row", "r2"),
+                ("attributions.r2.contributor", "person-002"),
+                ("attributions.new.q", "Rita"),
+                ("intent", "add-agent:attributions:person-025"),
+            ]),
+            shape_of,
+        );
+        assert!(out.contains(&("attributions.row".to_string(), "r1".to_string())), "{out:?}");
+        assert!(
+            out.contains(&("attributions.r1.contributor".to_string(), "person-025".to_string())),
+            "{out:?}"
+        );
+        assert!(!out.iter().any(|(name, _)| name == "attributions.new.q"), "{out:?}");
+        assert!(out.iter().any(|(name, _)| name == "intent"), "the intent stays: {out:?}");
+    }
+
+    #[test]
+    fn adding_an_agent_to_an_empty_list_drops_the_placeholder_row() {
+        let out = apply_picker_intents(
+            pairs(&[
+                ("attributions.row", ""),
+                ("attributions.new.q", "Rita"),
+                ("intent", "add-agent:attributions:person-025"),
+            ]),
+            shape_of,
+        );
+        let rows: Vec<&str> = out
+            .iter()
+            .filter(|(name, _)| name == "attributions.row")
+            .map(|(_, value)| value.as_str())
+            .collect();
+        assert_eq!(rows, ["r0"], "{out:?}");
+        assert!(out.contains(&("attributions.r0.contributor".to_string(), "person-025".to_string())));
+    }
+
+    #[test]
+    fn adding_an_agent_appends_an_agent_rows_row() {
+        let out = apply_picker_intents(
+            pairs(&[
+                ("contactPoint.row", "r0"),
+                ("contactPoint.r0", "organization-008"),
+                ("contactPoint.new.q", "Bern"),
+                ("intent", "add-agent:contactPoint:organization-002"),
+            ]),
+            shape_of,
+        );
+        assert!(out.contains(&("contactPoint.row".to_string(), "r1".to_string())), "{out:?}");
+        assert!(
+            out.contains(&("contactPoint.r1".to_string(), "organization-002".to_string())),
+            "{out:?}"
+        );
+        assert!(!out.iter().any(|(name, _)| name == "contactPoint.new.q"), "{out:?}");
+    }
+
+    #[test]
+    fn adding_an_agent_the_field_already_holds_appends_nothing() {
+        let attributions = pairs(&[
+            ("attributions.row", "r0"),
+            ("attributions.r0.contributor", "person-001"),
+            ("intent", "add-agent:attributions:person-001"),
+        ]);
+        assert_eq!(apply_picker_intents(attributions.clone(), shape_of), attributions);
+        let contacts = pairs(&[
+            ("contactPoint.row", "r0"),
+            ("contactPoint.r0", "organization-008"),
+            ("intent", "add-agent:contactPoint:organization-008"),
+        ]);
+        assert_eq!(apply_picker_intents(contacts.clone(), shape_of), contacts);
+    }
+
+    #[test]
+    fn adding_an_agent_to_a_field_with_no_agent_rows_changes_nothing() {
+        // `keywords` is a rows field of another shape, and `funding` holds its agents nested.
+        let keywords = pairs(&[("keywords.row", "r0"), ("intent", "add-agent:keywords:person-001")]);
+        assert_eq!(apply_picker_intents(keywords.clone(), shape_of), keywords);
+        let funding = pairs(&[("funding.row", "r0"), ("intent", "add-agent:funding:organization-002")]);
+        assert_eq!(apply_picker_intents(funding.clone(), shape_of), funding);
+        let unknown = pairs(&[
+            ("nosuchfield.row", "r0"),
+            ("intent", "add-agent:nosuchfield:person-001"),
+        ]);
+        assert_eq!(apply_picker_intents(unknown.clone(), shape_of), unknown);
+    }
+
+    #[test]
+    fn removing_a_role_drops_every_pair_of_that_role_in_that_row_only() {
+        let out = apply_picker_intents(
+            pairs(&[
+                ("attributions.r0.contributor", "person-001"),
+                ("attributions.r0.role", "Author"),
+                ("attributions.r0.role", "Editor"),
+                ("attributions.r0.role", ""),
+                ("attributions.r0.role", "Author"),
+                ("attributions.r1.role", "Author"),
+                ("intent", "remove-role:attributions.r0:Author"),
+            ]),
+            shape_of,
+        );
+        let roles: Vec<&str> = out
+            .iter()
+            .filter(|(name, _)| name == "attributions.r0.role")
+            .map(|(_, value)| value.as_str())
+            .collect();
+        assert_eq!(roles, ["Editor", ""], "{out:?}");
+        assert!(out.contains(&("attributions.r1.role".to_string(), "Author".to_string())));
+    }
+
+    /// The values of the checked checkboxes in `out`, in document order: what a browser posts.
+    fn checked_roles(out: &str) -> Vec<String> {
+        out.split(r#"value=""#)
+            .skip(1)
+            .filter_map(|rest| rest.split_once('"'))
+            .filter(|(_, after)| after.starts_with(" checked"))
+            .map(|(value, _)| value.to_string())
+            .collect()
+    }
+
+    /// The value of the `nth` role Remove in `out`.
+    fn remove_intent(out: &str, nth: usize) -> String {
+        out.split(r#"name="intent" value=""#)
+            .skip(1)
+            .filter_map(|rest| rest.split('"').next())
+            .filter(|value| value.starts_with("remove-role:"))
+            .nth(nth)
+            .expect("a role chip")
+            .to_string()
+    }
+
+    /// The opening tag in `out` that holds `needle`.
+    fn tag_with<'a>(out: &'a str, needle: &str) -> &'a str {
+        out.split('<')
+            .find(|tag| tag.contains(needle))
+            .unwrap_or_else(|| panic!("no tag holds {needle}: {out}"))
+    }
+
+    fn contributor_with_roles(roles: &[&str]) -> ProjectDraft {
+        let mut draft = published_draft();
+        draft.set(
+            "attributions",
+            serde_json::json!([{ "contributor": "person-001", "contributorType": roles }]),
+        );
+        draft
+    }
+
+    #[test]
+    fn a_chip_s_remove_drops_exactly_its_role_when_the_body_posts_roles_in_checkbox_order() {
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let field = editor_core::form::registry::field("attributions").expect("attributions is a known field");
+        let rows = Rows { action: "/x", agents: Some(&scope), ..Rows::default() };
+
+        // Chips follow the stored order, the posted pairs follow the checkboxes: the vocabulary's,
+        // then any other role.
+        for (stored, chip, removed, left) in [
+            (vec!["Author", "Project Leader"], 0, "Author", vec!["Project Leader"]),
+            (vec!["Zeta custom", "Author"], 0, "Zeta custom", vec!["Author"]),
+            (
+                vec!["Author", "Editor: volume 2", "Editor"],
+                1,
+                "Editor: volume 2",
+                vec!["Author", "Editor"],
+            ),
+        ] {
+            let out = attribution_rows(field, &contributor_with_roles(&stored), rows).into_string();
+            let intent = remove_intent(&out, chip);
+            assert_eq!(intent, format!("remove-role:attributions.r0:{removed}"));
+
+            let mut posted = pairs(&[
+                ("attributions.row", "r0"),
+                ("attributions.r0.contributor", "person-001"),
+            ]);
+            posted.extend(
+                checked_roles(&out)
+                    .into_iter()
+                    .map(|role| ("attributions.r0.role".to_string(), role)),
+            );
+            posted.push(("attributions.r0.role".to_string(), String::new()));
+            posted.push(("intent".to_string(), intent));
+
+            let rewritten = apply_picker_intents(posted, shape_of);
+            let mut roles: Vec<&str> = rewritten
+                .iter()
+                .filter(|(name, value)| name == "attributions.r0.role" && !value.is_empty())
+                .map(|(_, value)| value.as_str())
+                .collect();
+            roles.sort_unstable();
+            let mut left = left;
+            left.sort_unstable();
+            assert_eq!(roles, left, "stored {stored:?}, chip {chip}");
+        }
+    }
+
+    #[test]
+    fn focus_after_a_role_chip_s_remove_goes_to_the_chip_in_its_place_then_before_it_then_the_summary() {
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let field = editor_core::form::registry::field("attributions").expect("attributions is a known field");
+        let rows = Rows { action: "/x", agents: Some(&scope), ..Rows::default() };
+        let draft = contributor_with_roles(&[]);
+        let answer = |roles: &[&str], removed: &str| {
+            let mut posted = pairs(&[
+                ("attributions.row", "r0"),
+                ("attributions.r0.contributor", "person-001"),
+            ]);
+            posted.extend(roles.iter().map(|role| ("attributions.r0.role".to_string(), role.to_string())));
+            posted.push(("intent".to_string(), format!("remove-role:attributions.r0:{removed}")));
+            let body = editor_core::form::FormBody::from_pairs(apply_picker_intents(posted, shape_of));
+            attribution_rows(field, &draft, Rows { posted: Some(&body), submitted: Some(&body), ..rows }).into_string()
+        };
+        let focused = |out: &str, role: &str| tag_with(out, &format!("Remove role {role} from ")).contains("autofocus");
+
+        // Posted in checkbox order: Project Leader, Author, Editor.
+        let out = answer(&["Project Leader", "Author", "Editor"], "Author");
+        assert!(focused(&out, "Editor") && !focused(&out, "Project Leader"), "{out}");
+        assert!(out.contains("el.querySelector('[autofocus]')?.focus()"), "{out}");
+
+        let out = answer(&["Project Leader", "Author", "Editor"], "Editor");
+        assert!(focused(&out, "Author") && !focused(&out, "Project Leader"), "{out}");
+
+        let out = answer(&["Author"], "Author");
+        assert!(!out.contains("Remove role"), "{out}");
+        assert!(tag_with(&out, "Choose roles").contains("autofocus"), "{out}");
+
+        // Another row's Remove, and any other response, move nothing.
+        let other = {
+            let body = editor_core::form::FormBody::from_pairs(pairs(&[
+                ("attributions.row", "r0"),
+                ("attributions.r0.contributor", "person-001"),
+                ("attributions.r0.role", "Author"),
+                ("attributions.r0.role", ""),
+                ("intent", "remove-role:attributions.r1:Author"),
+            ]));
+            attribution_rows(field, &draft, Rows { posted: Some(&body), submitted: Some(&body), ..rows }).into_string()
+        };
+        assert!(!other.contains("autofocus"), "{other}");
+    }
+
+    #[test]
+    fn removing_a_role_leaves_the_server_s_open_to_win_once_the_row_holds_none() {
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let field = editor_core::form::registry::field("attributions").expect("attributions is a known field");
+        let rows = Rows { action: "/x", agents: Some(&scope), ..Rows::default() };
+        let held = attribution_rows(field, &contributor_with_roles(&["Author"]), rows).into_string();
+        assert!(held.contains(r#"data-preserve-attr="open""#), "{held}");
+        let empty = attribution_rows(field, &contributor_with_roles(&[]), rows).into_string();
+        assert!(!empty.contains("data-preserve-attr"), "{empty}");
+        assert!(empty.contains("<details open"), "{empty}");
+    }
+
+    #[test]
+    fn the_roles_summary_is_described_by_the_incomplete_marker_and_a_chip_s_remove_is_24px() {
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let field = editor_core::form::registry::field("attributions").expect("attributions is a known field");
+        let rows = Rows { action: "/x", agents: Some(&scope), ..Rows::default() };
+
+        let flagged = attribution_rows(field, &contributor_with_roles(&[]), rows).into_string();
+        assert!(flagged.contains(r#"<p id="attributions.r0-roles-required""#), "{flagged}");
+        assert!(
+            tag_with(&flagged, "Choose roles").contains(r#"aria-describedby="attributions.r0-roles-required""#),
+            "{flagged}"
+        );
+
+        let held = attribution_rows(field, &contributor_with_roles(&["Author"]), rows).into_string();
+        assert!(!held.contains("aria-describedby=\"attributions.r0-roles-required\""), "{held}");
+        let remove = tag_with(&held, "Remove role Author from ");
+        assert!(remove.contains("min-h-6") && remove.contains("min-w-6"), "{remove}");
+    }
+
+    #[test]
+    fn every_search_button_names_itself_starting_with_its_visible_text() {
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let field = editor_core::form::registry::field("attributions").expect("attributions is a known field");
+        let rows = Rows { action: "/x", agents: Some(&scope), ..Rows::default() };
+        let mut draft = published_draft();
+        draft.set(
+            "attributions",
+            serde_json::json!([{ "contributor": "", "contributorType": [] }]),
+        );
+        let out = attribution_rows(field, &draft, rows).into_string();
+        let buttons: Vec<&str> = out.split('<').filter(|tag| tag.contains(r#"value="find-agent""#)).collect();
+        assert_eq!(buttons.len(), 2, "the empty row's search and the append search: {out}");
+        for tag in buttons {
+            assert!(tag.contains(r#"aria-label="Search "#), "{tag}");
+        }
+    }
+
+    #[test]
+    fn a_slot_being_changed_says_whom_a_choice_replaces() {
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let field = editor_core::form::registry::field("attributions").expect("attributions is a known field");
+        let rows = Rows { action: "/x", agents: Some(&scope), ..Rows::default() };
+        let draft = contributor_with_roles(&["Author"]);
+        let name = &agents.get("person-001").expect("a committed person").label;
+
+        let body = editor_core::form::FormBody::from_pairs(pairs(&[
+            ("attributions.row", "r0"),
+            ("attributions.r0.contributor", "person-001"),
+            ("attributions.r0.role", "Author"),
+            ("intent", "change-agent:attributions.r0.contributor"),
+        ]));
+        let changing =
+            attribution_rows(field, &draft, Rows { posted: Some(&body), submitted: Some(&body), ..rows }).into_string();
+        assert!(changing.contains(&format!("Choosing a match replaces {name}.")), "{changing}");
+
+        let card = attribution_rows(field, &draft, rows).into_string();
+        assert!(!card.contains("Choosing a match replaces"), "{card}");
+    }
+
+    #[test]
+    fn an_append_stops_at_the_cap_on_rows() {
+        let mut full: Vec<(String, String)> = Vec::new();
+        for n in 0..MAX_VALUES_PER_FIELD {
+            full.push(("attributions.row".to_string(), format!("r{n}")));
+            full.push((format!("attributions.r{n}.contributor"), format!("person-{n:03}")));
+        }
+        full.push(("intent".to_string(), "add-agent:attributions:organization-002".to_string()));
+        let out = apply_picker_intents(full.clone(), shape_of);
+        assert_eq!(out, full, "no pair is added to a full field");
+    }
+
+    #[test]
+    fn a_body_without_a_picker_intent_is_returned_unchanged() {
+        let body = pairs(&[
+            ("attributions.row", "r0"),
+            ("attributions.r0.role", "Author"),
+            ("intent", "save"),
+        ]);
+        assert_eq!(apply_picker_intents(body.clone(), shape_of), body);
+    }
+
+    #[test]
+    fn a_blank_query_renders_empty_results_that_say_the_box_is_collapsed() {
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let out = agent_results("attributions.new", "  ", &scope, &[], true).into_string();
+        assert!(out.contains(r#"id="attributions.new-results""#), "{out}");
+        assert!(out.contains("setAttribute('aria-expanded','false')"), "{out}");
+        assert!(!out.contains("role=\"option\""), "{out}");
+        assert!(!out.contains("role=\"status\""), "{out}");
+    }
+
+    #[test]
+    fn a_query_over_the_cap_renders_empty_results() {
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let long = "a".repeat(201);
+        let out = agent_results("attributions.new", &long, &scope, &[], true).into_string();
+        assert!(out.contains("setAttribute('aria-expanded','false')"), "{out}");
+        assert!(!out.contains("role=\"option\""), "{out}");
+        assert!(!out.contains("Nothing matches"), "{out}");
+        let at_cap = "a".repeat(200);
+        let out = agent_results("attributions.new", &at_cap, &scope, &[], true).into_string();
+        assert!(out.contains("data-combobox-status"), "a query at the cap is searched: {out}");
+    }
+
+    #[test]
+    fn the_append_search_offers_add_intents_with_a_kind_badge_and_a_detail_line() {
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let out = agent_results("attributions.new", "person-001", &scope, &[], true).into_string();
+        assert!(out.contains(r#"value="add-agent:attributions:person-001""#), "{out}");
+        assert!(!out.contains("choose-agent:"), "{out}");
+        assert!(out.contains("setAttribute('aria-expanded','true')"), "{out}");
+        assert!(out.contains(r#"class="font-semibold""#), "{out}");
+        assert!(out.contains("badge-secondary"), "{out}");
+        assert!(out.contains(">Person<"), "{out}");
+        assert!(out.contains("Université de Lausanne"), "the detail line: {out}");
+        assert!(out.contains("data-combobox-status"), "{out}");
+        assert!(!out.contains(r#"role="status""#), "the tile owns the live region: {out}");
+        assert!(out.contains("1 match."), "{out}");
+    }
+
+    #[test]
+    fn a_search_on_a_card_offers_choose_intents_for_that_card() {
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let out = agent_results("attributions.r0.contributor", "person-001", &scope, &[], true).into_string();
+        assert!(
+            out.contains(r#"value="choose-agent:attributions.r0.contributor:person-001""#),
+            "{out}"
+        );
+        assert!(!out.contains("add-agent:"), "{out}");
+    }
+
+    #[test]
+    fn excluded_agents_are_not_offered() {
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let out = agent_results("attributions.new", "person-00", &scope, &["person-001"], true).into_string();
+        assert!(!out.contains("add-agent:attributions:person-001\""), "{out}");
+        assert!(out.contains("add-agent:attributions:person-002\""), "{out}");
+        // Everything a query finds excluded reads as no match.
+        let none = agent_results("attributions.new", "person-001", &scope, &["person-001"], true).into_string();
+        assert!(none.contains("Nothing matches"), "{none}");
+    }
+
+    #[test]
+    fn a_search_with_no_match_offers_the_proposals_only_when_asked_to() {
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let with = agent_results("attributions.new", "zzzzqqqq", &scope, &[], true).into_string();
+        assert!(with.contains("Nothing matches “zzzzqqqq”."), "{with}");
+        assert!(with.contains("Not in the list? Propose a new person or organisation"), "{with}");
+        assert!(with.contains(r#"value="propose-person""#), "{with}");
+        assert!(with.contains(r#"value="propose-organization""#), "{with}");
+        assert!(with.contains("setAttribute('aria-expanded','false')"), "{with}");
+        let without = agent_results("attributions.new", "zzzzqqqq", &scope, &[], false).into_string();
+        assert!(without.contains("Nothing matches"), "{without}");
+        assert!(!without.contains("propose-"), "{without}");
+    }
+
+    #[test]
+    fn a_search_hitting_the_cap_says_how_many_it_shows() {
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let out = agent_results("attributions.new", "person", &scope, &[], true).into_string();
+        assert!(out.contains("matches, showing the first 25. Add a word to narrow it."), "{out}");
+    }
+
+    #[test]
+    fn the_search_action_is_a_get_carrying_the_encoded_input_value() {
+        assert_eq!(
+            agent_search_action("/projects/0801d/sections/contributors/agents", "attributions.new"),
+            "@get('/projects/0801d/sections/contributors/agents?for=attributions.new&q=' + \
+             encodeURIComponent(evt.target.value))"
+        );
+        assert_eq!(agent_query_id("attributions.new"), "attributions.new-q");
+    }
+
+    #[test]
+    fn a_filled_slot_is_a_card_with_name_kind_detail_the_posting_id_and_a_change_button() {
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let mut draft = published_draft();
+        draft.set("contactPoint", serde_json::json!(["person-001"]));
+        let field = editor_core::form::registry::field("contactPoint").expect("contactPoint is a known field");
+        let rows = Rows { action: "/x", agents: Some(&scope), ..Rows::default() };
+
+        let out = agent_rows(field, &draft, rows).into_string();
+        assert!(out.contains(r#"class="font-semibold""#), "the name: {out}");
+        assert!(out.contains("badge-secondary"), "{out}");
+        assert!(out.contains(">Person<"), "{out}");
+        assert!(
+            out.contains(r#"<p class="text-sm text-neutral-600">Université de Lausanne"#),
+            "{out}"
+        );
+        assert!(
+            out.contains(r#"<input type="hidden" name="contactPoint.r0" value="person-001">"#),
+            "{out}"
+        );
+        assert!(out.contains(r#"name="intent" value="change-agent:contactPoint.r0""#), "{out}");
+        assert!(out.contains(r#"aria-label="Change "#), "{out}");
+        assert!(out.contains(r#" (row 1)">Change</button>"#), "{out}");
+        assert!(!out.contains(r#"name="contactPoint.r0.q""#), "a card has no search: {out}");
+        assert!(out.contains("border-neutral-500"), "{out}");
+    }
+
+    #[test]
+    fn an_id_that_resolves_to_nobody_keeps_its_text_and_its_propose_buttons() {
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let mut draft = published_draft();
+        draft.set("contactPoint", serde_json::json!(["person-999999"]));
+        let field = editor_core::form::registry::field("contactPoint").expect("contactPoint is a known field");
+        let rows = Rows {
+            action: "/x",
+            agents: Some(&scope),
+            propose: true,
+            ..Rows::default()
+        };
+
+        let out = agent_rows(field, &draft, rows).into_string();
+        assert!(out.contains("<strong>person-999999</strong>"), "{out}");
+        assert!(out.contains(UNRESOLVED_AGENT), "{out}");
+        assert!(out.contains(r#"value="propose-person""#), "{out}");
+        assert!(out.contains(r#"value="change-agent:contactPoint.r0""#), "{out}");
+    }
+
+    #[test]
+    fn a_slot_being_changed_shows_the_search_with_its_query_and_keeps_the_hidden_value() {
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let mut draft = published_draft();
+        draft.set("contactPoint", serde_json::json!(["organization-008"]));
+        let field = editor_core::form::registry::field("contactPoint").expect("contactPoint is a known field");
+        let rows = Rows { action: "/x", agents: Some(&scope), ..Rows::default() };
+        let hidden = r#"<input type="hidden" name="contactPoint.r0" value="organization-008">"#;
+
+        // Just opened: the Change button was the submitter, and no query exists yet.
+        let opened = editor_core::form::FormBody::from_pairs(vec![
+            ("contactPoint.row".to_string(), "r0".to_string()),
+            ("contactPoint.r0".to_string(), "organization-008".to_string()),
+            ("intent".to_string(), "change-agent:contactPoint.r0".to_string()),
+        ]);
+        let out = agent_rows(field, &draft, Rows { posted: Some(&opened), ..rows }).into_string();
+        assert!(out.contains(r#"role="combobox""#), "{out}");
+        assert!(out.contains(r#"name="contactPoint.r0.q""#), "{out}");
+        assert!(
+            out.contains(r#"<label class="field-label" for="contactPoint.r0-q">Person or organisation 1"#),
+            "{out}"
+        );
+        assert!(out.contains(hidden), "an abandoned change keeps the stored choice: {out}");
+        assert!(out.contains(" autofocus"), "{out}");
+        assert!(out.contains(FOCUS_AUTOFOCUS), "{out}");
+        assert!(!out.contains(r#"value="change-agent:contactPoint.r0""#), "{out}");
+
+        // Any later render of that body keeps the search open, for as long as it posts its query.
+        let typed = editor_core::form::FormBody::from_pairs(vec![
+            ("contactPoint.row".to_string(), "r0".to_string()),
+            ("contactPoint.r0".to_string(), "organization-008".to_string()),
+            ("contactPoint.r0.q".to_string(), "Bern".to_string()),
+        ]);
+        let out = agent_rows(field, &draft, Rows { posted: Some(&typed), ..rows }).into_string();
+        assert!(out.contains(r#"value="Bern""#), "{out}");
+        assert!(out.contains(hidden), "{out}");
+        assert!(!out.contains(" autofocus"), "only a freshly opened search takes focus: {out}");
+        assert!(!out.contains("Keep "), "{out}");
+        // A render of the stored draft is the card again.
+        let stored = agent_rows(field, &draft, rows).into_string();
+        assert!(!stored.contains(r#"role="combobox" aria-autocomplete="list" aria-controls="contactPoint.r0-results""#));
+    }
+
+    #[test]
+    fn an_empty_slot_types_ahead_against_the_section_s_search_only_when_it_has_one() {
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let mut draft = published_draft();
+        draft.set("contactPoint", serde_json::json!([]));
+        let field = editor_core::form::registry::field("contactPoint").expect("contactPoint is a known field");
+        let path = "/projects/0801d/sections/contributors/agents";
+        let rows = Rows {
+            action: "/x",
+            adding: Some("contactPoint"),
+            agents: Some(&scope),
+            search_path: Some(path),
+            ..Rows::default()
+        };
+
+        let with = agent_rows(field, &draft, rows).into_string();
+        assert!(
+            with.contains(&format!(
+                r#"data-on:input__debounce.300ms="@get('{path}?for=contactPoint.r0&amp;q='"#
+            )),
+            "{with}"
+        );
+        assert!(with.contains(r#"aria-controls="contactPoint.r0-results""#), "{with}");
+        assert!(with.contains(r#"id="contactPoint.r0-results""#), "{with}");
+        // The append search below the list asks about its own picker.
+        assert!(
+            with.contains(&format!(r#"@get('{path}?for=contactPoint.new&amp;q='"#)),
+            "{with}"
+        );
+
+        let without = agent_rows(field, &draft, Rows { search_path: None, ..rows }).into_string();
+        assert!(!without.contains("data-on:input"), "{without}");
+        assert!(without.contains(r#"name="contactPoint.r0.q""#), "{without}");
+        assert!(
+            without.contains(r#"value="find-agent""#),
+            "the Search button still runs it: {without}"
+        );
+    }
+
+    #[test]
+    fn a_no_javascript_search_shows_its_matches_in_the_results_container() {
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let mut draft = published_draft();
+        draft.set("contactPoint", serde_json::json!([]));
+        let field = editor_core::form::registry::field("contactPoint").expect("contactPoint is a known field");
+        let body = editor_core::form::FormBody::from_pairs(vec![
+            ("contactPoint.row".to_string(), "r0".to_string()),
+            ("contactPoint.r0".to_string(), String::new()),
+            ("contactPoint.r0.q".to_string(), "person-001".to_string()),
+            ("intent".to_string(), "find-agent".to_string()),
+        ]);
+        let rows = Rows {
+            action: "/x",
+            posted: Some(&body),
+            submitted: Some(&body),
+            agents: Some(&scope),
+            ..Rows::default()
+        };
+
+        let out = agent_rows(field, &draft, rows).into_string();
+        assert_eq!(
+            out.matches(r#"id="contactPoint.r0-results""#).count(),
+            1,
+            "one container: {out}"
+        );
+        let container = out.find(r#"id="contactPoint.r0-results""#).expect("container");
+        let option = out.find(r#"value="choose-agent:contactPoint.r0:person-001""#).expect("option");
+        assert!(container < option, "{out}");
+        assert!(out.contains(r#"aria-expanded="true""#), "{out}");
+    }
+
+    #[test]
+    fn contributors_render_one_append_search_and_no_per_row_search_or_add_button() {
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let mut draft = published_draft();
+        draft.set(
+            "attributions",
+            serde_json::json!([
+                { "contributor": "person-001", "contributorType": ["Author"] },
+                { "contributor": "organization-008", "contributorType": ["Editor"] },
+            ]),
+        );
+        let field = editor_core::form::registry::field("attributions").expect("attributions is a known field");
+        let rows = Rows { action: "/x", agents: Some(&scope), ..Rows::default() };
+
+        let out = attribution_rows(field, &draft, rows).into_string();
+        assert_eq!(out.matches(r#"name="attributions.new.q""#).count(), 1, "{out}");
+        assert!(!out.contains(r#"name="attributions.r0.contributor.q""#), "{out}");
+        assert!(!out.contains(r#"name="attributions.r1.contributor.q""#), "{out}");
+        assert_eq!(out.matches(r#"role="combobox""#).count(), 1, "{out}");
+        assert!(out.contains("Add a person or organisation"), "{out}");
+        assert!(out.contains("Search by name or affiliation."), "{out}");
+        assert!(out.contains(r#"value="change-agent:attributions.r0.contributor""#), "{out}");
+        assert!(out.contains(r#"value="change-agent:attributions.r1.contributor""#), "{out}");
+        // Each row keeps its Remove, and nothing posts to the list's add URL.
+        assert!(out.contains(r#"formaction="/x/attributions/r0/remove""#), "{out}");
+        assert!(out.contains(r#"formaction="/x/attributions/r1/remove""#), "{out}");
+        assert!(!out.contains("/x/attributions/add"), "{out}");
+        assert!(!out.contains("repeatable-add"), "{out}");
+
+        let mut contacts = published_draft();
+        contacts.set("contactPoint", serde_json::json!(["organization-008"]));
+        let field = editor_core::form::registry::field("contactPoint").expect("contactPoint is a known field");
+        let out = agent_rows(field, &contacts, rows).into_string();
+        assert!(!out.contains("/x/contactPoint/add"), "{out}");
+        assert!(!out.contains("repeatable-add"), "{out}");
+        assert_eq!(out.matches(r#"name="contactPoint.new.q""#).count(), 1, "{out}");
+    }
+
+    #[test]
+    fn an_empty_list_says_how_to_fill_it_and_the_append_search_does_not_offer_what_a_row_holds() {
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let mut empty = published_draft();
+        empty.set("attributions", serde_json::json!([]));
+        empty.set("contactPoint", serde_json::json!([]));
+        let rows = Rows { action: "/x", agents: Some(&scope), ..Rows::default() };
+
+        let attributions = editor_core::form::registry::field("attributions").expect("a known field");
+        let out = attribution_rows(attributions, &empty, rows).into_string();
+        assert!(
+            out.contains("No contributors yet. Search below to add the people and organisations involved."),
+            "{out}"
+        );
+        let contact = editor_core::form::registry::field("contactPoint").expect("a known field");
+        let out = agent_rows(contact, &empty, rows).into_string();
+        assert!(out.contains("No contact point yet. Search below to add one."), "{out}");
+
+        // Typing in the box of a list holding person-001 never offers person-001 again.
+        let mut held = published_draft();
+        held.set("contactPoint", serde_json::json!(["person-001"]));
+        let body = editor_core::form::FormBody::from_pairs(vec![
+            ("contactPoint.row".to_string(), "r0".to_string()),
+            ("contactPoint.r0".to_string(), "person-001".to_string()),
+            ("contactPoint.new.q".to_string(), "person-00".to_string()),
+            ("intent".to_string(), "find-agent".to_string()),
+        ]);
+        let out =
+            agent_rows(contact, &held, Rows { posted: Some(&body), submitted: Some(&body), ..rows }).into_string();
+        assert!(out.contains(r#"value="add-agent:contactPoint:person-002""#), "{out}");
+        assert!(!out.contains(r#"value="add-agent:contactPoint:person-001""#), "{out}");
+        assert!(out.contains(r#"value="person-00""#), "the query stays in the box: {out}");
+    }
+
+    #[test]
+    fn roles_render_as_chips_with_remove_buttons_and_a_disclosure_over_the_checkboxes() {
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let mut draft = published_draft();
+        draft.set(
+            "attributions",
+            serde_json::json!([
+                { "contributor": "person-001", "contributorType": ["Author", "Editor"] },
+                { "contributor": "person-002", "contributorType": [] },
+            ]),
+        );
+        let field = editor_core::form::registry::field("attributions").expect("attributions is a known field");
+        let rows = Rows { action: "/x", agents: Some(&scope), ..Rows::default() };
+
+        let out = attribution_rows(field, &draft, rows).into_string();
+        assert!(out.contains(r#"<ul aria-label="Roles of "#), "{out}");
+        assert!(
+            out.contains(r#"name="intent" value="remove-role:attributions.r0:Author""#),
+            "{out}"
+        );
+        assert!(
+            out.contains(r#"name="intent" value="remove-role:attributions.r0:Editor""#),
+            "{out}"
+        );
+        assert!(!out.contains("remove-role:attributions.r1"), "no chips without a role: {out}");
+        assert!(out.contains(r#"aria-label="Remove role Author from "#), "{out}");
+        assert!(out.contains(r#"aria-label="Remove role Editor from "#), "{out}");
+        // The first row holds roles, so its disclosure is closed and offers to change them; the
+        // second holds none, so it is open and offers to choose. Both keep the depositor's own
+        // toggle across a morph.
+        assert!(
+            out.contains(r#"<details data-preserve-attr="open"><summary class="cursor-pointer text-sm">Change roles"#),
+            "{out}"
+        );
+        assert!(
+            out.contains(r#"<details open><summary class="cursor-pointer text-sm""#),
+            "{out}"
+        );
+        // The checkbox group is the only thing that posts a role, and the chips post nothing.
+        let chips = &out[out.find(r#"<ul aria-label="Roles of "#).expect("chips")..];
+        let chips = &chips[..chips.find("</ul>").expect("end of chips")];
+        assert!(!chips.contains("<input"), "{chips}");
+        assert!(!chips.contains(r#"name="attributions.r0.role""#), "{chips}");
+        assert!(out.contains(r#"value="Author" checked"#), "{out}");
+        assert!(out.contains(ADD_ROLE_LABEL), "{out}");
+    }
+
+    #[test]
+    fn a_contributor_with_no_role_is_flagged_on_a_get_and_a_refused_submit_but_not_on_the_choice_that_made_it() {
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let mut draft = published_draft();
+        draft.set(
+            "attributions",
+            serde_json::json!([{ "contributor": "person-001", "contributorType": [] }]),
+        );
+        let field = editor_core::form::registry::field("attributions").expect("attributions is a known field");
+        let rows = Rows { action: "/x", agents: Some(&scope), ..Rows::default() };
+        let flagged = |out: &str| out.contains("Choose at least one role") && out.contains("border-warning-600");
+
+        assert!(flagged(&attribution_rows(field, &draft, rows).into_string()));
+
+        let body_with = |intent: &str| {
+            editor_core::form::FormBody::from_pairs(vec![
+                ("attributions.row".to_string(), "r0".to_string()),
+                ("attributions.r0.contributor".to_string(), "person-001".to_string()),
+                ("attributions.r0.role".to_string(), String::new()),
+                ("intent".to_string(), intent.to_string()),
+            ])
+        };
+        let render = |intent: &str| {
+            let body = body_with(intent);
+            attribution_rows(field, &draft, Rows { posted: Some(&body), submitted: Some(&body), ..rows }).into_string()
+        };
+        assert!(flagged(&render("submit")), "a refused submit names what is missing");
+        let chosen = render("choose-agent:attributions.r0.contributor:person-001");
+        assert!(
+            !chosen.contains("Choose at least one role") && !chosen.contains("border-warning-600"),
+            "{chosen}"
+        );
+        let added = render("add-agent:attributions:person-001");
+        assert!(!added.contains("Choose at least one role"), "{added}");
+
+        // A role held clears it.
+        let mut held = draft.clone();
+        held.set(
+            "attributions",
+            serde_json::json!([{ "contributor": "person-001", "contributorType": ["Author"] }]),
+        );
+        let out = attribution_rows(field, &held, rows).into_string();
+        assert!(
+            !out.contains("Choose at least one role") && !out.contains("border-warning-600"),
+            "{out}"
+        );
+    }
+
+    #[test]
+    fn the_append_box_gets_a_new_id_after_an_add_and_its_results_container_keeps_its_own() {
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let mut draft = published_draft();
+        draft.set(
+            "attributions",
+            serde_json::json!([{ "contributor": "person-001", "contributorType": ["Author"] }]),
+        );
+        let field = editor_core::form::registry::field("attributions").expect("attributions is a known field");
+        let rows = Rows { action: "/x", agents: Some(&scope), ..Rows::default() };
+
+        let before = attribution_rows(field, &draft, rows).into_string();
+        assert!(before.contains(r#"id="attributions.new-q-add-1""#), "{before}");
+        assert!(!before.contains("document.activeElement"), "a GET takes no focus: {before}");
+
+        // The agent is already held, so the row count does not move: only the token can rename it.
+        let body = editor_core::form::FormBody::from_pairs(apply_picker_intents(
+            pairs(&[
+                ("attributions.row", "r0"),
+                ("attributions.r0.contributor", "person-001"),
+                ("attributions.r0.role", "Author"),
+                ("attributions.new.q", "Rita"),
+                ("intent", "add-agent:attributions:person-001"),
+            ]),
+            shape_of,
+        ));
+        let after =
+            attribution_rows(field, &draft, Rows { posted: Some(&body), submitted: Some(&body), ..rows }).into_string();
+        assert!(!after.contains(r#"id="attributions.new-q-add-1""#), "{after}");
+        assert!(after.contains(r#"id="attributions.new-q-add-1-"#), "{after}");
+        assert!(after.contains(r#"value="""#), "the box comes back empty: {after}");
+        assert!(after.contains("document.activeElement"), "focus stays on the box: {after}");
+        // An autosave landing mid-typing posts the text and no intent: the box keeps its node.
+        let typing = editor_core::form::FormBody::from_pairs(pairs(&[
+            ("attributions.row", "r0"),
+            ("attributions.r0.contributor", "person-001"),
+            ("attributions.r0.role", "Author"),
+            ("attributions.r0.role", ""),
+            ("attributions.new.q", "Rit"),
+        ]));
+        let autosaved =
+            attribution_rows(field, &draft, Rows { posted: Some(&typing), submitted: Some(&typing), ..rows })
+                .into_string();
+        assert!(autosaved.contains(r#"id="attributions.new-q-add-1""#), "{autosaved}");
+        assert!(!autosaved.contains("document.activeElement"), "{autosaved}");
+        for out in [&before, &after] {
+            assert!(out.contains(r#"id="attributions.new-results""#), "{out}");
+            assert!(out.contains(r#"aria-controls="attributions.new-results""#), "{out}");
+        }
+    }
+
+    #[test]
+    fn a_funder_is_a_card_and_a_search_with_no_append_search() {
+        let agents = agent_corpus();
+        let scope = editor_core::agents::AgentScope::published_only(&agents);
+        let mut draft = published_draft();
+        draft.set(
+            "funding",
+            serde_json::json!([{ "funders": ["organization-002"], "number": "1" }]),
+        );
+        let field = editor_core::form::registry::field("funding").expect("funding is a known field");
+        let rows = Rows { action: "/x", agents: Some(&scope), ..Rows::default() };
+
+        let out = funding(field, &draft, rows).into_string();
+        assert!(out.contains(r#"value="change-agent:funding.r0.funder-0""#), "{out}");
+        assert!(
+            out.contains(r#"<input type="hidden" name="funding.r0.funder" value="organization-002">"#),
+            "{out}"
+        );
+        assert!(
+            out.contains(r#"name="funding.r0.funder-1.q""#),
+            "the blank trailing funder searches: {out}"
+        );
+        assert!(!out.contains(".new.q"), "{out}");
     }
 }

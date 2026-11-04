@@ -21,6 +21,7 @@ const COMPONENT_NAV: &[(&str, &str)] = &[
     ("/button", "Button"),
     ("/card", "Card"),
     ("/checkbox-group", "Checkbox Group"),
+    ("/combobox", "Combobox"),
     ("/copy-button", "Copy Button"),
     ("/icon", "Icon"),
     ("/link", "Link"),
@@ -57,6 +58,10 @@ pub fn router(public_dir: PathBuf) -> Router {
         .route(
             "/checkbox-group",
             get(|| async { render("/checkbox-group", "Checkbox Group", showcase::checkbox_group::page()) }),
+        )
+        .route(
+            "/combobox",
+            get(|| async { render("/combobox", "Combobox", showcase::combobox::page()) }),
         )
         .route(
             "/copy-button",

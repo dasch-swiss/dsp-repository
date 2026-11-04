@@ -13,8 +13,8 @@ pub fn page() -> Markup {
     let header = page_header(
         "Repeatable List",
         "An ordered list of rows a reader can add to and remove from, each row's fields supplied by the \
-         caller. Rows are keyed by an opaque server id, never an index, and both controls are submit buttons \
-         so the whole form body travels with them.",
+         caller. Rows are keyed by an opaque server id, never an index, and the add and remove controls are \
+         submit buttons so the whole form body travels with them.",
     );
     page_layout(header, examples())
 }
@@ -48,6 +48,15 @@ fn examples() -> Markup {
                 "Rejected, with the reason",
                 "The message hangs off the fieldset and is announced once, as with the other grouped fields.",
                 error_state(),
+            )
+        })
+        ({
+            example(
+                "repeatable_list-without_add",
+                "Without the add button",
+                "`.without_add()` leaves out the add button for a list whose rows are added by a control the \
+                 caller places beside it. The remove buttons stay.",
+                without_add(),
             )
         })
     }
@@ -106,6 +115,16 @@ fn error_state() -> Markup {
         .hint("At least one is required before submitting.")
         .error("Add at least one discipline.")
         .with_test_id("disciplines-rows");
+    form_column(html! {
+        (list)
+    })
+}
+
+fn without_add() -> Markup {
+    let list = repeatable_list("languages", "Languages", ROWS)
+        .item_noun("language")
+        .without_add()
+        .row("l4c1", keyword_row("l4c1", "Latin", "Latein"));
     form_column(html! {
         (list)
     })

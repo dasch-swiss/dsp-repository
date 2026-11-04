@@ -10,6 +10,7 @@ pub mod breadcrumb;
 pub mod button;
 pub mod card;
 pub mod checkbox_group;
+pub mod combobox;
 pub mod copy_button;
 pub mod icon;
 pub mod link;
@@ -76,6 +77,7 @@ mod tests {
             ("Button", button::page().into_string()),
             ("Card", card::page().into_string()),
             ("Checkbox Group", checkbox_group::page().into_string()),
+            ("Combobox", combobox::page().into_string()),
             ("Copy Button", copy_button::page().into_string()),
             ("Icon", icon::page().into_string()),
             ("Link", link::page().into_string()),

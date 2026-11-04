@@ -40,10 +40,12 @@ use editor_core::submission::SubmitRefusal;
 use shared_metadata::is_valid_shortcode;
 use uuid::Uuid;
 
-use crate::form::widgets::apply_agent_choice;
+use crate::form::widgets::apply_picker_intents;
 use crate::form::INTENT;
 use crate::handlers::auth::{Account, Authenticated};
-use crate::handlers::{is_enhanced, storage_error, StorageSurface};
+use crate::handlers::{
+    agent_search_response, is_enhanced, picker_root, storage_error, AgentSearchParams, StorageSurface,
+};
 use crate::pages::section as page;
 use crate::shell::EditorState;
 
@@ -607,6 +609,63 @@ pub(crate) async fn show(
     )
 }
 
+/// The field a search's `for` names, when it is a picker name this section renders: a
+/// [`picker_root`] that is a field the reader's audience sees here and whose shape has an agent
+/// picker.
+fn picker_field(context: &Context<'_>, name: &str) -> Option<&'static registry::Field> {
+    let root = picker_root(name)?;
+    context
+        .section
+        .fields_for(context.audience)
+        .find(|field| field.id == root)
+        .filter(|field| field.shape.is_some_and(Shape::has_agent_picker))
+}
+
+/// `GET /projects/{shortcode}/sections/{section}/agents?for=<picker>&q=<query>`: the results of
+/// one type-ahead search, as the fragment the combobox's results container is morphed to.
+///
+/// Reads and never writes: a `GET` that wrote would be a `GET` nothing protects, and the draft's
+/// `updated_at` must not move as a depositor types. It answers 200 for every `q`, a blank or
+/// over-long one included. The reach, audience and shortcode checks are `show`'s, through
+/// [`context`].
+#[tracing::instrument(
+    skip_all,
+    fields(
+        otel.kind = "internal",
+        otel.name = "project agent search",
+        auth.actor = tracing::field::Empty,
+        project.shortcode = tracing::field::Empty,
+        form.section = tracing::field::Empty,
+        form.picker = tracing::field::Empty,
+    )
+)]
+pub(crate) async fn agent_search(
+    State(state): State<EditorState>,
+    Authenticated(user): Authenticated,
+    Path((shortcode, section_id)): Path<(String, String)>,
+    Query(params): Query<AgentSearchParams>,
+) -> Response {
+    let span = tracing::Span::current();
+    span.record("auth.actor", tracing::field::display(user.id));
+    span.record("project.shortcode", tracing::field::display(&shortcode));
+    span.record("form.section", tracing::field::display(&section_id));
+
+    let context = match context(&state, &user, &shortcode, &section_id, user.signed_out_at()).await {
+        Ok(context) => context,
+        Err(response) => return response,
+    };
+    let Some((unique, field)) = params
+        .r#for
+        .as_deref()
+        .and_then(|unique| picker_field(&context, unique).map(|field| (unique, field)))
+    else {
+        return crate::shell::not_found(State(state.clone())).await;
+    };
+    span.record("form.picker", tracing::field::display(unique));
+
+    agent_search_response(unique, field, &context.draft, &context.agents, params.q.as_deref(), true)
+}
+
 /// The phase notice a `?done=...` marker names, rendered only while the project is still in the
 /// phase it describes — see [`ShowParams`]. `None` for an unrecognized value, or one whose phase
 /// has since moved on.
@@ -668,7 +727,9 @@ pub(crate) async fn act(
     // Declared before the context so it outlives it: the context borrows it, so
     // that every render reached from here can preserve the editing state
     // without the body being threaded through each refusal.
-    let body = FormBody::from_pairs(apply_agent_choice(pairs));
+    let body = FormBody::from_pairs(apply_picker_intents(pairs, |name| {
+        registry::field(name).and_then(|field| field.shape)
+    }));
 
     let mut context = match context(&state, &user, &shortcode, &section_id, user.signed_out_at()).await {
         Ok(context) => context,
@@ -688,6 +749,8 @@ pub(crate) async fn act(
         Some(page::DISCARD) => Intent::Discard,
         Some(page::DISCARD_CONFIRM) => Intent::ConfirmDiscard,
         Some(page::FIND_AGENT) => Intent::FindAgent,
+        // Opening a card's search is a re-render like a search: a redirect would lose it.
+        Some(value) if page::changed_agent(value).is_some() => Intent::FindAgent,
         Some(page::PROPOSE_PERSON) => Intent::ProposePerson,
         Some(page::PROPOSE_ORGANIZATION) => Intent::ProposeOrganization,
         // The entity rides in the value, so this matches the prefix rather than the whole
@@ -698,10 +761,11 @@ pub(crate) async fn act(
     span.record("form.intent", tracing::field::display(intent.as_str()));
     // The autosave trigger has no submitter, so it alone posts no intent; see
     // `Rendering::keep_posted` and `Rendering::before_autosave` for what that changes.
-    // A picker's choice keeps the body too, as the rest of the form may hold a row
-    // that is not storable yet.
+    // A picker's choice, an appended agent and a removed role keep the body too, as the rest of
+    // the form may hold a row that is not storable yet. A find or a change never reads this: it
+    // is `Intent::FindAgent`, which re-renders with the body before the save is rendered.
     let autosave = body.get(INTENT).is_none();
-    let keep_posted = autosave || body.get(INTENT).is_some_and(|intent| page::chosen_agent(intent).is_some());
+    let keep_posted = autosave || body.get(INTENT).is_some_and(page::keeps_posted);
     // Taken before the write below changes the draft.
     let before_autosave = autosave.then(|| context.draft.clone());
 
@@ -1097,8 +1161,8 @@ enum Intent {
     ConfirmWithdrawal,
     Discard,
     ConfirmDiscard,
-    /// Run the agent pickers' searches and re-render. Stores the posted body like a save, and
-    /// changes nothing else.
+    /// Run the agent pickers' searches, or open one card's, and re-render. Stores the posted
+    /// body like a save, and changes nothing else.
     FindAgent,
     /// Start a proposal for a new person.
     ProposePerson,
@@ -1901,9 +1965,9 @@ struct Rendering<'a> {
     adding_row: Option<&'a str>,
     /// Whether this render must preserve the posted editing state.
     ///
-    /// Set for a refusal, a row action, an agent picker's choice and an autosave, and
-    /// deliberately **not** for an explicit save: a save commits every row with any
-    /// text in it, and a row that still has none is not data, so dropping it is the
+    /// Set for a refusal, a row action, an agent picker's choice, add or role removal and an
+    /// autosave, and deliberately **not** for an explicit save: a save commits every row with
+    /// any text in it, and a row that still has none is not data, so dropping it is the
     /// point rather than a loss. An autosave is the exception because it fires mid-edit: a row
     /// whose variant was just chosen holds nothing storable yet.
     keep_posted: bool,
@@ -3554,6 +3618,233 @@ mod tests {
             Some(&serde_json::json!(["organization-002"])),
             "the chosen id is what lands in the draft"
         );
+    }
+
+    #[tokio::test]
+    async fn adding_an_agent_stores_a_new_contributor_row_and_a_new_contact_point() {
+        let (state, app, session) = a_depositor_on("section-add-agent").await;
+        const CONTRIBUTORS: &str = "/projects/0801d/sections/contributors";
+
+        let added = as_session(
+            &app,
+            post(
+                CONTRIBUTORS,
+                "attributions.row=r0&attributions.r0.contributor=person-001&attributions.r0.role=Author\
+                 &attributions.new.q=Berton&intent=add-agent:attributions:person-025",
+            ),
+            &session,
+        )
+        .await;
+        assert_eq!(added.status(), StatusCode::SEE_OTHER, "stored like a save");
+        assert_eq!(
+            stored_draft(&state, "0801d").await.get("attributions"),
+            Some(&json!([
+                {"contributor": "person-001", "contributorType": ["Author"]},
+                {"contributor": "person-025", "contributorType": []},
+            ])),
+            "the appended row follows the existing one"
+        );
+
+        as_session(
+            &app,
+            post(
+                CONTRIBUTORS,
+                "contactPoint.row=r0&contactPoint.r0=organization-008&intent=add-agent:contactPoint:organization-002",
+            ),
+            &session,
+        )
+        .await;
+        assert_eq!(
+            stored_draft(&state, "0801d").await.get("contactPoint"),
+            Some(&json!(["organization-008", "organization-002"]))
+        );
+    }
+
+    #[tokio::test]
+    async fn changing_an_agent_re_renders_with_the_search_open_and_never_redirects() {
+        let (state, app, session) = a_depositor_on("section-change-agent").await;
+        let body = "attributions.row=r0&attributions.r0.contributor=person-001&attributions.r0.role=Author\
+                    &intent=change-agent:attributions.r0.contributor";
+
+        let response = as_session(&app, post("/projects/0801d/sections/contributors", body), &session).await;
+        assert_eq!(response.status(), StatusCode::OK, "a redirect would lose the open search");
+        assert_eq!(location(&response), None);
+        assert_eq!(
+            stored_draft(&state, "0801d").await.get("attributions"),
+            Some(&json!([{"contributor": "person-001", "contributorType": ["Author"]}])),
+            "stored like a search"
+        );
+    }
+
+    #[tokio::test]
+    async fn removing_a_role_stores_the_row_without_that_role() {
+        let (state, app, session) = a_depositor_on("section-remove-role").await;
+
+        as_session(
+            &app,
+            post(
+                "/projects/0801d/sections/contributors",
+                "attributions.row=r0&attributions.r0.contributor=person-001&attributions.r0.role=Author\
+                 &attributions.r0.role=Data+Curator&attributions.r0.role=&intent=remove-role:attributions.r0:Author",
+            ),
+            &session,
+        )
+        .await;
+        assert_eq!(
+            stored_draft(&state, "0801d").await.get("attributions"),
+            Some(&json!([{"contributor": "person-001", "contributorType": ["Data Curator"]}]))
+        );
+    }
+
+    const AGENTS: &str = "/projects/0801d/sections/contributors/agents";
+
+    #[tokio::test]
+    async fn the_agent_search_answers_options_and_writes_nothing() {
+        let (state, app, session) = a_depositor_on("section-agent-fragment").await;
+        as_session(
+            &app,
+            post(
+                "/projects/0801d/sections/contributors",
+                "attributions.row=r0&attributions.r0.contributor=person-001",
+            ),
+            &session,
+        )
+        .await;
+        let before = DraftRepository::find(&*state.editor, "0801d").await.expect("read");
+        assert!(before.is_some(), "a draft is stored to compare against");
+
+        let response = as_session(&app, get(&format!("{AGENTS}?for=attributions.new&q=person-00")), &session).await;
+        assert_eq!(response.status(), StatusCode::OK);
+        let content_type = response.headers().get("content-type").and_then(|value| value.to_str().ok());
+        assert!(
+            content_type.is_some_and(|value| value.starts_with("text/html")),
+            "{content_type:?}"
+        );
+        let fragment = body_string(response).await;
+        assert!(fragment.contains(r#"value="add-agent:attributions:person-002""#), "{fragment}");
+        assert!(
+            !fragment.contains(r#"value="add-agent:attributions:person-001""#),
+            "an agent the field holds is not offered again: {fragment}"
+        );
+        assert!(!fragment.contains("<html"), "the fragment only: {fragment}");
+
+        // A search on a card is not an append: it excludes nothing and offers a choice.
+        let card = body_string(
+            as_session(
+                &app,
+                get(&format!(
+                    "{AGENTS}?for=attributions.r0.contributor&q=person-001&datastar=%7B%7D"
+                )),
+                &session,
+            )
+            .await,
+        )
+        .await;
+        assert!(
+            card.contains(r#"value="choose-agent:attributions.r0.contributor:person-001""#),
+            "{card}"
+        );
+
+        assert_eq!(
+            DraftRepository::find(&*state.editor, "0801d").await.expect("read"),
+            before,
+            "a search changes neither the draft nor its stamp"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_forged_append_search_on_a_field_that_cannot_append_offers_nothing_to_add() {
+        let (_state, app, session) = a_depositor_on("section-agent-fragment-forged").await;
+        let fragment = body_string(
+            as_session(
+                &app,
+                get("/projects/0801d/sections/access/agents?for=funding.new&q=organization"),
+                &session,
+            )
+            .await,
+        )
+        .await;
+        assert!(!fragment.contains("add-agent:"), "{fragment}");
+        assert!(!fragment.contains("role=\"option\""), "{fragment}");
+
+        // The funder's own picker still answers with a choice.
+        let funder = body_string(
+            as_session(
+                &app,
+                get("/projects/0801d/sections/access/agents?for=funding.r0.funder-0&q=organization"),
+                &session,
+            )
+            .await,
+        )
+        .await;
+        assert!(funder.contains("choose-agent:funding.r0.funder-0:"), "{funder}");
+    }
+
+    #[tokio::test]
+    async fn the_agent_search_answers_200_with_no_options_for_a_blank_or_over_long_query() {
+        let (_state, app, session) = a_depositor_on("section-agent-fragment-edges").await;
+        let over_long = "a".repeat(201);
+        for query in ["", "%20%20", over_long.as_str()] {
+            let response = as_session(&app, get(&format!("{AGENTS}?for=attributions.new&q={query}")), &session).await;
+            assert_eq!(response.status(), StatusCode::OK, "q={query:?}");
+            let fragment = body_string(response).await;
+            assert!(!fragment.contains("role=\"option\""), "q={query:?}: {fragment}");
+        }
+        let missing = as_session(&app, get(&format!("{AGENTS}?for=attributions.new")), &session).await;
+        assert_eq!(missing.status(), StatusCode::OK, "no q at all is a blank one");
+    }
+
+    #[tokio::test]
+    async fn the_agent_search_refuses_a_picker_the_section_does_not_have() {
+        let (_state, app, session) = a_depositor_on("section-agent-fragment-refused").await;
+        for target in [
+            "for=nosuchfield.new",
+            "for=a%27b",
+            "for=keywords.new",
+            "for=",
+            "",
+            // A field of this section that has no agent picker.
+            "for=provenance.new",
+        ] {
+            let response = as_session(&app, get(&format!("{AGENTS}?{target}&q=person")), &session).await;
+            assert_eq!(response.status(), StatusCode::NOT_FOUND, "{target}");
+        }
+        let long = format!("attributions.{}", "r".repeat(200));
+        let response = as_session(&app, get(&format!("{AGENTS}?for={long}&q=person")), &session).await;
+        assert_eq!(response.status(), StatusCode::NOT_FOUND, "a name over 200 characters");
+
+        // A picker field of another section is not this section's.
+        let elsewhere = as_session(
+            &app,
+            get("/projects/0801d/sections/overview/agents?for=attributions.new&q=person"),
+            &session,
+        )
+        .await;
+        assert_eq!(elsewhere.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn the_agent_search_has_the_reach_and_sign_in_rules_of_the_section_page() {
+        let (state, _) = test_state("section-agent-fragment-reach").await;
+        let user = a_user(&state, "d@example.test", "A Depositor", Role::Depositor, &["0801d"]).await;
+        let session = a_session(&state, user.id).await;
+        let app = test_app(&state);
+
+        let signed_out = app
+            .clone()
+            .oneshot(get(&format!("{AGENTS}?for=attributions.new&q=person")))
+            .await
+            .expect("completes");
+        assert_eq!(signed_out.status(), StatusCode::SEE_OTHER);
+        assert!(location(&signed_out).is_some_and(|target| target.starts_with("/login?next=")));
+
+        let other = as_session(
+            &app,
+            get("/projects/0803/sections/contributors/agents?for=attributions.new&q=person"),
+            &session,
+        )
+        .await;
+        assert_eq!(other.status(), StatusCode::FORBIDDEN);
     }
 
     #[tokio::test]

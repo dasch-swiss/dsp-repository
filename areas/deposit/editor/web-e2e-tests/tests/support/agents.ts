@@ -9,7 +9,7 @@ export type AgentField = "attributions" | "contactPoint";
 export const isJs = () => test.info().project.name === "chromium-js";
 
 /** The cards of one list. The append search sits outside the fieldset. */
-export const cards = (page: Page, field: AgentField): Locator =>
+export const cards = (page: Page, field: string): Locator =>
   page.locator(`fieldset#${field} > ol.repeatable-rows > li.repeatable-row`);
 
 /** The name a card shows: its first bold run, not a roles chip or a badge. */
@@ -88,7 +88,7 @@ export async function appendAgent(
 
 export async function trimCards(
   page: Page,
-  field: AgentField,
+  field: string,
   count: number,
 ): Promise<void> {
   let present = await cards(page, field).count();

@@ -37,6 +37,7 @@ use editor_core::repository::{
 use editor_core::review::ReviewState;
 use editor_core::status::{classify_record, RecordClassification};
 use editor_core::submission::SubmitRefusal;
+use editor_core::vocabulary;
 use shared_metadata::is_valid_shortcode;
 use uuid::Uuid;
 
@@ -45,7 +46,7 @@ use crate::form::widgets::apply_picker_intents;
 use crate::form::INTENT;
 use crate::handlers::auth::{Account, Authenticated};
 use crate::handlers::{
-    agent_search_response, is_enhanced, navigate, picker_root, storage_error, AgentSearchParams, StorageSurface,
+    agent_search_response, is_enhanced, navigate, picker_root, storage_error, SearchParams, StorageSurface,
 };
 use crate::pages::section as page;
 use crate::shell::EditorState;
@@ -652,7 +653,7 @@ pub(crate) async fn agent_search(
     State(state): State<EditorState>,
     Authenticated(user): Authenticated,
     Path((shortcode, section_id)): Path<(String, String)>,
-    Query(params): Query<AgentSearchParams>,
+    Query(params): Query<SearchParams>,
 ) -> Response {
     let span = tracing::Span::current();
     span.record("auth.actor", tracing::field::display(user.id));
@@ -673,6 +674,61 @@ pub(crate) async fn agent_search(
     span.record("form.picker", tracing::field::display(unique));
 
     agent_search_response(unique, field, &context.draft, &context.agents, params.q.as_deref(), true)
+}
+
+/// The row prefix and list a vocabulary search's `for` names: `{field}.{key}.pick` for a field the
+/// reader's audience sees in this section and [`vocabulary::list_for`] gives a list.
+fn vocabulary_picker<'a>(context: &Context<'_>, name: &'a str) -> Option<(&'a str, vocabulary::List)> {
+    let root = picker_root(name)?;
+    let prefix = crate::form::widgets::pick_prefix(name)?;
+    prefix.strip_prefix(root).filter(|key| key.len() > 1 && key.starts_with('.'))?;
+    context.section.fields_for(context.audience).find(|field| field.id == root)?;
+    Some((prefix, vocabulary::list_for(root)?))
+}
+
+/// `GET /projects/{shortcode}/sections/{section}/vocabulary?for=<picker>&q=<query>`: the results
+/// of one discipline, place or period search, as the fragment the combobox's results container is
+/// morphed to.
+///
+/// Reads and never writes, like [`agent_search`], and answers 200 for every `q`. A `for` that is
+/// not a vocabulary picker of this section is a 404.
+#[tracing::instrument(
+    skip_all,
+    fields(
+        otel.kind = "internal",
+        otel.name = "project vocabulary search",
+        auth.actor = tracing::field::Empty,
+        project.shortcode = tracing::field::Empty,
+        form.section = tracing::field::Empty,
+        form.picker = tracing::field::Empty,
+    )
+)]
+pub(crate) async fn vocabulary_search(
+    State(state): State<EditorState>,
+    Authenticated(user): Authenticated,
+    Path((shortcode, section_id)): Path<(String, String)>,
+    Query(params): Query<SearchParams>,
+) -> Response {
+    let span = tracing::Span::current();
+    span.record("auth.actor", tracing::field::display(user.id));
+    span.record("project.shortcode", tracing::field::display(&shortcode));
+    span.record("form.section", tracing::field::display(&section_id));
+
+    let context = match context(&state, &user, &shortcode, &section_id, user.signed_out_at()).await {
+        Ok(context) => context,
+        Err(response) => return response,
+    };
+    let Some((name, prefix, list)) = params
+        .r#for
+        .as_deref()
+        .and_then(|name| vocabulary_picker(&context, name).map(|(prefix, list)| (name, prefix, list)))
+    else {
+        return crate::shell::not_found(State(state.clone())).await;
+    };
+    span.record("form.picker", tracing::field::display(name));
+
+    let results = crate::form::widgets::vocabulary_results(prefix, list, params.q.as_deref().unwrap_or_default());
+    (StatusCode::OK, axum::response::Html(results.into_string())).into_response()
 }
 
 /// The sentence confirming that this project's proposal for `entity_id` was discarded, while that
@@ -778,9 +834,9 @@ pub(crate) async fn act(
         Some(page::WITHDRAW_CONFIRM) => Intent::ConfirmWithdrawal,
         Some(page::DISCARD) => Intent::Discard,
         Some(page::DISCARD_CONFIRM) => Intent::ConfirmDiscard,
-        Some(page::FIND_AGENT) => Intent::FindAgent,
+        Some(page::FIND_AGENT | page::FIND_ENTRY) => Intent::Find,
         // Opening a card's search is a re-render like a search: a redirect would lose it.
-        Some(value) if page::changed_agent(value).is_some() => Intent::FindAgent,
+        Some(value) if page::changed_agent(value).is_some() => Intent::Find,
         Some(page::PROPOSE_PERSON) => Intent::ProposePerson,
         Some(page::PROPOSE_ORGANIZATION) => Intent::ProposeOrganization,
         // The entity rides in the value, so this matches the prefix rather than the whole
@@ -791,9 +847,9 @@ pub(crate) async fn act(
     span.record("form.intent", tracing::field::display(intent.as_str()));
     // The autosave trigger has no submitter, so it alone posts no intent; see
     // `Rendering::keep_posted` and `Rendering::before_autosave` for what that changes.
-    // A picker's choice, an appended agent and a removed role keep the body too, as the rest of
-    // the form may hold a row that is not storable yet. A find or a change never reads this: it
-    // is `Intent::FindAgent`, which re-renders with the body before the save is rendered.
+    // A picker's choice, a vocabulary pick, an appended agent and a removed role keep the body too,
+    // as the rest of the form may hold a row that is not storable yet. A find or a change never
+    // reads this: it is `Intent::Find`, which re-renders with the body before the save is rendered.
     let autosave = body.get(INTENT).is_none();
     let keep_posted = autosave || body.get(INTENT).is_some_and(page::keeps_posted);
     // Taken before the write below changes the draft.
@@ -891,7 +947,7 @@ pub(crate) async fn act(
     // posted body, unlike a save: the query lives only in the form, so a render that dropped it
     // would clear the box and the matches with it. `saved` redirects for the same reason it must
     // not here.
-    if intent == Intent::FindAgent {
+    if intent == Intent::Find {
         span.record("form.outcome", "searched");
         let rendering = Rendering { keep_posted: true, ..Rendering::default() };
         return if is_enhanced(&headers) {
@@ -1191,9 +1247,9 @@ enum Intent {
     ConfirmWithdrawal,
     Discard,
     ConfirmDiscard,
-    /// Run the agent pickers' searches, or open one card's, and re-render. Stores the posted
-    /// body like a save, and changes nothing else.
-    FindAgent,
+    /// Run the agent or vocabulary pickers' searches, or open one agent card's, and re-render.
+    /// Stores the posted body like a save, and changes nothing else.
+    Find,
     /// Start a proposal for a new person.
     ProposePerson,
     /// Start a proposal for a new organisation.
@@ -1214,7 +1270,7 @@ impl Intent {
             Self::ConfirmWithdrawal => "withdraw-confirm",
             Self::Discard => "discard",
             Self::ConfirmDiscard => "discard-confirm",
-            Self::FindAgent => "find-agent",
+            Self::Find => "find",
             Self::ProposePerson => "propose-person",
             Self::ProposeOrganization => "propose-organization",
             Self::ProposeChanges => "propose-changes",
@@ -3947,6 +4003,202 @@ mod tests {
         assert_eq!(other.status(), StatusCode::FORBIDDEN);
     }
 
+    const VOCABULARY: &str = "/projects/0801d/sections/dataset/vocabulary";
+
+    fn switzerland() -> &'static editor_core::vocabulary::Entry {
+        editor_core::vocabulary::places()
+            .iter()
+            .find(|entry| entry.text == "Switzerland")
+            .expect("the bundled places hold Switzerland")
+    }
+
+    #[tokio::test]
+    async fn the_vocabulary_search_answers_options_and_writes_nothing() {
+        let (state, app, session) = a_depositor_on("section-vocabulary-fragment").await;
+        as_session(&app, post(DATASET, "spatialCoverage.row=r0"), &session).await;
+        let before = DraftRepository::find(&*state.editor, "0801d").await.expect("read");
+        assert!(before.is_some(), "a draft is stored to compare against");
+
+        let response = as_session(
+            &app,
+            get(&format!("{VOCABULARY}?for=spatialCoverage.r0.pick&q=switz")),
+            &session,
+        )
+        .await;
+        assert_eq!(response.status(), StatusCode::OK);
+        let content_type = response.headers().get("content-type").and_then(|value| value.to_str().ok());
+        assert!(
+            content_type.is_some_and(|value| value.starts_with("text/html")),
+            "{content_type:?}"
+        );
+        let fragment = body_string(response).await;
+        assert!(
+            fragment.contains(&format!(r#"value="pick:spatialCoverage.r0:{}""#, switzerland().pick_value())),
+            "{fragment}"
+        );
+        assert!(!fragment.contains("<html"), "the fragment only: {fragment}");
+
+        let disciplines = body_string(
+            as_session(&app, get(&format!("{VOCABULARY}?for=disciplines.r0.pick&q=10404")), &session).await,
+        )
+        .await;
+        assert!(disciplines.contains(r#"role="group""#), "{disciplines}");
+        assert!(disciplines.contains("pick:disciplines.r0:10404"), "{disciplines}");
+
+        assert_eq!(
+            DraftRepository::find(&*state.editor, "0801d").await.expect("read"),
+            before,
+            "a search changes neither the draft nor its stamp"
+        );
+    }
+
+    #[tokio::test]
+    async fn the_vocabulary_search_answers_200_with_no_options_for_a_blank_query() {
+        let (_state, app, session) = a_depositor_on("section-vocabulary-fragment-blank").await;
+        for target in ["q=", "q=%20%20", ""] {
+            let response = as_session(
+                &app,
+                get(&format!("{VOCABULARY}?for=spatialCoverage.r0.pick&{target}")),
+                &session,
+            )
+            .await;
+            assert_eq!(response.status(), StatusCode::OK, "{target:?}");
+            let fragment = body_string(response).await;
+            assert!(!fragment.contains("role=\"option\""), "{target:?}: {fragment}");
+        }
+    }
+
+    #[tokio::test]
+    async fn the_vocabulary_search_refuses_a_picker_the_section_does_not_have() {
+        let (_state, app, session) = a_depositor_on("section-vocabulary-fragment-refused").await;
+        for target in [
+            // A field without a list, a field of another section, and names that are no picker.
+            "for=keywords.r0.pick",
+            "for=attributions.r0.pick",
+            "for=spatialCoverage.r0",
+            "for=spatialCoverage.pick",
+            "for=nosuchfield.r0.pick",
+            "for=spatialCoverage.%27.pick",
+            "for=",
+            "",
+        ] {
+            let response = as_session(&app, get(&format!("{VOCABULARY}?{target}&q=switz")), &session).await;
+            assert_eq!(response.status(), StatusCode::NOT_FOUND, "{target}");
+        }
+    }
+
+    #[tokio::test]
+    async fn a_vocabulary_pick_stores_the_committed_shape() {
+        let (state, app, session) = a_depositor_on("section-vocabulary-pick").await;
+        let place = switzerland();
+        let period = editor_core::vocabulary::periods()
+            .iter()
+            .find(|entry| entry.text == entry.text.trim())
+            .expect("a bundled period whose text has no surrounding space");
+
+        let response = as_session(
+            &app,
+            post(
+                DATASET,
+                &format!(
+                    "spatialCoverage.row=r0&intent={}",
+                    urlencoding(&format!("pick:spatialCoverage.r0:{}", place.pick_value()))
+                ),
+            ),
+            &session,
+        )
+        .await;
+        assert_eq!(response.status(), StatusCode::SEE_OTHER);
+        assert_eq!(
+            stored_draft(&state, "0801d").await.get("spatialCoverage"),
+            Some(&json!([{"type": "Geonames", "url": place.url, "text": "Switzerland"}]))
+        );
+
+        as_session(
+            &app,
+            post(
+                DATASET,
+                &format!(
+                    "temporalCoverage.row=r0&temporalCoverage.r0.kind=text&intent={}",
+                    urlencoding(&format!("pick:temporalCoverage.r0:{}", period.pick_value()))
+                ),
+            ),
+            &session,
+        )
+        .await;
+        assert_eq!(
+            stored_draft(&state, "0801d").await.get("temporalCoverage"),
+            Some(&json!([{"type": period.type_, "url": period.url, "text": period.text}])),
+            "the detail line is never stored"
+        );
+
+        as_session(
+            &app,
+            post(
+                DATASET,
+                "disciplines.row=r0&disciplines.r0.kind=text&intent=pick:disciplines.r0:10404",
+            ),
+            &session,
+        )
+        .await;
+        assert_eq!(
+            stored_draft(&state, "0801d").await.get("disciplines"),
+            Some(&json!([{"en": "10404 Visual arts and Art history"}]))
+        );
+    }
+
+    #[tokio::test]
+    async fn an_enhanced_pick_renders_the_stored_value_in_the_row_and_clears_the_search() {
+        let (_state, app, session) = a_depositor_on("section-vocabulary-pick-enhanced").await;
+        let body = format!(
+            "spatialCoverage.row=r0&intent={}",
+            urlencoding(&format!("pick:spatialCoverage.r0:{}", switzerland().pick_value()))
+        );
+        let response = as_session(&app, enhanced(DATASET, &body), &session).await;
+        assert_eq!(response.status(), StatusCode::OK);
+        let fragment = body_string(response).await;
+        let control = |name: &str| {
+            let at = fragment
+                .find(&format!(r#"name="{name}""#))
+                .unwrap_or_else(|| panic!("{name}: {fragment}"));
+            let end = fragment[at..].find('>').map_or(fragment.len(), |end| at + end);
+            fragment[at..end].to_string()
+        };
+        assert!(
+            control("spatialCoverage.r0.ref.label").contains(r#"value="Switzerland""#),
+            "{fragment}"
+        );
+        let query = control("spatialCoverage.r0.pick.q");
+        assert!(
+            !query.contains("value=\"") || query.contains(r#"value="""#),
+            "the search is empty: {query}"
+        );
+    }
+
+    #[tokio::test]
+    async fn find_entry_rerenders_with_matches_and_writes_the_body_like_a_save() {
+        let (state, app, session) = a_depositor_on("section-vocabulary-find").await;
+        let response = as_session(
+            &app,
+            post(
+                DATASET,
+                "keywords.row=r0&keywords.r0.lang=en&keywords.r0.text=typed+before+searching\
+                 &temporalCoverage.row=r0&temporalCoverage.r0.kind=reference&temporalCoverage.r0.pick.q=bronze\
+                 &intent=find-entry",
+            ),
+            &session,
+        )
+        .await;
+        assert_eq!(response.status(), StatusCode::OK, "a search re-renders rather than redirecting");
+        let body = body_string(response).await;
+        assert!(body.contains("pick:temporalCoverage.r0:"), "{body}");
+        assert_eq!(
+            stored_draft(&state, "0801d").await.get("keywords"),
+            Some(&json!([{"en": "typed before searching"}])),
+            "the body is written like a save"
+        );
+    }
+
     #[tokio::test]
     async fn every_add_and_remove_control_the_form_renders_resolves() {
         // Posted to the URLs the pages themselves draw, over every section a depositor sees,
@@ -4218,8 +4470,7 @@ mod tests {
         let session = a_session(&state, user.id).await;
         let app = test_app(&state);
 
-        // Written straight to the draft: `temporalCoverage` has no control yet,
-        // so there is no body that could carry it.
+        // Written straight to the draft: the gate reads what is stored.
         let mut draft = ProjectDraft::from_raw(state.published.get("0801d").expect("0801d"));
         draft.set("temporalCoverage", json!([{ "en": "A period nobody has enriched" }]));
         DraftRepository::upsert(
@@ -6111,6 +6362,9 @@ mod tests {
                         let key = format!("r{position}");
                         let prefix = format!("{}.{key}", field.id);
                         pairs.push((format!("{}.row", field.id), key.clone()));
+                        if field.vocabulary.is_some() {
+                            pairs.push((format!("{prefix}.pick.q"), String::new()));
+                        }
                         for (member, name) in [("type", "type"), ("url", "url"), ("text", "label")] {
                             pairs.push((
                                 format!("{prefix}.ref.{name}"),
@@ -6202,8 +6456,17 @@ mod tests {
                         let kind = editor_core::form::stored_kind(field.id, row);
                         let is_reference = kind == editor_core::form::REFERENCE_KIND;
                         pairs.push((format!("{prefix}.kind"), kind.to_string()));
-                        // `disciplines` offers a third variant, the SNSF list: the select
-                        // posts the code, and every disciplines row carries the control.
+                        // A vocabulary search posts its query, empty untouched: on every
+                        // disciplines row (the SNSF branch), else only on the reference branch.
+                        let searches = match field.vocabulary {
+                            Some(editor_core::vocabulary::List::Disciplines) => true,
+                            Some(_) => is_reference,
+                            None => false,
+                        };
+                        if searches {
+                            pairs.push((format!("{prefix}.pick.q"), String::new()));
+                        }
+                        // Every disciplines row posts the SNSF code in a hidden input.
                         if field.id == editor_core::disciplines::FIELD {
                             pairs.push((
                                 format!("{prefix}.snsf"),

@@ -6,7 +6,7 @@
 
 use maud::{html, Markup};
 use mosaic_tiles::button::{button, ButtonVariant};
-use mosaic_tiles::combobox::{combobox, combobox_listbox, combobox_option};
+use mosaic_tiles::combobox::{combobox, combobox_groups, combobox_listbox, combobox_option};
 use mosaic_tiles::ComponentBuilder;
 
 use super::{example, page_header, page_layout};
@@ -38,6 +38,15 @@ fn examples() -> Markup {
                 "The results are a listbox of options. ArrowDown from the input focuses the first option, \
                  ArrowUp from the first returns to the input, and Escape closes the list.",
                 with_results(),
+            )
+        })
+        ({
+            example(
+                "combobox-grouped",
+                "Grouped results",
+                "`combobox_groups` puts the options under group headings. The arrow keys still move through every \
+                 option in order, across groups.",
+                grouped(),
             )
         })
         ({
@@ -111,6 +120,34 @@ fn with_results() -> Markup {
         ],
     );
     let field = combobox("person_results", "Person")
+        .value("a")
+        .search_button(search_button())
+        .results(listbox)
+        .expanded(true);
+    form_column(html! {
+        (field)
+    })
+}
+
+fn grouped() -> Markup {
+    let groups = [
+        (
+            "Humanities".to_string(),
+            vec![
+                person("Ada Lovelace", "University of London", "p1"),
+                person("Alan Turing", "University of Manchester", "p2"),
+            ],
+        ),
+        (
+            "Sciences".to_string(),
+            vec![
+                person("Grace Hopper", "Yale University", "p3"),
+                person("Hedy Lamarr", "University of Vienna", "p4"),
+            ],
+        ),
+    ];
+    let listbox = combobox_groups("People by field", groups);
+    let field = combobox("person_grouped", "Person")
         .value("a")
         .search_button(search_button())
         .results(listbox)

@@ -346,6 +346,31 @@ pub fn combobox_listbox(label: impl Into<String>, options: impl IntoIterator<Ite
     }
 }
 
+/// A listbox whose options sit under group headings: each group is an `li role="group"` named by
+/// its `aria-label`, its visible `p.combobox-group` heading `aria-hidden` so the name is read once.
+///
+/// The arrow-key script collects every `[role=option]` inside the combobox, so grouped options
+/// need no change to it.
+pub fn combobox_groups(label: impl Into<String>, groups: impl IntoIterator<Item = (String, Vec<Markup>)>) -> Markup {
+    let label = label.into();
+    html! {
+        ul role="listbox" aria-label=(label) {
+            @for (name, options) in groups {
+                @if !options.is_empty() {
+                    li role="group" aria-label=(name) {
+                        p class="combobox-group" aria-hidden="true" { (name) }
+                        ul role="none" {
+                            @for option in options {
+                                li role="none" { (option) }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 /// Builder for one option. Construct with [`combobox_option`].
 #[must_use = "a builder renders nothing unless it is spliced into `html!` or `.build()` is called"]
 pub struct ComboboxOptionBuilder {
@@ -620,6 +645,34 @@ mod tests {
         let out = combobox_listbox("People", options).into_string();
         assert!(out.contains(r#"<ul role="listbox" aria-label="People">"#), "{out}");
         assert_eq!(out.matches(r#"<li role="none">"#).count(), 2, "{out}");
+    }
+
+    #[test]
+    fn a_grouped_listbox_nests_presentational_options_in_labelled_groups() {
+        let groups = [
+            (
+                "Humanities".to_string(),
+                vec![
+                    combobox_option("History", "pick", "1").build(),
+                    combobox_option("Linguistics", "pick", "2").build(),
+                ],
+            ),
+            ("Empty".to_string(), Vec::new()),
+            ("Sciences".to_string(), vec![combobox_option("Physics", "pick", "3").build()]),
+        ];
+        let out = combobox_groups("Disciplines", groups).into_string();
+        assert_eq!(out.matches(r#"role="listbox""#).count(), 1, "{out}");
+        assert!(out.contains(r#"<ul role="listbox" aria-label="Disciplines">"#), "{out}");
+        assert!(out.contains(r#"<li role="group" aria-label="Humanities">"#), "{out}");
+        assert!(out.contains(r#"<li role="group" aria-label="Sciences">"#), "{out}");
+        assert_eq!(
+            out.matches(r#"<p class="combobox-group" aria-hidden="true">"#).count(),
+            2,
+            "{out}"
+        );
+        assert_eq!(out.matches(r#"role="group""#).count(), 2, "{out}");
+        assert_eq!(out.matches(r#"<li role="none">"#).count(), 3, "{out}");
+        assert!(!out.contains("Empty"), "{out}");
     }
 
     #[test]

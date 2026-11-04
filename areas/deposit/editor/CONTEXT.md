@@ -101,6 +101,10 @@ Whether a Field is required, and the count the rail shows; refusal happens at su
 A stored value without the format its kind needs, a web address, a DOI or web address, or a plan link or `not accessible` (`form::format::Finding`): computed from the Draft at every render and shown on its control, never stored, and refused only at submit and, over every field, at approve.
 _Avoid_: validation error, format error (a finding stops no save).
 
+**Vocabulary pick**:
+A depositor's choice of an **Entry** from a bundled list (`places.json`, `periods.json`, `snsf-disciplines.json`) found through the combobox search over it; the `pick:{prefix}:{value}` intent is rewritten into the row's own posted pairs before they are read, so a pick stores exactly what typing the row would. An **Entry** is one item of such a list, not an Entity (a Person or Organization) and not what the depositor's "A recognised entry" option calls the whole choice; its `detail` line tells entries apart in a search and is never stored.
+_Avoid_: vocabulary for a closed `StringList` set of values, or for the depositor-vocabulary rule below (REQ-2.2); autocomplete, lookup.
+
 **Entity proposal**:
 An `entity_proposals` row through which a depositor proposes a new Person or Organization, or a change to one their project references; keyed by Shortcode, it outlives the Submission it rides in, and its allocated id is never reused.
 _Avoid_: entity draft, agent proposal (in prose "Agent" is the archive's word), person request.

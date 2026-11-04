@@ -59,6 +59,7 @@ const PERSON_FIELDS: &[Field] = &[
         audience: Audience::Everyone,
         shape: Some(Shape::StringRows),
         format: &[],
+        vocabulary: None,
     },
     Field {
         id: "familyNames",
@@ -69,6 +70,7 @@ const PERSON_FIELDS: &[Field] = &[
         audience: Audience::Everyone,
         shape: Some(Shape::StringRows),
         format: &[],
+        vocabulary: None,
     },
     Field {
         id: "jobTitles",
@@ -82,6 +84,7 @@ const PERSON_FIELDS: &[Field] = &[
         audience: Audience::Everyone,
         shape: Some(Shape::StringRows),
         format: &[],
+        vocabulary: None,
     },
     Field {
         id: "affiliations",
@@ -92,6 +95,7 @@ const PERSON_FIELDS: &[Field] = &[
         audience: Audience::Everyone,
         shape: Some(Shape::AgentRows),
         format: &[],
+        vocabulary: None,
     },
     Field {
         id: "sameAs",
@@ -102,6 +106,7 @@ const PERSON_FIELDS: &[Field] = &[
         audience: Audience::Everyone,
         shape: Some(Shape::ReferenceRows(SAME_AS_TYPES)),
         format: format::REFERENCE_LINK,
+        vocabulary: None,
     },
     Field {
         id: "email",
@@ -114,6 +119,7 @@ const PERSON_FIELDS: &[Field] = &[
         // validate, and a browser refusing a half-typed address would block the save.
         shape: Some(Shape::Text(editor_core::form::WhenCleared::Drop)),
         format: &[],
+        vocabulary: None,
     },
 ];
 
@@ -130,6 +136,7 @@ const ORGANIZATION_FIELDS: &[Field] = &[
         audience: Audience::Everyone,
         shape: Some(Shape::Text(editor_core::form::WhenCleared::Drop)),
         format: &[],
+        vocabulary: None,
     },
     Field {
         id: "url",
@@ -140,6 +147,7 @@ const ORGANIZATION_FIELDS: &[Field] = &[
         audience: Audience::Everyone,
         shape: Some(Shape::Text(editor_core::form::WhenCleared::Drop)),
         format: format::LINK,
+        vocabulary: None,
     },
     Field {
         id: "alternativeName",
@@ -150,6 +158,7 @@ const ORGANIZATION_FIELDS: &[Field] = &[
         audience: Audience::Everyone,
         shape: Some(Shape::Multilingual),
         format: &[],
+        vocabulary: None,
     },
     Field {
         id: "sameAs",
@@ -160,6 +169,7 @@ const ORGANIZATION_FIELDS: &[Field] = &[
         audience: Audience::Everyone,
         shape: Some(Shape::ReferenceRows(SAME_AS_TYPES)),
         format: format::REFERENCE_LINK,
+        vocabulary: None,
     },
     Field {
         id: "email",
@@ -170,6 +180,7 @@ const ORGANIZATION_FIELDS: &[Field] = &[
         audience: Audience::Everyone,
         shape: Some(Shape::Text(editor_core::form::WhenCleared::Drop)),
         format: &[],
+        vocabulary: None,
     },
 ];
 
@@ -344,6 +355,7 @@ impl EntityView<'_> {
             // intents, so they would be dead controls; see Rows::propose.
             propose: false,
             search_path,
+            vocabulary_path: None,
             focus: None,
         }
     }

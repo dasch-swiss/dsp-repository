@@ -80,7 +80,7 @@ pub(crate) fn storage_error(
 /// result rather than a 400, which would drop the response and fire the page's telemetry error
 /// listener.
 #[derive(Debug, serde::Deserialize)]
-pub(crate) struct AgentSearchParams {
+pub(crate) struct SearchParams {
     pub(crate) r#for: Option<String>,
     pub(crate) q: Option<String>,
 }

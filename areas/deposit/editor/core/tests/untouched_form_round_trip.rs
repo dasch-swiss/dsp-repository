@@ -12,11 +12,11 @@
 use std::path::PathBuf;
 
 use editor_core::canonical::{write_draft, write_project};
-use editor_core::disciplines;
 use editor_core::draft::ProjectDraft;
 use editor_core::form::registry::{Field, FIELDS};
 use editor_core::form::{apply, stored_kind, FormBody, Shape, REFERENCE_KIND};
 use editor_core::multilingual::{DraftMultilingual, UI_LANGUAGES};
+use editor_core::{disciplines, vocabulary};
 use serde_json::Value;
 use shared_metadata::project::ProjectRaw;
 
@@ -77,6 +77,10 @@ fn untouched_submit(draft: &ProjectDraft) -> FormBody {
                     let key = format!("r{position}");
                     let prefix = format!("{}.{key}", field.id);
                     pairs.push((format!("{}.row", field.id), key.clone()));
+                    // The vocabulary combobox's search box, empty until someone types.
+                    if vocabulary::list_for(field.id).is_some() {
+                        pairs.push((format!("{prefix}.pick.q"), String::new()));
+                    }
                     for (member, name) in [("type", "type"), ("url", "url"), ("text", "label")] {
                         pairs.push((
                             format!("{prefix}.ref.{name}"),
@@ -162,15 +166,19 @@ fn untouched_submit(draft: &ProjectDraft) -> FormBody {
                     let kind = stored_kind(field.id, row);
                     let is_reference = kind == REFERENCE_KIND;
                     pairs.push((format!("{prefix}.kind"), kind.to_string()));
-                    // `disciplines` offers a third variant, the SNSF list: the select
-                    // posts the code, and every disciplines row carries the control.
+                    // Every disciplines row carries the SNSF code in a hidden input.
                     if field.id == disciplines::FIELD {
+                        pairs.push((format!("{prefix}.pick.q"), String::new()));
                         pairs.push((
                             format!("{prefix}.snsf"),
                             disciplines::snsf_row(row)
                                 .map(|discipline| discipline.code.clone())
                                 .unwrap_or_default(),
                         ));
+                    }
+                    // A period's search box sits on the reference branch only.
+                    if is_reference && field.id != disciplines::FIELD && vocabulary::list_for(field.id).is_some() {
+                        pairs.push((format!("{prefix}.pick.q"), String::new()));
                     }
                     // The reference branch, empty on a text row.
                     for (member, name) in [("type", "type"), ("url", "url"), ("text", "label")] {

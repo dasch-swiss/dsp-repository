@@ -31,6 +31,7 @@ use crate::draft::UrlSlot;
 use crate::form::format::{Member, ValueKind, LINK, PLAN_LINK, REFERENCE_LINK};
 use crate::form::{ChoiceSet, Shape, WhenCleared};
 use crate::multilingual::UI_LANGUAGES;
+use crate::vocabulary::List;
 
 /// A required contract `String` whose empty state the committed data spells as a
 /// sentinel. Named because the distinction reads as the UI tier beside it and is
@@ -150,11 +151,17 @@ pub struct Field {
     /// Where this field holds a value with a format to check: the form marks a
     /// failing one at its control and submit refuses it. Empty for most fields.
     pub format: &'static [Member],
+    /// The bundled list this field's rows are searched in, or `None` for a field without a picker.
+    pub vocabulary: Option<List>,
 }
 
 impl Field {
     const fn formatted(self, format: &'static [Member]) -> Self {
         Self { format, ..self }
+    }
+
+    pub const fn vocabulary(self, list: List) -> Self {
+        Self { vocabulary: Some(list), ..self }
     }
 
     /// Whether a depositor may change this field.
@@ -204,6 +211,7 @@ const fn hinted(
         audience,
         shape,
         format: &[],
+        vocabulary: None,
     }
 }
 
@@ -220,6 +228,7 @@ const fn shown(id: &'static str, label: &'static str, hint: Option<&'static str>
         // unchanged.
         shape: None,
         format: &[],
+        vocabulary: None,
     }
 }
 
@@ -421,32 +430,37 @@ pub const FIELDS: &[Field] = &[
     hinted(
         "disciplines",
         "Disciplines",
-        "At least one. Choose from the SNSF list, or paste the link to the discipline in the UNESCO \
-         nomenclature; if nothing fits, add your own wording.",
+        "At least one. Search the SNSF list by name, code or research domain, or paste the link to the discipline \
+         in the UNESCO nomenclature; if nothing fits, add your own wording.",
         Required,
         Everyone,
         Some(TextOrReferenceRows(DISCIPLINE_SOURCES)),
     )
-    .formatted(REFERENCE_LINK),
+    .formatted(REFERENCE_LINK)
+    .vocabulary(List::Disciplines),
     hinted(
         "temporalCoverage",
         "Temporal coverage",
-        "The time period the data covers. For a recognised period, for example Bronze Age or Siècle des \
-         Lumières, paste its PeriodO or Chronontology link; otherwise add your own term per language.",
+        "The time period the data covers. Search for a recognised period, for example Bronze Age or \
+         Siècle des Lumières, or paste its PeriodO or Chronontology link; otherwise add your own term per \
+         language.",
         Required,
         Everyone,
         Some(TextOrReferenceRows(PERIOD_SOURCES)),
     )
-    .formatted(REFERENCE_LINK),
+    .formatted(REFERENCE_LINK)
+    .vocabulary(List::Periods),
     hinted(
         "spatialCoverage",
         "Spatial coverage",
-        "Paste the link to the place in GeoNames, Pleiades or another gazetteer, and choose its source.",
+        "Search for the place by name, or paste the link to it in GeoNames, Pleiades or another gazetteer \
+         and choose its source.",
         Required,
         Everyone,
         Some(ReferenceRows(PLACE_SOURCES)),
     )
-    .formatted(REFERENCE_LINK),
+    .formatted(REFERENCE_LINK)
+    .vocabulary(List::Places),
     hinted(
         "provenance",
         "Provenance",
@@ -1280,5 +1294,20 @@ mod tests {
             assert!(!tier.note().is_empty());
         }
         assert_eq!(Required.label(), "Required");
+    }
+
+    #[test]
+    fn a_vocabulary_sits_on_a_field_that_holds_reference_rows() {
+        // A pick posts the pairs its list's shape reads (`List::posted`): a list on another shape
+        // stores nothing.
+        for field in FIELDS.iter() {
+            let fits = match field.vocabulary {
+                None => true,
+                Some(List::Places) => matches!(field.shape, Some(ReferenceRows(_))),
+                Some(List::Periods) => matches!(field.shape, Some(TextOrReferenceRows(_))),
+                Some(List::Disciplines) => field.id == crate::disciplines::FIELD,
+            };
+            assert!(fits, "{}: {:?} cannot pick into {:?}", field.id, field.vocabulary, field.shape);
+        }
     }
 }

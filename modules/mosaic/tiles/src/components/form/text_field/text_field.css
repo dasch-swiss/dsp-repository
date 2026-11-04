@@ -25,6 +25,14 @@
     @apply rounded border border-neutral-500 px-3 py-2 focus-visible:outline-2 focus-visible:outline-primary-600;
   }
 
+  /*
+   * Placeholder text is neutral-600, the lightest stop that reaches 4.5:1 (WCAG 2.1 SC 1.4.3) on
+   * white; the browser default is a 50% mix of the text colour and falls short.
+   */
+  .field-input::placeholder {
+    @apply text-neutral-600;
+  }
+
   .field-hint {
     @apply text-sm text-neutral-600;
   }

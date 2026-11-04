@@ -54,6 +54,16 @@ fn examples() -> Markup {
         })
         ({
             example(
+                "textarea-placeholder",
+                "Placeholder and language",
+                "`.placeholder()` shows a greyed example and always sits beside a hint, never replaces one. \
+                 `.lang()` marks a value held in a known language so a screen reader pronounces it correctly; \
+                 an empty tag renders nothing.",
+                placeholder_and_lang(),
+            )
+        })
+        ({
+            example(
                 "textarea-capped",
                 "Capped length",
                 "`maxlength` is an affordance: browsers enforce it on typing but not on every paste, and never \
@@ -113,6 +123,22 @@ fn error_state() -> Markup {
         ({
             textarea("valid", "Provenance")
                 .value("Digitised from the institute's slide archive.")
+        })
+    };
+    form_column(fields)
+}
+
+fn placeholder_and_lang() -> Markup {
+    let fields = html! {
+        ({
+            textarea("references", "References")
+                .placeholder("Author, Title, Year")
+                .hint("One reference per line.")
+        })
+        ({
+            textarea("description_fr", "Description")
+                .value("Correspondance de la famille, 1890 à 1920.")
+                .lang("fr")
         })
     };
     form_column(fields)

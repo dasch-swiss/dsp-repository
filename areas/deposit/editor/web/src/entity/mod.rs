@@ -11,6 +11,7 @@
 pub mod origin;
 
 use editor_core::agents::AgentScope;
+use editor_core::countries::{takes_canton, CANTONS, COUNTRIES, SWITZERLAND};
 use editor_core::draft::ProjectDraft;
 use editor_core::form::format::{self, Finding};
 use editor_core::form::registry::{Audience, Field, Obligation};
@@ -20,12 +21,15 @@ use maud::{html, Markup};
 use mosaic_tiles::alert::{alert, AlertVariant};
 use mosaic_tiles::button::{button, ButtonType, ButtonVariant};
 use mosaic_tiles::link::link;
+use mosaic_tiles::select::select;
 use mosaic_tiles::text_field::{text_field, InputType};
 use origin::Origin;
 use serde_json::Value;
 use shared_datastar as datastar;
 
-use crate::form::widgets::{agent_rows, formatted_text, multilingual, reference_rows, stated, string_rows, Mode, Rows};
+use crate::form::widgets::{
+    agent_rows, formatted_text, multilingual, reference_rows, stated, string_rows, Mode, ReferenceWording, Rows,
+};
 use crate::form::INTENT;
 
 /// The id the enhanced path's patch targets, and the anchor a save returns to
@@ -46,6 +50,15 @@ pub const DISCARD: &str = "discard";
 /// The authority sources a `sameAs` reference may come from, on both a person
 /// and an organisation: the committed corpus carries `ORCID`, `GND` and `URL`.
 pub const SAME_AS_TYPES: &[&str] = &["ORCID", "GND", "URL"];
+
+/// The wording on a `sameAs` row's controls: what an authority record is for.
+pub(crate) const SAME_AS_WORDING: ReferenceWording = ReferenceWording {
+    source_hint: "ORCID for an ORCID iD, GND for the German National Library's authority file, URL for any other web \
+                  address.",
+    link_lead: Some("The whole link to the record, not just its ID."),
+    link_example: Some("https://d-nb.info/gnd/118540238"),
+    shown_as_hint: "A name for this record, such as the person's or organisation's name.",
+};
 
 /// A person's fields, in display order. Exactly `Person`'s members
 /// (`shared/metadata/src/person.rs`) and no others.
@@ -184,17 +197,81 @@ const ORGANIZATION_FIELDS: &[Field] = &[
     },
 ];
 
-/// `address`'s six flat members, in display order, paired with their label.
+/// One of `address`'s flat members: what [`address_group`] renders for it.
+pub struct AddressMember {
+    pub name: &'static str,
+    pub label: &'static str,
+    pub hint: Option<&'static str>,
+    /// Text members only; a choice carries its own prompt.
+    pub placeholder: Option<&'static str>,
+    pub control: MemberControl,
+    /// Wrapped in the `data-show` that follows the Country select, but always in the HTML.
+    pub swiss_only: bool,
+}
+
+pub enum MemberControl {
+    Text,
+    Choice { options: &'static [&'static str], prompt: &'static str },
+}
+
+/// The Country member's name: the control [`address_group`]'s `data-on:change` listens for.
+const COUNTRY: &str = "country";
+
+/// `address`'s six flat members, in display order.
 /// The first four are the ones [`editor_core::proposals::check_organization`] asks
 /// for together or not at all; `canton` and `additional` are always optional, on the contract as
 /// well as here.
-pub const ADDRESS_MEMBERS: &[(&str, &str)] = &[
-    ("street", "Street"),
-    ("postalCode", "Postal code"),
-    ("locality", "Locality"),
-    ("country", "Country"),
-    ("canton", "Canton"),
-    ("additional", "Additional address line"),
+pub const ADDRESS_MEMBERS: &[AddressMember] = &[
+    AddressMember {
+        name: "street",
+        label: "Street",
+        hint: None,
+        placeholder: None,
+        control: MemberControl::Text,
+        swiss_only: false,
+    },
+    AddressMember {
+        name: "postalCode",
+        label: "Postal code",
+        hint: None,
+        placeholder: None,
+        control: MemberControl::Text,
+        swiss_only: false,
+    },
+    AddressMember {
+        name: "locality",
+        label: "Locality",
+        hint: None,
+        placeholder: None,
+        control: MemberControl::Text,
+        swiss_only: false,
+    },
+    AddressMember {
+        name: COUNTRY,
+        label: "Country",
+        hint: Some("The country's English name."),
+        placeholder: None,
+        control: MemberControl::Choice { options: COUNTRIES, prompt: "Choose a country" },
+        swiss_only: false,
+    },
+    AddressMember {
+        name: "canton",
+        label: "Canton",
+        hint: Some("Switzerland only: cleared on save when the country is not Switzerland."),
+        placeholder: None,
+        control: MemberControl::Choice { options: CANTONS, prompt: "Choose a canton" },
+        swiss_only: true,
+    },
+    AddressMember {
+        name: "additional",
+        label: "Additional address line",
+        hint: Some(
+            "A line after the street, such as c/o, the building or the floor. Leave it blank if the street says it all.",
+        ),
+        placeholder: Some("c/o Department of History"),
+        control: MemberControl::Text,
+        swiss_only: false,
+    },
 ];
 
 /// The rule is about the group, so it is stated once rather than on each control.
@@ -564,7 +641,7 @@ fn entity_field_row(field: &Field, draft: &ProjectDraft, mode: Mode, rows: Rows<
         Some(Shape::Multilingual) => multilingual(field, draft, 2),
         Some(Shape::StringRows) => string_rows(field, draft, rows),
         Some(Shape::AgentRows) => agent_rows(field, draft, rows),
-        Some(Shape::ReferenceRows(types)) => reference_rows(field, draft, rows, types),
+        Some(Shape::ReferenceRows(types)) => reference_rows(field, draft, rows, types, &SAME_AS_WORDING),
         other => unreachable!("every entity field declares one of the shapes matched above, got {other:?}"),
     }
 }
@@ -586,36 +663,85 @@ fn address_group(view: &EntityView<'_>, read_only: bool) -> Markup {
         let path = format!("address.{name}");
         view.draft.get(&path).and_then(Value::as_str).unwrap_or_default().to_string()
     };
-    // aria-describedby on the fieldset: a paragraph rendered beside a control is
-    // not part of its accessible description, so as a sibling the rule would be
-    // announced to nobody. mosaic_tiles' group_shell does this for radio_group
-    // and checkbox_group but is pub(super) to that crate.
+    // Canton is always in the HTML and only hidden client-side, so a depositor
+    // without JavaScript can still fill it in, and the save can clear it.
+    // `_swiss` is a local signal: it is never posted, the form body is. It holds a
+    // server-computed boolean, never the stored country: Datastar compiles signal
+    // values and expressions as JavaScript.
+    let live = !read_only;
+    let swiss_signal = live.then(|| takes_canton(&member(COUNTRY)).to_string());
+    // The client-side form of `editor_core::countries::takes_canton`, which the save applies.
+    let track_country = format!(
+        "evt.target.name === 'address.{COUNTRY}' && ($_swiss = evt.target.value.trim().toLowerCase() === '{}')",
+        SWITZERLAND.to_ascii_lowercase()
+    );
+    // aria-describedby on the fieldset: a sibling paragraph is not part of a control's accessible
+    // description. mosaic_tiles' `group_shell` does the same but is pub(super).
     html! {
         fieldset class="field field-group" aria-describedby=(ADDRESS_HINT_ID) {
             legend class="field-label" { (ADDRESS_LABEL) }
-            div class="flex flex-col gap-3" {
-                @for (name, label) in ADDRESS_MEMBERS.iter().copied() {
-                    @let value = member(name);
+            div class="flex flex-col gap-3"
+                data-signals:_swiss=[swiss_signal.as_deref()]
+                data-on:change=[live.then_some(track_country.as_str())]
+            {
+                @for m in ADDRESS_MEMBERS {
+                    @let value = member(m.name);
+                    @let control = || match &m.control {
+                        MemberControl::Choice { options, prompt } => {
+                            choice_select(m, options, prompt, &value)
+                        }
+                        MemberControl::Text => {
+                            let mut field = text_field(
+                                    format!("address.{}", m.name),
+                                    m.label,
+                                )
+                                .input_type(InputType::Text)
+                                .value(value.clone());
+                            if let Some(hint) = m.hint {
+                                field = field.hint(hint);
+                            }
+                            if let Some(placeholder) = m.placeholder {
+                                field = field.placeholder(placeholder);
+                            }
+                            html! {
+                                (field)
+                            }
+                        }
+                    };
                     @if read_only {
                         div class="field" {
-                            p class="field-label" { (label) }
+                            p class="field-label" { (m.label) }
                             ({
                                 crate::form::widgets::value_markup(
-                                    Some(&Value::String(value)),
+                                    Some(&Value::String(value.clone())),
                                 )
                             })
                         }
-                    } @else {
-                        ({
-                            text_field(format!("address.{name}"), label)
-                                .input_type(InputType::Text)
-                                .value(value)
-                        })
-                    }
+                    } @else if m.swiss_only {
+                        div data-show="$_swiss" { (control()) }
+                    } @else { (control()) }
                 }
             }
             p class="field-hint" id=(ADDRESS_HINT_ID) { (ADDRESS_HINT) }
         }
+    }
+}
+
+/// A single-choice select over a bundled list. A stored `value` outside the list is added as its
+/// own option, so it keeps rendering and saving as stored instead of being cleared.
+fn choice_select(member: &AddressMember, list: &'static [&'static str], placeholder: &str, value: &str) -> Markup {
+    let stored_outside_list = (!value.trim().is_empty() && !list.contains(&value)).then_some(value);
+    let mut control = select(format!("address.{}", member.name), member.label)
+        .placeholder(placeholder)
+        .selected(value);
+    if let Some(hint) = member.hint {
+        control = control.hint(hint);
+    }
+    if let Some(stored) = stored_outside_list {
+        control = control.option(stored, stored);
+    }
+    html! {
+        (control.options(list.iter().map(|name| (*name, *name))))
     }
 }
 
@@ -875,7 +1001,7 @@ mod tests {
             additional: Some("An Extra Line".to_string()),
         };
         let serialized = serde_json::to_value(&address).expect("an address serializes");
-        let mut declared: Vec<String> = ADDRESS_MEMBERS.iter().map(|(name, _)| (*name).to_string()).collect();
+        let mut declared: Vec<String> = ADDRESS_MEMBERS.iter().map(|member| member.name.to_string()).collect();
         declared.sort();
         assert_eq!(declared, members(&serialized));
     }
@@ -915,6 +1041,140 @@ mod tests {
             rows_action: "/projects/0801d/entities/person-001/fields".to_string(),
             origin: None,
         }
+    }
+
+    fn organization_address_html(address: Value, read_only: bool) -> String {
+        let mut proposal = person_proposal();
+        proposal.kind = ProposalKind::Organization;
+        proposal.entity_id = "organization-900".to_string();
+        let mut draft = ProjectDraft::default();
+        draft.set("address", address);
+        address_group(&view_of(&proposal, &draft, None), read_only).into_string()
+    }
+
+    /// The `<select …>…</select>` named `name`, as text.
+    fn select_named<'a>(out: &'a str, name: &str) -> &'a str {
+        let start = out
+            .find(&format!(r#"<select class="field-input field-select" id="{name}""#))
+            .expect("the select");
+        &out[start..start + out[start..].find("</select>").expect("a closed select")]
+    }
+
+    #[test]
+    fn a_stored_country_outside_the_list_is_the_selected_option() {
+        let out = organization_address_html(serde_json::json!({ "country": "Atlantis" }), false);
+        let country = select_named(&out, "address.country");
+        assert!(
+            country.contains(r#"<option value="Atlantis" selected>Atlantis</option>"#),
+            "{country}"
+        );
+        assert_eq!(country.matches(" selected").count(), 1, "{country}");
+
+        let listed = organization_address_html(serde_json::json!({ "country": "Tanzania" }), false);
+        let country = select_named(&listed, "address.country");
+        assert!(
+            country.contains(r#"<option value="Tanzania" selected>Tanzania</option>"#),
+            "{country}"
+        );
+        assert_eq!(country.matches(r#"value="Tanzania""#).count(), 1, "{country}");
+        assert!(country.contains(r#"<option value="">Choose a country</option>"#), "{country}");
+
+        let blank = organization_address_html(serde_json::json!({ "country": "  " }), false);
+        assert!(!select_named(&blank, "address.country").contains(r#"value="  ""#), "{blank}");
+    }
+
+    #[test]
+    fn a_stored_canton_outside_the_list_is_the_selected_option() {
+        let out = organization_address_html(serde_json::json!({ "country": "Switzerland", "canton": "ZH" }), false);
+        let canton = select_named(&out, "address.canton");
+        assert!(canton.contains(r#"<option value="ZH" selected>ZH</option>"#), "{canton}");
+        assert!(canton.contains(r#"<option value="Zurich">Zurich</option>"#), "{canton}");
+    }
+
+    /// Without JavaScript nothing hides Canton, so a depositor can still use it and the save can
+    /// clear it; with JavaScript the `data-show` follows the Country select without a round trip.
+    #[test]
+    fn canton_is_rendered_for_a_non_swiss_country_and_hidden_by_datastar_alone() {
+        let out = organization_address_html(serde_json::json!({ "country": "Germany" }), false);
+        let canton = select_named(&out, "address.canton");
+        assert!(canton.contains(r#"<option value="Bern">Bern</option>"#), "{canton}");
+        assert!(out.contains(r#"data-show="$_swiss""#), "{out}");
+        assert!(out.contains(r#"data-signals:_swiss="false""#), "{out}");
+        assert!(out.contains("data-on:change="), "{out}");
+        assert!(!out.contains("display:none") && !out.contains(" hidden"), "{out}");
+    }
+
+    #[test]
+    fn the_swiss_signal_is_true_for_switzerland_however_it_is_stored() {
+        let out = organization_address_html(serde_json::json!({ "country": " switzerland " }), false);
+        assert!(out.contains(r#"data-signals:_swiss="true""#), "{out}");
+    }
+
+    /// Datastar compiles signal values and expressions as JavaScript, so a stored country must
+    /// reach no `data-*` attribute: only its escaped text inside the select's option.
+    #[test]
+    fn a_stored_country_reaches_no_datastar_attribute() {
+        let payload = "\u{1F595}JS_$`_DS\u{1F680}+alert(document.domain)+\u{1F595}JS_$'_DS\u{1F680}";
+        let out = organization_address_html(serde_json::json!({ "country": payload }), false);
+        for chunk in out.split(" data-").skip(1) {
+            let value = chunk.split('"').nth(1).unwrap_or_default();
+            assert!(!value.contains("alert("), "{chunk}");
+        }
+        assert!(
+            out.contains("alert(document.domain)"),
+            "the payload shows as option text: {out}"
+        );
+        assert!(out.contains("data-signals:_swiss=\"false\""), "{out}");
+    }
+
+    /// A renamed Country select would leave the Datastar listener comparing against a name nothing
+    /// has.
+    #[test]
+    fn the_datastar_listener_names_the_country_select() {
+        let out = organization_address_html(serde_json::json!({ "country": "Germany" }), false);
+        let attribute = out.split(r#"data-on:change=""#).nth(1).expect("the listener");
+        let expression = attribute.split('"').next().expect("a closed attribute");
+        let listened_for = expression
+            .split("evt.target.name === '")
+            .nth(1)
+            .and_then(|rest| rest.split('\'').next())
+            .unwrap_or_else(|| panic!("no control name in {expression}"));
+        let country = select_named(&out, listened_for);
+        assert!(country.contains(&format!(r#"name="{listened_for}""#)), "{country}");
+        assert!(country.contains("Choose a country"), "{country}");
+    }
+
+    #[test]
+    fn the_read_only_address_has_no_controls() {
+        let out = organization_address_html(serde_json::json!({ "country": "Germany" }), true);
+        assert!(!out.contains("<select") && !out.contains("data-show"), "{out}");
+    }
+
+    #[test]
+    fn every_address_member_renders_its_declared_control_and_hint() {
+        let out = organization_address_html(serde_json::json!({}), false);
+        for member in ADDRESS_MEMBERS {
+            let id = format!("address.{}", member.name);
+            let id_at = out.find(&format!(r#"id="{id}""#)).expect("the control");
+            let tag_start = out[..id_at].rfind('<').expect("a tag start");
+            let control_tag = &out[tag_start..][..out[tag_start..].find('>').expect("a tag end")];
+            let expected = match member.control {
+                MemberControl::Choice { .. } => "<select",
+                MemberControl::Text => "<input",
+            };
+            assert!(control_tag.starts_with(expected), "{id}: {control_tag}");
+            let Some(hint) = member.hint else { continue };
+            let described_by = control_tag
+                .split(r#"aria-describedby=""#)
+                .nth(1)
+                .and_then(|rest| rest.split('"').next())
+                .unwrap_or_else(|| panic!("{id} has no aria-describedby: {control_tag}"));
+            let hint_id = described_by.split(' ').next().expect("an id");
+            let paragraph = &out[out.find(&format!(r#"id="{hint_id}""#)).expect("the hint element")..];
+            let paragraph = &paragraph[..paragraph.find("</").expect("a closed element")];
+            assert!(paragraph.contains(hint), "{id}: {paragraph}");
+        }
+        assert!(out.contains(r#"placeholder="c/o Department of History""#), "{out}");
     }
 
     /// Without the submitter's `formaction`, every add and remove control acts as a plain save

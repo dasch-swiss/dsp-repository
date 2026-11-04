@@ -239,6 +239,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `EditorRepositories` (behind `EditorState.editor`), `ReviewRoundRepository`, `RecordClassification`, `classify_record`,
   `editor_core::form::registry::{FIELDS, SECTIONS, Field}`, `form::Shape`, `sections_for`, `fields_for`,
   `Section::has_editable_field`, `form::ChoiceSet::Languages`, `editor_core::languages::{LANGUAGES, canonical_code}`,
+  `editor_core::countries::{COUNTRIES, CANTONS, SWITZERLAND, takes_canton}`,
   `ProjectState::explanation_for`, `AgentScope::get_proposed_first`, `entity::{entity_label, entity_labels, Precedence}`,
   `editor_web::form::INTENT`, `editor_core::submission::{check, SubmitRefusal}`, `editor_core::review::{approval, ApproveRefusal}`,
   `SubmissionState::is_pending`,
@@ -370,6 +371,10 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - A pick posts `pick:{prefix}:{value}` and is rewritten into the row's own posted pairs before the appliers run,
     so a pick and a typed value share one write path; each POST handler calls `apply_picker_intents` first
     (**static-analysis** — the handler tests of a pick).
+  - `editor_core::countries` (`COUNTRIES`, `CANTONS`) holds hand-edited lists, not registry vocabularies: the contract still types
+    country and canton as free text, and a stored value outside a list is kept. Drift tests pin them against the committed organisations in
+    `areas/access/dpe/server/data/organizations` (**static-analysis**); the entity save clears `address.canton` exactly when `takes_canton`
+    is false (**review**).
   - Known gap: `ReviewRoundRepository::approve` compares no version, so a depositor's proposal save
     landing between `review::approval`'s read and the approve transaction is approved unchecked;
     writes to an `Accepted` row are refused (**review**).

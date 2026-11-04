@@ -1,7 +1,7 @@
 ---
 dune_map: true
 schema_version: 2
-date: 2026-10-22
+date: 2026-11-04
 ---
 
 # Architecture Map
@@ -136,7 +136,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `every_committed_temporal_coverage_resolves` and `the_corpus_is_the_whole_published_set`, all of
   which run on it because it is opened with `secrets.GH_TOKEN`; then **review**).
   The `Corpus`'s instance `OnceLock` caches load once per process and never invalidate.
-- **Fingerprint:** `a29d6f8744a1`
+- **Fingerprint:** `e37556c5029d`
 
 ### areas/access/server
 
@@ -207,20 +207,23 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Paths:** `:(glob)areas/deposit/editor/**`
 - **Purpose:** The metadata editor — the Deposit Area's first service. Five crates:
   `editor-core` (the draft model, the form's field registry with its obligation and per-field
-  submit rules, the format findings computed from a draft at render (`editor_core::form::format`), the submit and approve gate sequences (`editor_core::submission`,
-  `editor_core::review`), validation, the canonical project and entity writers, the persistence
-  ports),
+  submit rules, the format findings computed from a draft at render (`editor_core::form::format`, in the
+  handlers' `view()`), the submit and approve gate sequences (`editor_core::submission`,
+  `editor_core::review`), validation, the canonical project and entity writers, a created project's seeded draft with its
+  derived `id`/`pid` (`editor_core::creation`), the persistence ports),
   `editor-ports` (what the editor asks of identity: `Actor`,
   `Authenticator`, `UserDirectory` and their fakes), `editor-store` (the SQLite implementation
   of the persistence ports, the file `editor.sqlite`, and `LiveOpenWork` behind
-  `identity-ports`), `editor-web` (the editor's HTTP surface: pages, the form's rendered widgets,
+  `identity-ports`: open drafts, open submissions, and `unknown_projects` over `created_projects`
+  and a second load of the published set), `editor-web` (the editor's HTTP surface: pages, the form's rendered widgets,
   the handlers (which map each submit and approve refusal to its message)
   and route table, the extractors, the startup loaders and reconcile,
   behind the `Editor` facade; the document shell around the pages is the area's
   `deposit-shell`, below), `editor-pull-requests` (the CI binary that turns an approved record into a
   pull request against this repository — outside the service's request path, and the only crate
   here that writes anything under `areas/access/dpe/`).
-  Depositors edit their projects section by section; RDU reviews field by field; approve
+  Depositors edit their projects section by section; RDU creates a project the published set
+  does not carry yet, and reviews field by field; approve
   writes an approved record, which the pull-request run publishes as a pull request. The Deposit
   Area is two capabilities, `identity` and `editor`, under the composition root `deposit-server`
   (`areas/deposit/server`, below; `areas/deposit/ADR-0004`), with identity's four crates in
@@ -236,12 +239,17 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `UserDirectory`, `Account`, `Authenticated`, `Rdu`, `LiveOpenWork`, `Editor`,
   `EditorSettings`, `EditorState`, `is_enhanced`,
   `routes`, `route_paths`, `reconcile_published`,
-  `Forge`, `EditorPullRequest`
+  `Forge`, `EditorPullRequest`, `CreatedProject`, `CreatedProjectRepository`, `Removal`,
+  `editor_core::creation::{seed, reseed, shown, pid_for, pid_holder}`,
+  `editor_core::form::registry::GIT_OWNED`, `editor_core::form::format::{findings, Finding, ValueKind, Member}`,
+  `editor_web::form::widgets::{format_message, format_hint}`
 - **Public interface:** the HTTP routes of `editor-web`'s route table, root-mounted on the
   editor's own hostname (`/` (a redirect), `/projects`, `/projects/{shortcode}`,
   `/projects/{shortcode}/sections/{section}` and its row-action `POST`s,
   `/projects/{shortcode}/entities/{proposal}` and its row-action `POST`s, `/review`, `/review/{shortcode}`,
-  `/approved`, `/approved/{id}/discard`, `/states`,
+  `/approved`, `/approved/{id}/discard`, `/states`, `/projects/new` and
+  `/projects/{shortcode}/remove` (RDU only; `/projects/new` matches before `/projects/{shortcode}`,
+  and `new` is refused as a shortcode),
   `GET /api/v1/approved-records`), served only through
   `Editor::router`, which `deposit-server` merges with identity's; the
   `editor-pull-requests` CLI (no arguments; one job-summary row per record), invoked only by
@@ -249,14 +257,15 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   (`Editor::{start, router}`, `EditorSettings`, `route_paths`;
   `Editor::for_test` and `test_support`
   behind `test-support`). The `editor_store` library for the root (`Database`, `Source`,
-  `LiveOpenWork`; `test_support`'s plain-value seed helpers and row readers behind
+  `LiveOpenWork::new(store, data_dir)`; `test_support`'s plain-value seed helpers and row readers behind
   `test-support`). The `editor_ports` library, which `identity-store` implements. Outside this
   component only `deposit-server` and `identity-store` (on `editor-ports`) depend on an `editor-*` crate.
 - **Local-context kit:** `areas/deposit/editor/CLAUDE.md`, `areas/deposit/editor/web/src/lib.rs`,
   `areas/deposit/editor/web/src/routes.rs`, `areas/deposit/editor/web/src/handlers/auth.rs`,
   `areas/deposit/server/src/router.rs`, `areas/deposit/editor/core/src/form.rs`,
   `areas/deposit/editor/store/src/lib.rs`. The kit is at its seven-file budget; the next reads
-  are `core/src/form/registry.rs` (a form change), `core/src/status.rs` (project state),
+  are `core/src/form/registry.rs` (a form change), `core/src/status.rs` (project state), `core/src/creation.rs` (a created project),
+  `core/src/form/format.rs` (a format rule),
   `ports/src/lib.rs` (what identity answers) and `docs/src/editor/{publishing-to-git,architecture}.md`.
 - **Depends on:** shared/metadata (`editor-core`, `editor-web`, `editor-pull-requests`),
   shared/rate-limit (`editor-web`), shared/telemetry (`editor-web`: `is_valid_traceparent`),
@@ -266,7 +275,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `editor-web` and `editor-core` on no identity crate; `editor-ports` on `std` alone); areas/access/dpe's corpus as data (see above),
   never its code — `editor-pull-requests` additionally *writes* that corpus, through a pull request
   and never at runtime (`docs/src/editor/publishing-to-git.md`); third-party: axum, maud, rusqlite
-  (`bundled`) + deadpool-sqlite, tower_governor,
+  (`bundled`) + deadpool-sqlite, tower_governor, url (`editor-core`, `form::format`),
   reqwest (`editor-pull-requests`), the OpenTelemetry API, insta
 - **Used by:** areas/deposit/server (`editor-web`'s facade and `editor-store`; `editor-ports`
   in its tests), areas/deposit/identity (`identity-store` on `editor-ports`, the ports it answers)
@@ -311,19 +320,35 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     `deposit-server`'s.
   - `editor-ports` depends on `std` alone: on no workspace crate but `shared-*`
     (**static-analysis** — `check-capability-deps.sh`), on no third-party crate (**static-analysis** — the same script).
+  - A format finding never stops a save: it is computed from the draft at every render and never
+    stored; submit refuses one in the viewer's fields, approve in every field, RDU-only included
+    (**static-analysis** — `sections.rs`'s autosave and Save/Add/Submit parity tests).
+  - `GIT_OWNED` members (`howToCite`, `legalInfo`) are not compared for a published project, and the
+    pull-request run takes them from the published file (`with_git_owned`) (**static-analysis** —
+    `every_git_owned_member_is_a_display_only_field`, `a_git_owned_member_is_not_a_change`).
+  - A created project is removable only while it has no submission and no approved record, checked
+    inside `CreatedProjectRepository::remove`'s transaction (**structure**).
+  - Known gap: `ReviewRoundRepository::approve` compares no version, so a depositor's proposal save
+    landing between `review::approval`'s read and the approve transaction is approved unchecked;
+    writes to an `Accepted` row are refused (**review**).
 - **Durable state:** the SQLite file `editor.sqlite` — `drafts`, `submissions`, `review_rounds`,
-  `approved_records`, `entity_proposals`, all `STRICT`, one baseline migration `0001` under
+  `approved_records`, `entity_proposals`, `created_projects`, all `STRICT`, one baseline migration `0001` under
   `editor/store/src/migrations/` (edited in place until the first deployment, then forward-only)
   guarded by its own `PRAGMA user_version`; identity's tables are in `identity.sqlite`
   (below). **Single writer:** `editor-store` through `editor-core`'s repository ports; several of
   `editor-web`'s handlers call the same port, serialized by the one writer connection, and every
-  multi-table transition is one repository method. `review_rounds` is append-only.
+  multi-table transition is one repository method. `review_rounds` is never updated; its rows
+  are deleted only by RDU's removal of a created project. `created_projects` is written by
+  `CreatedProjectRepository`: `create` (`POST /projects/new`, with the seeded `drafts` row),
+  `remove` (`POST /projects/{shortcode}/remove`, with its draft and review rounds, withdrawing
+  its proposals) and `delete_registration` (the startup reconcile, once the published set
+  carries the shortcode; the draft stays).
   `approved_records` is created only by approve, never updated, and deleted by three
   paths: the startup reconcile that derives Online (`editor-web`'s `startup.rs`, inside
   `Editor::start`), approve's own transaction, which supersedes the project's earlier record, so a
   project holds at most one, and RDU's discard
   (`POST /approved/{id}/discard`).
-- **Fingerprint:** `c302d6c9ca28`
+- **Fingerprint:** `687fa9e0b740`
 
 ### areas/deposit/shell
 
@@ -376,10 +401,11 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   (`areas/deposit/ADR-0004`). `identity-core`: accounts, sessions, login codes and mail sends
   as records and repository ports, the login rules, the session rules, the cookie names and
   `Cookie`-header scan, code and token generation, and the `Mailer` trait. `identity-ports`:
-  `OpenWork`, what identity asks of the editor. `identity-store`: the SQLite file
+  `OpenWork`, what identity asks of the editor: an account's open drafts and submissions, and
+  which assigned shortcodes name no published or created project. `identity-store`: the SQLite file
   `identity.sqlite` behind the four ports, the mail transports, and `LiveAuthenticator` and
-  `LiveUserDirectory` behind `editor-ports`. `identity-web`: the login and depositor pages,
-  their handlers and route table, identity's own `Authenticated`/`Rdu` extractors, the
+  `LiveUserDirectory` behind `editor-ports`. `identity-web`: the login and depositor pages
+  (which warn on an unknown shortcode), their handlers and route table, identity's own `Authenticated`/`Rdu` extractors, the
   `Set-Cookie` glue, and the `Identity` facade the composition root starts and mounts.
 - **Key entities:** `User`, `Role`, `Session`, `LoginCode`, `UserRepository`,
   `SessionRepository`, `LoginCodeRepository`, `MailSendRepository`, `Attempt`, `Issued`,
@@ -389,11 +415,12 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `MailError`, `SmtpMailer`, `ConsoleMailer`, `OpenWork`, `LiveAuthenticator`,
   `LiveUserDirectory`, `Identity`, `IdentitySettings`, `SmtpPassword`, `StartupError`,
   `IdentityState`, `Authenticated`, `Rdu`, `ensure_rdu`, `spawn_sweep`, `routes`, `route_paths`,
-  `RecordingMailer`
+  `RecordingMailer`, `FakeOpenWork`, `OpenWork::unknown_projects`
 - **Public interface:** the `identity_core` library (`records`, `repository`, `login`,
-  `session`, `cookie`, `secret`, `mail`), the `identity_ports` library (`OpenWork`, which
-  `editor-store` implements, `PortFuture`, `Unavailable`; `FakeOpenWork` behind
-  `test-support`) and the `identity_store` library (`Database`, `Source`, `DbError`,
+  `session`, `cookie`, `secret`, `mail`), the `identity_ports` library (`OpenWork`:
+  `drafts`, `submissions`, `unknown_projects`, which `editor-store`'s `LiveOpenWork` implements;
+  `PortFuture`, `Unavailable`; `FakeOpenWork` (`with_known_projects`, `failing_projects`, …)
+  behind `test-support`) and the `identity_store` library (`Database`, `Source`, `DbError`,
   `mail::mailer`, `SmtpSetupError`, `LiveAuthenticator`, `LiveUserDirectory`; behind
   `test-support`, `test_support`'s plain-value seed helpers and readers (`seed_user`,
   `seed_session`, `find_user`, `UserRow`, `session_exists`, …) and `FaultyStore`) and the `identity_web` library (`Identity::{start, router}`,
@@ -413,8 +440,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   lettre + rsa (`identity-store`); axum, maud, tower_governor, tokio, the OpenTelemetry API
   (`identity-web`)
 - **Used by:** areas/deposit/server (`identity-web`'s facade and re-exports, `identity-store`'s
-  stores and adapters; never `identity-core`), areas/deposit/editor (`editor-store` on
-  `identity-ports`; `editor-web` on no identity crate)
+  stores and adapters; never `identity-core`), areas/deposit/editor (`editor-store`'s
+  `LiveOpenWork` answers `identity-ports`' `OpenWork` from its tables and the published set;
+  `editor-web` on no identity crate)
 - **Boundary rules:**
   - `identity-core` has no Axum, Maud or database dependency (**static-analysis** — `check-capability-deps.sh`).
   - Depends on no `editor-*` crate but `editor-ports` (from `identity-store`), and neither
@@ -426,11 +454,15 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     editor's side (**review**).
   - `identity-ports` depends on `std` alone: on no workspace crate but `shared-*`
     (**static-analysis** — `check-capability-deps.sh`), on no third-party crate (**static-analysis** — the same script).
-  - `identity-web` depends on no `editor-*` crate: the removal confirmation's open work comes
-    through `identity-ports` (**static-analysis** — `check-capability-deps.sh`). Only its `handlers/`,
+  - `identity-web` depends on no `editor-*` crate: the removal confirmation's open work and the
+    unknown-shortcode check come through `identity-ports` (**static-analysis** — `check-capability-deps.sh`). Only its `handlers/`,
     route table, `shell.rs`, `lib.rs` and the handler tests' `fixtures.rs` use axum; `pages/` are
     `fn -> Markup` (**static-analysis** — `check-views-no-axum.sh`, which checks every other file of the
     crate's `src/`).
+  - Project existence crosses as plain `String` shortcodes through `OpenWork::unknown_projects`,
+    compared without regard to case; identity names no editor type for it (**structure**). An
+    unknown shortcode never blocks a save: the list and edit pages warn, and on a port failure
+    say the projects could not be checked (**review**; `handlers/depositors.rs` tests).
   - `route_paths()` exports the paths of `routes.rs`'s table, so the root labels every identity
     route without a second list (**structure**).
   - `Identity::router` returns its routes without CSRF or tracing; whoever mounts it supplies
@@ -443,7 +475,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `PRAGMA user_version`. **Single writer:** `identity-store`, through `identity-core`'s
   repository ports, called by `identity-web`'s handlers, the RDU bootstrap and the hourly
   sweep, and by `session::current`'s idle touch (also through `LiveAuthenticator`).
-- **Fingerprint:** `ca9d26f4cb16`
+- **Fingerprint:** `b552c50b4d74`
 
 ### areas/deposit/server
 
@@ -472,7 +504,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `Database`, `Source`, `LiveAuthenticator`, `LiveUserDirectory`), areas/deposit/editor
   (`editor-web`: `Editor`, `EditorSettings`,
   `route_paths`; `editor-store`: `Database`, `Source`,
-  `LiveOpenWork`; `editor-ports` in tests only), areas/deposit/shell (the fallback 404),
+  `LiveOpenWork`, built over the editor's store and the published set's data dir; `editor-ports` in
+  tests only), areas/deposit/shell (the fallback 404),
   shared/rate-limit (`RightmostXffKeyExtractor`), shared/telemetry (`collect_route`, `is_valid_traceparent`); third-party: axum, clap, figment,
   ureq, tokio, tower-http, tower_governor, the OpenTelemetry stack, pyroscope, matchit
 - **Used by:** nothing in the workspace; the top of the Deposit Area's dependency graph, a
@@ -498,15 +531,16 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     `identity_web::route_paths()`, so a traced route cannot go unlabelled (**structure**); that
     `matchit`'s match is axum's is pinned by `every_label_is_the_route_axum_matches`
     (**static-analysis**).
-  - The CSRF layer exempts no path; `csrf.rs`'s test enumerates every state-changing route
-    (**static-analysis**).
+  - The CSRF layer exempts no path (**static-analysis** — `csrf.rs`'s test, over the real router);
+    that test's path list is kept by hand, so a new `POST` route is added to it (**review**).
   - The telemetry identity is pinned, not derived from the crate name: tracer and Pyroscope
     application name `"editor-server"` (`TELEMETRY_NAME`), Pyroscope `service.namespace=editor`,
     beacon scope `"editor"` (**review**; recorded in `CLAUDE.md`).
 - **Durable state:** none of its own. It opens `identity.sqlite` and `editor.sqlite` in
   `EDITOR_DB_DIR` (two named in-memory databases when unset) and hands each store to its
-  capability, which is the single writer.
-- **Fingerprint:** `5d2c7506ab10`
+  capability, which is the single writer. It hands `EDITOR_DATA_DIR` (the published set,
+  read-only) to `EditorSettings` and to `LiveOpenWork`, which reads it once at construction.
+- **Fingerprint:** `e681c2b16764`
 
 ### modules/mosaic
 
@@ -552,7 +586,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - Registration is in `tiles/src/components/mod.rs`, not `lib.rs`; `modules/mosaic/CLAUDE.md`
     and the `add-mosaic-component` skill say `lib.rs` — stale, fix on next touch (**docs-only**).
 - **Durable state:** none. The playground E2E suite is dormant (no recipe, no CI job runs it).
-- **Fingerprint:** `7e1f14442dc7`
+- **Fingerprint:** `68a37c22eca5`
 
 ### shared/fair
 
@@ -611,18 +645,20 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     (`areas/access/dpe/api-oai/src/metadata/corpus.rs`), not here (**review**).
 - **Durable state:** none. Holds no cache and reads no environment; the contributor lookup and
   the two temporal tables arrive in `ResolveContext`.
-- **Fingerprint:** `c424b1286553`
+- **Fingerprint:** `4aecb81c37a0`
 
 ### shared/metadata
 
 - **Paths:** `:(glob)shared/metadata/**`
 - **Purpose:** `shared-metadata` — the research-metadata wire contract and the rules for
   reading a value out of it: `ProjectRaw` and its parts, `Person`, `Organization`, `Record`,
-  `Multilingual`, the placeholder rule, shortcode validation, the record-ARK rules (host
+  `Multilingual`, the placeholder rule, shortcode validation, the link and DOI character rules
+  (bare-DOI recognition and its `https://doi.org/` resolution), the record-ARK rules (host
   normalisation, dropping a versioned ARK's timestamp), temporal-coverage resolution,
   and the per-project checks. The published language between the Deposit and Access Areas.
 - **Key entities:** `ProjectRaw`, `Multilingual`, `is_placeholder`, `multilingual_value`,
-  `is_valid_shortcode`, `AuthorityFileReference`, `Person`, `Organization`, `Record`,
+  `is_valid_shortcode`, `is_bare_doi`, `breaks_an_address`, `pid_href`,
+  `DATA_MANAGEMENT_PLAN_NOT_ACCESSIBLE`, `AuthorityFileReference`, `Person`, `Organization`, `Record`,
   `RecordPid`, `RecordFile`, `ARK_PATH_PREFIX`, `with_ark_host`, `strip_ark_timestamp` (a record id
   without its ARK version timestamp, for readers whose output is the same at every version),
   `Finding`, `ContributorRef`, `ContributorLookup`, `is_organization_id`,
@@ -656,9 +692,13 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     (**static-analysis** — `every_committed_project_file_round_trips_byte_identically`).
   - Tests that read committed data live in the consumer that owns the data, not here
     (**review**).
+  - `breaks_an_address` is the one hidden-character predicate for every formatted value
+    (`editor-core`'s `form::format`), and `pid_href` the one bare-DOI resolver for every surface
+    that links a publication pid (`dpe-web`, `shared/fair`'s `ProjectGraph`); a new case is
+    added here, not in a consumer (**review**).
 - **Durable state:** none. Loads `chronontology-periods.json` and
   `temporal-coverage-enrichment.json` from whatever directory it is given.
-- **Fingerprint:** `c9c7113614f0`
+- **Fingerprint:** `1c07252fb9e4`
 
 ### shared/rate-limit
 

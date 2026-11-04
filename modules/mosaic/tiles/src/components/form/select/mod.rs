@@ -168,6 +168,7 @@ impl SelectBuilder {
             hint: self.hint.as_ref(),
             error: self.error.as_ref(),
             label_hidden: self.label_hidden,
+            counter: None,
         };
         let described_by = shell.described_by();
         let placeholder_selected = self.placeholder_selected();

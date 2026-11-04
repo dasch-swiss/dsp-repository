@@ -719,7 +719,7 @@ fn view<'a>(shortcode: &'a str, context: &'a Context<'a>, rendering: Rendering<'
     // From the stored payload at every render, as the section form does, so a
     // save's redirect and a refusal's re-render show the same findings.
     let fields = crate::entity::fields_for(context.proposal.kind);
-    let format_findings = editor_core::form::format::findings(fields.iter(), &context.draft, posted);
+    let format_findings = editor_core::form::format::findings(fields.iter(), &context.draft, posted, None);
     crate::entity::EntityView {
         shortcode,
         proposal: &context.proposal,

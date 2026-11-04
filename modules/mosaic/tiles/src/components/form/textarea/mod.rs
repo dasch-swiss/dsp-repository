@@ -31,12 +31,14 @@ pub struct TextareaBuilder {
     label: Markup,
     value: Option<String>,
     hint: Option<Markup>,
+    counter: Option<Markup>,
     error: Option<Markup>,
     placeholder: Option<String>,
     lang: Option<String>,
     rows: u32,
     maxlength: Option<u32>,
     required: bool,
+    autofocus: bool,
     id: Option<String>,
     test_id: Option<String>,
 }
@@ -51,12 +53,14 @@ pub fn textarea(name: impl Into<String>, label: impl Render) -> TextareaBuilder 
         label: label.render(),
         value: None,
         hint: None,
+        counter: None,
         error: None,
         placeholder: None,
         lang: None,
         rows: DEFAULT_ROWS,
         maxlength: None,
         required: false,
+        autofocus: false,
         id: None,
         test_id: None,
     }
@@ -73,6 +77,13 @@ impl TextareaBuilder {
     /// Add help text below the control, announced with it via `aria-describedby`.
     pub fn hint(mut self, hint: impl Render) -> Self {
         self.hint = Some(hint.render());
+        self
+    }
+
+    /// Add a counter slot after the hint, announced with the control via
+    /// `aria-describedby`. The caller keeps its content current.
+    pub fn counter(mut self, counter: impl Render) -> Self {
+        self.counter = Some(counter.render());
         self
     }
 
@@ -117,6 +128,11 @@ impl TextareaBuilder {
         self
     }
 
+    pub fn autofocus(mut self) -> Self {
+        self.autofocus = true;
+        self
+    }
+
     fn resolved_id(&self) -> &str {
         self.id.as_deref().unwrap_or(&self.name)
     }
@@ -127,6 +143,7 @@ impl TextareaBuilder {
             id,
             label: &self.label,
             hint: self.hint.as_ref(),
+            counter: self.counter.as_ref(),
             error: self.error.as_ref(),
             label_hidden: false,
         };
@@ -147,6 +164,7 @@ impl TextareaBuilder {
                 aria-invalid=[shell.aria_invalid()]
                 data-testid=[self.test_id.as_deref()]
                 required[self.required]
+                autofocus[self.autofocus]
             {
                 @if leading_newline { (PreEscaped("\n")) }
                 @if let Some(value) = &self.value { (value) }
@@ -258,6 +276,34 @@ mod tests {
             "{out}"
         );
         assert!(out.contains("Enter a description."), "{out}");
+    }
+
+    #[test]
+    fn a_counter_renders_in_the_field_and_is_described_between_hint_and_error() {
+        let out = textarea("short", "Short")
+            .hint("One line.")
+            .counter("200 left")
+            .error("Too long.")
+            .build()
+            .into_string();
+        assert!(
+            out.contains(r#"<div class="field-counter" id="short-counter">200 left</div>"#),
+            "{out}"
+        );
+        assert!(
+            out.contains(r#"aria-describedby="short-hint short-counter short-error""#),
+            "{out}"
+        );
+
+        let moved = textarea("short", "Short").with_id("x").counter("n").build().into_string();
+        assert!(moved.contains(r#"id="x-counter""#), "{moved}");
+    }
+
+    #[test]
+    fn without_a_counter_no_counter_id_appears() {
+        let out = textarea("short", "Short").hint("One line.").build().into_string();
+        assert!(!out.contains("-counter"), "{out}");
+        assert!(!out.contains("field-counter"), "{out}");
     }
 
     #[test]

@@ -71,6 +71,16 @@ fn examples() -> Markup {
                 capped(),
             )
         })
+        ({
+            example(
+                "textarea-counter",
+                "Counter slot",
+                "`.counter()` places caller-supplied content after the hint and names it in the \
+                 description. The tile does not count: keeping the text current, and announcing it, is the \
+                 caller's job.",
+                counter(),
+            )
+        })
     }
 }
 
@@ -152,6 +162,18 @@ fn capped() -> Markup {
                 .maxlength(200)
                 .hint("One line for cards and listings. Up to 200 characters.")
                 .with_test_id("short-description-input")
+        })
+    };
+    form_column(fields)
+}
+
+fn counter() -> Markup {
+    let fields = html! {
+        ({
+            textarea("short_description", "Short description")
+                .rows(2)
+                .hint("One line for cards and listings.")
+                .counter("You have 200 characters remaining")
         })
     };
     form_column(fields)

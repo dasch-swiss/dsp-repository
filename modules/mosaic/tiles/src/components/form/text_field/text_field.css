@@ -33,7 +33,8 @@
     @apply text-neutral-600;
   }
 
-  .field-hint {
+  .field-hint,
+  .field-counter {
     @apply text-sm text-neutral-600;
   }
 

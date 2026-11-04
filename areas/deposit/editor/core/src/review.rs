@@ -274,6 +274,18 @@ pub fn diff(published: Option<&ProjectDraft>, submitted: &ProjectDraft) -> Vec<F
     rows
 }
 
+/// The published side of `rows` as a draft, empty for a project that is not published.
+#[must_use]
+pub fn published_draft(rows: &[FieldDiff]) -> ProjectDraft {
+    let mut published = ProjectDraft::default();
+    for row in rows {
+        if let Some(value) = &row.published {
+            published.set(&row.field, value.clone());
+        }
+    }
+    published
+}
+
 /// The submitted draft with every field decision applied: what an approval commits, and what
 /// [`approval`]'s gates check. Checking the submitted draft instead would check a document that is
 /// not what gets committed: a revert can remove a reference and a substitution can add one.
@@ -386,7 +398,8 @@ pub enum ApproveRefusal {
     RejectedEntity(Vec<(&'static Field, String)>),
     /// Proposals this approval keeps whose payload the entity form's rules refuse.
     ProposalIncomplete(Vec<ProposalProblem>),
-    /// Values in the decided draft without the format their kind needs, RDU-only fields included.
+    /// Values in the decided draft without the format their kind needs, and values over their
+    /// field's cap that the published project does not hold, RDU-only fields included.
     Format(Vec<Finding>),
     /// The decided draft is not a [`ProjectRaw`](shared_metadata::project::ProjectRaw).
     Unpublishable(DraftError),
@@ -407,8 +420,9 @@ pub enum ApproveRefusal {
 /// 4. every proposal this approval keeps passes the entity form's rules
 ///    ([`ApproveRefusal::ProposalIncomplete`]): the depositor can still edit a submitted proposal,
 ///    so the submit gate's check is not enough;
-/// 5. every value of the decided draft has its format ([`ApproveRefusal::Format`]), over every
-///    field: the depositor's submit skips the RDU-only ones, and nothing after approval checks;
+/// 5. every value of the decided draft has its format and is within its field's cap unless the
+///    published project holds it ([`ApproveRefusal::Format`]), RDU-only fields included: the
+///    depositor's submit skips those and nothing after approval checks them;
 /// 6. the decided draft converts to a project file ([`ApproveRefusal::Unpublishable`]): a
 ///    permissive draft can pass every check above and still fail to become one.
 ///
@@ -460,6 +474,7 @@ pub fn approval(
         sections_for(Audience::RduOnly).flat_map(|section| section.fields_for(Audience::RduOnly)),
         &decided,
         None,
+        Some(&published_draft(rows)),
     );
     if !findings.is_empty() {
         return Err(ApproveRefusal::Format(findings));
@@ -474,6 +489,8 @@ mod tests {
     use serde_json::json;
 
     use super::*;
+    use crate::form::format::FindingKind;
+    use crate::form::registry::SHORT_DESCRIPTION_MAX;
 
     fn draft(value: serde_json::Value) -> ProjectDraft {
         serde_json::from_value(value).expect("an object deserializes as a draft")
@@ -676,5 +693,44 @@ mod tests {
         let fields = vec!["name".to_string(), "abstract".to_string()];
         assert_eq!(state.count(&fields, Decision::Accept), 1);
         assert_eq!(state.count(&fields, Decision::Revert), 1);
+    }
+
+    fn approve(published: Option<&ProjectDraft>, edited: &str) -> Result<(), ApproveRefusal> {
+        let submitted = draft(json!({ "shortDescription": edited, "name": "N" }));
+        let rows = diff(published, &submitted);
+        let mut state = ReviewState::new();
+        for row in &rows {
+            state.set(&row.field, FieldReview { decision: Some(Decision::Accept), value: None });
+        }
+        approval(&submitted, &rows, &state, &[], &Agents::default())
+    }
+
+    #[test]
+    fn test_an_rdu_edit_over_the_cap_is_refused_at_approval() {
+        let refusal = approve(None, &"a".repeat(SHORT_DESCRIPTION_MAX + 50)).expect_err("over the cap");
+        let ApproveRefusal::Format(findings) = refusal else {
+            panic!("expected Format, got {refusal:?}");
+        };
+        assert_eq!(findings[0].control, "shortDescription");
+        assert_eq!(findings[0].kind, FindingKind::TooLong { max: SHORT_DESCRIPTION_MAX });
+        assert!(!matches!(
+            approve(None, &"a".repeat(SHORT_DESCRIPTION_MAX)),
+            Err(ApproveRefusal::Format(_))
+        ));
+    }
+
+    #[test]
+    fn test_a_value_the_published_project_holds_over_the_cap_is_not_refused_at_approval() {
+        let long = "a".repeat(SHORT_DESCRIPTION_MAX + 50);
+        let published = draft(json!({ "shortDescription": long, "name": "Old" }));
+        let submitted = draft(json!({ "shortDescription": long, "name": "N" }));
+        let rows = diff(Some(&published), &submitted);
+        let mut state = ReviewState::new();
+        state.set("name", FieldReview { decision: Some(Decision::Accept), value: None });
+        let result = approval(&submitted, &rows, &state, &[], &Agents::default());
+        assert!(!matches!(result, Err(ApproveRefusal::Format(_))), "{result:?}");
+
+        let edited = approve(Some(&published), &"b".repeat(250));
+        assert!(matches!(edited, Err(ApproveRefusal::Format(_))), "{edited:?}");
     }
 }

@@ -1,24 +1,27 @@
 //! The label / hint / error wrapper every form tile renders around its control.
 //!
 //! Private to `form`: not a tile, and no showcase. It owns the five things every
-//! form tile must keep in agreement — `id`, the label's `for`, the hint's and
-//! error's `id`, and the `aria-describedby` naming whichever of the last two
-//! exist — because a mismatch between them is silent: the field still renders,
+//! form tile must keep in agreement — `id`, the label's `for`, the hint's,
+//! counter's and error's `id`, and the `aria-describedby` naming whichever of
+//! the last three exist — because a mismatch between them is silent: the field still renders,
 //! it stops being announced correctly, and a test asserting the attribute is
 //! present still passes.
 //!
-//! It is a struct rather than a function taking five arguments because three of
+//! It is a struct rather than a function taking six arguments because three of
 //! them are `Option<&Markup>`, and adjacent optional arguments of one type are
 //! silently swappable — a hint rendered where an error belongs.
 
 use maud::{html, Markup};
 
-/// One field's label, hint and error, and the ids that tie them together.
+/// One field's label, hint, counter and error, and the ids that tie them together.
 pub(super) struct FieldShell<'a> {
     /// The control's `id`, and the stem the hint and error ids are derived from.
     pub id: &'a str,
     pub label: &'a Markup,
     pub hint: Option<&'a Markup>,
+    /// Caller-supplied counter content, in a `.field-counter` slot the control is
+    /// described by.
+    pub counter: Option<&'a Markup>,
     pub error: Option<&'a Markup>,
     /// Keep the label for assistive technology but take no row of the `.field`
     /// flex column.
@@ -30,6 +33,10 @@ impl<'a> FieldShell<'a> {
         self.hint.map(|_| format!("{}-hint", self.id))
     }
 
+    pub fn counter_id(&self) -> Option<String> {
+        self.counter.map(|_| format!("{}-counter", self.id))
+    }
+
     /// The error region's id. Always present, because the region always is —
     /// see [`Self::render`].
     pub fn error_id(&self) -> String {
@@ -39,15 +46,18 @@ impl<'a> FieldShell<'a> {
     /// What the control's `aria-describedby` should be, or `None` when there is
     /// nothing to describe it by.
     ///
-    /// Hint before error, matching the order they appear in: the description
-    /// then reads the way a person would say it, where the reverse states a
+    /// Hint, counter, error, matching the order they appear in: the description
+    /// then reads the way a person would say it, where an error first states a
     /// problem about a field not yet described.
     pub fn described_by(&self) -> Option<String> {
-        match (self.hint_id(), self.error) {
-            (Some(hint), Some(_)) => Some(format!("{hint} {}", self.error_id())),
-            (Some(hint), None) => Some(hint),
-            (None, Some(_)) => Some(self.error_id()),
-            (None, None) => None,
+        let ids: Vec<String> = [self.hint_id(), self.counter_id(), self.error.map(|_| self.error_id())]
+            .into_iter()
+            .flatten()
+            .collect();
+        if ids.is_empty() {
+            None
+        } else {
+            Some(ids.join(" "))
         }
     }
 
@@ -58,8 +68,8 @@ impl<'a> FieldShell<'a> {
         self.error.map(|_| "true")
     }
 
-    /// The field: its label, the `control` markup, the hint, and the error
-    /// region.
+    /// The field: its label, the `control` markup, the hint, the counter, and
+    /// the error region.
     ///
     /// The error region is rendered **even when there is no error**. An
     /// `aria-live` region announces a *change* to content it already contains,
@@ -74,6 +84,7 @@ impl<'a> FieldShell<'a> {
     /// public content slot.
     pub fn render(&self, control: Markup) -> Markup {
         let hint_id = self.hint_id();
+        let counter_id = self.counter_id();
         let label_class = if self.label_hidden {
             "field-label sr-only"
         } else {
@@ -85,6 +96,9 @@ impl<'a> FieldShell<'a> {
                 (control)
                 @if let Some(hint) = self.hint {
                     p class="field-hint" id=[hint_id.as_deref()] { (hint) }
+                }
+                @if let Some(counter) = self.counter {
+                    div class="field-counter" id=[counter_id.as_deref()] { (counter) }
                 }
                 p class="field-error" id=(self.error_id()) aria-live="polite" {
                     @if let Some(error) = self.error { (error) }
@@ -116,7 +130,14 @@ pub(super) fn group_shell(
     error: Option<&Markup>,
     controls: Markup,
 ) -> Markup {
-    let shell = FieldShell { id, label: legend, hint, error, label_hidden: false };
+    let shell = FieldShell {
+        id,
+        label: legend,
+        hint,
+        counter: None,
+        error,
+        label_hidden: false,
+    };
     let hint_id = shell.hint_id();
     let described_by = shell.described_by();
     html! {
@@ -162,6 +183,7 @@ mod tests {
             hint: None,
             error: None,
             label_hidden: false,
+            counter: None,
         };
         assert_eq!(shell.described_by(), None);
         assert_eq!(shell.aria_invalid(), None);
@@ -177,9 +199,26 @@ mod tests {
             hint: Some(&hint),
             error: Some(&error),
             label_hidden: false,
+            counter: None,
         };
         assert_eq!(shell.described_by().as_deref(), Some("codes-hint codes-error"));
         assert_eq!(shell.aria_invalid(), Some("true"));
+    }
+
+    #[test]
+    fn a_counter_is_named_between_the_hint_and_the_error() {
+        let hint = markup("Up to 200 characters.");
+        let counter = markup("200 left");
+        let error = markup("Too long.");
+        let shell = FieldShell {
+            id: "short",
+            label: &label(),
+            hint: Some(&hint),
+            counter: Some(&counter),
+            error: Some(&error),
+            label_hidden: false,
+        };
+        assert_eq!(shell.described_by().as_deref(), Some("short-hint short-counter short-error"));
     }
 
     #[test]
@@ -190,6 +229,7 @@ mod tests {
             hint: None,
             error: None,
             label_hidden: false,
+            counter: None,
         };
         let out = shell
             .render(html! {
@@ -247,6 +287,7 @@ mod tests {
             hint: None,
             error: None,
             label_hidden: false,
+            counter: None,
         };
         let out = shell
             .render(html! {

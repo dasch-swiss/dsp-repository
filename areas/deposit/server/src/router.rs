@@ -15,7 +15,14 @@
 //! handlers, and the one deliberate exception is the session's idle-timeout
 //! touch in `identity-core`'s session rules.
 
+use axum::extract::DefaultBodyLimit;
 use axum::Router;
+
+/// Request body cap on the traced routes. The largest committed project (29 KB of JSON)
+/// form-encodes to about 40 KB as a whole and a request posts one section or one entity, so this
+/// leaves headroom while replacing axum's 2 MiB default, now that the text inputs carry no
+/// `maxlength`.
+const MAX_REQUEST_BODY: usize = 256 * 1024;
 
 /// The whole app: the traced router plus the routes that must stay untraced,
 /// with the CSRF middleware and then the security headers wrapped around all of
@@ -80,9 +87,9 @@ pub(crate) fn build_app(identity: Router, editor: Router, css_href: String, publ
 /// Assemble the traced app router: the editor's routes merged with identity's. Static assets are
 /// served from `public_dir`, falling back to the app's 404.
 ///
-/// Every route in `editor` and `identity` is wrapped by the OTel layers. Routes that must stay
-/// **untraced** — `/healthz` and the telemetry beacon — are added by [`build_app`] after this
-/// returns.
+/// Every route in `editor` and `identity` is wrapped by the body limit and the OTel layers. Routes
+/// that must stay **untraced** — `/healthz` and the telemetry beacon — are added by [`build_app`]
+/// after this returns, so they are outside the body limit too.
 fn build_router(identity: Router, editor: Router, css_href: String, public_dir: &std::path::Path) -> Router {
     use axum::routing::get;
     use axum_tracing_opentelemetry::middleware::{OtelAxumLayer, OtelInResponseLayer};
@@ -95,6 +102,8 @@ fn build_router(identity: Router, editor: Router, css_href: String, public_dir: 
         .merge(identity)
         // Static assets + 404 fallback.
         .fallback_service(serve_dir)
+        // --- Body limit: enforced by the extractor that reads the body (`Form`) ---
+        .layer(DefaultBodyLimit::max(MAX_REQUEST_BODY))
         // --- OTel layers ---
         // Axum layers wrap in reverse declaration order:
         // - OtelInResponseLayer (declared first) runs INNER — injects traceparent into response headers
@@ -346,6 +355,35 @@ mod tests {
             .body(Body::from("email=nobody@example.test"))
             .unwrap();
         assert_eq!(app.oneshot(other).await.unwrap().status(), StatusCode::SEE_OTHER);
+    }
+
+    fn login_post(forwarded_for: &str, body: String) -> Request<Body> {
+        Request::builder()
+            .method("POST")
+            .uri("/login")
+            .header("x-forwarded-for", forwarded_for)
+            .header("sec-fetch-site", "same-origin")
+            .header("content-type", "application/x-www-form-urlencoded")
+            .body(Body::from(body))
+            .unwrap()
+    }
+
+    #[tokio::test]
+    async fn a_form_body_over_the_limit_is_refused_and_a_normal_one_is_not() {
+        // The limit is enforced when `Form` reads the body, so this goes through
+        // the whole `build_app` stack to show CSRF and the other layers do not
+        // change the answer.
+        let app = app(test_state("body-limit").await.0);
+
+        let oversized = format!("email={}", "a".repeat(super::MAX_REQUEST_BODY + 1));
+        let response = app.clone().oneshot(login_post("203.0.113.210", oversized)).await.unwrap();
+        assert_eq!(response.status(), StatusCode::PAYLOAD_TOO_LARGE);
+
+        let response = app
+            .oneshot(login_post("203.0.113.211", "email=nobody@example.test".to_string()))
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::PAYLOAD_TOO_LARGE);
     }
 
     #[tokio::test]

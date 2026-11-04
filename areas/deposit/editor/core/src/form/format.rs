@@ -1,4 +1,5 @@
-//! Format rules: whether a stored value has the shape its kind of value needs.
+//! Format and length rules: whether a stored value has the shape its kind of value
+//! needs, and whether a capped field's value stays within its cap.
 //!
 //! A finding never stops a value being stored. The appliers keep what was typed, a
 //! finding is computed from the draft whenever the form renders, and only submit
@@ -105,30 +106,65 @@ pub const PLAN_LINK: &[Member] = &[Member {
 /// The address of each authority reference in a field's rows.
 pub const REFERENCE_LINK: &[Member] = &[Member { posted: "ref.url", stored: &["url"], kind: ValueKind::Link }];
 
-/// One value without the format its kind needs.
+/// What a [`Finding`] found fault with.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FindingKind {
+    Format(ValueKind),
+    /// A value longer than its field's [`Field::max_chars`], which `max` carries.
+    TooLong {
+        max: usize,
+    },
+}
+
+/// One value without the format its kind needs, or longer than its field allows.
 #[derive(Debug, Clone)]
 pub struct Finding {
     pub field: &'static Field,
     /// The name of the control showing the value, which is where the finding is
     /// rendered.
     pub control: String,
-    pub kind: ValueKind,
+    pub kind: FindingKind,
 }
 
-/// Every finding in `fields`, from the values `draft` holds.
+/// Every finding in `fields`, from the values `draft` holds, in form order (field,
+/// then stored or row position).
 ///
 /// A row's control is named by its row key, so the key decides where a finding
 /// renders. A render from `posted` names its rows by the posted keys, and a blank
 /// row there is never stored, so a stored position is no key: each posted row is
 /// matched to the stored values by its own value. Without a posted body the rows
 /// are named by [`stored_row_key`], as the form names them.
+///
+/// A value equal to the one `published` holds for the same field is never too long,
+/// so a project published over the cap keeps submitting its other changes; `None`
+/// means nothing is published. Characters are Unicode scalar values, never UTF-16
+/// units.
 #[must_use]
 pub fn findings(
     fields: impl Iterator<Item = &'static Field>,
     draft: &ProjectDraft,
     posted: Option<&FormBody>,
+    published: Option<&ProjectDraft>,
 ) -> Vec<Finding> {
-    findings_by(fields, draft, posted, |field| field.format, ValueKind::accepts)
+    fields
+        .flat_map(|field| {
+            let mut found =
+                findings_by(std::iter::once(field), draft, posted, |field| field.format, ValueKind::accepts);
+            found.extend(too_long(field, draft, published));
+            found
+        })
+        .collect()
+}
+
+fn too_long(field: &'static Field, draft: &ProjectDraft, published: Option<&ProjectDraft>) -> Option<Finding> {
+    let max = field.max_chars?;
+    let value = draft.get(field.id).and_then(Value::as_str)?;
+    let held = published.and_then(|published| published.get(field.id)).and_then(Value::as_str);
+    (value.chars().count() > max && held != Some(value)).then(|| Finding {
+        field,
+        control: field.id.to_string(),
+        kind: FindingKind::TooLong { max },
+    })
 }
 
 /// The name of the control a row's `member` posts under, or, for a field without
@@ -167,11 +203,11 @@ fn findings_by(
                     .into_iter()
                     .collect()
             };
-            found.extend(
-                controls
-                    .into_iter()
-                    .map(|control| Finding { field, control, kind: member.kind }),
-            );
+            found.extend(controls.into_iter().map(|control| Finding {
+                field,
+                control,
+                kind: FindingKind::Format(member.kind),
+            }));
         }
     }
     found
@@ -251,7 +287,7 @@ mod tests {
             .into_iter()
             .map(|finding| {
                 assert_eq!(finding.field.id, id);
-                assert_eq!(finding.kind, members[0].kind);
+                assert_eq!(finding.kind, FindingKind::Format(members[0].kind));
                 finding.control
             })
             .collect()

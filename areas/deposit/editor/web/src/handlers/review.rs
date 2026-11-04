@@ -73,8 +73,9 @@ const APPROVE_REFUSED_PROPOSAL: &str = "A proposed person or organisation this a
                                         rules of its form, so this cannot be approved. Reject the proposal or \
                                         request changes:";
 /// Not the whole message: the fields holding the values are appended.
-const APPROVE_REFUSED_FORMAT: &str = "Some values are not in the format they need, so this cannot be approved. \
-                                      Substitute a corrected value, revert the field, or request changes. Fields:";
+const APPROVE_REFUSED_FORMAT: &str = "Some values are not in the format they need or are longer than their limit, \
+                                      so this cannot be approved. Substitute a corrected value, revert the field, \
+                                      or request changes. Fields:";
 const NOTE_REQUIRED: &str = "A note is required: it is the only thing the depositor will see. Nothing was changed.";
 const FINISH_REFUSED_STORAGE: &str = "The review could not be recorded, so this submission is still in the queue. \
                                       Nothing was changed — try again, and if it keeps happening the service needs \
@@ -503,7 +504,7 @@ async fn finish(
                 ApproveRefusal::Format(findings) => {
                     let fields = labels_once(findings.iter().map(|finding| finding.field));
                     span.record("review.outcome", "format");
-                    tracing::info!(review.format_fields = ?fields, "refused an approval holding a value without its format");
+                    tracing::info!(review.format_fields = ?fields, "refused an approval holding a value without its format or over its limit");
                     format!("{APPROVE_REFUSED_FORMAT} {}.", fields.join(", "))
                 }
                 ApproveRefusal::Unpublishable(error) => {
@@ -1129,6 +1130,7 @@ const SURFACE: StorageSurface = StorageSurface {
 mod tests {
     use axum::body::Body;
     use axum::http::Request;
+    use editor_core::form::registry::SHORT_DESCRIPTION_MAX;
     use editor_core::proposals::ProposalDecision;
     use editor_core::review::DECISION_PREFIX;
     use editor_ports::Role;
@@ -2297,9 +2299,7 @@ mod tests {
     async fn the_in_place_editor_is_the_control_the_depositor_form_renders() {
         // Not a second dispatch. Keying off whether the value happens to hold a
         // newline would render `startDate` as free text where the form gives a
-        // date picker, and lose `shortDescription` the 200-character cap its own
-        // hint promises — with nothing server-side to catch either, because the
-        // cap is an HTML attribute.
+        // date picker, and lose `shortDescription` the form's live character counter.
         let (state, _) = test_state("review-controls").await;
         let (_, session) = a_reviewer(&state, "rdu@dasch.swiss", "A Reviewer").await;
         a_submission(
@@ -2313,7 +2313,7 @@ mod tests {
 
         let body = body_string(as_session(&app, get("/review/0801d"), &session).await).await;
         assert!(body.contains(r#"id="startDate" name="startDate" type="date""#), "{body}");
-        assert!(body.contains(r#"maxlength="200""#), "{body}");
+        assert!(body.contains(r#"data-signals="{_count_shortDescription: "#), "{body}");
     }
 
     #[tokio::test]
@@ -2391,6 +2391,36 @@ mod tests {
             .unwrap()
             .unwrap();
         assert_eq!(after.payload, submission.payload, "the submitted payload is never rewritten");
+    }
+
+    #[tokio::test]
+    async fn an_in_place_edit_over_the_cap_re_renders_with_the_error_at_the_control() {
+        let (state, _) = test_state("review-edit-too-long").await;
+        let (_, session) = a_reviewer(&state, "rdu@dasch.swiss", "A Reviewer").await;
+        a_submission(&state, "0801d", None, json!({ "shortDescription": "A short teaser" })).await;
+        let app = test_app(&state);
+
+        let save = format!(
+            "intent=save&decision.shortDescription=accept&shortDescription={}",
+            "x".repeat(SHORT_DESCRIPTION_MAX + 50)
+        );
+        let saved = as_session(&app, post("/review/0801d", &save), &session).await;
+        let body = match location(&saved) {
+            Some(target) => body_string(as_session(&app, get(&target), &session).await).await,
+            None => body_string(saved).await,
+        };
+
+        let textarea = body
+            .split("<textarea")
+            .find(|textarea| textarea.contains(r#"name="shortDescription""#))
+            .expect("the in-place control");
+        assert!(textarea.contains(r#"aria-invalid="true""#), "{body}");
+        assert!(
+            body.contains(&format!(
+                "Short description must be {SHORT_DESCRIPTION_MAX} characters or fewer."
+            )),
+            "{body}"
+        );
     }
 
     #[tokio::test]

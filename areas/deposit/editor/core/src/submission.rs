@@ -9,7 +9,8 @@
 //! 3. every agent reference resolves ([`SubmitRefusal::UnknownAgent`]);
 //! 4. the project's own live proposals are complete ([`SubmitRefusal::ProposalIncomplete`]);
 //! 5. no typed placeholder sentinel is left ([`SubmitRefusal::Sentinel`]);
-//! 6. every value has the format its kind needs ([`SubmitRefusal::Format`]);
+//! 6. every value has the format its kind needs and is within its field's cap unless already
+//!    published ([`SubmitRefusal::Format`]);
 //! 7. every data language is a listed code or already published
 //!    ([`SubmitRefusal::UnlistedLanguage`]);
 //! 8. every `temporalCoverage` entry resolves to a structured date ([`SubmitRefusal::Invalid`]);
@@ -56,7 +57,8 @@ pub enum SubmitRefusal {
     ProposalIncomplete(Vec<ProposalProblem>),
     /// Fields holding a placeholder sentinel the depositor typed.
     Sentinel(Vec<&'static Field>),
-    /// Values without the format their kind needs, in form order, each keyed by
+    /// Values without the format their kind needs and values over their field's cap
+    /// that the published project does not hold, in form order, each keyed by
     /// stored position.
     Format(Vec<Finding>),
     /// Data-language values that are neither a listed code nor already published, with their field.
@@ -140,6 +142,7 @@ pub fn check(
         sections_for(audience).flat_map(|section| section.fields_for(audience)),
         draft,
         None,
+        published,
     );
     if !findings.is_empty() {
         return Err(SubmitRefusal::Format(findings));
@@ -224,6 +227,8 @@ mod tests {
     use uuid::Uuid;
 
     use super::*;
+    use crate::form::format::FindingKind;
+    use crate::form::registry::SHORT_DESCRIPTION_MAX;
     use crate::proposals::{ProposalFault, ProposalKind, ProposalOperation, ProposalStatus};
     use crate::test_support::sample_raw;
 
@@ -457,6 +462,88 @@ mod tests {
             };
             let controls: Vec<&str> = findings.iter().map(|finding| finding.control.as_str()).collect();
             assert_eq!(controls, expected, "{audience:?}");
+        }
+    }
+
+    fn with_short_description(text: &str) -> ProjectDraft {
+        let mut draft = ProjectDraft::from_raw(&sample_raw());
+        draft.set("shortDescription", json!(text));
+        draft
+    }
+
+    fn refused_as_too_long(draft: &ProjectDraft, published: Option<&ProjectDraft>) -> bool {
+        match check(
+            Audience::Everyone,
+            draft,
+            &committed_agents(),
+            &[],
+            &periods(),
+            &HashMap::new(),
+            published,
+        ) {
+            Err(SubmitRefusal::Format(findings)) => {
+                assert_eq!(findings.len(), 1);
+                assert_eq!(findings[0].field.id, "shortDescription");
+                assert_eq!(findings[0].control, "shortDescription");
+                assert_eq!(findings[0].kind, FindingKind::TooLong { max: SHORT_DESCRIPTION_MAX });
+                true
+            }
+            _ => false,
+        }
+    }
+
+    #[test]
+    fn a_short_description_over_its_cap_is_refused_and_one_at_it_is_not() {
+        assert!(refused_as_too_long(
+            &with_short_description(&"a".repeat(SHORT_DESCRIPTION_MAX + 1)),
+            None
+        ));
+        assert!(!refused_as_too_long(
+            &with_short_description(&"a".repeat(SHORT_DESCRIPTION_MAX)),
+            None
+        ));
+    }
+
+    #[test]
+    fn the_cap_counts_scalar_values_not_bytes() {
+        assert!(!refused_as_too_long(
+            &with_short_description(&"é".repeat(SHORT_DESCRIPTION_MAX)),
+            None
+        ));
+        assert!(!refused_as_too_long(
+            &with_short_description(&"😀".repeat(SHORT_DESCRIPTION_MAX)),
+            None
+        ));
+        assert!(refused_as_too_long(
+            &with_short_description(&"😀".repeat(SHORT_DESCRIPTION_MAX + 1)),
+            None
+        ));
+    }
+
+    /// `0850_martcult` and `0101_religious-speech` are published over the cap and must
+    /// keep submitting their other changes.
+    #[test]
+    fn a_short_description_the_published_project_holds_over_the_cap_is_not_refused() {
+        let dir = crate::checkout_dpe_data_dir().join("projects");
+        let (published, errors) = crate::published::PublishedProjects::load_from(&dir);
+        assert!(errors.is_empty(), "{errors:?}");
+        for shortcode in ["0850", "0101"] {
+            let project = ProjectDraft::from_raw(published.get(shortcode).expect("a committed project"));
+            let text = project
+                .get("shortDescription")
+                .and_then(serde_json::Value::as_str)
+                .expect("a short description")
+                .to_string();
+            assert!(
+                text.chars().count() > SHORT_DESCRIPTION_MAX,
+                "{shortcode} is published over the cap"
+            );
+
+            assert!(!refused_as_too_long(&project, Some(&project)), "{shortcode} unchanged");
+            assert!(refused_as_too_long(&project, None), "{shortcode} unpublished");
+
+            let other = with_short_description("A different published one.");
+            assert!(refused_as_too_long(&project, Some(&other)), "{shortcode} edited");
         }
     }
 }

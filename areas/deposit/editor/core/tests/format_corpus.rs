@@ -30,9 +30,10 @@ fn draft_of(path: &PathBuf) -> ProjectDraft {
     ProjectDraft::from_raw(&raw)
 }
 
-/// The controls of `draft` holding a finding, over every field: RDU sees them all.
+/// The controls of `draft` holding a finding, over every field. A committed project is its own
+/// published side, so a value published over its cap is no finding.
 fn controls(draft: &ProjectDraft) -> Vec<String> {
-    findings(FIELDS.iter(), draft, None)
+    findings(FIELDS.iter(), draft, None, Some(draft))
         .into_iter()
         .map(|finding| finding.control)
         .collect()

@@ -227,6 +227,7 @@ impl ComboboxBuilder {
             hint: self.hint.as_ref(),
             error: None,
             label_hidden: self.label_hidden,
+            counter: None,
         };
         let described_by = shell.described_by();
         let results_id = self.results_id.clone().unwrap_or_else(|| default_results_id(id));

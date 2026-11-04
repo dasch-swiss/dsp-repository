@@ -19,11 +19,14 @@ use editor_core::disciplines::{self, snsf_text, SnsfDiscipline};
 use editor_core::draft::{ProjectDraft, UrlSlot};
 use editor_core::form::format::{Finding, ValueKind};
 use editor_core::form::registry::{source_label, Field, Obligation};
+use editor_core::form::submit::LineWithoutLanguage;
 use editor_core::form::{
     stored_kind, stored_row_key, ChoiceSet, FormBody, Shape, GRANTS_KIND, MAX_VALUES_PER_FIELD, REFERENCE_KIND,
     SNSF_KIND, TEXT_KIND,
 };
-use editor_core::multilingual::{as_multilingual, is_language_map, is_language_tag, DraftMultilingual, UI_LANGUAGES};
+use editor_core::multilingual::{
+    as_multilingual, is_language_map, normalized_language_tag, DraftMultilingual, UI_LANGUAGES,
+};
 use editor_core::vocabulary::{self, List};
 use maud::{html, Markup, Render};
 use mosaic_tiles::badge::{badge, BadgeVariant};
@@ -360,6 +363,10 @@ pub struct Rows<'a> {
     /// The control that takes focus, by name: the first holding a finding on a refused submit's
     /// re-render.
     pub focus: Option<&'a str>,
+    /// Language-row lines posted with text and no language, each flagged on its select. Set only
+    /// by the render that answers a save or submit holding one; see
+    /// [`editor_core::form::submit::lines_without_language`].
+    pub without_language: &'a [LineWithoutLanguage],
 }
 
 /// The keys of the rows to render for `field`, in display order: from the posted
@@ -482,14 +489,17 @@ fn stored_rows<'a>(field: &Field, draft: &'a ProjectDraft) -> Vec<&'a Value> {
 /// and tags from the other shows a value the depositor did not type. A `Vec`, not
 /// a language map, so a tag repeated within a row stays two lines until the
 /// applier splits it.
+///
+/// A posted line with no language code keeps its text under an empty tag, which renders the
+/// select's placeholder: the autosave fires before the depositor reaches the select, and
+/// dropping the line would erase what they typed.
 fn row_lines(field: &Field, draft: &ProjectDraft, rows: Rows<'_>, key: &str, position: usize) -> Vec<(String, String)> {
     let row_name = format!("{}.row", field.id);
     let mut lines: Vec<(String, String)> = match rows.posted {
         Some(body) if body.has(&row_name) => body
             .all(&format!("{}.{key}.lang", field.id))
             .zip(body.all(&format!("{}.{key}.text", field.id)))
-            .map(|(tag, text)| (tag.trim().to_ascii_lowercase(), text.to_string()))
-            .filter(|(tag, _)| is_language_tag(tag))
+            .map(|(tag, text)| (normalized_language_tag(tag).unwrap_or_default(), text.to_string()))
             .take(MAX_VALUES_PER_FIELD)
             .collect(),
         _ => stored_rows(field, draft)
@@ -503,12 +513,10 @@ fn row_lines(field: &Field, draft: &ProjectDraft, rows: Rows<'_>, key: &str, pos
             .unwrap_or_default(),
     };
     if lines.is_empty() {
-        lines.push((BLANK_ROW_LANGUAGE.to_string(), String::new()));
+        lines.push((String::new(), String::new()));
     }
     lines
 }
-
-const BLANK_ROW_LANGUAGE: &str = "en";
 
 /// A list of single strings: one text control per row, sharing the row protocol
 /// with [`multilingual_rows`] and differing only in what a row contains.
@@ -2004,18 +2012,37 @@ fn row_noun(field: &Field) -> String {
     label.strip_suffix('s').map_or(label.clone(), str::to_string)
 }
 
+/// The language column's heading, which each select's accessible name starts with (WCAG 2.5.3,
+/// label in name); [`text_heading`] is the text column's.
+const LANGUAGE_HEADING: &str = "Language";
+
+/// The text column's heading: the last word of the field's row noun, so "Keyword" for Keywords and
+/// "Name" for Alternative names. Each text control's accessible name starts with it.
+fn text_heading(noun: &str) -> String {
+    capitalised(noun.rsplit(' ').next().unwrap_or(noun))
+}
+
+/// What an untagged line's select shows until a language is chosen. A tagged line has no such
+/// option: picking it would post an empty tag, and the applier drops the line.
+const CHOOSE_LANGUAGE: &str = "Choose language";
+
+const LANGUAGE_MISSING: &str = "Choose a language for this line.";
+
+/// Shared by the heading and every line so the two columns stay aligned.
+const LINE_COLUMNS: &str = "grid grid-cols-[minmax(0,1fr)_minmax(6rem,12rem)] items-start gap-2";
+
 /// A list of language maps: one row per map, each a text field and a language
 /// select per language the map holds, added and removed by server round-trip.
 ///
-/// A select offers [`UI_LANGUAGES`] plus its own line's tag: a tag with no option
-/// would post as whichever language the browser then selects. Lines stop at
+/// A select offers [`UI_LANGUAGES`] plus its own line's tag, and a line with no tag shows
+/// [`CHOOSE_LANGUAGE`]: a tag with no option would post as whichever language the browser then
+/// selects. Lines stop at
 /// [`MAX_VALUES_PER_FIELD`] across the field, as the applier's do.
 fn multilingual_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Markup {
     let mut keys = row_keys(field, draft, rows);
     keys.truncate(MAX_VALUES_PER_FIELD);
     let action = format!("{}/{}", rows.action, field.id);
     let noun = row_noun(field);
-    let name = capitalised(&noun);
     let mut budget = MAX_VALUES_PER_FIELD;
     let row_lines: Vec<Vec<(String, String)>> = keys
         .iter()
@@ -2027,59 +2054,45 @@ fn multilingual_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Mar
             (!lines.is_empty()).then_some(lines)
         })
         .collect();
+    let text_heading = text_heading(&noun);
+    let heading = html! {
+        div class=(LINE_COLUMNS) {
+            span class="field-label" { (text_heading) }
+            span class="field-label" { (LANGUAGE_HEADING) }
+        }
+    };
     let mut list = repeatable_list(field.id, labelled(field), &action)
         .item_noun(&noun)
-        .add_label(format!("Add {noun}"));
+        .add_label(format!("Add {noun}"))
+        .heading(heading);
     for (position, (key, lines)) in keys.iter().zip(&row_lines).enumerate() {
-        let prefix = format!("{}.{key}", field.id);
         let focus = is_added_row(field, rows, position, keys.len());
         list = list.row(
             key,
             html! {
                 div class="flex flex-col gap-2" data-init=[focus.then_some(FOCUS_AUTOFOCUS)] {
                     @for (line, (tag, text)) in lines.iter().enumerate() {
-                        @let suffix = if line == 0 {
-                            String::new()
-                        } else {
-                            format!(", translation {}", line + 1)
-                        };
-                        @let id = format!("{}-{key}-{line}", field.id);
-                        div class="flex flex-wrap items-end gap-2" {
-                            div {
-                                ({
-                                    select(
-                                            format!("{prefix}.lang"),
-                                            format!("Language of {noun} {}{suffix}", position + 1),
-                                        )
-                                        .options(
-                                            UI_LANGUAGES
-                                                .iter()
-                                                .copied()
-                                                .chain(
-                                                    (!UI_LANGUAGES.contains(&tag.as_str()))
-                                                        .then_some(tag.as_str()),
-                                                )
-                                                .map(|tag| (tag, language_name(tag))),
-                                        )
-                                        .selected(tag)
-                                        .with_id(format!("{id}-lang"))
-                                })
-                            }
-                            div class="grow min-w-0" {
-                                ({
-                                    let input = text_field(
-                                            format!("{prefix}.text"),
-                                            format!("{}{suffix}", row_label(&name, position)),
-                                        )
-                                        .input_type(InputType::Text)
-                                        .value(text)
-                                        .with_id(format!("{id}-text"));
-                                    match focus && line == 0 {
-                                        true => input.autofocus(),
-                                        false => input,
-                                    }
-                                })
-                            }
+                        ({
+                            language_line(
+                                field,
+                                rows,
+                                Line {
+                                    text_heading: &text_heading,
+                                    key,
+                                    position,
+                                    line,
+                                    tag,
+                                    text,
+                                    focus_text: focus && line == 0,
+                                },
+                            )
+                        })
+                    }
+                    @if lines.len() > 1 {
+                        p class="text-sm text-neutral-600" {
+                            "Remove deletes this "
+                            (noun)
+                            " in every language."
                         }
                     }
                 }
@@ -2091,6 +2104,76 @@ fn multilingual_rows(field: &Field, draft: &ProjectDraft, rows: Rows<'_>) -> Mar
     }
     html! {
         (list)
+    }
+}
+
+/// Which line of which language row [`language_line`] renders, and what it holds.
+struct Line<'a> {
+    text_heading: &'a str,
+    key: &'a str,
+    position: usize,
+    line: usize,
+    tag: &'a str,
+    text: &'a str,
+    /// The line a freshly added row opens on.
+    focus_text: bool,
+}
+
+/// One line of a language row.
+fn language_line(field: &Field, rows: Rows<'_>, parts: Line<'_>) -> Markup {
+    let Line { text_heading, key, position, line, tag, text, focus_text } = parts;
+    let suffix = if line == 0 {
+        String::new()
+    } else {
+        format!(", translation {}", line + 1)
+    };
+    let prefix = format!("{}.{key}", field.id);
+    let id = format!("{}-{key}-{line}", field.id);
+    let select_name = format!("{prefix}.lang");
+    let flagged = |other: &LineWithoutLanguage| other.control == select_name && other.line == line;
+    let missing = rows.without_language.iter().find(|other| flagged(other));
+    let focus_select = rows.without_language.first().is_some_and(flagged) && rows.focus == Some(select_name.as_str());
+    let input = text_field(
+        format!("{prefix}.text"),
+        format!("{}{suffix}", row_label(text_heading, position)),
+    )
+    .label_hidden()
+    .input_type(InputType::Text)
+    .value(text)
+    .with_id(format!("{id}-text"));
+    let input = if focus_text { input.autofocus() } else { input };
+    let language = select(select_name, format!("{}{suffix}", row_label(LANGUAGE_HEADING, position)))
+        .label_hidden()
+        .options(
+            UI_LANGUAGES
+                .iter()
+                .copied()
+                .chain((!tag.is_empty() && !UI_LANGUAGES.contains(&tag)).then_some(tag))
+                .map(|tag| (tag, language_name(tag))),
+        )
+        .selected(tag)
+        .with_id(format!("{id}-lang"));
+    let language = if tag.is_empty() {
+        language.placeholder(CHOOSE_LANGUAGE)
+    } else {
+        language
+    };
+    let language = match (missing.is_some(), focus_select) {
+        (false, _) => language,
+        (true, false) => language.error(LANGUAGE_MISSING),
+        (true, true) => language.error(LANGUAGE_MISSING).autofocus(),
+    };
+    html! {
+        div class=(LINE_COLUMNS) {
+            div class="min-w-0" { (input) }
+            div {
+                (language)
+                // Keeps the flag through the autosave that follows the save that set it.
+                @if let Some(missing) = missing {
+                    input type="hidden" name=(missing.marker()) value=(line);
+                }
+            }
+        }
     }
 }
 
@@ -2902,6 +2985,125 @@ mod tests {
     }
 
     #[test]
+    fn a_language_field_heads_its_two_columns_once_and_names_each_line_from_the_heading() {
+        let field = editor_core::form::registry::field("keywords").expect("keywords is a known field");
+        let mut draft = ProjectDraft::default();
+        draft.set(
+            "keywords",
+            serde_json::json!([{ "de": "Nomaden", "en": "Nomads" }, { "fr": "Livres" }]),
+        );
+        let out = multilingual_rows(field, &draft, Rows { action: "/x", ..Rows::default() }).into_string();
+
+        assert_eq!(out.matches(r#"<span class="field-label">Keyword</span>"#).count(), 1, "{out}");
+        assert_eq!(out.matches(r#"<span class="field-label">Language</span>"#).count(), 1, "{out}");
+        let heading = out.find("repeatable-heading").expect("the heading");
+        assert!(
+            heading < out.find("repeatable-row").expect("a row"),
+            "above every row's box: {out}"
+        );
+        assert_eq!(out.matches(r#"<label class="field-label sr-only" for="#).count(), 6, "{out}");
+        for label in [
+            "Keyword 1",
+            "Keyword 1, translation 2",
+            "Keyword 2",
+            "Language 1",
+            "Language 1, translation 2",
+            "Language 2",
+        ] {
+            assert_eq!(out.matches(&format!(">{label}</label>")).count(), 1, "{label}: {out}");
+        }
+        for line in ["keywords-r0-0", "keywords-r0-1", "keywords-r1-0"] {
+            let text = out.find(&format!(r#"id="{line}-text""#)).expect("a text control");
+            let language = out.find(&format!(r#"id="{line}-lang""#)).expect("a select");
+            assert!(text < language, "{line}: the text comes first: {out}");
+        }
+    }
+
+    #[test]
+    fn an_alternative_name_line_is_headed_and_named_name() {
+        let field = editor_core::form::registry::field("alternativeNames").expect("alternativeNames is a field");
+        let mut draft = ProjectDraft::default();
+        draft.set("alternativeNames", serde_json::json!([{ "en": "BEBB" }]));
+        let out = multilingual_rows(field, &draft, Rows { action: "/x", ..Rows::default() }).into_string();
+
+        assert_eq!(out.matches(r#"<span class="field-label">Name</span>"#).count(), 1, "{out}");
+        assert_eq!(out.matches(">Name 1</label>").count(), 1, "{out}");
+    }
+
+    #[test]
+    fn a_new_language_line_starts_on_the_placeholder_not_on_english() {
+        let field = editor_core::form::registry::field("keywords").expect("keywords is a known field");
+        let rows = Rows { action: "/x", adding: Some("keywords"), ..Rows::default() };
+        let out = multilingual_rows(field, &ProjectDraft::default(), rows).into_string();
+
+        assert!(out.contains(r#"<option value="" selected>Choose language</option>"#), "{out}");
+        assert!(!out.contains(r#"value="en" selected"#), "{out}");
+    }
+
+    #[test]
+    fn a_tagged_language_line_offers_no_empty_option() {
+        let field = editor_core::form::registry::field("keywords").expect("keywords is a known field");
+        let mut draft = ProjectDraft::default();
+        draft.set("keywords", serde_json::json!([{ "de": "BEBB" }]));
+        let out = multilingual_rows(field, &draft, Rows { action: "/x", ..Rows::default() }).into_string();
+
+        assert!(!out.contains(r#"<option value="""#), "{out}");
+        assert!(out.contains(r#"value="de" selected"#), "{out}");
+    }
+
+    #[test]
+    fn only_a_row_of_several_languages_says_remove_takes_them_all() {
+        let field = editor_core::form::registry::field("alternativeNames").expect("alternativeNames is a field");
+        let cue = "Remove deletes this alternative name in every language.";
+        let mut draft = ProjectDraft::default();
+        draft.set("alternativeNames", serde_json::json!([{ "de": "Nomaden", "en": "Nomads" }]));
+        let two = multilingual_rows(field, &draft, Rows { action: "/x", ..Rows::default() }).into_string();
+        assert_eq!(two.matches(cue).count(), 1, "{two}");
+
+        draft.set("alternativeNames", serde_json::json!([{ "en": "Nomads" }]));
+        let one = multilingual_rows(field, &draft, Rows { action: "/x", ..Rows::default() }).into_string();
+        assert!(!one.contains("in every language"), "{one}");
+    }
+
+    #[test]
+    fn a_flagged_line_marks_its_select_and_takes_focus() {
+        use editor_core::form::submit::lines_without_language;
+
+        let field = editor_core::form::registry::field("keywords").expect("keywords is a known field");
+        let body = editor_core::form::FormBody::from_pairs(vec![
+            ("keywords.row".to_string(), "r0".to_string()),
+            ("keywords.r0.lang".to_string(), "en".to_string()),
+            ("keywords.r0.text".to_string(), "manuscripts".to_string()),
+            ("keywords.r0.lang".to_string(), String::new()),
+            ("keywords.r0.text".to_string(), "Handschriften".to_string()),
+        ]);
+        let section = editor_core::form::registry::section("dataset").expect("dataset");
+        let flagged = lines_without_language(editor_core::form::registry::Audience::Everyone, section, &[], &body);
+        let focus = flagged.first().map(|line| line.control.as_str());
+        let rows = Rows {
+            action: "/x",
+            posted: Some(&body),
+            without_language: &flagged,
+            focus,
+            ..Rows::default()
+        };
+        let out = multilingual_rows(field, &ProjectDraft::default(), rows).into_string();
+
+        assert_eq!(out.matches("Choose a language for this line.").count(), 1, "{out}");
+        assert_eq!(out.matches(r#"aria-invalid="true""#).count(), 1, "{out}");
+        assert_eq!(
+            out.matches(r#"<input type="hidden" name="keywords.r0.lang-missing" value="1">"#)
+                .count(),
+            1,
+            "the flagged line posts its marker, so the next autosave keeps the flag: {out}"
+        );
+        assert_eq!(out.matches(" autofocus").count(), 1, "{out}");
+        let second_line = out.find(r#"id="keywords-r0-1-lang""#).expect("the second line's select");
+        assert!(out[second_line..].contains("autofocus"), "{out}");
+        assert!(out[second_line..].contains(r#"aria-invalid="true""#), "{out}");
+    }
+
+    #[test]
     fn the_keyword_row_an_add_just_appended_takes_focus() {
         let field = editor_core::form::registry::field("keywords").expect("keywords is a known field");
         let draft = ProjectDraft::default();
@@ -3190,6 +3392,7 @@ mod tests {
             format_findings: &[],
             propose: true,
             focus: None,
+            without_language: &[],
             search_path: None,
             vocabulary_path: None,
         };
@@ -3227,6 +3430,7 @@ mod tests {
             format_findings: &[],
             propose: false,
             focus: None,
+            without_language: &[],
             search_path: None,
             vocabulary_path: None,
         };
@@ -3335,6 +3539,7 @@ mod tests {
                 format_findings: &[],
                 propose: false,
                 focus: None,
+                without_language: &[],
                 search_path: None,
                 vocabulary_path: None,
             },
@@ -3401,6 +3606,7 @@ mod tests {
                 format_findings: &[],
                 propose: true,
                 focus: None,
+                without_language: &[],
                 search_path: None,
                 vocabulary_path: None,
             },
@@ -3437,6 +3643,7 @@ mod tests {
             format_findings: &[],
             propose: true,
             focus: None,
+            without_language: &[],
             search_path: None,
             vocabulary_path: None,
         };
@@ -3469,6 +3676,7 @@ mod tests {
             format_findings: &[],
             propose: true,
             focus: None,
+            without_language: &[],
             search_path: None,
             vocabulary_path: None,
         };
@@ -3500,6 +3708,7 @@ mod tests {
             format_findings: &[],
             propose: true,
             focus: None,
+            without_language: &[],
             search_path: None,
             vocabulary_path: None,
         };
@@ -3657,6 +3866,7 @@ mod tests {
                 format_findings: &[],
                 propose: true,
                 focus: None,
+                without_language: &[],
                 search_path: None,
                 vocabulary_path: None,
             };

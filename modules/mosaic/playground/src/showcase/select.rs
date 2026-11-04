@@ -51,6 +51,15 @@ fn examples() -> Markup {
                 error_state(),
             )
         })
+        ({
+            example(
+                "select-label-hidden",
+                "Titled by what surrounds it",
+                "`label_hidden` keeps the label as the control's accessible name but takes it out of the \
+                 layout, for a select whose visible title is a column header elsewhere.",
+                label_hidden(),
+            )
+        })
     }
 }
 
@@ -128,6 +137,23 @@ fn error_state() -> Markup {
                 .required()
                 .with_test_id("access-rights-select")
         })
+    };
+    form_column(fields)
+}
+
+fn label_hidden() -> Markup {
+    let fields = html! {
+        div class="flex flex-col gap-2" {
+            span class="field-label" { "Language" }
+            ({
+                select("language", "Language of the first name")
+                    .label_hidden()
+                    .placeholder("Choose a language…")
+                    .option("en", "English")
+                    .option("de", "German")
+                    .option("fr", "French")
+            })
+        }
     };
     form_column(fields)
 }

@@ -63,6 +63,7 @@ export const DEPOSITOR_SHORTCODES = [
   "E2E2",
   "0111",
   "0113",
+  "0115",
 ] as const;
 
 /** Row add/remove assertions. */
@@ -125,6 +126,8 @@ export const A11Y_STATES_SHORTCODE = DEPOSITOR_SHORTCODES[12];
  * find its own save warned about that link.
  */
 export const REFUSED_SUBMIT_SHORTCODE = DEPOSITOR_SHORTCODES[13];
+/** A language-row line saved with no language. */
+export const LANGUAGE_ROWS_SHORTCODE = DEPOSITOR_SHORTCODES[14];
 
 const PORT = Number(process.env.EDITOR_E2E_PORT ?? 4101);
 export const BASE_URL = `http://127.0.0.1:${PORT}`;

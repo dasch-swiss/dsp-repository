@@ -223,6 +223,7 @@ fn every_form_section_a_depositor_sees_carries_none_of_the_forbidden_words() {
             submitted: None,
             adding_row: None,
             focus_finding: false,
+            without_language: Vec::new(),
             agents: Some(&scope),
             rows_action: format!("/projects/0801d/sections/{}/fields", section_def.id),
             // The approved box, shown while a release is awaited, is depositor-facing text too.
@@ -413,6 +414,7 @@ fn the_new_proposal_notice_names_no_id() {
             agents: Some(&scope),
             created: false,
             focus_finding: false,
+            without_language: Vec::new(),
             format_findings: Vec::new(),
             findings_elsewhere: Vec::new(),
             rows_action: format!("/projects/0801d/sections/{}/fields", section_def.id),
@@ -477,6 +479,7 @@ fn the_proposals_box_and_its_findings_name_each_proposal_and_carry_no_id() {
         agents: Some(&scope),
         created: false,
         focus_finding: false,
+        without_language: Vec::new(),
         format_findings: Vec::new(),
         findings_elsewhere: Vec::new(),
         rows_action: format!("/projects/0801d/sections/{}/fields", section_def.id),

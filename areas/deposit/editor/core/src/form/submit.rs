@@ -13,6 +13,7 @@ use crate::agents::AgentScope;
 use crate::draft::ProjectDraft;
 use crate::form::{language_parts, ChoiceSet, FormBody, Shape, WhenCleared, MAX_VALUES_PER_FIELD};
 use crate::languages::canonical_code;
+use crate::multilingual::normalized_language_tag;
 
 /// Every field whose stored value is a placeholder sentinel the editor could not
 /// have written there, which leaves one way for it to have arrived: a depositor
@@ -198,6 +199,81 @@ pub fn over_cap(audience: Audience, section: &Section, body: &FormBody) -> Vec<&
             ) => body.exceeds_all(&format!("{}.row", field.id), MAX_VALUES_PER_FIELD),
         })
         .collect()
+}
+
+/// One line of a [`Shape::MultilingualRows`] field that has text and no language.
+#[derive(Debug, Clone)]
+pub struct LineWithoutLanguage {
+    /// The line's position within its row.
+    pub line: usize,
+    /// The name its language select posts under, which is where an error on the line renders.
+    pub control: String,
+}
+
+impl LineWithoutLanguage {
+    /// The hidden field a flagged line posts, its value the line's position: what keeps the flag
+    /// through the next autosave, which re-renders the form after the save that set it.
+    #[must_use]
+    pub fn marker(&self) -> String {
+        format!("{}-missing", self.control)
+    }
+}
+
+/// Every line of `section`'s multilingual-row fields with non-blank text and no language code,
+/// leaving out the `accepted` fields, which the applier skips.
+///
+/// Read from the body: the applier drops such a line, so the stored draft cannot say it was typed.
+#[must_use]
+pub fn lines_without_language(
+    audience: Audience,
+    section: &Section,
+    accepted: &[String],
+    body: &FormBody,
+) -> Vec<LineWithoutLanguage> {
+    lines_matching(audience, section, accepted, body, |_| true)
+}
+
+/// The lines of [`lines_without_language`] a save already flagged, by the
+/// [`LineWithoutLanguage::marker`] posted with them: an autosave or a row action keeps the flag
+/// until a language is chosen, and flags no line the depositor is still typing.
+#[must_use]
+pub fn lines_still_without_language(
+    audience: Audience,
+    section: &Section,
+    accepted: &[String],
+    body: &FormBody,
+) -> Vec<LineWithoutLanguage> {
+    lines_matching(audience, section, accepted, body, |line| {
+        body.all(&line.marker()).any(|value| value == line.line.to_string())
+    })
+}
+
+fn lines_matching(
+    audience: Audience,
+    section: &Section,
+    accepted: &[String],
+    body: &FormBody,
+    keep: impl Fn(&LineWithoutLanguage) -> bool,
+) -> Vec<LineWithoutLanguage> {
+    let mut lines = Vec::new();
+    for field in section
+        .fields_for(audience)
+        .filter(|field| matches!(field.shape, Some(Shape::MultilingualRows)))
+        .filter(|field| !accepted.iter().any(|accepted| accepted == field.id))
+    {
+        for key in body.rows(field.id) {
+            let control = format!("{}.{key}.lang", field.id);
+            let tags = body.all(&control);
+            let texts = body.all(&format!("{}.{key}.text", field.id));
+            for (line, (tag, text)) in tags.zip(texts).enumerate() {
+                let found = LineWithoutLanguage { line, control: control.clone() };
+                if !text.trim().is_empty() && normalized_language_tag(tag).is_none() && keep(&found) {
+                    lines.push(found);
+                }
+            }
+        }
+    }
+    lines
 }
 
 /// Every agent-reference field holding an id that resolves to nobody, with the
@@ -538,6 +614,98 @@ mod tests {
                 .collect::<Vec<_>>(),
             ["keywords"]
         );
+    }
+
+    #[test]
+    fn a_line_with_text_and_no_language_is_flagged_and_a_blank_or_tagged_one_is_not() {
+        use crate::form::FormBody;
+
+        let dataset = crate::form::registry::section("dataset").expect("dataset");
+        let pairs = |lines: &[(&str, &str)]| {
+            let mut body = vec![("keywords.row".to_string(), "r0".to_string())];
+            for (tag, text) in lines {
+                body.push(("keywords.r0.lang".to_string(), (*tag).to_string()));
+                body.push(("keywords.r0.text".to_string(), (*text).to_string()));
+            }
+            FormBody::from_pairs(body)
+        };
+        let flagged = |lines: &[(&str, &str)]| {
+            lines_without_language(Audience::Everyone, dataset, &[], &pairs(lines))
+                .iter()
+                .map(|line| (line.control.clone(), line.line))
+                .collect::<Vec<_>>()
+        };
+
+        assert_eq!(
+            flagged(&[("en", "manuscripts"), ("", "Handschriften"), ("EN1", " x ")]),
+            [("keywords.r0.lang".to_string(), 1), ("keywords.r0.lang".to_string(), 2)]
+        );
+        assert!(flagged(&[("", ""), ("", "   "), (" EN ", "manuscripts")]).is_empty());
+    }
+
+    #[test]
+    fn after_a_save_only_a_marked_line_still_without_a_language_stays_flagged() {
+        use crate::form::FormBody;
+
+        let dataset = crate::form::registry::section("dataset").expect("dataset");
+        let body = |marker: &str, second_tag: &str| {
+            FormBody::from_pairs(
+                [
+                    ("keywords.row", "r0"),
+                    ("keywords.r0.lang", ""),
+                    ("keywords.r0.text", "typed, language not reached yet"),
+                    ("keywords.r0.lang", second_tag),
+                    ("keywords.r0.text", "flagged by the save"),
+                    ("keywords.r0.lang-missing", marker),
+                ]
+                .map(|(name, value)| (name.to_string(), value.to_string()))
+                .to_vec(),
+            )
+        };
+        let still = |body: &FormBody| {
+            lines_still_without_language(Audience::Everyone, dataset, &[], body)
+                .iter()
+                .map(|line| (line.marker(), line.line))
+                .collect::<Vec<_>>()
+        };
+
+        assert_eq!(still(&body("1", "")), [("keywords.r0.lang-missing".to_string(), 1)]);
+        assert!(still(&body("1", "de")).is_empty(), "a language was chosen");
+        assert!(still(&body("", "")).is_empty(), "nothing was flagged yet");
+    }
+
+    #[test]
+    fn a_tag_the_applier_stores_is_never_reported_and_one_it_drops_always_is() {
+        use crate::form::{apply_multilingual_rows, FormBody};
+
+        let dataset = crate::form::registry::section("dataset").expect("dataset");
+        let lines = [
+            ("en", "a"),
+            (" DE ", "b"),
+            ("Fr", "c"),
+            ("", "d"),
+            ("en1", "e"),
+            ("toolong", "f"),
+        ];
+        let mut body = vec![("keywords.row".to_string(), "r0".to_string())];
+        for (tag, text) in lines {
+            body.push(("keywords.r0.lang".to_string(), tag.to_string()));
+            body.push(("keywords.r0.text".to_string(), text.to_string()));
+        }
+        let body = FormBody::from_pairs(body);
+
+        let mut stored = ProjectDraft::default();
+        apply_multilingual_rows(&body, &mut stored, "keywords");
+        let stored_text = serde_json::to_string(&stored.get("keywords")).expect("serialises");
+        let reported: Vec<usize> = lines_without_language(Audience::Everyone, dataset, &[], &body)
+            .iter()
+            .map(|line| line.line)
+            .collect();
+
+        for (position, (_, text)) in lines.iter().enumerate() {
+            let is_stored = stored_text.contains(&format!("\"{text}\""));
+            assert_eq!(is_stored, !reported.contains(&position), "line {position} ({text})");
+        }
     }
 
     #[test]

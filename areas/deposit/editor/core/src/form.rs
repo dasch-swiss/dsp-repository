@@ -45,7 +45,7 @@ use shared_metadata::is_placeholder;
 use shared_metadata::utils::Multilingual;
 
 use crate::draft::{ProjectDraft, UrlSlot};
-use crate::multilingual::{is_language_tag, DraftMultilingual};
+use crate::multilingual::{normalized_language_tag, DraftMultilingual};
 use crate::{disciplines, languages};
 
 /// The longest a language tag may be, and the longest an opaque row key may be.
@@ -780,10 +780,9 @@ pub(crate) fn apply_multilingual_rows(body: &FormBody, draft: &mut ProjectDraft,
         let mut value = DraftMultilingual::new();
         for (tag, text) in lines {
             // Tag folded for the same reason as in `apply_multilingual`.
-            let tag = tag.trim().to_ascii_lowercase();
-            if !is_language_tag(&tag) {
+            let Some(tag) = normalized_language_tag(tag) else {
                 continue;
-            }
+            };
             // Looked up by text across every row, not by position: a row key is
             // opaque and need not map to a position.
             let text = match unchanged_in(&stored, &tag, text) {

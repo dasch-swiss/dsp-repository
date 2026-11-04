@@ -357,6 +357,7 @@ impl EntityView<'_> {
             search_path,
             vocabulary_path: None,
             focus: None,
+            without_language: &[],
         }
     }
 

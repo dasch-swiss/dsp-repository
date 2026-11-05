@@ -7,3 +7,4 @@ publish = false
 [dependencies]
 maud.workspace = true
 mosaic-tiles = { path = "../../../modules/mosaic/tiles" }
+tracing.workspace = true

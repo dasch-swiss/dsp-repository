@@ -102,7 +102,7 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 | `shared-metadata` | `shared/metadata` | The research-metadata wire contract and the rules for reading a value out of it — shared by DPE and the editor |
 | `shared-rate-limit` | `shared/rate-limit` | The key extractor the per-IP rate limiters use, `RightmostXffKeyExtractor`: the rightmost `X-Forwarded-For` entry, falling back to the connection peer address — shared by DPE, the access server and the Deposit Area's services |
 | `shared-telemetry` | `shared/telemetry` | Browser beacon contract, validation, and the collector endpoint — shared by DPE and the editor |
-| `deposit-shell` | `areas/deposit/shell` | The Deposit Area's document shell: page, header, footer, the 403, 404 and problem pages, the sign-in link (`safe_next`, `login_url`) and the RDU-only text; `maud` and `mosaic-tiles` only |
+| `deposit-shell` | `areas/deposit/shell` | The Deposit Area's document shell: page, header, footer, the 403, 404 and problem pages, the sign-in link (`safe_next`, `login_url`) and the RDU-only text; `maud`, `mosaic-tiles` and `tracing` only |
 | `identity-core` | `areas/deposit/identity/core` | Identity's domain: accounts, sessions, login codes, the login and session rules, the repository traits (zero framework deps) |
 | `identity-ports` | `areas/deposit/identity/ports` | What identity asks of the editor: `OpenWork`; `std` only |
 | `identity-store` | `areas/deposit/identity/store` | Identity's SQLite store (`identity.sqlite`), the mail transports, and `LiveAuthenticator` and `LiveUserDirectory` behind `editor-ports` |

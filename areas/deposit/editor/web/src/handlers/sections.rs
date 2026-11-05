@@ -378,11 +378,7 @@ async fn context<'a>(
             project.shortcode = %shortcode,
             "refused a project that is not assigned to this account"
         );
-        return Err(crate::shell::forbidden(
-            state,
-            &user.actor.display_name,
-            crate::handlers::projects::NOT_ASSIGNED,
-        ));
+        return Err(crate::shell::forbidden(state, user, crate::handlers::projects::NOT_ASSIGNED));
     }
 
     let audience = audience_of(user);
@@ -2170,7 +2166,7 @@ fn render_page(
         Some(prefix) => format!("{prefix} — {title}"),
         None => title,
     };
-    crate::shell::render(state, &title, StatusCode::OK, Some(&user.actor.display_name), page::page(&view))
+    crate::shell::render(state, &title, StatusCode::OK, Some(user), page::page(&view))
 }
 
 /// What the stored draft row contributes to a rendering: when it was last

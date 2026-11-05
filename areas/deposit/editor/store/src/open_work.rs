@@ -12,7 +12,8 @@ use identity_ports::{OpenWork, PortFuture, Unavailable};
 use uuid::Uuid;
 
 /// The editor work still open under an account, for the depositor-removal
-/// confirmation, and the projects the editor knows, for the account screens.
+/// confirmation, the projects the editor knows, for the account screens, and the review queue's
+/// size.
 ///
 /// Over the editor's repository bundle rather than [`crate::Database`], so a test can put a
 /// fault-injecting store in front of it.
@@ -87,6 +88,14 @@ impl OpenWork for LiveOpenWork {
                 })
                 .cloned()
                 .collect())
+        })
+    }
+
+    fn pending_reviews<'a>(&'a self) -> PortFuture<'a, Result<usize, Unavailable>> {
+        Box::pin(async move {
+            SubmissionRepository::count_pending(&*self.store)
+                .await
+                .map_err(Unavailable::new)
         })
     }
 }

@@ -22,7 +22,9 @@ const VERSION: &str = match option_env!("DEPOSIT_VERSION") {
 pub fn footer() -> Markup {
     html! {
         footer class="bg-slate-800 text-gray-300 py-6" {
-            nav class="flex flex-wrap justify-center gap-6 max-w-[1536px] mx-auto px-4 text-sm" {
+            nav aria-label="Legal"
+                class="flex flex-wrap justify-center gap-6 max-w-[1536px] mx-auto px-4 text-sm"
+            {
                 @for (label, href) in LEGAL_LINKS {
                     a   class="hover:text-white transition-colors"
                         href=(href)

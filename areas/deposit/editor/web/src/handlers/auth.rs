@@ -11,6 +11,8 @@ use axum::http::Method;
 use axum::response::{IntoResponse, Redirect, Response};
 use chrono::{DateTime, Utc};
 use deposit_shell::sign_in::login_url;
+use deposit_shell::view::{Menu, Viewer};
+use editor_core::repository::SubmissionRepository;
 use editor_ports::Actor;
 use uuid::Uuid;
 
@@ -40,12 +42,45 @@ pub(crate) struct Account {
     /// [`Actor::account_id`], parsed once into the `Uuid` the editor's records hold.
     pub(crate) id: Uuid,
     pub(crate) actor: Actor,
+    /// The header navigation this account is offered: for RDU it carries the review-queue count,
+    /// which costs a query, so it is read once per request, never per page. A handler that changes
+    /// the count and then renders a page refreshes it first ([`Account::refresh_menu`]).
+    menu: Menu,
+    path: String,
 }
 
 impl Account {
     pub(crate) fn signed_out_at(&self) -> DateTime<Utc> {
         self.actor.signed_out_at.into()
     }
+
+    #[cfg(test)]
+    pub(crate) fn for_test(display_name: &str) -> Self {
+        let actor = Actor { display_name: display_name.to_string(), ..depositor(&[]) };
+        Self {
+            id: Uuid::nil(),
+            actor,
+            menu: Menu::Depositor,
+            path: "/projects".to_owned(),
+        }
+    }
+
+    /// Re-reads the header menu, for a handler that changed the pending count and renders a page.
+    pub(crate) async fn refresh_menu(&mut self, state: &EditorState) {
+        self.menu = menu(&self.actor, state).await;
+    }
+
+    pub(crate) fn viewer(&self) -> Viewer<'_> {
+        Viewer {
+            name: &self.actor.display_name,
+            menu: self.menu,
+            path: &self.path,
+        }
+    }
+}
+
+async fn menu(actor: &Actor, state: &EditorState) -> Menu {
+    Menu::for_role(actor.is_rdu(), SubmissionRepository::count_pending(&*state.editor)).await
 }
 
 /// A live session, or the request never reaches the handler: it is sent to sign in.
@@ -65,7 +100,10 @@ impl FromRequestParts<EditorState> for Authenticated {
             return Err(sign_in());
         };
         match Uuid::parse_str(&actor.account_id) {
-            Ok(id) => Ok(Self(Account { id, actor })),
+            Ok(id) => {
+                let menu = menu(&actor, state).await;
+                Ok(Self(Account { id, actor, menu, path: parts.uri.path().to_owned() }))
+            }
             // Identity mints every id as a `Uuid`, so this is a broken adapter rather than a
             // visitor's doing; failing closed keeps an id the records cannot hold off every write.
             Err(error) => {
@@ -91,13 +129,20 @@ impl FromRequestParts<EditorState> for Rdu {
         if !account.actor.is_rdu() {
             // No `http.route` field: the enclosing server span carries it (see identity's `guard`).
             tracing::info!("refused an RDU-only page to an account that is not RDU");
-            return Err(crate::shell::forbidden(
-                state,
-                &account.actor.display_name,
-                deposit_shell::RDU_ONLY,
-            ));
+            return Err(crate::shell::forbidden(state, &account, deposit_shell::RDU_ONLY));
         }
         Ok(Self(account))
+    }
+}
+
+#[cfg(test)]
+fn depositor(assigned_shortcodes: &[&str]) -> Actor {
+    Actor {
+        account_id: uuid::Uuid::nil().to_string(),
+        display_name: "A".to_string(),
+        role: editor_ports::Role::Depositor,
+        assigned_shortcodes: assigned_shortcodes.iter().map(|s| (*s).to_string()).collect(),
+        signed_out_at: SystemTime::UNIX_EPOCH,
     }
 }
 
@@ -219,14 +264,107 @@ mod tests {
             .is_ok());
     }
 
-    fn depositor(assigned_shortcodes: &[&str]) -> Actor {
-        Actor {
-            account_id: uuid::Uuid::nil().to_string(),
-            display_name: "A".to_string(),
-            role: Role::Depositor,
-            assigned_shortcodes: assigned_shortcodes.iter().map(|s| (*s).to_string()).collect(),
-            signed_out_at: std::time::SystemTime::UNIX_EPOCH,
+    /// The header's `<nav>`: the page's own links sit in `<main>`, below it.
+    fn header_nav(body: &str) -> &str {
+        let header = body.split("<main").next().expect("a page has a header above <main>");
+        let start = header
+            .find(r#"<nav aria-label="Main""#)
+            .expect("a signed-in page renders the nav");
+        let end = header[start..].find("</nav>").expect("the nav closes") + start;
+        &header[start..end]
+    }
+
+    async fn page_as(app: &axum::Router, state: &TestState, role: Role, uri: &str) -> (StatusCode, String) {
+        use tower::ServiceExt;
+
+        use crate::fixtures::{a_session, a_user, get, with_cookie, SESSION};
+
+        let user = a_user(state, "x@x.test", "A Reader", role, &["0801"]).await;
+        let session = a_session(state, user.id).await;
+        let response = app
+            .clone()
+            .oneshot(with_cookie(get(uri), SESSION, &session))
+            .await
+            .expect("the request should complete");
+        (response.status(), body_string(response).await)
+    }
+
+    #[tokio::test]
+    async fn test_rdu_sees_the_full_menu_with_the_pending_count() {
+        let db = crate::fixtures::open_test_db("header-rdu").await;
+        let now = Utc::now();
+        for (shortcode, state) in [("0801d", "submitted"), ("0803d", "in_review")] {
+            editor_store::test_support::seed_submission(&db.editor, shortcode, "{}", state, None, now, None, None)
+                .await;
         }
+        let state = crate::fixtures::state_over(db.editor.clone());
+        let app = crate::fixtures::test_app(&state);
+
+        let (status, body) = page_as(&app, &state, Role::Rdu, "/projects").await;
+
+        assert_eq!(status, StatusCode::OK);
+        let nav = header_nav(&body);
+        for expected in ["Projects", "Review queue (2)", "Approved records", "Accounts"] {
+            assert!(nav.contains(expected), "{expected} in {nav}");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_the_review_page_marks_only_the_review_queue_as_current() {
+        let db = crate::fixtures::open_test_db("header-current").await;
+        editor_store::test_support::seed_submission(
+            &db.editor,
+            "0801d",
+            "{}",
+            "submitted",
+            None,
+            Utc::now(),
+            None,
+            None,
+        )
+        .await;
+        let state = crate::fixtures::state_over(db.editor.clone());
+        let app = crate::fixtures::test_app(&state);
+
+        let (status, body) = page_as(&app, &state, Role::Rdu, "/review/0801d").await;
+
+        assert_eq!(status, StatusCode::OK);
+        let nav = header_nav(&body);
+        assert_eq!(nav.matches("aria-current").count(), 1, "{nav}");
+        assert!(nav.contains(r#"aria-current="page">Review queue"#), "{nav}");
+    }
+
+    #[tokio::test]
+    async fn test_an_unreadable_count_leaves_the_number_off_and_the_page_up() {
+        use editor_store::test_support::{Faults, FaultyStore};
+
+        let db = crate::fixtures::open_test_db("header-count-fails").await;
+        let sound = crate::fixtures::state_over(db.editor.clone());
+        let faulty = sound.with_store(Arc::new(FaultyStore::new(
+            db.editor.clone(),
+            Faults { submission_count: true, ..Faults::default() },
+        )));
+        let app = crate::fixtures::test_app(&faulty);
+
+        let (status, body) = page_as(&app, &faulty, Role::Rdu, "/projects").await;
+
+        assert_eq!(status, StatusCode::OK);
+        let nav = header_nav(&body);
+        assert!(nav.contains("Review queue"), "{nav}");
+        assert!(!nav.contains("Review queue ("), "{nav}");
+    }
+
+    #[tokio::test]
+    async fn test_the_rdu_only_403_carries_the_depositor_menu() {
+        let (state, _) = test_state("header-403").await;
+        let app = crate::fixtures::test_app(&state);
+
+        let (status, body) = page_as(&app, &state, Role::Depositor, "/review").await;
+
+        assert_eq!(status, StatusCode::FORBIDDEN);
+        let nav = header_nav(&body);
+        assert!(nav.contains(r#"href="/projects""#), "{nav}");
+        assert!(!nav.contains("/review"), "{nav}");
     }
 
     #[test]

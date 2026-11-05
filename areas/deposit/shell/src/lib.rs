@@ -4,9 +4,12 @@
 //!
 //! The routes it links are string literals, a coupling to the capabilities' route tables that
 //! no compiler checks: the 403 page links `/projects`, the area's home route; the header links
-//! `/` and posts to `/logout`; [`sign_in::login_url`] builds `/login`, and
-//! [`sign_in::safe_next`] refuses `/login` and `/login/…` as destinations. The document loads
-//! `/logo.svg`, `/vendor/datastar.js` and `/telemetry.js`, which the server serves.
+//! `/`, posts to `/logout` and its menu links `/projects`, `/review`, `/approved` and
+//! `/depositors`; [`sign_in::login_url`] builds `/login`, and [`sign_in::safe_next`] refuses
+//! `/login` and `/login/…` as destinations. The document loads `/logo.svg`,
+//! `/vendor/datastar.js` and `/telemetry.js`, which the server serves. Only the menu hrefs are
+//! checked, by `cross_capability::header_menu` in `deposit-server`; no compiler or test checks
+//! the rest.
 
 mod components;
 pub mod pages;

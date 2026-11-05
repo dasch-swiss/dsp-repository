@@ -559,6 +559,37 @@ mod depositors {
         assert_eq!(after.name, "A Depositor", "no GET on this surface may change anything");
         assert_eq!(after.shortcodes, vec!["0801".to_string()]);
     }
+
+    #[tokio::test]
+    async fn test_both_capabilities_show_rdu_the_same_review_queue_count() {
+        // Two adapters, one per capability's port, read the count: each must be wired to the real
+        // store.
+        let (state, _) = test_state("review-queue-count").await;
+        let (reviewer, session) = rdu(&state).await;
+        seed_submission(&state.editor, "0801", "{}", "submitted", None, Utc::now(), None, None).await;
+        seed_submission(&state.editor, "0802", "{}", "in_review", None, Utc::now(), None, None).await;
+        seed_submission(
+            &state.editor,
+            "0803",
+            "{}",
+            "approved",
+            None,
+            Utc::now(),
+            Some(&reviewer),
+            Some(Utc::now()),
+        )
+        .await;
+        let app = test_app(&state);
+
+        for uri in ["/depositors", "/review"] {
+            let response = app.clone().oneshot(as_session(get(uri), &session)).await.unwrap();
+            assert_eq!(response.status(), StatusCode::OK, "{uri}");
+            let body = body_string(response).await;
+            let header = body.split("<main").next().unwrap_or_default();
+            assert!(header.contains(r#"aria-label="Main""#), "{uri}: {header}");
+            assert!(header.contains("Review queue (2)"), "{uri}: {header}");
+        }
+    }
 }
 
 mod sections {
@@ -594,5 +625,26 @@ mod sections {
         );
         let response = app.clone().oneshot(request).await.expect("completes");
         assert_eq!(response.status(), StatusCode::FORBIDDEN);
+    }
+}
+
+mod header_menu {
+    use std::collections::BTreeSet;
+
+    use deposit_shell::view::Menu;
+
+    /// A menu link to a path no capability declares is a dead link, and no one
+    /// capability sees both the header and the other's routes.
+    #[test]
+    fn test_every_header_menu_href_is_a_declared_route() {
+        let declared: BTreeSet<&str> = editor_web::route_paths().chain(identity_web::route_paths()).collect();
+        for menu in [Menu::Depositor, Menu::Rdu { pending_reviews: Some(1) }] {
+            for (label, href) in menu.items() {
+                assert!(
+                    declared.contains(href),
+                    "the {menu:?} menu links {label:?} to {href}, which no capability declares as a route"
+                );
+            }
+        }
     }
 }

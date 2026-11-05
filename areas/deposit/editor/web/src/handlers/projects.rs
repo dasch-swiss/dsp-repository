@@ -116,13 +116,7 @@ pub(crate) async fn list(
         }
         crate::pages::projects::assigned(&rows, &unknown)
     };
-    crate::shell::render(
-        &state,
-        &title,
-        axum::http::StatusCode::OK,
-        Some(&user.actor.display_name),
-        content,
-    )
+    crate::shell::render(&state, &title, axum::http::StatusCode::OK, Some(&user), content)
 }
 
 /// `GET /projects/{shortcode}` — a redirect to the first form section.
@@ -162,7 +156,7 @@ pub(crate) async fn detail(
             project.shortcode = %shortcode,
             "refused a project that is not assigned to this account"
         );
-        return crate::shell::forbidden(&state, &user.actor.display_name, NOT_ASSIGNED);
+        return crate::shell::forbidden(&state, &user, NOT_ASSIGNED);
     }
     let audience = if user.actor.is_rdu() {
         editor_core::form::registry::Audience::RduOnly
@@ -182,7 +176,7 @@ pub(crate) async fn states(State(state): State<EditorState>, Authenticated(user)
         &state,
         "What the states mean — DaSCH Metadata Editor",
         StatusCode::OK,
-        Some(&user.actor.display_name),
+        Some(&user),
         crate::pages::states::explanation(),
     )
 }
@@ -196,7 +190,7 @@ pub(crate) async fn new_form(State(state): State<EditorState>, Rdu(user): Rdu) -
         &state,
         NEW_PROJECT_TITLE,
         StatusCode::OK,
-        Some(&user.actor.display_name),
+        Some(&user),
         crate::pages::projects::new_project(NewProjectFields::default(), &NewProjectErrors::default()),
     )
 }
@@ -347,7 +341,7 @@ fn refused_creation(
         state,
         NEW_PROJECT_TITLE,
         StatusCode::OK,
-        Some(&user.actor.display_name),
+        Some(user),
         crate::pages::projects::new_project(fields, errors),
     )
 }
@@ -467,7 +461,7 @@ fn confirm_removal(
         state,
         "Remove a project — DaSCH Metadata Editor",
         StatusCode::OK,
-        Some(&user.actor.display_name),
+        Some(user),
         crate::pages::projects::confirm_removal(shortcode, name, refusal),
     )
 }

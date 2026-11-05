@@ -22,7 +22,7 @@ _Avoid_: permission, membership, assignment (the row is named for the project it
 An Assigned project whose shortcode names no project in the editor's **Published set** and no **Created project** (both in [`areas/deposit/editor/CONTEXT.md`](../editor/CONTEXT.md)). The account list and edit pages name it as a warning and the account saves regardless; identity learns it through `OpenWork::unknown_projects`, and when that read fails the two pages say the projects could not be checked.
 
 **Open work**:
-What identity asks of the editor through `identity-ports`' `OpenWork` about an account's work, `drafts` and `submissions`: the drafts an account saved last and its submissions short of `Approved`, which the depositor-removal confirmation names before removal orphans them. The same port's `unknown_projects` answers the **Unknown shortcode** question, which is about projects rather than work.
+What identity asks of the editor through `identity-ports`' `OpenWork` about an account's work, `drafts` and `submissions`: the drafts an account saved last and its submissions short of `Approved`, which the depositor-removal confirmation names before removal orphans them. The same port's `unknown_projects` answers the **Unknown shortcode** question, which is about projects rather than work, and `pending_reviews` gives the header's review-queue count, which is about the queue rather than an account's work.
 _Avoid_: authored work (a draft is last-write-wins, so the account saved it last, not necessarily created it), pending work ("pending" already qualifies a Submission in Withdrawal).
 
 **Login code**:

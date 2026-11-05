@@ -13,6 +13,8 @@ pub struct FakeOpenWork {
     failing_drafts: bool,
     failing_submissions: bool,
     failing_projects: bool,
+    pending_reviews: usize,
+    failing_pending_reviews: bool,
 }
 
 impl FakeOpenWork {
@@ -40,6 +42,12 @@ impl FakeOpenWork {
     }
 
     #[must_use]
+    pub fn with_pending_reviews(mut self, count: usize) -> Self {
+        self.pending_reviews = count;
+        self
+    }
+
+    #[must_use]
     pub fn failing_drafts(mut self) -> Self {
         self.failing_drafts = true;
         self
@@ -54,6 +62,12 @@ impl FakeOpenWork {
     #[must_use]
     pub fn failing_projects(mut self) -> Self {
         self.failing_projects = true;
+        self
+    }
+
+    #[must_use]
+    pub fn failing_pending_reviews(mut self) -> Self {
+        self.failing_pending_reviews = true;
         self
     }
 }
@@ -100,6 +114,15 @@ impl OpenWork for FakeOpenWork {
                 .filter(|code| !self.known_projects.iter().any(|known| known.eq_ignore_ascii_case(code)))
                 .cloned()
                 .collect())
+        };
+        Box::pin(async move { result })
+    }
+
+    fn pending_reviews<'a>(&'a self) -> PortFuture<'a, Result<usize, Unavailable>> {
+        let result = if self.failing_pending_reviews {
+            Err(Unavailable::new(FakeFailure))
+        } else {
+            Ok(self.pending_reviews)
         };
         Box::pin(async move { result })
     }

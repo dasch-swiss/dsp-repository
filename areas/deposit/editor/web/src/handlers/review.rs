@@ -173,7 +173,7 @@ pub(crate) async fn queue(State(state): State<EditorState>, Rdu(user): Rdu) -> R
         &state,
         "Review queue — DaSCH Metadata Editor",
         StatusCode::OK,
-        Some(&user.actor.display_name),
+        Some(&user),
         page::queue(&pending_view, &drafts_view),
     )
 }
@@ -277,7 +277,7 @@ pub(crate) async fn show(
 )]
 pub(crate) async fn act(
     State(state): State<EditorState>,
-    Rdu(user): Rdu,
+    Rdu(mut user): Rdu,
     Path(shortcode): Path<String>,
     headers: HeaderMap,
     // Last, because it consumes the body. A pair list rather than a struct, for
@@ -331,7 +331,7 @@ pub(crate) async fn act(
     // decided a row and went straight to Approve without saving first.
     if matches!(intent, page::APPROVE | page::REQUEST_CHANGES | page::REJECT) {
         context.state = decisions(&body, &context.rows, &context.submitted, false, context.published.is_some());
-        return finish(&state, &user, &context, &body, filter, headers, intent).await;
+        return finish(&state, &mut user, &context, &body, filter, headers, intent).await;
     }
 
     let now = Utc::now();
@@ -419,7 +419,7 @@ pub(crate) async fn act(
 /// attribute the control carries.
 async fn finish(
     state: &EditorState,
-    user: &Account,
+    user: &mut Account,
     context: &Context<'_>,
     body: &FormBody,
     filter: page::Filter,
@@ -572,6 +572,8 @@ async fn finish(
                 review.accepted = context.state.count(&context.changed_fields(), Decision::Accept),
                 "finished a review round"
             );
+            // The round left the queue, and this renders a page rather than redirecting.
+            user.refresh_menu(state).await;
             finished(state, user, context, outcome)
         }
         // The terminal-state guard. Somebody else finished this submission
@@ -678,7 +680,7 @@ fn asking(
         return (StatusCode::OK, axum::response::Html(page::region(&view).into_string())).into_response();
     }
     let title = page_title(context);
-    crate::shell::render(state, &title, StatusCode::OK, Some(&user.actor.display_name), page::page(&view))
+    crate::shell::render(state, &title, StatusCode::OK, Some(user), page::page(&view))
 }
 
 /// The round is over, so there is no submission left to diff.
@@ -696,7 +698,7 @@ fn finished(state: &EditorState, user: &Account, context: &Context<'_>, outcome:
         state,
         &page_title(context),
         StatusCode::OK,
-        Some(&user.actor.display_name),
+        Some(user),
         page::finished(context.project_name.as_deref(), context.shortcode, finished),
     )
 }
@@ -944,13 +946,7 @@ fn render_page(
     let rows = review_rows(context);
     let entity_rows = entity_rows(context);
     let view = view(context, &rows, &entity_rows, filter, notice);
-    crate::shell::render(
-        state,
-        &page_title(context),
-        StatusCode::OK,
-        Some(&user.actor.display_name),
-        page::page(&view),
-    )
+    crate::shell::render(state, &page_title(context), StatusCode::OK, Some(user), page::page(&view))
 }
 
 /// What a review page is called. One decision, shared by the diff, the
@@ -1102,7 +1098,7 @@ fn no_submission(state: &EditorState, user: &Account) -> Response {
         state,
         "Nothing to review — DaSCH Metadata Editor",
         StatusCode::NOT_FOUND,
-        Some(&user.actor.display_name),
+        Some(user),
         content,
     )
 }
@@ -1113,7 +1109,7 @@ fn unreadable_submission(state: &EditorState, user: &Account) -> Response {
         state,
         "Submission unreadable — DaSCH Metadata Editor",
         StatusCode::INTERNAL_SERVER_ERROR,
-        Some(&user.actor.display_name),
+        Some(user),
         deposit_shell::pages::problem::unavailable(
             "This submission's stored record could not be read, so there is nothing to compare against what is \
              published. Nothing has been changed. The service needs attention before this project can be reviewed.",
@@ -1198,6 +1194,30 @@ mod tests {
             .expect("read");
         assert_eq!(rounds.len(), 1, "exactly one round: {rounds:?}");
         rounds.remove(0)
+    }
+
+    #[tokio::test]
+    async fn the_page_after_a_decision_shows_the_queue_as_it_now_stands() {
+        // The count is read before the write: without a refresh the page would still say two wait.
+        let (state, _) = test_state("review-header-count").await;
+        let (_, session) = a_reviewer(&state, "rdu@x.test", "An RDU Member").await;
+        a_submission(&state, "0801d", None, json!({ "name": "A New Title" })).await;
+        a_submission(&state, "0803d", None, json!({ "name": "Another Title" })).await;
+        let app = test_app(&state);
+
+        let body = body_string(
+            as_session(
+                &app,
+                post("/review/0801d", &finishing(page::APPROVE, &[("name", "accept")], "")),
+                &session,
+            )
+            .await,
+        )
+        .await;
+
+        assert!(body.contains("Approved"), "{body}");
+        let header = body.split("<main").next().expect("a page has a header above <main>");
+        assert!(header.contains("Review queue (1)"), "{header}");
     }
 
     #[tokio::test]

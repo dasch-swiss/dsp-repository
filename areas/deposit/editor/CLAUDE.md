@@ -41,7 +41,7 @@ The editor's routes are one table in `web/src/routes.rs`, which `Editor::router`
 
 ### Authorization
 
-`Authenticated` and `Rdu` are **extractors, not middleware**. A handler that omits them is public, visibly, in its signature. `Rdu` composes `Authenticated`, so RDU routes are closed twice over. An editor handler takes the pair in `web/src/handlers/auth.rs`, which sees identity only through the `Authenticator` port and yields an `Account` (the `Actor`, its id parsed); names behind account ids come from `UserDirectory`, never from identity's repositories. The pair in `identity-web`'s `handlers/guard.rs` is identity's, for its own pages.
+`Authenticated` and `Rdu` are **extractors, not middleware**. A handler that omits them is public, visibly, in its signature. `Rdu` composes `Authenticated`, so RDU routes are closed twice over; for RDU, `Authenticated` also reads the review-queue count once per request, for the header; a handler that ends a review round re-reads it with `Account::refresh_menu` before rendering, and an enhanced-path (Datastar) write leaves the header as rendered until the next navigation. An editor handler takes the pair in `web/src/handlers/auth.rs`, which sees identity only through the `Authenticator` port and yields an `Account` (the `Actor`, its id parsed); names behind account ids come from `UserDirectory`, never from identity's repositories. The pair in `identity-web`'s `handlers/guard.rs` is identity's, for its own pages.
 
 ### Method discipline
 

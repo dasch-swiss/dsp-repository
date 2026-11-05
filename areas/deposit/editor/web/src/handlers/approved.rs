@@ -119,7 +119,7 @@ pub(crate) async fn overview(State(state): State<EditorState>, Rdu(user): Rdu) -
         &state,
         "Approved records — DaSCH Metadata Editor",
         StatusCode::OK,
-        Some(&user.actor.display_name),
+        Some(&user),
         page::list(&view_rows),
     )
 }
@@ -181,7 +181,7 @@ pub(crate) async fn discard_form(State(state): State<EditorState>, Rdu(user): Rd
         &state,
         "Discard record — DaSCH Metadata Editor",
         StatusCode::OK,
-        Some(&user.actor.display_name),
+        Some(&user),
         page::confirm_discard(&id, &impact),
     )
 }
@@ -217,7 +217,7 @@ fn no_such_record(state: &EditorState, user: &Account) -> Response {
         state,
         "Nothing to discard — DaSCH Metadata Editor",
         StatusCode::NOT_FOUND,
-        Some(&user.actor.display_name),
+        Some(user),
         content,
     )
 }

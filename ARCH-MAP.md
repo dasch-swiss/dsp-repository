@@ -400,7 +400,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `Editor::start`), approve's own transaction, which supersedes the project's earlier record, so a
   project holds at most one, and RDU's discard
   (`POST /approved/{id}/discard`).
-- **Fingerprint:** `a54718712348`
+- **Fingerprint:** `60709c4e1602`
 
 ### areas/deposit/shell
 

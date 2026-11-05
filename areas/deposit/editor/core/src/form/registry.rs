@@ -199,6 +199,8 @@ pub struct Section {
     /// RDU-only sections are absent from a depositor's rail entirely, rather
     /// than present and empty.
     pub audience: Audience,
+    /// Depositor guidance: a sentence shown above the section's fields to depositors only.
+    pub intro: Option<&'static str>,
 }
 
 /// Shorthand for an editable field. Every editable field has a hint, so there is
@@ -578,6 +580,7 @@ pub const SECTIONS: &[Section] = &[
         id: "overview",
         title: "Overview",
         audience: Everyone,
+        intro: None,
         fields: &[
             "id",
             "pid",
@@ -599,6 +602,7 @@ pub const SECTIONS: &[Section] = &[
         id: "dataset",
         title: "Dataset",
         audience: Everyone,
+        intro: None,
         fields: &[
             "typeOfData",
             "dataLanguage",
@@ -616,18 +620,21 @@ pub const SECTIONS: &[Section] = &[
         id: "publications",
         title: "Publications",
         audience: Everyone,
+        intro: None,
         fields: &["publications"],
     },
     Section {
         id: "contributors",
         title: "Contributors",
         audience: Everyone,
+        intro: None,
         fields: &["attributions", "contactPoint"],
     },
     Section {
         id: "access",
         title: "Access, citation and funding",
         audience: Everyone,
+        intro: None,
         fields: &[
             "accessRights.accessRights",
             "accessRights.embargoDate",
@@ -640,6 +647,7 @@ pub const SECTIONS: &[Section] = &[
         id: "image",
         title: "Project image",
         audience: Everyone,
+        intro: Some("Image upload isn't available yet. To add or change the project image, send it to RDU."),
         fields: &["imageCredit"],
     },
     // Display-only and RDU-only: a depositor's rail does not show it at all.
@@ -647,6 +655,7 @@ pub const SECTIONS: &[Section] = &[
         id: "legal",
         title: "Legal info",
         audience: RduOnly,
+        intro: None,
         fields: &["legalInfo"],
     },
 ];

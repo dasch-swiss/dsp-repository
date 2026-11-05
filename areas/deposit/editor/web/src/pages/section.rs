@@ -875,6 +875,10 @@ fn form(view: &SectionView<'_>) -> Markup {
     html! {
         (persistent_box(view))
         h2 class="font-display text-xl mb-4" { (view.section.title) }
+        // Depositor guidance: RDU is not told to send anything to itself.
+        @if let (Some(intro), Audience::Everyone) = (view.section.intro, view.audience) {
+            p class="field-hint mb-4" { (intro) }
+        }
         // The action is the URL this form was fetched from, so a rejected save
         // re-renders somewhere that answers GET. No __prevent: Datastar calls
         // preventDefault unconditionally on a form's submit. With no script it is an
@@ -1584,6 +1588,36 @@ mod tests {
             !contributors.contains(r#"<legend class="field-label sr-only""#),
             "{contributors}"
         );
+    }
+
+    #[test]
+    fn a_section_intro_shows_to_depositors_only_and_above_the_fields() {
+        let draft = published_draft();
+        for section in editor_core::form::registry::SECTIONS {
+            let out = page(&view(&draft, section.id, Audience::Everyone)).into_string();
+            // Maud does not escape `'`, so the whole sentence matches as written.
+            match section.intro {
+                Some(intro) => assert!(out.contains(intro), "{} lacks its intro: {out}", section.id),
+                None => assert!(
+                    !out.contains(r#"<p class="field-hint mb-4">"#),
+                    "{} has no intro yet renders one: {out}",
+                    section.id
+                ),
+            }
+        }
+        let image = page(&view(&draft, "image", Audience::Everyone)).into_string();
+        let notice = image
+            .find("Image upload isn")
+            .unwrap_or_else(|| panic!("the image page carries the notice: {image}"));
+        let credit = image.find("Project image credit").expect("the credit field is on the page");
+        assert!(notice < credit, "the notice comes before the credit field: {image}");
+        let intro = editor_core::form::registry::SECTIONS
+            .iter()
+            .find(|section| section.id == "image")
+            .and_then(|section| section.intro)
+            .expect("the image section has an intro");
+        let rdu = page(&view(&draft, "image", Audience::RduOnly)).into_string();
+        assert!(!rdu.contains(intro), "RDU is not shown depositor guidance: {rdu}");
     }
 
     #[test]

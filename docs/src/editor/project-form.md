@@ -76,6 +76,8 @@ A fresh line starts on "Choose language", with no default language. A translatio
 
 A section whose only field is labelled with the section's own title (Publications, Legal info) shows the label's name to screen readers only, since the heading above it already says it; the obligation pill stays visible. The section page decides this by comparing the two, so a new section of that shape needs no setting.
 
+A section may carry an `intro`, a sentence shown to depositors above its fields; only Project image has one, because image upload is not available.
+
 ## Rows are added and removed by round-trip
 
 `POST …/sections/{section}/fields/{field}/add` and `…/{field}/{key}/remove`, under the section's own URL and handled by the same module, so a row action resolves through one `context()` — the audience gate, the lock check and the shortcode fold are the section's rather than a second copy. The URL names the field, so it is checked against `fields_for` too; without that it would be a way to reach an RDU-only or a display-only field. `apply_and_store` is shared with the save path, so a row action cannot become a second, weaker write.

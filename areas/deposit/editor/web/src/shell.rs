@@ -34,26 +34,35 @@ pub(crate) struct TemporalTables {
 
 /// Render a page inside the document shell: the one place a `Markup` becomes a `Response`.
 ///
-/// `viewer` is the signed-in account's display name, never its address: the header is on every
-/// page and in every screenshot of one.
+/// `viewer` is the signed-in account; the header shows its display name, never its address: it is
+/// on every page and in every screenshot of one.
 pub(crate) fn render(
     state: &EditorState,
     title: &str,
     status: axum::http::StatusCode,
-    viewer: Option<&str>,
+    viewer: Option<&crate::handlers::auth::Account>,
     content: maud::Markup,
 ) -> axum::response::Response {
     use axum::response::IntoResponse;
 
     let traceparent = crate::traceparent::extract_traceparent();
-    let viewer = viewer.map(|name| deposit_shell::view::Viewer { name });
-    let body = deposit_shell::view::page(title, traceparent.as_deref(), &state.css_href, viewer, content);
+    let body = deposit_shell::view::page(
+        title,
+        traceparent.as_deref(),
+        &state.css_href,
+        viewer.map(crate::handlers::auth::Account::viewer),
+        content,
+    );
     (status, axum::response::Html(body.into_string())).into_response()
 }
 
 /// A 403 rendered as a page, so it is not a dead end. Only authenticated requests reach it,
 /// so the header renders signed in.
-pub(crate) fn forbidden(state: &EditorState, viewer: &str, message: &str) -> axum::response::Response {
+pub(crate) fn forbidden(
+    state: &EditorState,
+    viewer: &crate::handlers::auth::Account,
+    message: &str,
+) -> axum::response::Response {
     render(
         state,
         "No access — DaSCH Metadata Editor",
@@ -136,7 +145,8 @@ mod tests {
     async fn forbidden_renders_the_page_shell_with_a_403_and_a_way_out() {
         // The reader is signed in, so the header renders their name and a way out.
         let (state, _) = fixtures::test_state("forbidden").await;
-        let response = forbidden(&state, "A Depositor", "This project is not assigned to your account.");
+        let account = crate::handlers::auth::Account::for_test("A Depositor");
+        let response = forbidden(&state, &account, "This project is not assigned to your account.");
         assert_eq!(response.status(), axum::http::StatusCode::FORBIDDEN);
         let body = fixtures::body_string(response).await;
         assert!(body.starts_with("<!DOCTYPE html>"), "{body}");

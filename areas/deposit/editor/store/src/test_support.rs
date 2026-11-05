@@ -204,6 +204,9 @@ pub struct Faults {
     /// `SubmissionRepository::create`: the submit path's write, and the branch where a refused
     /// submit must leave the draft editable rather than report a submission nobody holds.
     pub submission_create: bool,
+    /// `SubmissionRepository::count_pending`: the branch where an unreadable count must not render
+    /// as zero.
+    pub submission_count: bool,
     /// Every writing transition on [`ReviewRoundRepository`] at once.
     ///
     /// One flag for three methods, because a handler reaches exactly one of them per request and
@@ -304,6 +307,13 @@ impl SubmissionRepository for FaultyStore {
 
     async fn list(&self) -> Result<Vec<Submission>> {
         SubmissionRepository::list(&*self.inner).await
+    }
+
+    async fn count_pending(&self) -> Result<usize> {
+        if self.faults.submission_count {
+            return Err(injected("SubmissionRepository::count_pending"));
+        }
+        SubmissionRepository::count_pending(&*self.inner).await
     }
 
     async fn delete(&self, id: Uuid) -> Result<bool> {

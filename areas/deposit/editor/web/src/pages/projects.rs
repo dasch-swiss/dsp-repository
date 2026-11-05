@@ -116,12 +116,6 @@ pub fn rdu_overview(rows: &[ProjectSummary<'_>], created: &[CreatedRow], removed
                 }
                 (project_table("Every published project", rows))
             }
-            // Nothing else in the interface links to the review queue.
-            p class="mt-6 flex gap-6" {
-                a href="/review" class="underline" { "Review queue" }
-                a href="/depositors" class="underline" { "Manage depositor accounts" }
-                a href="/approved" class="underline" { "Approved records" }
-            }
         }
     }
 }
@@ -398,8 +392,10 @@ mod tests {
         assert!(out.contains("role-based"), "{out}");
         assert!(out.contains("Bernoulli-Euler Online"), "{out}");
         assert!(out.contains("Anton Webern"), "{out}");
-        assert!(out.contains(r#"href="/depositors""#), "{out}");
-        assert!(out.contains(r#"href="/review""#), "{out}");
+        // The header menu carries these; the overview body does not repeat them.
+        for href in ["/review", "/approved", "/depositors"] {
+            assert!(!out.contains(&format!(r#"href="{href}""#)), "{href} in {out}");
+        }
     }
 
     #[test]

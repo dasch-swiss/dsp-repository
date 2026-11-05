@@ -88,8 +88,11 @@ pub trait SubmissionRepository: Send + Sync {
 
     async fn find_by_shortcode(&self, shortcode: &str) -> Result<Option<Submission>>;
 
-    /// The review queue: every pending submission, oldest first.
+    /// Every submission row, oldest first by submission time, ties broken by shortcode.
     async fn list(&self) -> Result<Vec<Submission>>;
+
+    /// The number of rows whose state `is_pending`, without reading payloads.
+    async fn count_pending(&self) -> Result<usize>;
 
     /// `false` if there was no submission to delete. Covers reject,
     /// depositor discard and the move to approved.

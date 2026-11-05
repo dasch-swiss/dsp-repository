@@ -1,7 +1,8 @@
 //! What identity needs from the editor (`areas/deposit/ADR-0004`, "The shape"): the
 //! work an account still has open, which the depositor-removal confirmation lists, and which
-//! assigned shortcodes name no project, which the account screens warn about. `editor-store`
-//! implements [`OpenWork`] beside the editor's data; identity's tests use
+//! assigned shortcodes name no project, which the account screens warn about, and how many
+//! submissions are pending with RDU (submitted or in review), which the header counts.
+//! `editor-store` implements [`OpenWork`] beside the editor's data; identity's tests use
 //! `FakeOpenWork` (feature `test-support`).
 //!
 //! The crate depends on `std` alone: a consumer's `ports` crate may reach only `std` and
@@ -52,7 +53,8 @@ impl Error for Unavailable {
     }
 }
 
-/// The editor work still open under an account, and the projects the editor knows.
+/// The editor work still open under an account, the projects it knows, and the size of RDU's review
+/// queue.
 ///
 /// The two open-work reads are separate because the removal page names which one failed.
 pub trait OpenWork: Send + Sync {
@@ -66,4 +68,8 @@ pub trait OpenWork: Send + Sync {
     /// Those of `shortcodes` that name a project neither published nor created, each as given and
     /// in the order given. Compared without regard to case, as access is.
     fn unknown_projects<'a>(&'a self, shortcodes: &'a [String]) -> PortFuture<'a, Result<Vec<String>, Unavailable>>;
+
+    /// The number of pending submissions (submitted or in review), for the header's "Review queue"
+    /// count.
+    fn pending_reviews<'a>(&'a self) -> PortFuture<'a, Result<usize, Unavailable>>;
 }

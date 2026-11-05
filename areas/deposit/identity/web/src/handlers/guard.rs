@@ -17,11 +17,31 @@ use axum::http::Method;
 use axum::response::{IntoResponse, Redirect, Response};
 use chrono::Utc;
 use deposit_shell::sign_in::{login_url, safe_next, NEXT};
+use deposit_shell::view::{Menu, Viewer};
 use identity_core::records::User;
 use identity_core::session;
 
 use super::cookie;
 use crate::shell::IdentityState;
+
+/// The signed-in account, as identity's handlers use it, with the header facts computed once per
+/// request: the menu costs a query for RDU, so it is read here and never per page.
+#[derive(Debug, Clone)]
+pub(crate) struct SignedIn {
+    pub(crate) user: User,
+    menu: Menu,
+    path: String,
+}
+
+impl SignedIn {
+    pub(crate) fn viewer(&self) -> Viewer<'_> {
+        Viewer { name: &self.user.name, menu: self.menu, path: &self.path }
+    }
+}
+
+async fn menu(user: &User, state: &IdentityState) -> Menu {
+    Menu::for_role(user.is_rdu(), state.open_work.pending_reviews()).await
+}
 
 /// A live session, or the request never reaches the handler.
 ///
@@ -30,14 +50,17 @@ use crate::shell::IdentityState;
 /// useful. Signing in and landing back on the page that was asked for is the
 /// behaviour, which is what `next` carries.
 #[derive(Debug, Clone)]
-pub(crate) struct Authenticated(pub(crate) User);
+pub(crate) struct Authenticated(pub(crate) SignedIn);
 
 impl FromRequestParts<IdentityState> for Authenticated {
     type Rejection = Response;
 
     async fn from_request_parts(parts: &mut Parts, state: &IdentityState) -> Result<Self, Self::Rejection> {
         match session::current(&*state.store, &state.auth, &cookie::values(&parts.headers), Utc::now()).await {
-            Some(viewer) => Ok(Self(viewer.user)),
+            Some(viewer) => {
+                let menu = menu(&viewer.user, state).await;
+                Ok(Self(SignedIn { user: viewer.user, menu, path: parts.uri.path().to_owned() }))
+            }
             None => Err(Redirect::to(&login_url(destination(parts))).into_response()),
         }
     }
@@ -54,23 +77,23 @@ impl FromRequestParts<IdentityState> for Authenticated {
 /// fixes it; a session that is not RDU's is a 403 page, because signing in again
 /// will not, and a login screen they are already past reads as a bug.
 #[derive(Debug, Clone)]
-pub(crate) struct Rdu(pub(crate) User);
+pub(crate) struct Rdu(pub(crate) SignedIn);
 
 impl FromRequestParts<IdentityState> for Rdu {
     type Rejection = Response;
 
     async fn from_request_parts(parts: &mut Parts, state: &IdentityState) -> Result<Self, Self::Rejection> {
-        let Authenticated(user) = Authenticated::from_request_parts(parts, state).await?;
-        if !user.is_rdu() {
+        let Authenticated(signed_in) = Authenticated::from_request_parts(parts, state).await?;
+        if !signed_in.user.is_rdu() {
             // Worth a line: a depositor reaching an administration URL is
             // either a stale bookmark or someone trying doors. No `http.route`
             // field here on purpose — the enclosing server span already carries
             // it from `MatchedPath`, and semconv defines it as the matched
             // template rather than the concrete path.
             tracing::info!("refused an RDU-only page to an account that is not RDU");
-            return Err(crate::shell::forbidden(state, &user.name, deposit_shell::RDU_ONLY));
+            return Err(crate::shell::forbidden(state, &signed_in, deposit_shell::RDU_ONLY));
         }
-        Ok(Self(user))
+        Ok(Self(signed_in))
     }
 }
 

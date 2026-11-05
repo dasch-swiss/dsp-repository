@@ -6,13 +6,15 @@ The view layer's rules: server-rendered Maud, Datastar for enhancement, Tailwind
 
 Same as DPE: server-rendered HTML with **Maud**, served by **Axum**, with **Datastar** for interactivity over SSE. No client-side WASM, no hydration, no islands. The server is the single source of truth for UI state.
 
-## Three accessibility decisions the markup depends on
+## Five accessibility decisions the markup depends on
 
 Each of these fails silently: the page renders correctly, and only a screen-reader user or a keyboard user notices.
 
 - **A field's obligation lives inside its own `<label>` (or `<legend>`), not beside it.** No input carries `required` or `aria-required`: a draft may be missing anything and a browser refusing to save one is the opposite of what is asked for. That leaves the accessible name as the only channel the tier has, so a pill rendered as a sibling is visible and nothing else: a reader tabbing to the control hears "Name, edit text". Five control builders compose their own label, so one test asserts the obligation per field across every section rather than on an example; forgetting it in one builder renders identically to a sighted reader.
 - **The status region is `aria-live="polite"` and holds no element with a live role of its own.** A refusal renders `AlertVariant::Warning` rather than `Danger` for that reason: `Danger` carries `role="alert"`, an implicit *assertive* region, and screen readers do not agree on which politeness wins when one is nested inside a polite region — some interrupt, which is the behaviour the polite region exists to avoid. The region announces; the alert only styles.
 - **A rail link states its accessible name.** The section title and its progress are adjacent `<span>`s with no whitespace between them, because a flex column is what puts them on two lines — so the name computation concatenates them into "Overview5 of 5 required". The `aria-label` starts with the visible title, which is what WCAG 2.5.3 asks of an `aria-label` over visible text, and is omitted for a section with no requirements where the title is already the whole name.
+- **The header menu is one `nav aria-label="Main"`, and the footer's legal nav carries its own label.** Two unlabelled `nav` landmarks are indistinguishable in a screen reader's landmark list.
+- **The header is a `<header>` outside `<main>`, and a "Skip to content" link to `#main` is the first thing in `<body>`.** A `div` header is no banner landmark, and without the link a keyboard user tabs through the logo and the whole menu on every page; the link is `sr-only` until focused, so a sighted mouse user never sees it.
 
 The colour pairings are measured against the design tokens, with the method cross-checked on the four ratios `text_field.css` already documents: `warning-800` on `warning-50` 11.30:1, `info-800` on `info-50` 11.18:1, `neutral-700` on `neutral-100` 7.78:1, and `neutral-600` on the `gray-50` page 5.73:1 — all above WCAG 2.1 AA's 4.5:1 for the 12px bold pill text and the hint text.
 

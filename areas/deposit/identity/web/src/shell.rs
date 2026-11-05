@@ -20,26 +20,30 @@ pub(crate) struct IdentityState {
 
 /// Render a page inside the document shell: the one place a `Markup` becomes a `Response`.
 ///
-/// `viewer` is the signed-in account's display name, never its address: the header is on every
-/// page and in every screenshot of one.
+/// `viewer` is the signed-in account; the header shows its display name, never its address: it is
+/// on every page and in every screenshot of one.
 pub(crate) fn render(
     state: &IdentityState,
     title: &str,
     status: axum::http::StatusCode,
-    viewer: Option<&str>,
+    viewer: Option<&crate::handlers::guard::SignedIn>,
     content: maud::Markup,
 ) -> axum::response::Response {
     use axum::response::IntoResponse;
 
     let traceparent = crate::traceparent::extract_traceparent();
-    let viewer = viewer.map(|name| deposit_shell::view::Viewer { name });
+    let viewer = viewer.map(crate::handlers::guard::SignedIn::viewer);
     let body = deposit_shell::view::page(title, traceparent.as_deref(), &state.css_href, viewer, content);
     (status, axum::response::Html(body.into_string())).into_response()
 }
 
 /// A 403 rendered as a page, so it is not a dead end. Only authenticated requests reach it,
 /// so the header renders signed in.
-pub(crate) fn forbidden(state: &IdentityState, viewer: &str, message: &str) -> axum::response::Response {
+pub(crate) fn forbidden(
+    state: &IdentityState,
+    viewer: &crate::handlers::guard::SignedIn,
+    message: &str,
+) -> axum::response::Response {
     render(
         state,
         "No access — DaSCH Metadata Editor",

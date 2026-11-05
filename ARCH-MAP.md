@@ -220,8 +220,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `editor-ports` (what the editor asks of identity: `Actor`,
   `Authenticator`, `UserDirectory` and their fakes), `editor-store` (the SQLite implementation
   of the persistence ports, the file `editor.sqlite`, and `LiveOpenWork` behind
-  `identity-ports`: open drafts, open submissions, and `unknown_projects` over `created_projects`
-  and a second load of the published set), `editor-web` (the editor's HTTP surface: pages, the form's rendered widgets,
+  `identity-ports`: open drafts, open submissions, `unknown_projects` over `created_projects`
+  and a second load of the published set, and `pending_reviews` over `count_pending`), `editor-web` (the editor's HTTP surface: pages, the form's rendered widgets,
   the handlers (which map each submit and approve refusal to its message)
   and route table, the extractors, the startup loaders and reconcile,
   behind the `Editor` facade; the document shell around the pages is the area's
@@ -409,10 +409,12 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   the document (`view::page`), the header and footer, the 403, 404 and problem pages, the
   area's sign-in link with its one open-redirect check (`sign_in::safe_next`, `login_url`,
   `NEXT`), and the RDU-only text. A `fn -> Markup` library that both capabilities' pages are
-  wrapped in; it turns nothing into a response.
-- **Key entities:** `page`, `Viewer`, `header`, `footer`, `forbidden`, `not_found`,
+  wrapped in; it turns nothing into a response. The header carries a role-based main menu
+  (`Menu`: Projects for a depositor; Projects, Review queue with its count, Approved records
+  and Accounts for RDU) with `aria-current` on the current page's item.
+- **Key entities:** `page`, `Viewer`, `Menu`, `header`, `footer`, `forbidden`, `not_found`,
   `unavailable`, `safe_next`, `login_url`, `NEXT`, `MAX_NEXT_LEN`, `RDU_ONLY`
-- **Public interface:** the `deposit_shell` library: `view::{page, Viewer}`,
+- **Public interface:** the `deposit_shell` library: `view::{page, Viewer, Menu}`,
   `pages::{forbidden::forbidden, not_found::not_found, problem::unavailable}`,
   `sign_in::{safe_next, login_url, NEXT}`, `RDU_ONLY`; the header and footer are private to
   `view::page`. No routes, no binary.
@@ -421,7 +423,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `areas/deposit/editor/web/src/shell.rs`, `areas/deposit/identity/web/src/handlers/guard.rs`,
   `areas/deposit/editor/style/main.css`
 - **Depends on:** modules/mosaic (`mosaic-tiles`, the header's sign-out button); third-party:
-  maud
+  maud, tracing (logs a failed review-queue count read)
 - **Used by:** areas/deposit/editor (`editor-web`: `shell.rs` turns its pages into
   responses, `handlers/auth.rs` builds the sign-in redirect, every handler module renders the
   problem page), areas/deposit/server (`deposit-server`: `shell.rs` renders the fallback 404), areas/deposit/identity (`identity-web`: `shell.rs` turns its pages into
@@ -432,11 +434,13 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     (ADR-0003) (**static-analysis** — `check-capability-deps.sh`). Has no Axum:
     each caller turns its `Markup` into a response (**static-analysis** — the same script's
     web-framework list).
-  - The routes it links are string literals: `/` and `POST /logout` (header), `/projects`
-    (403), `/login` (`login_url`, and the two login screens `safe_next` refuses), plus the
-    assets `/logo.svg`, `/vendor/datastar.js` and `/telemetry.js`, which `deposit-server`
-    serves from `areas/deposit/editor/public`. No compiler checks them against the route tables (**docs-only**, recorded in the
-    crate doc).
+  - The routes it links are string literals: `/` and `POST /logout` (header), the header menu's
+    `/projects`, `/review`, `/approved` and `/depositors`, `/projects` (403), `/login`
+    (`login_url`, and the two login screens `safe_next` refuses), plus the assets `/logo.svg`,
+    `/vendor/datastar.js` and `/telemetry.js`, which `deposit-server` serves from
+    `areas/deposit/editor/public`. No compiler checks them against the route tables. The four
+    menu hrefs are checked by the header-menu test in `deposit-server` (**static-analysis** —
+    `cross_capability::header_menu`); the rest stay **docs-only**, recorded in the crate doc.
   - One copy of the open-redirect allowlist: every request-derived redirect target goes through
     `safe_next`, except the editor's entity return path (`entity::origin::Origin`, registry ids only; see
     areas/deposit/editor), and `login_url` interpolates without encoding only because `safe_next` admits
@@ -445,7 +449,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - Its Tailwind classes ship only through `@source '../../shell/**/*.rs'` in the editor's
     `style/main.css`; moving the crate drops them silently (**review**).
 - **Durable state:** none.
-- **Fingerprint:** `082474aa6ce6`
+- **Fingerprint:** `ea4be6a98521`
 
 ### areas/deposit/identity
 
@@ -454,8 +458,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   (`areas/deposit/ADR-0004`). `identity-core`: accounts, sessions, login codes and mail sends
   as records and repository ports, the login rules, the session rules, the cookie names and
   `Cookie`-header scan, code and token generation, and the `Mailer` trait. `identity-ports`:
-  `OpenWork`, what identity asks of the editor: an account's open drafts and submissions, and
-  which assigned shortcodes name no published or created project. `identity-store`: the SQLite file
+  `OpenWork`, what identity asks of the editor: an account's open drafts and submissions,
+  which assigned shortcodes name no published or created project, and the review-queue count
+  the header shows. `identity-store`: the SQLite file
   `identity.sqlite` behind the four ports, the mail transports, and `LiveAuthenticator` and
   `LiveUserDirectory` behind `editor-ports`. `identity-web`: the login and depositor pages
   (which warn on an unknown shortcode), their handlers and route table, identity's own `Authenticated`/`Rdu` extractors, the
@@ -468,11 +473,13 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `MailError`, `SmtpMailer`, `ConsoleMailer`, `OpenWork`, `LiveAuthenticator`,
   `LiveUserDirectory`, `Identity`, `IdentitySettings`, `SmtpPassword`, `StartupError`,
   `IdentityState`, `Authenticated`, `Rdu`, `ensure_rdu`, `spawn_sweep`, `routes`, `route_paths`,
-  `RecordingMailer`, `FakeOpenWork`, `OpenWork::unknown_projects`
+  `RecordingMailer`, `FakeOpenWork`, `OpenWork::unknown_projects`,
+  `OpenWork::pending_reviews`
 - **Public interface:** the `identity_core` library (`records`, `repository`, `login`,
   `session`, `cookie`, `secret`, `mail`), the `identity_ports` library (`OpenWork`:
-  `drafts`, `submissions`, `unknown_projects`, which `editor-store`'s `LiveOpenWork` implements;
-  `PortFuture`, `Unavailable`; `FakeOpenWork` (`with_known_projects`, `failing_projects`, …)
+  `drafts`, `submissions`, `unknown_projects`, `pending_reviews`, which `editor-store`'s
+  `LiveOpenWork` implements; `PortFuture`, `Unavailable`; `FakeOpenWork` (`with_known_projects`,
+  `failing_projects`, `with_pending_reviews`, `failing_pending_reviews`, …)
   behind `test-support`) and the `identity_store` library (`Database`, `Source`, `DbError`,
   `mail::mailer`, `SmtpSetupError`, `LiveAuthenticator`, `LiveUserDirectory`; behind
   `test-support`, `test_support`'s plain-value seed helpers and readers (`seed_user`,
@@ -494,7 +501,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   (`identity-web`)
 - **Used by:** areas/deposit/server (`identity-web`'s facade and re-exports, `identity-store`'s
   stores and adapters; never `identity-core`), areas/deposit/editor (`editor-store`'s
-  `LiveOpenWork` answers `identity-ports`' `OpenWork` from its tables and the published set;
+  `LiveOpenWork` answers `identity-ports`' `OpenWork` from its tables and the published set, and
+  the header's review count through `SubmissionRepository::count_pending`;
   `editor-web` on no identity crate)
 - **Boundary rules:**
   - `identity-core` has no Axum, Maud or database dependency (**static-analysis** — `check-capability-deps.sh`).
@@ -507,8 +515,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     editor's side (**review**).
   - `identity-ports` depends on `std` alone: on no workspace crate but `shared-*`
     (**static-analysis** — `check-capability-deps.sh`), on no third-party crate (**static-analysis** — the same script).
-  - `identity-web` depends on no `editor-*` crate: the removal confirmation's open work and the
-    unknown-shortcode check come through `identity-ports` (**static-analysis** — `check-capability-deps.sh`). Only its `handlers/`,
+  - `identity-web` depends on no `editor-*` crate: the removal confirmation's open work, the
+    unknown-shortcode check and the header's review count come through `identity-ports` (**static-analysis** — `check-capability-deps.sh`). Only its `handlers/`,
     route table, `shell.rs`, `lib.rs` and the handler tests' `fixtures.rs` use axum; `pages/` are
     `fn -> Markup` (**static-analysis** — `check-views-no-axum.sh`, which checks every other file of the
     crate's `src/`).
@@ -528,7 +536,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `PRAGMA user_version`. **Single writer:** `identity-store`, through `identity-core`'s
   repository ports, called by `identity-web`'s handlers, the RDU bootstrap and the hourly
   sweep, and by `session::current`'s idle touch (also through `LiveAuthenticator`).
-- **Fingerprint:** `066a546db150`
+- **Fingerprint:** `fe27873d8ad8`
 
 ### areas/deposit/server
 
@@ -593,7 +601,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `EDITOR_DB_DIR` (two named in-memory databases when unset) and hands each store to its
   capability, which is the single writer. It hands `EDITOR_DATA_DIR` (the published set,
   read-only) to `EditorSettings` and to `LiveOpenWork`, which reads it once at construction.
-- **Fingerprint:** `e681c2b16764`
+- **Fingerprint:** `ac04084ebe46`
 
 ### modules/mosaic
 

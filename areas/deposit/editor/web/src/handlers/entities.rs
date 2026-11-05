@@ -81,11 +81,7 @@ async fn context<'a>(
             project.shortcode = %shortcode,
             "refused an entity form for a project that is not assigned to this account"
         );
-        return Err(crate::shell::forbidden(
-            state,
-            &user.actor.display_name,
-            crate::handlers::projects::NOT_ASSIGNED,
-        ));
+        return Err(crate::shell::forbidden(state, user, crate::handlers::projects::NOT_ASSIGNED));
     }
 
     let key = normalize_shortcode(shortcode);
@@ -705,13 +701,7 @@ fn render_page(
         None => title,
     };
     let view = view(shortcode, context, rendering);
-    crate::shell::render(
-        state,
-        &title,
-        StatusCode::OK,
-        Some(&user.actor.display_name),
-        crate::entity::page(&view),
-    )
+    crate::shell::render(state, &title, StatusCode::OK, Some(user), crate::entity::page(&view))
 }
 
 fn view<'a>(shortcode: &'a str, context: &'a Context<'a>, rendering: Rendering<'a>) -> crate::entity::EntityView<'a> {

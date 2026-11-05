@@ -141,6 +141,22 @@ impl SubmissionRepository for Database {
             .await?)
     }
 
+    async fn count_pending(&self) -> Result<usize> {
+        Ok(self
+            .read(|conn| {
+                // The states `SubmissionState::is_pending` accepts; a test pins the two together.
+                conn.query_row(
+                    "SELECT COUNT(*) FROM submissions WHERE state IN (?1, ?2)",
+                    params![SubmissionState::Submitted.as_str(), SubmissionState::InReview.as_str()],
+                    |row| {
+                        let n: i64 = row.get(0)?;
+                        usize::try_from(n).map_err(|_| rusqlite::Error::IntegralValueOutOfRange(0, n))
+                    },
+                )
+            })
+            .await?)
+    }
+
     async fn delete(&self, id: Uuid) -> Result<bool> {
         let deleted = self
             .write(move |tx| tx.execute("DELETE FROM submissions WHERE id = ?1", params![id.to_string()]))
@@ -350,6 +366,35 @@ mod tests {
             .map(|s| s.shortcode)
             .collect();
         assert_eq!(shortcodes, vec!["0801".to_string(), "0805".to_string(), "0803".to_string()]);
+    }
+
+    /// Every state, walked through an exhaustive `match`: a new variant does not compile until
+    /// it is placed in the chain.
+    fn every_state() -> Vec<SubmissionState> {
+        let mut states = vec![SubmissionState::Submitted];
+        while let Some(next) = match *states.last().unwrap() {
+            SubmissionState::Submitted => Some(SubmissionState::InReview),
+            SubmissionState::InReview => Some(SubmissionState::Approved),
+            SubmissionState::Approved => None,
+        } {
+            states.push(next);
+        }
+        states
+    }
+
+    #[tokio::test]
+    async fn test_count_pending_counts_exactly_the_pending_states() {
+        let db = test_db("submissions-count-pending").await;
+        assert_eq!(SubmissionRepository::count_pending(&db).await.unwrap(), 0);
+
+        let states = every_state();
+        for (i, state) in states.iter().enumerate() {
+            let shortcode = format!("08{i:02}");
+            crate::test_support::seed_submission(&db, &shortcode, "{}", state.as_str(), None, at(11), None, None).await;
+        }
+
+        let pending = states.iter().filter(|state| state.is_pending()).count();
+        assert_eq!(SubmissionRepository::count_pending(&db).await.unwrap(), pending);
     }
 
     #[tokio::test]

@@ -911,6 +911,7 @@ version = "0.8.10"
 dependencies = [
  "maud",
  "mosaic-tiles",
+ "tracing",
 ]
 
 [[package]]

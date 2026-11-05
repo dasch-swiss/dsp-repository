@@ -66,7 +66,7 @@ pub(crate) fn storage_error(
         state,
         "Page unavailable — DaSCH Metadata Editor",
         StatusCode::INTERNAL_SERVER_ERROR,
-        Some(&user.actor.display_name),
+        Some(user),
         deposit_shell::pages::problem::unavailable(&format!(
             "The editor could not reach its database, so this {} is not showing what it should. Try again; if it \
              keeps happening, the service needs attention.",

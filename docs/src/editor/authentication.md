@@ -141,7 +141,7 @@ Authentication says who is asking. Authorization says what they may reach, and i
 
 ### Two extractors, and why not a middleware
 
-`Authenticated` yields the signed-in account or refuses; `Rdu` composes it and additionally requires the `rdu` role. Both are Axum extractors, so a handler that names one **cannot** run without the check — the argument is what performs it — and a handler that names neither is public, visibly, in its signature.
+`Authenticated` yields the signed-in account or refuses (for RDU it also reads the review-queue count once per request, for the header; a handler that ends a review round re-reads it with `Account::refresh_menu` before rendering, and an enhanced-path (Datastar) write leaves the header as rendered until the next navigation); `Rdu` composes it and additionally requires the `rdu` role. Both are Axum extractors, so a handler that names one **cannot** run without the check — the argument is what performs it — and a handler that names neither is public, visibly, in its signature.
 
 There are two pairs, one per capability, over one copy of the session rules. Identity's (`identity-web/src/handlers/guard.rs`), for the depositor pages, calls `session::current` and yields the account. The editor's (`editor-web/src/handlers/auth.rs`) asks `editor-ports`' `Authenticator`, which `identity-store`'s `LiveAuthenticator` answers by calling the same `session::current`, and yields the `Actor` with its account id parsed into the `Uuid` the editor's records hold. An id that does not parse is treated as no session.
 

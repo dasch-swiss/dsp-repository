@@ -32,7 +32,7 @@ use serde::Deserialize;
 use shared_metadata::is_valid_shortcode;
 use uuid::Uuid;
 
-use crate::handlers::guard::Rdu;
+use crate::handlers::guard::{Rdu, SignedIn};
 use crate::pages::depositors as page;
 use crate::shell::{format_instant, IdentityState};
 
@@ -175,7 +175,7 @@ pub(crate) async fn list(State(state): State<IdentityState>, Rdu(viewer): Rdu) -
         &state,
         LIST_TITLE,
         StatusCode::OK,
-        Some(&viewer.name),
+        Some(&viewer),
         page::list(&rows, projects_checked),
     )
 }
@@ -183,13 +183,7 @@ pub(crate) async fn list(State(state): State<IdentityState>, Rdu(viewer): Rdu) -
 /// `GET /depositors/new` — the empty create form.
 pub(crate) async fn create_form(State(state): State<IdentityState>, Rdu(viewer): Rdu) -> Response {
     let fields = page::DepositorFields { name: "", email: "", shortcodes: "" };
-    crate::shell::render(
-        &state,
-        CREATE_TITLE,
-        StatusCode::OK,
-        Some(&viewer.name),
-        page::create(&fields, None),
-    )
+    crate::shell::render(&state, CREATE_TITLE, StatusCode::OK, Some(&viewer), page::create(&fields, None))
 }
 
 /// `POST /depositors` — create a depositor.
@@ -209,7 +203,7 @@ pub(crate) async fn create(
     Form(form): Form<DepositorForm>,
 ) -> Response {
     let span = tracing::Span::current();
-    span.record("auth.actor", tracing::field::display(viewer.id));
+    span.record("auth.actor", tracing::field::display(viewer.user.id));
 
     let (name, email, shortcodes) = match form.validate() {
         Ok(values) => values,
@@ -276,7 +270,7 @@ pub(crate) async fn edit_form(
         &state,
         EDIT_TITLE,
         StatusCode::OK,
-        Some(&viewer.name),
+        Some(&viewer),
         page::edit(&target.id.to_string(), &fields, None, unknown.as_deref()),
     )
 }
@@ -301,7 +295,7 @@ pub(crate) async fn update(
     Form(form): Form<DepositorForm>,
 ) -> Response {
     let span = tracing::Span::current();
-    span.record("auth.actor", tracing::field::display(viewer.id));
+    span.record("auth.actor", tracing::field::display(viewer.user.id));
 
     let target = match manageable(&state, &viewer, &id).await {
         Ok(user) => user,
@@ -393,7 +387,7 @@ pub(crate) async fn remove_form(
         &state,
         REMOVE_TITLE,
         StatusCode::OK,
-        Some(&viewer.name),
+        Some(&viewer),
         page::confirm_removal(&target.id.to_string(), &impact),
     )
 }
@@ -411,7 +405,7 @@ pub(crate) async fn remove_form(
 )]
 pub(crate) async fn remove(State(state): State<IdentityState>, Rdu(viewer): Rdu, Path(id): Path<String>) -> Response {
     let span = tracing::Span::current();
-    span.record("auth.actor", tracing::field::display(viewer.id));
+    span.record("auth.actor", tracing::field::display(viewer.user.id));
 
     // Re-checked here and not only on the confirmation page: the confirmation is
     // a `GET`, so nothing stops a `POST` arriving without one.
@@ -450,7 +444,7 @@ pub(crate) async fn remove(State(state): State<IdentityState>, Rdu(viewer): Rdu,
 /// Three refusals in one place, because every route that changes an account
 /// needs all three and one route forgetting one is how an RDU row gets edited
 /// through a URL typed by hand.
-async fn manageable(state: &IdentityState, viewer: &User, id: &str) -> Result<User, Response> {
+async fn manageable(state: &IdentityState, viewer: &SignedIn, id: &str) -> Result<User, Response> {
     // The id is a path segment, so it is whatever was typed. Parsed here rather
     // than by `Path<Uuid>`: a value that is not an id at all should be the same
     // 404 as an id that names nothing, not a deserialization error explaining
@@ -459,7 +453,7 @@ async fn manageable(state: &IdentityState, viewer: &User, id: &str) -> Result<Us
         return Err(crate::shell::not_found(state));
     };
     match UserRepository::find_by_id(&*state.store, id).await {
-        Ok(Some(user)) if user.is_rdu() => Err(crate::shell::forbidden(state, &viewer.name, RDU_IMMUTABLE)),
+        Ok(Some(user)) if user.is_rdu() => Err(crate::shell::forbidden(state, viewer, RDU_IMMUTABLE)),
         Ok(Some(user)) => Ok(user),
         // Not a 403: a reader who reached this page followed a link from the
         // list, and an account that is not there is gone rather than closed.
@@ -469,7 +463,7 @@ async fn manageable(state: &IdentityState, viewer: &User, id: &str) -> Result<Us
 }
 
 /// The create form, redisplayed with what was typed and why it was refused.
-fn rejected_create(state: &IdentityState, viewer: &User, form: &DepositorForm, message: &str) -> Response {
+fn rejected_create(state: &IdentityState, viewer: &SignedIn, form: &DepositorForm, message: &str) -> Response {
     // 200 rather than 422: this is a form being redisplayed, which is what a
     // browser needs to show it. The outcome is on the span, which is where
     // alerting reads it from.
@@ -477,18 +471,18 @@ fn rejected_create(state: &IdentityState, viewer: &User, form: &DepositorForm, m
         state,
         CREATE_TITLE,
         StatusCode::OK,
-        Some(&viewer.name),
+        Some(viewer),
         page::create(&form.as_fields(), Some(message)),
     )
 }
 
 /// The edit form, redisplayed the same way.
-fn rejected_edit(state: &IdentityState, viewer: &User, id: Uuid, form: &DepositorForm, message: &str) -> Response {
+fn rejected_edit(state: &IdentityState, viewer: &SignedIn, id: Uuid, form: &DepositorForm, message: &str) -> Response {
     crate::shell::render(
         state,
         EDIT_TITLE,
         StatusCode::OK,
-        Some(&viewer.name),
+        Some(viewer),
         page::edit(&id.to_string(), &form.as_fields(), Some(message), Some(&[])),
     )
 }
@@ -503,13 +497,13 @@ fn rejected_edit(state: &IdentityState, viewer: &User, id: Uuid, form: &Deposito
 /// opposite things, and routing a 500 through the 403 tells an RDU member they
 /// do not have access to a page they administer — which sends whoever reads it
 /// hunting for a misconfigured account instead of a database that is down.
-fn storage_error(state: &IdentityState, viewer: &User, what: &str, error: &impl std::fmt::Display) -> Response {
+fn storage_error(state: &IdentityState, viewer: &SignedIn, what: &str, error: &impl std::fmt::Display) -> Response {
     tracing::error!(error = %error, operation = what, "an account screen could not reach storage");
     crate::shell::render(
         state,
         UNAVAILABLE_TITLE,
         StatusCode::INTERNAL_SERVER_ERROR,
-        Some(&viewer.name),
+        Some(viewer),
         deposit_shell::pages::problem::unavailable(
             "The editor could not reach its database, so this page is not showing what it should. Try again; if it \
              keeps happening, the service needs attention.",
@@ -1051,5 +1045,59 @@ mod route_tests {
             lines.iter().any(|line| line.contains(&created.id.to_string())),
             "the account must stay traceable: {lines:?}"
         );
+    }
+
+    /// The header's `nav aria-label="Main"` element, which the page body's own links stay out of.
+    fn main_nav(page: &str) -> &str {
+        let start = page
+            .find(r#"<nav aria-label="Main""#)
+            .expect("the page should carry the main nav");
+        let end = page[start..].find("</nav>").expect("the nav should close");
+        &page[start..start + end]
+    }
+
+    #[tokio::test]
+    async fn test_an_rdu_sees_the_full_menu_with_the_pending_count() {
+        let (mut state, _) = test_state("dep-menu-rdu").await;
+        state.open_work = std::sync::Arc::new(identity_ports::FakeOpenWork::new().with_pending_reviews(3));
+        let (_, session) = rdu(&state).await;
+
+        let rendered = page(&test_app(&state), "/depositors", &session).await;
+        let nav = main_nav(&rendered);
+        for expected in ["Projects", "Review queue (3)", "Approved records", "Accounts"] {
+            assert!(nav.contains(expected), "{expected:?} missing from {nav}");
+        }
+        assert_eq!(nav.matches(r#"aria-current="page""#).count(), 1, "{nav}");
+        assert!(nav.contains(r#"aria-current="page">Accounts"#), "{nav}");
+    }
+
+    #[tokio::test]
+    async fn test_an_unreadable_pending_count_leaves_it_off_the_menu_without_failing_the_page() {
+        let (mut state, _) = test_state("dep-menu-count-down").await;
+        state.open_work = std::sync::Arc::new(identity_ports::FakeOpenWork::new().failing_pending_reviews());
+        let (_, session) = rdu(&state).await;
+
+        let rendered = page(&test_app(&state), "/depositors", &session).await;
+        let nav = main_nav(&rendered);
+        assert!(nav.contains("Review queue"), "{nav}");
+        assert!(!nav.contains("Review queue ("), "{nav}");
+    }
+
+    #[tokio::test]
+    async fn test_a_depositor_refused_the_account_screens_sees_the_depositor_menu() {
+        let (state, _) = test_state("dep-menu-depositor").await;
+        let (_, session) = depositor(&state, DEPOSITOR_EMAIL, &[]).await;
+
+        let response = test_app(&state)
+            .oneshot(as_session(get("/depositors"), &session))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::FORBIDDEN);
+        let rendered = body_string(response).await;
+        let nav = main_nav(&rendered);
+        assert!(nav.contains("Projects"), "{nav}");
+        for href in ["/review", "/approved", "/depositors"] {
+            assert!(!nav.contains(&format!(r#"href="{href}""#)), "{href} in {nav}");
+        }
     }
 }

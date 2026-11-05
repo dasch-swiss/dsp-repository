@@ -22,7 +22,7 @@ The depositor's working copy of one project: a `drafts` row holding a `ProjectDr
 _Avoid_: working copy, unsaved changes (a draft is saved), "the JSON" or "the export" anywhere a depositor reads (REQ-2.2).
 
 **Draft in progress**:
-A Draft with no Submission row, edited after the project's newest approved Review round, since submitting and approving both leave the `drafts` row in place. A save after approval, even one that changes nothing, lists the draft again. The review queue's second table lists these.
+A Draft with no Submission row, edited after the project's newest approved Review round, since submitting and approving both leave the `drafts` row in place. A save after approval, even one that changes nothing, lists the draft again. The Review queue's second table lists these.
 
 **Submission**:
 A `submissions` row, at most one per project, created when a depositor submits a Draft and deleted by every review outcome; it carries the submitted payload untouched and, while a round runs, the Review state beside it.
@@ -73,6 +73,9 @@ _Avoid_: status (the contract's `ProjectStatus` is the research project's own li
 
 **Submission state**:
 The three stored values of a Submission (`SubmissionState`: Submitted, In review, Approved); a reviewer's claim moves Submitted to In review, which the project form reads as a reason to lock the depositor out. Submitted and In review are pending (`SubmissionState::is_pending`, the one definition).
+
+**Review queue**:
+The `/review` page: the pending submissions RDU reviews (Submitted and In review, as defined by `SubmissionState::is_pending`) and, in a second table, the Drafts in progress; the header counts only the pending submissions.
 
 **Published set**:
 The `projects/*.json` files baked into the editor image (`PublishedProjects`), keyed by the case-folded `shortcode` field — not the filename stem, which disagrees with the field in five files.

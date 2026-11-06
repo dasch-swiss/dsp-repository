@@ -455,7 +455,8 @@ project is embargoed, the metadata is only available on the project level.</li>
 <li><code>legalInfo</code>: Legal information about the project. Calculated from records;
 cannot be specified explicitly on the project.</li>
 <li><code>dataManagementPlan</code>: A data management plan (string or URL); use "not
-accessible" if not available.</li>
+accessible" if not available. The page links any other value, so the editor
+accepts only a full web address or exactly <code>not accessible</code>.</li>
 <li><code>typeOfData</code>: The type(s) of data — "XML", "Text", "Image", "Video", "Audio".
 Computed from the records where available and optionally added manually.</li>
 <li><code>dataLanguage</code>: Languages contained in the project. Computed from the records
@@ -746,7 +747,7 @@ implementation also uses <code>'URL'</code> for plain links.</li>
 </div>
 <ul>
 <li><code>text</code>: The text of the publication.</li>
-<li><code>pid</code>: A URL to the publication, e.g. a DOI, if available.</li>
+<li><code>pid</code>: A URL to the publication, e.g. a DOI, if available. A bare DOI (<code>10.1234/abcd</code>) is resolved through <code>https://doi.org/</code> wherever it is linked or used as an identifier (<code>shared_metadata::pid_href</code>).</li>
 </ul>
 <h3 id="address"><a class="header" href="#address">Address</a></h3>
 <div class="table-wrapper"><table><thead><tr><th>Field</th><th>Type</th><th>Card.</th></tr></thead><tbody>

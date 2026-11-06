@@ -624,7 +624,7 @@ corpus records an authority URL.</li>
 <code>shared/fair/src/record_datacite.rs</code>).</li>
 <li>The project's schema.org graph carries <code>hasPart</code> over record ARKs
 (<code>part_nodes</code>), <code>citation</code> nodes whose <code>@id</code> is a publication's PID when one is
-recorded (<code>citation_nodes</code>), <code>spatialCoverage</code> <code>Place</code> nodes with <code>sameAs</code> to
+recorded, a bare DOI through <code>https://doi.org/</code> (<code>citation_nodes</code>), <code>spatialCoverage</code> <code>Place</code> nodes with <code>sameAs</code> to
 an authority URL (<code>spatial_nodes</code>), agent nodes whose <code>@id</code> is the agent's
 ORCID (<code>agent_node</code>), <code>prov:wasAttributedTo</code> pointing at <em>those same nodes</em>
 rather than describing copies (<code>attributed_to</code>), <code>includedInDataCatalog</code>, and

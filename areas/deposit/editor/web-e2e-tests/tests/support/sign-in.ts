@@ -2,6 +2,10 @@ import { expect, type Page } from "@playwright/test";
 
 import { logOffset, waitForLoginCode } from "./server-log";
 
+/** What `/login/code` says to every code it refuses, whatever the reason. */
+export const CODE_REJECTED =
+  "That code is not valid, or it has expired. Request a new one.";
+
 /**
  * Drive the real two-step sign-in: post the address, read the code the console
  * mailer wrote to the log, post the code.

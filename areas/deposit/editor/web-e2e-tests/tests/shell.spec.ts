@@ -7,7 +7,12 @@ import {
   RDU_STATE,
 } from "../playwright.config";
 import { createDepositor, throwawayEmail } from "./support/depositors";
-import { enterCode, requestCode, signIn } from "./support/sign-in";
+import {
+  CODE_REJECTED,
+  enterCode,
+  requestCode,
+  signIn,
+} from "./support/sign-in";
 
 /**
  * Sign-in, sign-out, the header menus and the error pages, as a browser sees
@@ -18,9 +23,6 @@ import { enterCode, requestCode, signIn } from "./support/sign-in";
  * spends budgets that live as long as the server, and a sign-out with the
  * shared jars would sign every later spec out.
  */
-
-const CODE_REJECTED =
-  "That code is not valid, or it has expired. Request a new one.";
 
 /** A throwaway depositor, created by RDU in a context of its own. */
 async function throwaway(browser: Browser, purpose: string): Promise<string> {

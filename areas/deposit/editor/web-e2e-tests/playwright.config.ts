@@ -62,8 +62,14 @@ export const DEPOSITOR_EMAIL = "depositor@example.test";
  * vocabulary check reads: a project whose text holds a word
  * `tests/support/vocabulary.ts` forbids ("Committee", "Transfers") fails it.
  *
- * Codes the suite takes outside this list: `REMOVED_SHORTCODES` (`E2E5`, `E2E6`), and
+ * Codes the suite takes outside this list: `REMOVED_SHORTCODES`, `A11Y_CREATED_SHORTCODE`, and
  * `0813`, the published code `projects.spec.ts` tries to create.
+ *
+ * Adding a spec: append its entry at the end, since the constants below index this list. A spec
+ * that walks a lifecycle from a starting state in both passes gets a per-pass
+ * `Partial<Record<…>>` map, read with `perPass`. Only a spec whose assertions hold whatever another
+ * spec left in the draft may share `PICKER_SHORTCODE`, except the one its doc names. A code from
+ * the data set needs a project JSON with no word the vocabulary check forbids (above).
  */
 export const DEPOSITOR_SHORTCODES = [
   "0103",
@@ -172,8 +178,9 @@ export const REMOVED_SHORTCODES: Partial<Record<string, string>> = {
   "chromium-nojs": "E2E6",
 };
 /**
- * The accessibility sweep's submitted-locked and awaiting-release pages. Not
- * shared: submitting locks the form, so any other spec would find it read-only.
+ * The accessibility sweep's submitted-locked and awaiting-release pages, and its
+ * approved record's discard page. Not shared: submitting locks the form, so any
+ * other spec would find it read-only.
  */
 export const A11Y_STATES_SHORTCODE = DEPOSITOR_SHORTCODES[12];
 /**
@@ -183,6 +190,18 @@ export const A11Y_STATES_SHORTCODE = DEPOSITOR_SHORTCODES[12];
 export const REFUSED_SUBMIT_SHORTCODE = DEPOSITOR_SHORTCODES[13];
 /** A language-row line saved with no language. */
 export const LANGUAGE_ROWS_SHORTCODE = DEPOSITOR_SHORTCODES[14];
+/**
+ * The accessibility sweep's pages that need a proposal, a draft, a submission
+ * and a claim. Not shared: it is submitted and claimed. One, not one per pass:
+ * `accessibility.spec.ts` runs only in `chromium-js`.
+ */
+export const A11Y_REVIEW_SHORTCODE = DEPOSITOR_SHORTCODES[29];
+/**
+ * Created by RDU for the accessibility sweep's remove page, and never removed.
+ * Assigned to no depositor, like `REMOVED_SHORTCODES`; one, for the reason
+ * `A11Y_REVIEW_SHORTCODE` gives.
+ */
+export const A11Y_CREATED_SHORTCODE = "E2E7";
 
 /*
  * One project per pass, for the reason `STATUS_SHORTCODES` gives: each spec walks

@@ -2,12 +2,19 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
 import {
+  A11Y_CREATED_SHORTCODE,
+  A11Y_REVIEW_SHORTCODE,
   A11Y_STATES_SHORTCODE,
+  DEPOSITOR_EMAIL,
   DEPOSITOR_SHORTCODE,
   DEPOSITOR_STATE,
   RDU_STATE,
+  RDU2_STATE,
 } from "../playwright.config";
 import { formatViolations } from "./support/axe-helpers";
+import { depositorRow, throwawayEmail } from "./support/depositors";
+import { proposePerson } from "./support/proposals";
+import { claimReview, submitAs } from "./support/review";
 
 // WCAG 2.1 Level AA — required by EU Directive 2019/882 (EAA) via EN 301 549.
 async function expectNoViolations(
@@ -36,6 +43,18 @@ test.describe("signed out", () => {
       await expectNoViolations(page);
     });
   }
+
+  test("Enter the code (/login/code) has no violations", async ({ page }) => {
+    // An address with no account: the page renders for any address.
+    await page.goto("/login");
+    await page.fill('[name="email"]', throwawayEmail("a11y-code"));
+    await page.getByRole("button", { name: "Send me a code" }).click();
+    await page.waitForURL(/\/login\/code/);
+    await expect(
+      page.getByRole("heading", { name: "Enter your code", level: 1 }),
+    ).toBeVisible();
+    await expectNoViolations(page);
+  });
 });
 
 test.describe("depositor — the form screens", () => {
@@ -86,12 +105,65 @@ test.describe("RDU — the review screens", () => {
     { name: "Depositor accounts", path: "/depositors" },
     { name: "New depositor", path: "/depositors/new" },
     { name: "Approved records", path: "/approved" },
+    { name: "New project", path: "/projects/new" },
   ]) {
     test(`${name} (${path}) has no violations`, async ({ page }) => {
       await page.goto(path);
       await expectNoViolations(page);
     });
   }
+
+  for (const [action, heading] of [
+    ["Edit", /^Edit /],
+    ["Remove", /^Remove .+\?$/],
+  ] as const) {
+    test(`the depositor's ${action} page has no violations`, async ({
+      page,
+    }) => {
+      await page.goto("/depositors");
+      await depositorRow(page, DEPOSITOR_EMAIL)
+        .getByRole("link", { name: action })
+        .click();
+      await expect(page).toHaveURL(
+        new RegExp(`/depositors/[^/]+/${action.toLowerCase()}$`),
+      );
+      await expect(
+        page.getByRole("heading", { name: heading, level: 1 }),
+      ).toBeVisible();
+      await expectNoViolations(page);
+    });
+  }
+
+  test("a created project's remove page has no violations", async ({
+    page,
+  }) => {
+    await page.goto("/projects/new");
+    await page
+      .getByLabel("Shortcode", { exact: true })
+      .fill(A11Y_CREATED_SHORTCODE);
+    await page
+      .getByLabel("Name", { exact: true })
+      .fill(`Accessibility sweep ${A11Y_CREATED_SHORTCODE}`);
+    await page
+      .locator("main")
+      .getByRole("button", { name: "Create project" })
+      .click();
+    // Created, or on a retry refused as already created: either way it exists.
+    await expect(page.locator("main")).toContainText(
+      new RegExp(
+        `Accessibility sweep ${A11Y_CREATED_SHORTCODE}|Project ${A11Y_CREATED_SHORTCODE} has already been created`,
+      ),
+    );
+
+    await page.goto("/projects");
+    await page
+      .getByRole("link", { name: `Remove project ${A11Y_CREATED_SHORTCODE}` })
+      .click();
+    await expect(
+      page.locator("main").getByRole("button", { name: "Remove project" }),
+    ).toBeVisible();
+    await expectNoViolations(page);
+  });
 });
 
 test.describe("depositor — the section page in later states", () => {
@@ -178,6 +250,112 @@ test.describe("depositor — the section page in later states", () => {
     } finally {
       await rdu.close();
       await depositor.close();
+    }
+  });
+
+  test("the approved record's discard confirmation has no violations", async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({ storageState: RDU_STATE });
+    try {
+      const page = await context.newPage();
+      await page.goto("/approved");
+      await page
+        .locator("tr", { hasText: A11Y_STATES_SHORTCODE })
+        .getByRole("link", { name: "Discard" })
+        .click();
+      await expect(page).toHaveURL(/\/approved\/[^/]+\/discard$/);
+      await expect(
+        page.getByRole("heading", { name: "Discard this record?", level: 1 }),
+      ).toBeVisible();
+      await expectNoViolations(page);
+    } finally {
+      await context.close();
+    }
+  });
+});
+
+test.describe("the pages behind a proposal, a draft, a submission and a claim", () => {
+  // A retry would start from the state the failed attempt left. Runs once per
+  // server, so a local re-run needs a fresh one.
+  test.describe.configure({ mode: "serial", retries: 0 });
+  test.use({ storageState: DEPOSITOR_STATE });
+
+  const overview = `/projects/${A11Y_REVIEW_SHORTCODE}/sections/overview`;
+
+  test("an entity proposal page has no violations", async ({ page }) => {
+    const form = await proposePerson(
+      page,
+      A11Y_REVIEW_SHORTCODE,
+      `A11y ${A11Y_REVIEW_SHORTCODE}`,
+    );
+
+    await page.goto(form);
+    await expect(
+      page.getByRole("textbox", { name: "Given name 1", exact: true }),
+    ).toHaveValue("Ada");
+    await expectNoViolations(page);
+  });
+
+  test("the discard-draft confirmation has no violations", async ({ page }) => {
+    await page.goto(overview);
+    await page.fill(
+      'input[name="name"]',
+      `A11y draft ${A11Y_REVIEW_SHORTCODE}`,
+    );
+    await page.getByRole("button", { name: "Save draft" }).click();
+    await expect(page.locator("main")).toContainText("Draft saved");
+
+    await page.goto(overview);
+    await page.getByRole("button", { name: "Discard draft" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Discard the draft?" }),
+    ).toBeVisible();
+    await expectNoViolations(page);
+  });
+
+  test("the take-back confirmation has no violations", async ({
+    browser,
+    page,
+  }) => {
+    await submitAs(browser, A11Y_REVIEW_SHORTCODE, (form) =>
+      form.fill(
+        'input[name="name"]',
+        `A11y submitted ${A11Y_REVIEW_SHORTCODE}`,
+      ),
+    );
+
+    await page.goto(overview);
+    await page
+      .getByRole("button", { name: "Take the submission back" })
+      .click();
+    await expect(
+      page.getByRole("heading", { name: "Take the submission back?" }),
+    ).toBeVisible();
+    await expectNoViolations(page);
+  });
+
+  test("a review another reviewer holds, with a proposed person, has no violations", async ({
+    browser,
+  }) => {
+    const rdu = await browser.newContext({ storageState: RDU_STATE });
+    const second = await browser.newContext({ storageState: RDU2_STATE });
+    try {
+      await claimReview(await rdu.newPage(), A11Y_REVIEW_SHORTCODE);
+
+      const page = await second.newPage();
+      await page.goto(`/review/${A11Y_REVIEW_SHORTCODE}`);
+      const main = page.locator("main");
+      await expect(main).toContainText("Somebody else is reviewing this");
+      await expect(
+        main.getByRole("heading", {
+          name: "Proposed people and organisations",
+        }),
+      ).toBeVisible();
+      await expectNoViolations(page);
+    } finally {
+      await rdu.close();
+      await second.close();
     }
   });
 });

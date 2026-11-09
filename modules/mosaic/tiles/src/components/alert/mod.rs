@@ -1,4 +1,4 @@
-//! Alert tile: a bordered, tinted block carrying a message, with an optional
+//! Alert tile: a tinted block with a coloured left stripe carrying a message, with an optional
 //! bold title above it.
 //!
 //! See `docs/src/mosaic/component-api-conventions.md`.
@@ -224,10 +224,7 @@ mod tests {
         let out = alert("x").build().into_string();
         assert!(out.contains(r#"class="alert alert-info""#), "{out}");
         let css = include_str!("alert.css");
-        assert!(
-            css.contains("@apply mb-4 rounded border"),
-            "the `.alert` rule owns the margin: {css}"
-        );
+        assert!(css.contains("@apply mb-4 "), "the `.alert` rule owns the margin: {css}");
     }
 
     #[test]

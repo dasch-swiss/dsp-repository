@@ -7,7 +7,7 @@ use super::{example, page_header, page_layout};
 pub fn page() -> Markup {
     let header = page_header(
         "Alert",
-        "A bordered, tinted block carrying a message, with an optional bold title. The variant decides both the \
+        "A tinted block with a coloured left stripe carrying a message, with an optional bold title. The variant decides both the \
          colour and whether assistive technology is interrupted.",
     );
     page_layout(header, examples())

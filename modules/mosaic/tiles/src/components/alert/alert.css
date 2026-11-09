@@ -1,8 +1,11 @@
 @layer components {
   /*
-   * Colours are the -50 surface with -800 text and a -300 border. The `link`
-   * tile's text-primary-600 clears AA on every one of these surfaces, so a link
-   * inside an alert needs no variant of its own.
+   * Info's stripe is primary-600, the brand blue, not info-600. The `link`
+   * tile's resting colour clears 4.5:1 on every -50 surface; its hover colour
+   * does not.
+   *
+   * Corners stay square while the stripe is one-sided: a radius there ends in
+   * a bent tip.
    */
   /*
    * `mb-4` is part of the tile, not a per-call-site class. A caller needing a
@@ -11,7 +14,7 @@
    * order they appear in the attribute.
    */
   .alert {
-    @apply mb-4 rounded border px-3 py-2;
+    @apply mb-4 rounded-none border border-l-4 px-3 py-2 text-neutral-900;
   }
 
   .alert-title {
@@ -19,18 +22,18 @@
   }
 
   .alert-info {
-    @apply border-info-300 bg-info-50 text-info-800;
+    @apply border-info-200 border-l-primary-600 bg-info-50;
   }
 
   .alert-success {
-    @apply border-success-300 bg-success-50 text-success-800;
+    @apply border-success-200 border-l-success-600 bg-success-50;
   }
 
   .alert-warning {
-    @apply border-warning-300 bg-warning-50 text-warning-800;
+    @apply border-warning-200 border-l-warning-700 bg-warning-50;
   }
 
   .alert-danger {
-    @apply border-danger-300 bg-danger-50 text-danger-800;
+    @apply border-danger-200 border-l-danger-600 bg-danger-50;
   }
 }

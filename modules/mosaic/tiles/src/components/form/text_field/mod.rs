@@ -63,6 +63,7 @@ pub struct TextFieldBuilder {
     inputmode: Option<&'static str>,
     pattern: Option<String>,
     maxlength: Option<u32>,
+    one_time_code: bool,
     list: Option<String>,
     required: bool,
     autofocus: bool,
@@ -89,6 +90,7 @@ pub fn text_field(name: impl Into<String>, label: impl Render) -> TextFieldBuild
         inputmode: None,
         pattern: None,
         maxlength: None,
+        one_time_code: false,
         list: None,
         required: false,
         autofocus: false,
@@ -199,6 +201,7 @@ impl TextFieldBuilder {
         self.inputmode = Some("numeric");
         self.pattern = Some(format!("[0-9]{{{digits}}}"));
         self.maxlength = Some(digits);
+        self.one_time_code = true;
         self
     }
 
@@ -231,9 +234,14 @@ impl TextFieldBuilder {
             counter: None,
         };
         let described_by = shell.described_by();
+        let class = if self.one_time_code {
+            "field-input field-input-code"
+        } else {
+            "field-input"
+        };
         let control = html! {
             input
-                class="field-input"
+                class=(class)
                 id=(id)
                 name=(self.name)
                 type=(self.input_type.as_str())
@@ -350,6 +358,15 @@ mod tests {
         assert!(out.contains(r#"inputmode="numeric""#), "{out}");
         assert!(out.contains(r#"pattern="[0-9]{6}""#), "{out}");
         assert!(out.contains(r#"maxlength="6""#), "{out}");
+    }
+
+    #[test]
+    fn only_a_one_time_code_field_carries_the_code_class() {
+        let code = text_field("code", "Code").one_time_code(6).build().into_string();
+        assert!(code.contains(r#"class="field-input field-input-code""#), "{code}");
+        let plain = text_field("name", "Name").build().into_string();
+        assert!(plain.contains(r#"class="field-input""#), "{plain}");
+        assert!(!plain.contains("field-input-code"), "{plain}");
     }
 
     #[test]

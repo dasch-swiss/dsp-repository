@@ -25,6 +25,11 @@
     @apply rounded border border-neutral-500 px-3 py-2 focus-visible:outline-2 focus-visible:outline-primary-600;
   }
 
+  /* The indent balances the tracking letter-spacing adds after the last digit, so the code stays centred. */
+  .field-input-code {
+    @apply indent-[0.5em] text-center font-mono text-xl tracking-[0.5em];
+  }
+
   /*
    * Placeholder text is neutral-600, the lightest stop that reaches 4.5:1 (WCAG 2.1 SC 1.4.3) on
    * white; the browser default is a 50% mix of the text colour and falls short.

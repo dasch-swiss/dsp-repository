@@ -40,4 +40,67 @@
   .badge-info {
     @apply bg-info-100 text-info-800;
   }
+
+  /* The tints are compound selectors so they beat the plain variant rule. */
+  .badge-status {
+    @apply gap-1.5 rounded-full border font-bold;
+  }
+
+  .badge-status::before {
+    content: '';
+    @apply size-1.5 shrink-0 rounded-full bg-current;
+  }
+
+  .badge-status.badge-secondary {
+    @apply border-neutral-300 bg-neutral-100 text-neutral-700;
+  }
+
+  .badge-status.badge-primary {
+    @apply border-primary-200 bg-primary-50 text-primary-700;
+  }
+
+  .badge-status.badge-info {
+    @apply border-info-200 bg-info-50 text-info-700;
+  }
+
+  .badge-status.badge-success {
+    @apply border-success-200 bg-success-50 text-success-700;
+  }
+
+  .badge-status.badge-warning {
+    @apply border-warning-200 bg-warning-50 text-warning-700;
+  }
+
+  .badge-status.badge-danger {
+    @apply border-danger-200 bg-danger-50 text-danger-700;
+  }
+
+  /*
+   * Solid fill. Must stay after the `.badge-status` tints: both are compound
+   * selectors of equal specificity, so source order makes `.status().solid()`
+   * resolve to solid.
+   */
+  .badge-solid.badge-secondary {
+    @apply border-neutral-600 bg-neutral-600 text-white;
+  }
+
+  .badge-solid.badge-primary {
+    @apply border-primary-600 bg-primary-600 text-white;
+  }
+
+  .badge-solid.badge-info {
+    @apply border-info-600 bg-info-600 text-white;
+  }
+
+  .badge-solid.badge-success {
+    @apply border-success-600 bg-success-600 text-white;
+  }
+
+  .badge-solid.badge-warning {
+    @apply border-warning-600 bg-warning-600 text-white;
+  }
+
+  .badge-solid.badge-danger {
+    @apply border-danger-600 bg-danger-600 text-white;
+  }
 }

@@ -15,6 +15,7 @@ mod reconcile;
 mod routes;
 mod shell;
 mod startup;
+pub mod state_badge;
 #[cfg(any(test, feature = "test-support"))]
 pub mod test_support;
 mod traceparent;

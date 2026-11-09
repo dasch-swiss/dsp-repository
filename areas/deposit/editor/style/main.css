@@ -16,6 +16,11 @@
 @import 'tailwindcss' source(none);
 @import '../../../../modules/mosaic/tiles/src/components/theme_provider/tokens.css';
 
+/* Defined in the editor entry, not tokens.css, so DPE's and the playground's `font-mono` stack is untouched. */
+@theme {
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
 /* Every Mosaic component stylesheet, through the barrel — so a tile added for the editor lands
    in DPE and the playground too, instead of in one hand-maintained list of three. Tokens are
    imported above because the component files @apply against them. */

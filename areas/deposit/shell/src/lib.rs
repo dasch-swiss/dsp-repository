@@ -16,6 +16,8 @@ pub mod pages;
 pub mod sign_in;
 pub mod view;
 
+pub use components::form_card;
+
 /// What a depositor is told if they find their way to an RDU-only page.
 ///
 /// Deliberately says nothing about what the page holds. Unlike the project 403,

@@ -3,17 +3,14 @@
 //! opposite things: a database that cannot be reached must not report itself as
 //! a permissions problem.
 
-use maud::{html, Markup};
+use maud::Markup;
 
-/// The body of a 5xx. No "try again" link: every link this page could offer
-/// reads the same database, so it would lead straight back to the failure.
+/// The body of a 500: every caller renders it with `StatusCode::INTERNAL_SERVER_ERROR`, so a
+/// caller using another status must change the code shown here.
+///
+/// No "try again" link: a link back to the failing page leads straight to the failure again.
 pub fn unavailable(message: &str) -> Markup {
-    html! {
-        div class="max-w-2xl py-12" {
-            h1 class="font-display text-2xl mb-2" { "This page could not be loaded" }
-            p class="text-gray-600" { (message) }
-        }
-    }
+    super::status_page("500", "This page could not be loaded", message)
 }
 
 #[cfg(test)]
@@ -33,5 +30,17 @@ mod tests {
         let out = unavailable("<script>alert(1)</script>").into_string();
         assert!(!out.contains("<script>alert(1)</script>"), "{out}");
         assert!(out.contains("&lt;script&gt;"), "{out}");
+    }
+
+    #[test]
+    fn test_the_status_code_precedes_the_heading_and_the_page_links_to_projects() {
+        let out = unavailable("down").into_string();
+        crate::pages::assert_status_page(&out, "500");
+    }
+
+    #[test]
+    fn test_the_page_has_exactly_one_link() {
+        let out = unavailable("down").into_string();
+        assert_eq!(out.matches("<a ").count(), 1, "{out}");
     }
 }

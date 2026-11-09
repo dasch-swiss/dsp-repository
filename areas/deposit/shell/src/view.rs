@@ -85,12 +85,12 @@ fn head(title: &str, traceparent: Option<&str>, css_href: &str) -> Markup {
             @if let Some(tp) = traceparent {
                 meta name="traceparent" content=(tp);
             }
-            // Google Fonts: Lora (display) and Lato (body) for the design tokens.
+            // Google Fonts: Lora (display), Lato (body) and JetBrains Mono (shortcodes and codes) for the design tokens.
             link rel="preconnect" href="https://fonts.googleapis.com";
             link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="";
             link
                 rel="stylesheet"
-                href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,600;0,700;1,400&display=swap";
+                href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap";
             link rel="stylesheet" href=(css_href);
             title { (title) }
         }
@@ -120,7 +120,7 @@ pub fn page(
                 a   href="#main"
                     class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-white focus:px-3 focus:py-2 focus:font-bold focus:shadow-xs focus:outline-2 focus:outline-primary-600"
                 { "Skip to content" }
-                div class="bg-gray-50 min-h-screen flex flex-col gap-4" {
+                div class="bg-neutral-50 min-h-screen flex flex-col gap-4" {
                     (components::header(viewer))
                     main id="main" class="flex-1 max-w-[1536px] mx-auto px-4 w-full" { (content) }
                     (components::footer())

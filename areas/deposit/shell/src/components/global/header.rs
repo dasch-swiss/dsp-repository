@@ -1,5 +1,5 @@
 use maud::{html, Markup};
-use mosaic_tiles::button::{button, ButtonType, ButtonVariant};
+use mosaic_tiles::button::{button, ButtonSize, ButtonType, ButtonVariant};
 
 use crate::view::Viewer;
 
@@ -16,42 +16,45 @@ use crate::view::Viewer;
 /// page and in every screenshot.
 pub fn header(viewer: Option<Viewer<'_>>) -> Markup {
     html! {
-        header class="bg-white shadow-xs" {
+        header class="bg-white border-b border-neutral-200" {
             div class="flex flex-wrap items-center gap-x-4 gap-y-1 py-2 max-w-[1536px] mx-auto px-4 w-full"
             {
                 a href="/" aria-label="DaSCH Metadata Editor home" {
-                    img src="/logo.svg" class="inline h-10 w-10 mr-2" alt="DaSCH logo";
+                    img src="/logo.svg" class="inline h-8 w-8 mr-2" alt="DaSCH logo";
                 }
 
-                div class="flex-1" {
-                    a class="inline-flex items-center font-bold font-display text-xl" href="/" {
-                        "DaSCH Metadata Editor"
-                    }
+                div {
+                    a   class="inline-flex items-center font-display font-semibold text-lg text-neutral-900"
+                        href="/"
+                    { "DaSCH Metadata Editor" }
                 }
 
                 @if let Some(viewer) = viewer {
                     nav aria-label="Main" class="w-full md:w-auto" {
-                        ul class="flex flex-wrap gap-x-4 gap-y-1" {
+                        ul class="flex flex-wrap gap-1" {
                             @for (label, href) in viewer.menu.items() {
                                 li {
+                                    // No radius while the bottom border exists: it would end in bent tips.
+                                    // The border is on every item, transparent unless current, so heights match.
                                     a   href=(href)
-                                        class="font-bold text-gray-700 hover:underline aria-[current=page]:text-black aria-[current=page]:underline"
+                                        class="inline-block px-3 py-1.5 text-sm font-bold text-neutral-700 border-b-2 border-transparent hover:bg-neutral-100 hover:text-neutral-900 aria-[current=page]:bg-primary-50 aria-[current=page]:text-primary-700 aria-[current=page]:border-primary-600"
                                         aria-current=[is_current(href, viewer.path).then_some("page")]
                                     { (label) }
                                 }
                             }
                         }
                     }
-                    div class="flex items-center gap-3" {
-                        span class="text-gray-600" {
+                    div class="flex items-center gap-3 md:ml-auto" {
+                        span class="text-sm text-neutral-600" {
                             "Signed in as "
-                            span class="font-bold" { (viewer.name) }
+                            span class="font-bold text-neutral-900" { (viewer.name) }
                         }
                         form method="post" action="/logout" {
                             ({
                                 button("Sign out")
                                     .button_type(ButtonType::Submit)
-                                    .variant(ButtonVariant::Ghost)
+                                    .variant(ButtonVariant::Outline)
+                                    .size(ButtonSize::Compact)
                             })
                         }
                     }

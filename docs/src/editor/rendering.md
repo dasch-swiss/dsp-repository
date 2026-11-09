@@ -16,7 +16,7 @@ Each of these fails silently: the page renders correctly, and only a screen-read
 - **The header menu is one `nav aria-label="Main"`, and the footer's legal nav carries its own label.** Two unlabelled `nav` landmarks are indistinguishable in a screen reader's landmark list.
 - **The header is a `<header>` outside `<main>`, and a "Skip to content" link to `#main` is the first thing in `<body>`.** A `div` header is no banner landmark, and without the link a keyboard user tabs through the logo and the whole menu on every page; the link is `sr-only` until focused, so a sighted mouse user never sees it.
 
-The colour pairings are measured against the design tokens, with the method cross-checked on the four ratios `text_field.css` already documents: `warning-800` on `warning-50` 11.30:1, `info-800` on `info-50` 11.18:1, `neutral-700` on `neutral-100` 7.78:1, and `neutral-600` on the `gray-50` page 5.73:1 — all above WCAG 2.1 AA's 4.5:1 for the 12px bold pill text and the hint text.
+The colour pairings are measured against the design tokens, with the method cross-checked on the four ratios `text_field.css` already documents: `warning-800` on `warning-50` 11.30:1, `info-800` on `info-50` 11.18:1, `neutral-700` on `neutral-100` 7.78:1, and `neutral-600` on the `neutral-50` page 5.82:1 — all above WCAG 2.1 AA's 4.5:1 for the 12px bold pill text and the hint text.
 
 ## Datastar
 
@@ -37,7 +37,7 @@ The rest of the conventions the editor's markup relies on:
 
 ## Styling
 
-`areas/deposit/editor/style/main.css` is the single Tailwind entry, built by `just css-editor` (dev) or `just css-editor-release` (content-hashed). It imports the design tokens and the `mosaic-tiles` component barrel.
+`areas/deposit/editor/style/main.css` is the single Tailwind entry, built by `just css-editor` (dev) or `just css-editor-release` (content-hashed). It imports the design tokens and the `mosaic-tiles` component barrel, and binds `font-mono` to JetBrains Mono for shortcodes and codes. The binding lives in this entry rather than in `tokens.css`, so DPE's and the playground's `font-mono` stack stays as it is.
 
 `@import 'tailwindcss' source(none)` means classes are collected **only** from the explicit `@source` globs, which must cover every crate that emits Tailwind classes. A missing glob produces no build error — just markup whose classes resolve to nothing. After a change that adds classes in a new location, grep the built stylesheet for them.
 

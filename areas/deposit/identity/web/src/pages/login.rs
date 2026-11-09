@@ -14,6 +14,7 @@
 //! `role="alert"` for `Danger`, so a screen reader announces a re-rendered
 //! failure on arrival.
 
+use deposit_shell::form_card;
 use maud::{html, Markup};
 use mosaic_tiles::alert::{alert, AlertVariant};
 use mosaic_tiles::button::{button, ButtonType};
@@ -29,22 +30,32 @@ fn with_next(path: &str, next: Option<&str>) -> String {
     }
 }
 
+fn centred(card: Markup) -> Markup {
+    html! {
+        div class="flex justify-center py-12" { (card) }
+    }
+}
+
 /// `GET /login` — ask for the address.
 pub fn request_code(next: Option<&str>, error: Option<&str>) -> Markup {
-    html! {
-        div class="max-w-md mx-auto py-12" {
-            h1 class="font-display text-2xl mb-2" { "Sign in" }
-            p class="text-gray-600 mb-6" {
-                "Enter your email address and we will send you a six-digit code. The code is valid for ten \
-                 minutes and can be used once."
-            }
-            @if let Some(message) = error { (alert(message).variant(AlertVariant::Danger)) }
-            form method="post" action=(with_next("/login", next)) class="flex flex-col gap-4" {
-                (email_field())
-                div { (button("Send me a code").button_type(ButtonType::Submit)) }
-            }
+    let body = html! {
+        p class="text-neutral-600" {
+            "Enter your email address and we will send you a six-digit code. The code is valid for ten \
+             minutes and can be used once."
         }
-    }
+        @if let Some(message) = error {
+            (alert(message).variant(AlertVariant::Danger).class("!mb-0"))
+        }
+        form method="post" action=(with_next("/login", next)) class="flex flex-col gap-4" {
+            (email_field())
+            ({
+                button("Send me a code")
+                    .button_type(ButtonType::Submit)
+                    .class("w-full justify-center")
+            })
+        }
+    };
+    centred(form_card("Sign in", body))
 }
 
 /// The login code, shown on the page instead of being sent. Rendered only where
@@ -64,6 +75,7 @@ fn revealed_code(code: &str) -> Markup {
             alert(body)
                 .variant(AlertVariant::Warning)
                 .title("Development deployment — no mail was sent")
+                .class("!mb-0")
         })
     }
 }
@@ -93,7 +105,12 @@ fn no_code_hint() -> Markup {
         }
     };
     html! {
-        (alert(body).variant(AlertVariant::Info).title("No code to show"))
+        ({
+            alert(body)
+                .variant(AlertVariant::Info)
+                .title("No code to show")
+                .class("!mb-0")
+        })
     }
 }
 
@@ -124,30 +141,36 @@ fn code_field() -> Markup {
 /// endpoint. `one_time_code(6)` sets `autocomplete`, `inputmode`, the pattern
 /// and the length together; the tile says why they only work as a set.
 pub fn enter_code(next: Option<&str>, error: Option<&str>, revealed: &Revealed) -> Markup {
-    html! {
-        div class="max-w-md mx-auto py-12" {
-            h1 class="font-display text-2xl mb-2" { "Enter your code" }
-            p class="text-gray-600 mb-6" {
-                "If the address you gave belongs to an account, a six-digit code is on its way to it. Enter the \
-                 code below."
-            }
-            @if let Some(message) = error { (alert(message).variant(AlertVariant::Danger)) }
-            @match revealed {
-                Revealed::Hidden => {}
-                Revealed::Code(code) => (revealed_code(code))
-                Revealed::NoCode => (no_code_hint())
-            }
-            form method="post" action=(with_next("/login/code", next)) class="flex flex-col gap-4" {
-                (code_field())
-                div { (button("Sign in").button_type(ButtonType::Submit)) }
-            }
-            p class="text-gray-600 mt-6" {
-                "Code not arrived, or expired? "
-                a href=(with_next("/login", next)) class="underline" { "Start again" }
-                "."
-            }
+    let body = html! {
+        p class="text-neutral-600" {
+            "If the address you gave belongs to an account, a six-digit code is on its way to it. Enter the \
+             code below."
         }
-    }
+        @if let Some(message) = error {
+            (alert(message).variant(AlertVariant::Danger).class("!mb-0"))
+        }
+        @match revealed {
+            Revealed::Hidden => {}
+            Revealed::Code(code) => (revealed_code(code))
+            Revealed::NoCode => (no_code_hint())
+        }
+        form method="post" action=(with_next("/login/code", next)) class="flex flex-col gap-4" {
+            (code_field())
+            ({
+                button("Sign in")
+                    .button_type(ButtonType::Submit)
+                    .class("w-full justify-center")
+            })
+        }
+        p class="text-sm text-neutral-600" {
+            "Code not arrived, or expired? "
+            a href=(with_next("/login", next)) class="text-primary-600 underline underline-offset-2" {
+                "Start again"
+            }
+            "."
+        }
+    };
+    centred(form_card("Enter your code", body))
 }
 
 #[cfg(test)]

@@ -7,19 +7,11 @@
 //! any signed-in account. The message is the caller's: whether a reader may be
 //! told what a page holds differs by case.
 
-use maud::{html, Markup};
+use maud::Markup;
 
 /// The body of a 403, above a link back to the project list.
 pub fn forbidden(message: &str) -> Markup {
-    html! {
-        div class="max-w-2xl py-12" {
-            h1 class="font-display text-2xl mb-2" { "You do not have access to this page" }
-            p class="text-gray-600 mb-6" { (message) }
-            p {
-                a href="/projects" class="underline" { "Go to your projects" }
-            }
-        }
-    }
+    super::status_page("403", "You do not have access to this page", message)
 }
 
 #[cfg(test)]
@@ -43,5 +35,11 @@ mod tests {
         let out = forbidden("<script>alert(1)</script>").into_string();
         assert!(!out.contains("<script>alert(1)</script>"), "{out}");
         assert!(out.contains("&lt;script&gt;"), "{out}");
+    }
+
+    #[test]
+    fn test_the_status_code_precedes_the_heading_and_the_page_links_to_projects() {
+        let out = forbidden("nope").into_string();
+        crate::pages::assert_status_page(&out, "403");
     }
 }

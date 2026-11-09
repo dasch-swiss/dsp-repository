@@ -95,13 +95,20 @@ export const DEPOSITOR_SHORTCODES = [
   "0810",
   "E2E3",
   "E2E4",
+  "080C",
+  "080E",
+  "0816",
 ] as const;
 
 /** Row add/remove assertions. */
 export const DEPOSITOR_SHORTCODE = DEPOSITOR_SHORTCODES[0];
 /** The sweep that clicks every control; leaves the draft dirty by design. */
 export const SWEEP_SHORTCODE = DEPOSITOR_SHORTCODES[1];
-/** The agent picker and repeated round trips. */
+/**
+ * The agent picker and repeated round trips. `proposals.spec.ts` is the
+ * exception to the sharing rule above: it asserts that the project shows no
+ * proposals, so a spec that leaves a live proposal here breaks it.
+ */
 export const PICKER_SHORTCODE = DEPOSITOR_SHORTCODES[2];
 /** The sticky save-notice measurement. */
 export const NOTICE_SHORTCODE = DEPOSITOR_SHORTCODES[3];
@@ -230,6 +237,15 @@ export const TAKEOVER_SHORTCODES: Partial<Record<string, string>> = {
 export const ENTITY_DECISIONS_SHORTCODES: Partial<Record<string, string>> = {
   "chromium-js": DEPOSITOR_SHORTCODES[25],
   "chromium-nojs": DEPOSITOR_SHORTCODES[26],
+};
+/**
+ * Proposing a new person and organisation. Its own project, since a proposal it
+ * leaves would break `proposals.spec.ts` on `PICKER_SHORTCODE`; one per pass,
+ * since a proposal the other pass left would satisfy its listing assertion.
+ */
+export const PROPOSALS_NEW_SHORTCODES: Partial<Record<string, string>> = {
+  "chromium-js": DEPOSITOR_SHORTCODES[30],
+  "chromium-nojs": DEPOSITOR_SHORTCODES[31],
 };
 
 const PORT = Number(process.env.EDITOR_E2E_PORT ?? 4101);

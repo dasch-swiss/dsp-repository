@@ -49,14 +49,15 @@ export const optionId = async (option: Locator): Promise<string> => {
 };
 
 /**
- * Types `query` into the append search of `field` and waits for its options.
- * With JavaScript the options arrive as the box is typed in; without, they
- * arrive when the Search button next to the box is pressed.
+ * Types `query` into the append search of `field`, and without JavaScript
+ * presses the Search button next to the box; with it, the results arrive as the
+ * box is typed in. Does not wait for the results: the caller's next locator
+ * does. Use `searchToAppend` unless the query is meant to match nothing.
  */
-export async function searchToAppend(
+export async function searchAppendBox(
   page: Page,
   field: AgentField,
-  query = "a",
+  query: string,
 ): Promise<void> {
   await appendBox(page, field).fill(query);
   if (!isJs()) {
@@ -67,6 +68,15 @@ export async function searchToAppend(
       .click();
     await page.waitForLoadState("domcontentloaded");
   }
+}
+
+/** Searches the append box of `field` for `query` and waits for its options. */
+export async function searchToAppend(
+  page: Page,
+  field: AgentField,
+  query = "a",
+): Promise<void> {
+  await searchAppendBox(page, field, query);
   await expect(
     appendOptions(page, field).first(),
     `the search for "${query}" offered nothing to append to ${field}`,

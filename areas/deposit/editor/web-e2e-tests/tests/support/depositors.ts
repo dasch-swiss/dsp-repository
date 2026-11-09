@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 
 /**
  * An address for a throwaway depositor, unique per pass and per retry.
@@ -39,7 +39,12 @@ export async function createDepositor(
 
   // Not the URL: the form posts to `/depositors`, so a refusal renders there too.
   await expect(
-    page.locator("tr", { has: page.getByText(email, { exact: true }) }),
+    depositorRow(page, email),
     `${email} is not listed after Create depositor; the form shows why`,
   ).toHaveCount(1);
+}
+
+/** The `/depositors` row of the account with `email`. */
+export function depositorRow(page: Page, email: string): Locator {
+  return page.locator("tr", { has: page.getByText(email, { exact: true }) });
 }

@@ -6,6 +6,7 @@ import {
 } from "@playwright/test";
 
 import { DEPOSITOR_STATE } from "../../playwright.config";
+import { isJs } from "./agents";
 
 /**
  * Claim `shortcode`'s review from the queue and land on its review page.
@@ -31,6 +32,20 @@ export const decision = (page: Page, label: string, choice: string) =>
   page
     .getByRole("group", { name: `${label} — decision`, exact: true })
     .getByRole("radio", { name: choice, exact: true });
+
+/** On a review page, Save review decisions, waiting until the save has landed. */
+export async function saveDecisions(page: Page): Promise<void> {
+  // The web fonts land after the load event, and their swap moves the button.
+  // With JavaScript off, Playwright's click retry waits on a page timer that
+  // never fires, so any click the swap makes miss hangs to the test timeout.
+  await page.evaluate(() => document.fonts.ready);
+  await page.getByRole("button", { name: "Save review decisions" }).click();
+  // The notice renders only on the enhanced path, where the save is a
+  // background post and the notice is the sign it landed.
+  if (isJs()) {
+    await expect(page.locator("main")).toContainText("Review decisions saved.");
+  }
+}
 
 /** The "Your changes" cell for `code` on the depositor's `/projects`, which the caller has loaded. */
 export const stateCell = (page: Page, code: string) =>

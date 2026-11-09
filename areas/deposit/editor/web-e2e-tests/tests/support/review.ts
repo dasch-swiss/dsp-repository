@@ -1,4 +1,9 @@
-import { type Browser, expect, type Page } from "@playwright/test";
+import {
+  type APIRequestContext,
+  type Browser,
+  expect,
+  type Page,
+} from "@playwright/test";
 
 import { DEPOSITOR_STATE } from "../../playwright.config";
 
@@ -79,4 +84,28 @@ export async function approve(page: Page): Promise<void> {
     .getByRole("button", { name: "Approve", exact: true })
     .click();
   await page.getByRole("button", { name: "Yes, approve" }).click();
+}
+
+/** The parts of an approved record the specs read; the route serves more. */
+export type ApprovedRecord = {
+  shortcode: string;
+  project: { name?: string; shortDescription?: string };
+  entities: { kind: string; operation: string; id: string }[];
+};
+
+/**
+ * `shortcode`'s record from `GET /api/v1/approved-records`, read once.
+ *
+ * Never polled: the route is rate-limited per IP (the burst in
+ * `web/src/routes.rs`), both passes share that budget, and a new caller has to
+ * fit what the existing callers leave of it.
+ */
+export async function approvedRecord(
+  request: APIRequestContext,
+  shortcode: string,
+): Promise<ApprovedRecord | undefined> {
+  const res = await request.get("/api/v1/approved-records");
+  expect(res.ok()).toBe(true);
+  const { records } = (await res.json()) as { records: ApprovedRecord[] };
+  return records.find((r) => r.shortcode === shortcode);
 }

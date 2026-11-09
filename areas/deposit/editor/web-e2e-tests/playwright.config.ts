@@ -33,9 +33,19 @@ export const DEPOSITOR_STATE = path.resolve(
   __dirname,
   "test-results/.auth/depositor.json",
 );
+export const RDU2_STATE = path.resolve(
+  __dirname,
+  "test-results/.auth/rdu2.json",
+);
 
 /** Seeded through `EDITOR_RDU_EMAILS`, so this account exists at startup. */
 export const RDU_EMAIL = "rdu@dasch.swiss";
+/**
+ * The second reviewer, seeded with `RDU_EMAIL`, for a review one account takes
+ * over from the other. The display name is the address's local part, so it must
+ * not contain `rdu`: a name match on `rdu` would find both.
+ */
+export const RDU2_EMAIL = "reviewer-b@dasch.swiss";
 /** Created by `auth.setup.ts` through the RDU interface — nothing seeds it. */
 export const DEPOSITOR_EMAIL = "depositor@example.test";
 /**
@@ -47,6 +57,10 @@ export const DEPOSITOR_EMAIL = "depositor@example.test";
  * sweep that clicks every row control leaves blank rows behind, and a blank row
  * makes the next Add a no-op — which reads exactly like the inert-control bug
  * this suite exists to catch. Give a new mutating spec its own entry here.
+ *
+ * Every entry's name is listed on the depositor's `/projects`, which the
+ * vocabulary check reads: a project whose text holds a word
+ * `tests/support/vocabulary.ts` forbids ("Committee", "Transfers") fails it.
  */
 export const DEPOSITOR_SHORTCODES = [
   "0103",
@@ -64,6 +78,18 @@ export const DEPOSITOR_SHORTCODES = [
   "0111",
   "0113",
   "0115",
+  "0811",
+  "0812",
+  "0118",
+  "0119",
+  "0120",
+  "0121",
+  "0803",
+  "0804",
+  "0805",
+  "0806",
+  "0807",
+  "0810",
 ] as const;
 
 /** Row add/remove assertions. */
@@ -129,6 +155,61 @@ export const REFUSED_SUBMIT_SHORTCODE = DEPOSITOR_SHORTCODES[13];
 /** A language-row line saved with no language. */
 export const LANGUAGE_ROWS_SHORTCODE = DEPOSITOR_SHORTCODES[14];
 
+/*
+ * One project per pass, for the reason `STATUS_SHORTCODES` gives: each spec walks
+ * a lifecycle from a published project. Read with `perPass`
+ * (`tests/support/per-pass.ts`).
+ */
+
+/**
+ * Discard draft and take the submission back: each ends the project's draft or
+ * submission, which a spec sharing the project would still need.
+ */
+export const LIFECYCLE_SHORTCODES: Partial<Record<string, string>> = {
+  "chromium-js": DEPOSITOR_SHORTCODES[15],
+  "chromium-nojs": DEPOSITOR_SHORTCODES[16],
+};
+/**
+ * Per-field review decisions; the approved record is read back by shortcode, so
+ * it holds only this spec's edits.
+ */
+export const DECISIONS_SHORTCODES: Partial<Record<string, string>> = {
+  "chromium-js": DEPOSITOR_SHORTCODES[17],
+  "chromium-nojs": DEPOSITOR_SHORTCODES[18],
+};
+/**
+ * Request changes, whose returned draft keeps accepted fields read-only: a
+ * field another spec edits would be locked.
+ */
+export const CHANGES_REQUESTED_SHORTCODES: Partial<Record<string, string>> = {
+  "chromium-js": DEPOSITOR_SHORTCODES[19],
+  "chromium-nojs": DEPOSITOR_SHORTCODES[20],
+};
+/**
+ * Reject; apart from `CHANGES_REQUESTED_SHORTCODES` because each outcome closes
+ * the review round the other needs open.
+ */
+export const REJECTED_SHORTCODES: Partial<Record<string, string>> = {
+  "chromium-js": DEPOSITOR_SHORTCODES[21],
+  "chromium-nojs": DEPOSITOR_SHORTCODES[22],
+};
+/**
+ * One reviewer taking over another's claim; on a shared project the claim taken
+ * over would be another spec's review.
+ */
+export const TAKEOVER_SHORTCODES: Partial<Record<string, string>> = {
+  "chromium-js": DEPOSITOR_SHORTCODES[23],
+  "chromium-nojs": DEPOSITOR_SHORTCODES[24],
+};
+/**
+ * Decisions on an entity proposal; the approved record is read back for the
+ * proposed person, so only this spec's proposal may be in it.
+ */
+export const ENTITY_DECISIONS_SHORTCODES: Partial<Record<string, string>> = {
+  "chromium-js": DEPOSITOR_SHORTCODES[25],
+  "chromium-nojs": DEPOSITOR_SHORTCODES[26],
+};
+
 const PORT = Number(process.env.EDITOR_E2E_PORT ?? 4101);
 export const BASE_URL = `http://127.0.0.1:${PORT}`;
 
@@ -153,9 +234,10 @@ export default defineConfig({
 
   projects: [
     // Signs in as RDU, creates the depositor through the RDU interface, signs
-    // in as the depositor, and saves both cookie jars. A setup *project* rather
-    // than `globalSetup` deliberately: a setup project runs after `webServer` is
-    // up, which `globalSetup` is not guaranteed to.
+    // in as the depositor and the second reviewer, and saves each cookie
+    // jar. A setup *project* rather than `globalSetup` deliberately: a setup
+    // project runs after `webServer` is up, which `globalSetup` is not
+    // guaranteed to.
     {
       name: "setup",
       testMatch: /.*\.setup\.ts/,
@@ -205,7 +287,7 @@ export default defineConfig({
       // No default in the config, so the editor will not start without it.
       EDITOR_DATA_DIR: DPE_DATA_DIR,
       // Unset EDITOR_DB_DIR means in-memory SQLite — a fresh database per run.
-      EDITOR_RDU_EMAILS: RDU_EMAIL,
+      EDITOR_RDU_EMAILS: `${RDU_EMAIL},${RDU2_EMAIL}`,
       // 1, not 0: `EditorConfig::validate` refuses a zero cooldown outright, and
       // 1 second is the floor — enough to keep a retried sign-in from tripping
       // the resend throttle.

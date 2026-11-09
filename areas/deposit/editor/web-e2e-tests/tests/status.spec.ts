@@ -5,6 +5,7 @@ import {
   RDU_STATE,
   STATUS_SHORTCODES,
 } from "../playwright.config";
+import { expectNoForbiddenVocabulary } from "./support/vocabulary";
 
 /**
  * The depositor-visible states, the approved box, the
@@ -40,36 +41,6 @@ function shortcode() {
 
 const overview = () => `/projects/${shortcode()}/sections/overview`;
 const editedName = () => `Status spec ${shortcode()}`;
-
-/** Lowercased; `pull request` is the phrase, not the bare word. */
-const FORBIDDEN = ["export", "json", "transfer", "commit", "pull request"];
-
-/**
- * The page's visible text, which is what the vocabulary rule bounds.
- *
- * `innerText` rather than `textContent`: it is the rendered text, so it omits
- * `<script>` bodies and anything hidden. With JavaScript disabled it still
- * works — the property is computed by the browser's layout, not by scripts.
- */
-async function visibleText(page: import("@playwright/test").Page) {
-  return (await page.locator("body").innerText()).toLowerCase();
-}
-
-async function expectNoForbiddenVocabulary(
-  page: import("@playwright/test").Page,
-  where: string,
-) {
-  const text = await visibleText(page);
-  // The assertion below is an absence, and an absence passes just as happily
-  // when the page never rendered. Every current call site happens to assert
-  // real content first; this makes the helper safe regardless of the next one.
-  expect(
-    text.length,
-    `REQ-2.2 check read an empty page on ${where}`,
-  ).toBeGreaterThan(0);
-  const found = FORBIDDEN.filter((word) => text.includes(word));
-  expect(found, `REQ-2.2: forbidden words on ${where}`).toEqual([]);
-}
 
 /** The "Your changes" cell for the spec's project on the list page. */
 async function stateCell(page: import("@playwright/test").Page) {

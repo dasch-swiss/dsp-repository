@@ -7,6 +7,7 @@ import {
   approve,
   approvedRecord,
   claimReview,
+  decision,
   submitAs,
 } from "./support/review";
 
@@ -17,12 +18,6 @@ test.use({ storageState: RDU_STATE });
 
 const shortcode = () => perPass({ DECISIONS_SHORTCODES });
 const review = () => `/review/${shortcode()}`;
-
-/** A field's decision radio, scoped by its group's legend. */
-const decision = (page: Page, label: string, choice: string) =>
-  page
-    .getByRole("group", { name: `${label} — decision`, exact: true })
-    .getByRole("radio", { name: choice, exact: true });
 
 /** The in-place editor for Name, which posts under the field's own name. */
 const nameEditor = (page: Page) =>

@@ -50,7 +50,7 @@ export const RDU2_EMAIL = "reviewer-b@dasch.swiss";
 export const DEPOSITOR_EMAIL = "depositor@example.test";
 /**
  * Projects the depositor may edit. All exist in `areas/access/dpe/server/data/projects`, except
- * the two `CREATED_SHORTCODES`, which RDU creates during the run.
+ * the `CREATED_SHORTCODES` and `SUBMITTED_CREATED_SHORTCODES`, which RDU creates during the run.
  *
  * One per mutating purpose, and that is not spare capacity: a draft is per
  * (user, project), so two tests editing the same project share one draft. The
@@ -61,6 +61,9 @@ export const DEPOSITOR_EMAIL = "depositor@example.test";
  * Every entry's name is listed on the depositor's `/projects`, which the
  * vocabulary check reads: a project whose text holds a word
  * `tests/support/vocabulary.ts` forbids ("Committee", "Transfers") fails it.
+ *
+ * Codes the suite takes outside this list: `REMOVED_SHORTCODES` (`E2E5`, `E2E6`), and
+ * `0813`, the published code `projects.spec.ts` tries to create.
  */
 export const DEPOSITOR_SHORTCODES = [
   "0103",
@@ -90,6 +93,8 @@ export const DEPOSITOR_SHORTCODES = [
   "0806",
   "0807",
   "0810",
+  "E2E3",
+  "E2E4",
 ] as const;
 
 /** Row add/remove assertions. */
@@ -141,6 +146,23 @@ export const TYPED_SHORTCODE = DEPOSITOR_SHORTCODES[9];
 export const CREATED_SHORTCODES: Partial<Record<string, string>> = {
   "chromium-js": DEPOSITOR_SHORTCODES[10],
   "chromium-nojs": DEPOSITOR_SHORTCODES[11],
+};
+/**
+ * Created by RDU and submitted by the depositor, so its removal is refused. One
+ * per pass for the reason `CREATED_SHORTCODES` gives.
+ */
+export const SUBMITTED_CREATED_SHORTCODES: Partial<Record<string, string>> = {
+  "chromium-js": DEPOSITOR_SHORTCODES[27],
+  "chromium-nojs": DEPOSITOR_SHORTCODES[28],
+};
+/**
+ * Created and removed by RDU, one per pass for the reason `CREATED_SHORTCODES`
+ * gives. Absent from the data set like them, and assigned to no depositor:
+ * nobody else opens them.
+ */
+export const REMOVED_SHORTCODES: Partial<Record<string, string>> = {
+  "chromium-js": "E2E5",
+  "chromium-nojs": "E2E6",
 };
 /**
  * The accessibility sweep's submitted-locked and awaiting-release pages. Not

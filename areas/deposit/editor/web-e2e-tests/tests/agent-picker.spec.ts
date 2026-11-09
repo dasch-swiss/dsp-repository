@@ -42,9 +42,9 @@ for (const field of FIELDS) {
       const added = await appendAgent(page, field);
 
       await expect(
-        cardName(cards(page, field).last()),
+        cardName(cards(page, field).last(), added.name),
         "the new card does not show the chosen name",
-      ).toHaveText(added.name);
+      ).toBeAttached();
       await expect(
         appendBox(page, field),
         "the search box was not emptied by the choice",
@@ -57,9 +57,9 @@ for (const field of FIELDS) {
       await page.goto(CONTRIBUTORS);
       await expect(cards(page, field)).toHaveCount(before + 1);
       await expect(
-        cardName(cards(page, field).last()),
+        cardName(cards(page, field).last(), added.name),
         `${added.name} did not survive a reload`,
-      ).toHaveText(added.name);
+      ).toBeAttached();
 
       await trimCards(page, field, before);
     });
@@ -110,17 +110,17 @@ for (const field of FIELDS) {
       await other.click();
 
       await expect(
-        cardName(card()),
+        cardName(card(), otherName),
         "the card does not show the agent that was chosen",
-      ).toHaveText(otherName);
+      ).toBeAttached();
       await expect(card().locator('input[role="combobox"]')).toHaveCount(0);
 
       await page.goto(CONTRIBUTORS);
       await expect(cards(page, field)).toHaveCount(before + 1);
       await expect(
-        cardName(card()),
+        cardName(card(), otherName),
         "the changed agent did not survive a reload",
-      ).toHaveText(otherName);
+      ).toBeAttached();
 
       await trimCards(page, field, before);
     });
@@ -318,7 +318,7 @@ test.describe("keyboard use of the append search (JavaScript only)", () => {
         message: "Enter on an option did not append a card",
       })
       .toBe(before + 1);
-    await expect(cardName(cards(page, field).last())).toHaveText(name);
+    await expect(cardName(cards(page, field).last(), name)).toBeAttached();
 
     await trimCards(page, field, before);
   });

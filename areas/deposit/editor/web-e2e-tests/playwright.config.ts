@@ -251,7 +251,9 @@ export default defineConfig({
   use: {
     actionTimeout: 0,
     baseURL: BASE_URL,
-    trace: "on-first-retry",
+    // Not "on-first-retry": the serial groups run with `retries: 0`, so a
+    // failure there is never retried and would leave no trace.
+    trace: "retain-on-failure",
   },
 
   projects: [

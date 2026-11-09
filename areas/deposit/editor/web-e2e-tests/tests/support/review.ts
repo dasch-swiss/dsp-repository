@@ -26,6 +26,12 @@ export async function claimReview(
   await expect(page).toHaveURL(new RegExp(`/review/${shortcode}`));
 }
 
+/** On a review page, a field's decision radio, scoped by its group's legend. */
+export const decision = (page: Page, label: string, choice: string) =>
+  page
+    .getByRole("group", { name: `${label} — decision`, exact: true })
+    .getByRole("radio", { name: choice, exact: true });
+
 /** The "Your changes" cell for `code` on the depositor's `/projects`, which the caller has loaded. */
 export const stateCell = (page: Page, code: string) =>
   page.locator("tr", { hasText: code }).locator("td").last();

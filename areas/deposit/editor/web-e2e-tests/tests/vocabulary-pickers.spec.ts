@@ -126,7 +126,7 @@ test.describe("the vocabulary pickers", () => {
     await searchRow(page, picker, "switz");
     const switzerland = picker.options
       .filter({
-        has: page.locator("span.font-semibold", { hasText: /^Switzerland$/ }),
+        has: page.getByText("Switzerland", { exact: true }),
       })
       .first();
     await expect(switzerland, "no option is labelled Switzerland").toBeVisible();
@@ -208,9 +208,7 @@ test.describe("the vocabulary pickers", () => {
     ).toBeVisible();
     const option = picker.options
       .filter({
-        has: page.locator("span.font-semibold", {
-          hasText: new RegExp(`^${name}$`),
-        }),
+        has: page.getByText(name, { exact: true }),
       })
       .first();
     await expect(option, `no option is labelled ${name}`).toBeVisible();

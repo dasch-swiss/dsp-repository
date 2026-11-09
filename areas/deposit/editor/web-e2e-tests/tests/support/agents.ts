@@ -12,9 +12,14 @@ export const isJs = () => test.info().project.name === "chromium-js";
 export const cards = (page: Page, field: string): Locator =>
   page.locator(`fieldset#${field} > ol.repeatable-rows > li.repeatable-row`);
 
-/** The name a card shows: its first bold run, not a roles chip or a badge. */
-export const cardName = (card: Locator): Locator =>
-  card.locator('div[role="group"] p span.font-semibold').first();
+/**
+ * `name` as the card's name line shows it: its first paragraph, never the detail
+ * line, which can hold another agent's name (a person's sole affiliation). Pair it
+ * with `toBeAttached`, and keep `p` over the paragraph role: right after a Change
+ * the morphed card has no layout box until the page lays out again.
+ */
+export const cardName = (card: Locator, name: string): Locator =>
+  card.locator("p").first().getByText(name, { exact: true });
 
 /** The append search's input, by name: the page renames its id on every reset. */
 export const appendBox = (page: Page, field: AgentField): Locator =>
@@ -29,7 +34,11 @@ export const appendOptions = (page: Page, field: AgentField): Locator =>
     `button[role="option"][name="intent"][value^="add-agent:${field}:"]`,
   );
 
-/** What an option shows as the agent's name, without its badge or detail line. */
+/**
+ * What an option shows as its name, without its badge or detail line. Kept on a
+ * utility class: the option's accessible name runs name, badge and detail
+ * together, and nothing else marks the name.
+ */
 export const optionName = async (option: Locator): Promise<string> =>
   (await option.locator("span.font-semibold").innerText()).trim();
 

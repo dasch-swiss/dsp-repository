@@ -24,6 +24,14 @@ fn examples() -> Markup {
         })
         ({
             example(
+                "badge-status",
+                "Status",
+                "State badges: a pill with a border and a leading dot; solid for the state that must stand out",
+                status(),
+            )
+        })
+        ({
+            example(
                 "badge-sizes",
                 "Badge Sizes",
                 "Available sizes: Small, Medium, and Large",
@@ -109,6 +117,44 @@ fn variants() -> Markup {
                         "Info"
                     },
                 )
+            })
+        }
+    }
+}
+
+fn status() -> Markup {
+    html! {
+        div class="flex flex-wrap gap-3 items-center" {
+            ({
+                badge("Draft")
+                    .variant(BadgeVariant::Secondary)
+                    .size(BadgeSize::Small)
+                    .status()
+            })
+            ({
+                badge("Submitted")
+                    .variant(BadgeVariant::Info)
+                    .size(BadgeSize::Small)
+                    .status()
+            })
+            ({
+                badge("In review")
+                    .variant(BadgeVariant::Primary)
+                    .size(BadgeSize::Small)
+                    .status()
+            })
+            ({
+                badge("Approved")
+                    .variant(BadgeVariant::Success)
+                    .size(BadgeSize::Small)
+                    .status()
+            })
+            ({
+                badge("Online")
+                    .variant(BadgeVariant::Success)
+                    .size(BadgeSize::Small)
+                    .status()
+                    .solid()
             })
         }
     }

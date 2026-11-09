@@ -58,6 +58,8 @@ pub struct BadgeBuilder {
     label: Markup,
     variant: BadgeVariant,
     size: BadgeSize,
+    status: bool,
+    solid: bool,
     id: Option<String>,
     test_id: Option<String>,
 }
@@ -69,6 +71,8 @@ pub fn badge(label: impl Render) -> BadgeBuilder {
         label: label.render(),
         variant: BadgeVariant::default(),
         size: BadgeSize::default(),
+        status: false,
+        solid: false,
         id: None,
         test_id: None,
     }
@@ -87,19 +91,32 @@ impl BadgeBuilder {
         self
     }
 
+    /// Render as a state badge: a pill with a border and a leading dot. One look
+    /// per state, reused everywhere a state is shown.
+    pub fn status(mut self) -> Self {
+        self.status = true;
+        self
+    }
+
+    /// Fill the badge with the variant's solid colour and white text. Meant for
+    /// the state that must stand out among other state badges.
+    pub fn solid(mut self) -> Self {
+        self.solid = true;
+        self
+    }
+
     fn markup(&self) -> Markup {
+        let mut class = format!("badge {} {}", self.variant.css_class(), self.size.css_class());
+        if self.status {
+            class.push_str(" badge-status");
+        }
+        if self.solid {
+            class.push_str(" badge-solid");
+        }
         html! {
-            span
-                class=({
-                    format!(
-                        "badge {} {}",
-                        self.variant.css_class(),
-                        self.size.css_class(),
-                    )
-                })
-                id=[self.id.as_deref()]
-                data-testid=[self.test_id.as_deref()]
-            { (self.label) }
+            span class=(class) id=[self.id.as_deref()] data-testid=[self.test_id.as_deref()] {
+                (self.label)
+            }
         }
     }
 }
@@ -150,6 +167,28 @@ mod tests {
         let out = badge("New").build().into_string();
         assert!(out.contains(r#"class="badge badge-primary badge-md""#), "{out}");
         assert!(out.contains(">New</span>"));
+    }
+
+    #[test]
+    fn status_and_solid_add_their_classes_after_variant_and_size() {
+        let status = badge("x").status().build().into_string();
+        assert!(
+            status.contains(r#"class="badge badge-primary badge-md badge-status""#),
+            "{status}"
+        );
+        let solid = badge("x").solid().build().into_string();
+        assert!(solid.contains(r#"class="badge badge-primary badge-md badge-solid""#), "{solid}");
+        let both = badge("x").status().solid().build().into_string();
+        assert!(
+            both.contains(r#"class="badge badge-primary badge-md badge-status badge-solid""#),
+            "{both}"
+        );
+    }
+
+    #[test]
+    fn default_badge_carries_neither_status_nor_solid() {
+        let out = badge("x").build().into_string();
+        assert!(!out.contains("badge-status") && !out.contains("badge-solid"), "{out}");
     }
 
     #[test]

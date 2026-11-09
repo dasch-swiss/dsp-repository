@@ -1,13 +1,13 @@
 import { expect, type Page, test } from "@playwright/test";
 
 import { DECISIONS_SHORTCODES, RDU_STATE } from "../playwright.config";
-import { isJs } from "./support/agents";
 import { perPass } from "./support/per-pass";
 import {
   approve,
   approvedRecord,
   claimReview,
   decision,
+  saveDecisions,
   submitAs,
 } from "./support/review";
 
@@ -26,15 +26,6 @@ const nameEditor = (page: Page) =>
 /** Read by the first test, from the depositor's form before it is edited. */
 let publishedShortDescription = "";
 const substitute = () => `Decisions substitute ${shortcode()}`;
-
-async function saveDecisions(page: Page): Promise<void> {
-  await page.getByRole("button", { name: "Save review decisions" }).click();
-  // The notice renders only on the enhanced path, where the save is a
-  // background post and the notice is the sign it landed.
-  if (isJs()) {
-    await expect(page.locator("main")).toContainText("Review decisions saved.");
-  }
-}
 
 test("the depositor submits a published project with Name and Short description changed", async ({
   browser,

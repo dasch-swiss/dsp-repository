@@ -631,7 +631,12 @@ fn claim_banner(view: &ReviewView<'_>) -> Markup {
          take it over to make that visible in the queue."
     );
     let take_over = html! {
-        form method="post" action=(view.action()) class="mt-2" {
+        form
+            method="post"
+            action=(view.action())
+            class="mt-2"
+            data-on:submit=(datastar::post(view.action()).form())
+        {
             input type="hidden" name=(INTENT) value=(CLAIM);
             // The filter travels with the take-over, as with the save.
             @if view.filter == Filter::All {
@@ -1614,6 +1619,20 @@ mod tests {
         assert!(out.contains("Another Reviewer picked this submission up"), "{out}");
         assert!(out.contains("Take over the review"), "{out}");
         assert!(out.contains("Save review decisions"), "{out}");
+    }
+
+    #[test]
+    fn the_take_over_posts_enhanced_so_the_notice_can_render() {
+        let rows = rows();
+        let mut view = view(&rows);
+        view.reviewer = Some("Another Reviewer");
+        let out = page(&view).into_string();
+        let take_over = out.split(r#"value="claim""#).next().expect("the take-over form").to_owned();
+        let form_start = take_over.rfind("<form").expect("a form opens the take-over");
+        assert!(
+            take_over[form_start..].contains(r#"data-on:submit="@post('/review/0801d', {contentType: 'form'})""#),
+            "{out}"
+        );
     }
 
     #[test]

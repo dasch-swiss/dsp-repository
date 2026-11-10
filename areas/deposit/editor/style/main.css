@@ -43,3 +43,17 @@
     scroll-padding-bottom: 6rem;
   }
 }
+
+/* A review decision's checked segment takes the decision's colour: Accept green, Revert and
+   Reject red; "Not reviewed yet" keeps the tile's Primary fill. Keyed on `Decision`'s and
+   `ProposalDecision`'s values, which `review.rs`'s
+   `every_decision_value_has_its_colour_in_the_editor_stylesheet` pins. Outside forced colours,
+   where these would out-rank the tile's Highlight fill. */
+@media not (forced-colors: active) {
+  #review-form .field-choices-segmented .field-choice:has(input[value='accept']:checked) {
+    @apply bg-success-600;
+  }
+  #review-form .field-choices-segmented .field-choice:has(input:is([value='revert'], [value='reject']):checked) {
+    @apply bg-danger-600;
+  }
+}

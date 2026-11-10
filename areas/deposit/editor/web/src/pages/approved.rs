@@ -14,11 +14,13 @@
 use deposit_shell::impact_card;
 use editor_core::status::RecordClassification;
 use maud::{html, Markup};
-use mosaic_tiles::badge::{badge, BadgeVariant};
+use mosaic_tiles::badge::{badge, BadgeSize, BadgeVariant};
 use mosaic_tiles::button::{button, ButtonType, ButtonVariant};
 use mosaic_tiles::link::link;
 use mosaic_tiles::table::{table, table_cell, table_head_cell};
 use mosaic_tiles::ComponentBuilder;
+
+use super::LIST_TABLE;
 
 /// One approved record, as the list renders it.
 pub struct ApprovedRow<'a> {
@@ -35,13 +37,15 @@ pub struct ApprovedRow<'a> {
 pub fn list(rows: &[ApprovedRow<'_>]) -> Markup {
     html! {
         div class="py-8" {
-            h1 class="font-display text-2xl mb-2" { "Approved records" }
-            p class="text-gray-600 mb-6" {
+            h1 class="font-display font-semibold text-2xl text-neutral-900 mb-2" {
+                "Approved records"
+            }
+            p class="text-neutral-600 mb-6" {
                 "Status compares each approved record with the published projects as of the last start. Whether its \
                  pull request is open, merged or closed is read on GitHub through the link."
             }
             @if rows.is_empty() {
-                p class="text-gray-600" { "No approved records are waiting for release." }
+                p class="text-neutral-600" { "No approved records are waiting for release." }
             } @else { (approved_table(rows)) }
         }
     }
@@ -64,7 +68,7 @@ fn approved_table(rows: &[ApprovedRow<'_>]) -> Markup {
         @for row in rows { (approved_row(row)) }
     };
     html! {
-        (table("Approved records").head(head).body(body))
+        (table("Approved records").head(head).body(body).class(LIST_TABLE))
     }
 }
 
@@ -116,8 +120,8 @@ fn status_label_and_variant(state: &RecordClassification) -> (&'static str, Badg
 fn status_cell(row: &ApprovedRow<'_>) -> Markup {
     let (label, variant) = status_label_and_variant(row.state);
     html! {
-        div class="flex flex-col gap-1" {
-            (badge(label).variant(variant))
+        div class="flex flex-col items-start gap-1" {
+            (badge(label).variant(variant).size(BadgeSize::Small).status())
             (status_detail(row.state))
             p class="text-sm" { (pull_requests_link(row.pull_requests_url, row.shortcode)) }
         }

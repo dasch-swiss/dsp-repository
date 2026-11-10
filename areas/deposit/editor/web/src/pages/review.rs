@@ -30,14 +30,16 @@ use editor_core::records::SubmissionState;
 use editor_core::review::{Decision, DECISION_PREFIX};
 use maud::{html, Markup};
 use mosaic_tiles::alert::{alert, AlertVariant};
-use mosaic_tiles::badge::{badge, BadgeVariant};
+use mosaic_tiles::badge::{badge, BadgeSize, BadgeVariant};
 use mosaic_tiles::button::{button, ButtonSize, ButtonType, ButtonVariant};
 use mosaic_tiles::link::link;
 use mosaic_tiles::radio_group::radio_group;
 use mosaic_tiles::table::{table, table_cell, table_head_cell};
+use mosaic_tiles::ComponentBuilder;
 use serde_json::Value;
 use shared_datastar as datastar;
 
+use super::LIST_TABLE;
 use crate::entity;
 use crate::form::widgets::{control, value_markup};
 use crate::form::INTENT;
@@ -113,21 +115,23 @@ pub struct DraftRow<'a> {
 pub fn queue(pending: &[QueueRow<'_>], drafts: &[DraftRow<'_>]) -> Markup {
     html! {
         div class="py-8" {
-            h1 class="font-display text-2xl mb-2" { "Review queue" }
-            p class="text-gray-600 mb-6" {
+            h1 class="font-display font-semibold text-2xl text-neutral-900 mb-2" { "Review queue" }
+            p class="text-neutral-600 mb-6" {
                 "Oldest first. Every RDU member sees every pending submission and every draft in progress — access here is \
                  role-based, not per project."
             }
             @if pending.is_empty() {
-                p class="text-gray-600 mb-8" { "No submissions are waiting for review." }
+                p class="text-neutral-600 mb-8" { "No submissions are waiting for review." }
             } @else { (pending_table(pending)) }
-            h2 class="font-display text-xl mt-10 mb-2" { "Drafts in progress" }
-            p class="text-gray-600 mb-4" {
+            h2 class="font-display font-semibold text-xl text-neutral-900 mt-10 mb-2" {
+                "Drafts in progress"
+            }
+            p class="text-neutral-600 mb-4" {
                 "Work a depositor has saved but not submitted. Nothing here is waiting on you; open one to help \
                  somebody who is stuck."
             }
             @if drafts.is_empty() {
-                p class="text-gray-600" { "No drafts are in progress." }
+                p class="text-neutral-600" { "No drafts are in progress." }
             } @else { (drafts_table(drafts)) }
         }
     }
@@ -151,7 +155,13 @@ fn pending_table(rows: &[QueueRow<'_>]) -> Markup {
         @for row in rows { (pending_row(row)) }
     };
     html! {
-        (table("Pending submissions").align_middle().head(head).body(body))
+        ({
+            table("Pending submissions")
+                .align_middle()
+                .head(head)
+                .body(body)
+                .class(LIST_TABLE)
+        })
     }
 }
 
@@ -181,16 +191,16 @@ fn pending_row(row: &QueueRow<'_>) -> Markup {
     }
 }
 
-/// What the queue says about who holds a submission.
+/// What the queue says about who holds a submission, coloured as [`crate::state_badge`] colours
+/// Submitted and In review.
 fn queue_status(row: &QueueRow<'_>) -> Markup {
+    let (label, variant) = match (row.state, row.reviewer) {
+        (SubmissionState::InReview, Some(reviewer)) => (format!("With {reviewer}"), BadgeVariant::Primary),
+        (SubmissionState::InReview, None) => ("In review".to_string(), BadgeVariant::Primary),
+        _ => ("Waiting".to_string(), BadgeVariant::Info),
+    };
     html! {
-        @match (row.state, row.reviewer) {
-            (SubmissionState::InReview, Some(reviewer)) => {
-                (badge(format!("With {reviewer}")).variant(BadgeVariant::Info))
-            }
-            (SubmissionState::InReview, None) => (badge("In review").variant(BadgeVariant::Info))
-            _ => (badge("Waiting").variant(BadgeVariant::Secondary))
-        }
+        (badge(label).variant(variant).size(BadgeSize::Small).status())
     }
 }
 
@@ -232,7 +242,7 @@ fn drafts_table(rows: &[DraftRow<'_>]) -> Markup {
         @for row in rows { (draft_row(row)) }
     };
     html! {
-        (table("Drafts in progress").head(head).body(body))
+        (table("Drafts in progress").head(head).body(body).class(LIST_TABLE))
     }
 }
 
@@ -286,6 +296,58 @@ fn editor_name(name: Option<&str>) -> Markup {
 }
 
 // --- The diff surface -----------------------------------------------------
+
+const HEADING: &str = "font-display font-semibold text-2xl text-neutral-900";
+
+const TEXT_LINK: &str = "text-primary-600 underline underline-offset-2";
+
+/// A diff row's frame and header, by where the row stands: blue to review, green accepted, neutral
+/// otherwise. Never amber, which is kept for notices the reader must act on (DEV-7692).
+#[derive(Clone, Copy)]
+enum RowTone {
+    ToReview,
+    Accepted,
+    Neutral,
+}
+
+impl RowTone {
+    fn frame(self) -> &'static str {
+        match self {
+            Self::ToReview => "rounded border border-primary-200 bg-white",
+            Self::Accepted => "rounded border border-success-200 bg-white",
+            Self::Neutral => "rounded border border-neutral-200 bg-white",
+        }
+    }
+
+    fn header(self) -> &'static str {
+        match self {
+            Self::ToReview => {
+                "flex flex-wrap items-center gap-3 rounded-t border-b border-primary-200 bg-primary-50 px-4 py-2 \
+                 text-primary-700"
+            }
+            Self::Accepted => {
+                "flex flex-wrap items-center gap-3 rounded-t border-b border-success-200 bg-success-50 px-4 py-2 \
+                 text-success-700"
+            }
+            Self::Neutral => {
+                "flex flex-wrap items-center gap-3 rounded-t border-b border-neutral-200 bg-neutral-50 px-4 py-2 \
+                 text-neutral-900"
+            }
+        }
+    }
+}
+
+const VALUE_COLUMNS: &str = "grid md:grid-cols-2";
+
+const VALUE_COLUMN: &str = "px-4 py-3";
+
+const SECOND_VALUE_COLUMN: &str = "px-4 py-3 border-t border-neutral-100 md:border-t-0 md:border-l";
+
+const VALUE_CAPTION: &str = "mb-2 text-xs font-bold uppercase tracking-wide text-neutral-600";
+
+const OLD_VALUE: &str = "line-through decoration-danger-600 [&_*]:text-neutral-600";
+
+const NEW_VALUE: &str = "bg-success-50 pl-2 shadow-[inset_2px_0_0_var(--color-success-600)]";
 
 /// The name the diff form posts its current filter under, so a save comes back
 /// showing what the reviewer was looking at.
@@ -478,19 +540,19 @@ pub fn region(view: &ReviewView<'_>) -> Markup {
 fn heading(view: &ReviewView<'_>) -> Markup {
     html! {
         div class="mb-6" {
-            p class="mb-2" {
-                a href="/review" class="underline" { "Back to the review queue" }
+            p class="mb-2 text-sm" {
+                a href="/review" class=(TEXT_LINK) { "Back to the review queue" }
             }
             @match view.project_name {
                 Some(name) => {
-                    h1 class="font-display text-2xl mb-1" { (name) }
-                    p class="font-mono text-sm text-gray-600" { (view.shortcode) }
+                    h1 class={ (HEADING) " mb-1" } { (name) }
+                    p class="font-mono text-sm text-neutral-600" { (view.shortcode) }
                 }
                 None => {
-                    h1 class="font-display text-2xl mb-1" { "Project " (view.shortcode) }
+                    h1 class={ (HEADING) " mb-1" } { "Project " (view.shortcode) }
                 }
             }
-            p class="text-gray-600 mt-2" {
+            p class="text-neutral-600 mt-2" {
                 "Submitted by "
                 @match view.submitted_by {
                     Some(name) => strong { (name) }
@@ -628,6 +690,7 @@ fn diff_form(view: &ReviewView<'_>) -> Markup {
     let action = view.action();
     let rows: Vec<&ReviewRow<'_>> = view.visible().collect();
     html! {
+        // `#review-form` is also what main.css scopes the decision colours to.
         // contentType: 'form' posts urlencoded, which editor_core::form reads, and
         // Datastar sends no signals with it. No __prevent: the bundle calls
         // preventDefault unconditionally on a form's submit.
@@ -677,27 +740,35 @@ fn entity_rows_section(view: &ReviewView<'_>) -> Markup {
     }
     html! {
         div class="mt-8 flex flex-col gap-4" {
-            h2 class="font-display text-xl" { "Proposed people and organisations" }
+            h2 class="font-display font-semibold text-xl text-neutral-900" {
+                "Proposed people and organisations"
+            }
             @for row in view.entity_rows { (entity_row(row)) }
         }
     }
 }
 
 fn entity_row(row: &EntityRow<'_>) -> Markup {
+    let tone = match row.proposal.decision {
+        None => RowTone::ToReview,
+        Some(ProposalDecision::Accept) => RowTone::Accepted,
+        Some(ProposalDecision::Reject) => RowTone::Neutral,
+    };
     html! {
-        div class="rounded border border-neutral-300 bg-white" {
-            div class="flex flex-wrap items-center gap-3 border-b border-neutral-200 px-4 py-2" {
-                strong { (row.label) }
+        div class=(tone.frame()) {
+            div class=(tone.header()) {
                 ({
                     badge(operation_label(row.proposal.operation))
-                        .variant(BadgeVariant::Secondary)
+                        .variant(BadgeVariant::Info)
+                        .size(BadgeSize::Small)
                 })
+                strong { (row.label) }
+                div class="ml-auto" { (entity_decision_control(row)) }
             }
             (cross_project_notice(row))
             @for (label, member) in entity_members(row.proposal.kind) {
                 (entity_member_row(label, member, row))
             }
-            (entity_decision_control(row))
         }
     }
 }
@@ -725,24 +796,25 @@ fn entity_members(kind: ProposalKind) -> Vec<(&'static str, &'static str)> {
 /// second value renderer — the same reuse [`row_values`] makes for a project field.
 fn entity_member_row(label: &str, member: &str, row: &EntityRow<'_>) -> Markup {
     let proposed = row.payload.get(member);
+    let changed = row.published.is_some_and(|published| published.get(member) != proposed);
     html! {
-        div class="border-t border-neutral-200 px-4 py-3" {
-            p class="mb-2 text-sm font-semibold" { (label) }
-            div class="grid gap-4 md:grid-cols-2" {
-                div {
-                    p class="mb-1 text-xs font-bold uppercase tracking-wide text-neutral-600" {
-                        "Published"
-                    }
+        div class="border-t border-neutral-200" {
+            p class="px-4 pt-3 text-sm font-semibold" { (label) }
+            div class=(VALUE_COLUMNS) {
+                div class=(VALUE_COLUMN) {
+                    p class=(VALUE_CAPTION) { "Published" }
                     @match row.published {
-                        Some(published) => (value_markup(published.get(member)))
+                        Some(published) => {
+                            div class=[changed.then_some(OLD_VALUE)] {
+                                (value_markup(published.get(member)))
+                            }
+                        }
                         None => p class="italic text-neutral-600" { "Not published yet" }
                     }
                 }
-                div {
-                    p class="mb-1 text-xs font-bold uppercase tracking-wide text-neutral-600" {
-                        "Proposed"
-                    }
-                    (value_markup(proposed))
+                div class=(SECOND_VALUE_COLUMN) {
+                    p class=(VALUE_CAPTION) { "Proposed" }
+                    div class=[changed.then_some(NEW_VALUE)] { (value_markup(proposed)) }
                 }
             }
         }
@@ -762,12 +834,14 @@ fn cross_project_notice(row: &EntityRow<'_>) -> Markup {
          other's change is silently replaced, with nothing here to say so once it happens."
     );
     html! {
-        div class="p-4 pb-0" {
+        p   class="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-neutral-200 px-4 py-2 text-sm"
+        {
             ({
-                alert(message)
-                    .variant(AlertVariant::Info)
-                    .title("Proposed by another project too")
+                badge("Proposed by another project too")
+                    .variant(BadgeVariant::Warning)
+                    .size(BadgeSize::Small)
             })
+            span { (message) }
         }
     }
 }
@@ -778,15 +852,14 @@ fn cross_project_notice(row: &EntityRow<'_>) -> Markup {
 fn entity_decision_control(row: &EntityRow<'_>) -> Markup {
     let legend = format!("{} — decision", row.label);
     let selected = row.proposal.decision.map_or("", ProposalDecision::as_str);
-    let mut group = radio_group(format!("{ENTITY_DECISION_PREFIX}.{}", row.proposal.entity_id), legend)
-        .inline()
+    radio_group(format!("{ENTITY_DECISION_PREFIX}.{}", row.proposal.entity_id), legend)
+        .segmented()
+        .legend_hidden()
         .option(ProposalDecision::Accept.as_str(), "Accept")
-        .selected(selected);
-    group = group.option(ProposalDecision::Reject.as_str(), "Reject");
-    group = group.option("", "Not reviewed yet");
-    html! {
-        div class="border-t border-neutral-200 px-4 py-3" { (group) }
-    }
+        .option(ProposalDecision::Reject.as_str(), "Reject")
+        .option("", "Not reviewed yet")
+        .selected(selected)
+        .build()
 }
 
 /// The three controls that end the review round, and the note they carry.
@@ -796,8 +869,8 @@ fn entity_decision_control(row: &EntityRow<'_>) -> Markup {
 /// irreversible from here.
 fn finish(view: &ReviewView<'_>) -> Markup {
     html! {
-        div class="mt-6 rounded border border-neutral-300 bg-white p-4 flex flex-col gap-4" {
-            h3 class="font-display text-lg" { "Finish this review" }
+        div class="mt-6 rounded border border-neutral-200 bg-white p-4 flex flex-col gap-4" {
+            h3 class="font-display font-semibold text-lg text-neutral-900" { "Finish this review" }
             @match view.confirming {
                 Some(APPROVE) => (confirm_approve(view))
                 Some(REQUEST_CHANGES) => (confirm_note(view, REQUEST_CHANGES))
@@ -946,14 +1019,14 @@ pub fn finished(project: Option<&str>, shortcode: &str, outcome: Finished) -> Ma
     };
     html! {
         div class="max-w-5xl py-8" {
-            h1 class="font-display text-2xl mb-1" { (title) }
-            p class="font-mono text-sm text-gray-600 mb-4" {
+            h1 class={ (HEADING) " mb-1" } { (title) }
+            p class="font-mono text-sm text-neutral-600 mb-4" {
                 @if let Some(project) = project { (project) " · " }
                 (shortcode)
             }
             p class="mb-4" { (body) }
             p {
-                a href="/review" class="underline" { "Back to the review queue" }
+                a href="/review" class=(TEXT_LINK) { "Back to the review queue" }
             }
         }
     }
@@ -961,54 +1034,57 @@ pub fn finished(project: Option<&str>, shortcode: &str, outcome: Finished) -> Ma
 
 /// One field: the header with its state, the two values, and the decision.
 fn diff_row(view: &ReviewView<'_>, row: &ReviewRow<'_>) -> Markup {
+    let tone = match (row.changed, row.decision) {
+        (true, None) => RowTone::ToReview,
+        (true, Some(Decision::Accept)) => RowTone::Accepted,
+        _ => RowTone::Neutral,
+    };
     html! {
-        div class="rounded border border-neutral-300 bg-white" {
-            div class="flex flex-wrap items-center gap-3 border-b border-neutral-200 px-4 py-2" {
+        div class=(tone.frame()) {
+            div class=(tone.header()) {
                 strong { (row.label()) }
                 (row_state(row))
+                @if row.changed {
+                    div class="ml-auto" { (decision_control(view, row)) }
+                }
             }
             (row_values(view, row))
-            @if row.changed { (decision_control(view, row)) }
         }
     }
 }
 
 /// The badge naming where the row stands.
 fn row_state(row: &ReviewRow<'_>) -> Markup {
-    if !row.changed {
-        return html! {
-            (badge("Unchanged").variant(BadgeVariant::Secondary))
-        };
-    }
-    html! {
-        @match (row.decision, row.substitute.is_some()) {
-            (Some(Decision::Accept), true) => (badge("Accepted · edited").variant(BadgeVariant::Success))
-            (Some(Decision::Accept), false) => (badge("Accepted").variant(BadgeVariant::Success))
-            (Some(Decision::Revert), _) => (badge("Reverted — keeps published").variant(BadgeVariant::Secondary))
-            (None, _) => (badge("Needs review").variant(BadgeVariant::Warning))
-        }
-    }
+    let (label, variant) = match (row.changed, row.decision, row.substitute.is_some()) {
+        (false, _, _) => ("Unchanged", BadgeVariant::Secondary),
+        (true, Some(Decision::Accept), true) => ("Accepted · edited", BadgeVariant::Success),
+        (true, Some(Decision::Accept), false) => ("Accepted", BadgeVariant::Success),
+        (true, Some(Decision::Revert), _) => ("Reverted — keeps published", BadgeVariant::Secondary),
+        (true, None, _) => ("Needs review", BadgeVariant::Primary),
+    };
+    badge(label).variant(variant).size(BadgeSize::Small).build()
 }
 
-/// The two columns: what is published, and what would be.
+/// The two columns: what is published, and what would be. A change still in play strikes the
+/// published value through and marks the submitted one; a reverted row marks neither, since the
+/// published value is the one it keeps.
 fn row_values(view: &ReviewView<'_>, row: &ReviewRow<'_>) -> Markup {
+    let marked = row.changed && row.decision != Some(Decision::Revert);
     html! {
-        div class="grid gap-4 border-t border-neutral-200 p-4 md:grid-cols-2" {
-            div {
-                p class="mb-2 text-xs font-bold uppercase tracking-wide text-neutral-600" {
-                    "Published"
-                }
-                @if view.published { (value_markup(row.published)) } @else {
+        div class=(VALUE_COLUMNS) {
+            div class=(VALUE_COLUMN) {
+                p class=(VALUE_CAPTION) { "Published" }
+                @if view.published {
+                    div class=[marked.then_some(OLD_VALUE)] { (value_markup(row.published)) }
+                } @else {
                     // No published project at all, not a published project holding no
                     // value: "Not set" would send a reader looking for the field.
                     p class="italic text-neutral-600" { "Not published yet" }
                 }
             }
-            div {
-                p class="mb-2 text-xs font-bold uppercase tracking-wide text-neutral-600" {
-                    "Submitted"
-                }
-                (submitted_side(row))
+            div class=(SECOND_VALUE_COLUMN) {
+                p class=(VALUE_CAPTION) { "Submitted" }
+                div class=[marked.then_some(NEW_VALUE)] { (submitted_side(row)) }
             }
         }
     }
@@ -1077,16 +1153,14 @@ fn decision_control(view: &ReviewView<'_>, row: &ReviewRow<'_>) -> Markup {
     let legend = format!("{} — decision", row.label());
     let selected = row.decision.map_or("", Decision::as_str);
     let mut group = radio_group(format!("{DECISION_PREFIX}.{}", row.field), legend)
-        .inline()
+        .segmented()
+        .legend_hidden()
         .option(Decision::Accept.as_str(), "Accept")
         .selected(selected);
     if view.published {
         group = group.option(Decision::Revert.as_str(), "Revert");
     }
-    group = group.option("", "Not reviewed yet");
-    html! {
-        div class="border-t border-neutral-200 px-4 py-3" { (group) }
-    }
+    group.option("", "Not reviewed yet").build()
 }
 
 #[cfg(test)]
@@ -1592,11 +1666,35 @@ mod tests {
     }
 
     #[test]
-    fn a_waiting_submission_is_a_secondary_badge_and_not_a_warning() {
+    fn a_waiting_submission_is_an_info_badge_and_not_a_warning() {
         let out = queue_status(&queue_row()).into_string();
         assert!(out.contains("Waiting"), "{out}");
-        assert!(out.contains("badge-secondary"), "{out}");
+        assert!(out.contains("badge-info"), "{out}");
         assert!(!out.contains("badge-warning"), "{out}");
+    }
+
+    #[test]
+    fn a_reverted_row_marks_neither_value_as_replaced() {
+        let mut rows = rows();
+        rows[0].decision = Some(Decision::Revert);
+        let marked = |out: &str| out.contains("line-through") || out.contains("bg-success-50");
+        assert!(!marked(&diff_row(&view(&rows), &rows[0]).into_string()));
+        rows[0].decision = None;
+        assert!(marked(&diff_row(&view(&rows), &rows[0]).into_string()));
+    }
+
+    #[test]
+    fn every_decision_value_has_its_colour_in_the_editor_stylesheet() {
+        let css = include_str!("../../../style/main.css");
+        let values = [
+            Decision::Accept.as_str(),
+            Decision::Revert.as_str(),
+            ProposalDecision::Accept.as_str(),
+            ProposalDecision::Reject.as_str(),
+        ];
+        for value in values {
+            assert!(css.contains(&format!("[value='{value}']")), "no colour for {value}");
+        }
     }
 
     #[test]

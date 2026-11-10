@@ -32,6 +32,8 @@ pub struct RadioGroupBuilder {
     choices: Vec<Choice>,
     selected: Option<String>,
     inline: bool,
+    segmented: bool,
+    legend_hidden: bool,
     hint: Option<Markup>,
     error: Option<Markup>,
     id: Option<String>,
@@ -46,6 +48,8 @@ pub fn radio_group(name: impl Into<String>, legend: impl Render) -> RadioGroupBu
         choices: Vec::new(),
         selected: None,
         inline: false,
+        segmented: false,
+        legend_hidden: false,
         hint: None,
         error: None,
         id: None,
@@ -99,6 +103,24 @@ impl RadioGroupBuilder {
         self
     }
 
+    /// Render the choices as one segmented control, the checked choice filled.
+    ///
+    /// The radios stay real and full size, transparent over their segment, so the
+    /// group still posts without JavaScript and a click lands on the input itself.
+    /// For a short, decision-like choice whose labels are a word or two. Takes
+    /// precedence over [`Self::inline`].
+    pub fn segmented(mut self) -> Self {
+        self.segmented = true;
+        self
+    }
+
+    /// Keep the legend for assistive technology only, where a visible heading
+    /// beside the group already says what it decides.
+    pub fn legend_hidden(mut self) -> Self {
+        self.legend_hidden = true;
+        self
+    }
+
     fn resolved_id(&self) -> &str {
         self.id.as_deref().unwrap_or(&self.name)
     }
@@ -108,15 +130,22 @@ impl RadioGroupBuilder {
         let controls = choice_controls(ChoiceKind::Radio, id, &self.name, &self.choices, |value| {
             self.selected.as_deref() == Some(value)
         });
-        let layout = if self.inline {
-            "field-choices field-choices-inline"
-        } else {
-            "field-choices"
+        let layout = match (self.segmented, self.inline) {
+            (true, _) => "field-choices field-choices-segmented",
+            (false, true) => "field-choices field-choices-inline",
+            (false, false) => "field-choices",
         };
         let controls = html! {
             div class=(layout) data-testid=[self.test_id.as_deref()] { (controls) }
         };
-        group_shell(id, &self.legend, self.hint.as_ref(), self.error.as_ref(), controls)
+        group_shell(
+            id,
+            &self.legend,
+            self.hint.as_ref(),
+            self.error.as_ref(),
+            self.legend_hidden,
+            controls,
+        )
     }
 }
 
@@ -204,6 +233,23 @@ mod tests {
         let row = variant().inline().build().into_string();
         assert!(!column.contains("field-choices-inline"), "{column}");
         assert!(row.contains("field-choices-inline"), "{row}");
+    }
+
+    #[test]
+    fn segmented_keeps_one_real_radio_per_choice_under_the_group_name() {
+        let out = variant().segmented().selected("text").build().into_string();
+        assert!(out.contains("field-choices-segmented"), "{out}");
+        assert_eq!(out.matches(r#"type="radio""#).count(), 2, "{out}");
+        assert!(out.contains(r#"value="text" checked"#), "{out}");
+    }
+
+    #[test]
+    fn a_hidden_legend_still_names_the_group() {
+        let out = variant().legend_hidden().build().into_string();
+        assert!(
+            out.contains(r#"<legend class="field-label sr-only">How is this period recorded?</legend>"#),
+            "{out}"
+        );
     }
 
     #[test]

@@ -38,6 +38,15 @@ fn examples() -> Markup {
         })
         ({
             example(
+                "radio_group-segmented",
+                "A decision",
+                "`segmented` draws the choices as one control with the checked one filled, for a short choice \
+                 such as a reviewer's decision. The radios stay real underneath, so it works without JavaScript.",
+                segmented(),
+            )
+        })
+        ({
+            example(
                 "radio_group-error",
                 "Rejected, with the reason",
                 "As with the checkbox group, the message hangs off the fieldset and is announced once. Note a \
@@ -66,6 +75,20 @@ fn inline() -> Markup {
                 .hint(
                     "Grants carry a funder, a number and a programme; free text is one line.",
                 )
+        })
+    };
+    form_column(fields)
+}
+
+fn segmented() -> Markup {
+    let fields = html! {
+        ({
+            radio_group("decision.name", "Name — decision")
+                .option("accept", "Accept")
+                .option("revert", "Revert")
+                .option("", "Not reviewed yet")
+                .selected("accept")
+                .segmented()
         })
     };
     form_column(fields)

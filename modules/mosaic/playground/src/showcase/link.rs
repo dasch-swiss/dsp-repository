@@ -70,6 +70,7 @@ fn as_button() -> Markup {
         (ButtonVariant::Outline, "Outline"),
         (ButtonVariant::Soft, "Soft"),
         (ButtonVariant::Ghost, "Ghost"),
+        (ButtonVariant::Danger, "Danger"),
     ];
     html! {
         div class="flex gap-4 items-center" {

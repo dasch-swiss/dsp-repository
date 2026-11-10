@@ -1,7 +1,7 @@
 ---
 dune_map: true
 schema_version: 2
-date: 2026-11-04
+date: 2026-11-10
 ---
 
 # Architecture Map
@@ -240,7 +240,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `editor_core::form::registry::{FIELDS, SECTIONS, Field}`, `form::Shape`, `sections_for`, `fields_for`,
   `Section::has_editable_field`, `form::ChoiceSet::Languages`, `editor_core::languages::{LANGUAGES, canonical_code}`,
   `editor_core::countries::{COUNTRIES, CANTONS, SWITZERLAND, takes_canton}`,
-  `ProjectState::explanation_for`, `AgentScope::get_proposed_first`, `entity::{entity_label, entity_labels, Precedence}`,
+  `ProjectState::explanation_for`, `editor_web::state_badge`, `AgentScope::get_proposed_first`, `entity::{entity_label, entity_labels, Precedence}`,
   `editor_web::form::INTENT`, `editor_core::submission::{check, SubmitRefusal}`, `editor_core::review::{approval, ApproveRefusal}`,
   `SubmissionState::is_pending`,
   `proposals::proposal_for`,
@@ -400,7 +400,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `Editor::start`), approve's own transaction, which supersedes the project's earlier record, so a
   project holds at most one, and RDU's discard
   (`POST /approved/{id}/discard`).
-- **Fingerprint:** `60709c4e1602`
+- **Fingerprint:** `0b95b67bba67`
 
 ### areas/deposit/shell
 
@@ -411,24 +411,29 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `NEXT`), and the RDU-only text. A `fn -> Markup` library that both capabilities' pages are
   wrapped in; it turns nothing into a response. The header carries a role-based main menu
   (`Menu`: Projects for a depositor; Projects, Review queue with its count, Approved records
-  and Accounts for RDU) with `aria-current` on the current page's item.
+  and Accounts for RDU) with `aria-current` on the current page's item. Also the home of view
+  fragments both capabilities share (`components/`): `form_card`, the white card of a
+  single-form page, and `impact_card`, the danger-tint card of a confirmation before something
+  is destroyed.
 - **Key entities:** `page`, `Viewer`, `Menu`, `header`, `footer`, `forbidden`, `not_found`,
-  `unavailable`, `safe_next`, `login_url`, `NEXT`, `MAX_NEXT_LEN`, `RDU_ONLY`
+  `unavailable`, `safe_next`, `login_url`, `NEXT`, `MAX_NEXT_LEN`, `RDU_ONLY`, `form_card`,
+  `impact_card`
 - **Public interface:** the `deposit_shell` library: `view::{page, Viewer, Menu}`,
   `pages::{forbidden::forbidden, not_found::not_found, problem::unavailable}`,
-  `sign_in::{safe_next, login_url, NEXT}`, `RDU_ONLY`; the header and footer are private to
+  `sign_in::{safe_next, login_url, NEXT}`, `RDU_ONLY`, `form_card`, `impact_card`; the header and footer are private to
   `view::page`. No routes, no binary.
 - **Local-context kit:** `areas/deposit/shell/src/lib.rs`, `areas/deposit/shell/src/view.rs`,
   `areas/deposit/shell/src/sign_in.rs`, `areas/deposit/shell/src/components/global/header.rs`,
   `areas/deposit/editor/web/src/shell.rs`, `areas/deposit/identity/web/src/handlers/guard.rs`,
   `areas/deposit/editor/style/main.css`
-- **Depends on:** modules/mosaic (`mosaic-tiles`, the header's sign-out button); third-party:
+- **Depends on:** modules/mosaic (`mosaic-tiles`: the header's sign-out button, `form_card`'s card); third-party:
   maud, tracing (logs a failed review-queue count read)
 - **Used by:** areas/deposit/editor (`editor-web`: `shell.rs` turns its pages into
   responses, `handlers/auth.rs` builds the sign-in redirect, every handler module renders the
-  problem page), areas/deposit/server (`deposit-server`: `shell.rs` renders the fallback 404), areas/deposit/identity (`identity-web`: `shell.rs` turns its pages into
+  problem page, `pages/approved.rs`, `pages/section.rs` and `entity` use `impact_card`), areas/deposit/server (`deposit-server`: `shell.rs` renders the fallback 404), areas/deposit/identity (`identity-web`: `shell.rs` turns its pages into
   responses, `handlers/guard.rs` and `handlers/login.rs` build the sign-in redirect,
-  `handlers/depositors.rs` renders the problem page)
+  `handlers/depositors.rs` renders the problem page, `pages/login.rs` uses `form_card`,
+  `pages/depositors.rs` uses `impact_card`)
 - **Boundary rules:**
   - Depends on no capability crate, nor any workspace crate but `mosaic-tiles` and `shared-*`
     (ADR-0003) (**static-analysis** — `check-capability-deps.sh`). Has no Axum:
@@ -449,7 +454,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - Its Tailwind classes ship only through `@source '../../shell/**/*.rs'` in the editor's
     `style/main.css`; moving the crate drops them silently (**review**).
 - **Durable state:** none.
-- **Fingerprint:** `ea4be6a98521`
+- **Fingerprint:** `145f0bc80e67`
 
 ### areas/deposit/identity
 
@@ -536,7 +541,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `PRAGMA user_version`. **Single writer:** `identity-store`, through `identity-core`'s
   repository ports, called by `identity-web`'s handlers, the RDU bootstrap and the hourly
   sweep, and by `session::current`'s idle touch (also through `LiveAuthenticator`).
-- **Fingerprint:** `fe27873d8ad8`
+- **Fingerprint:** `5809c59f286f`
 
 ### areas/deposit/server
 
@@ -616,7 +621,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `repeatable_list`, `icon`, `copy_button`, `loading`, `breadcrumb`, `combobox` (with `combobox_results`,
   `combobox_listbox`, `combobox_groups`, `combobox_option`, `combobox_status`); builders
   `BadgeBuilder`, `ButtonBuilder`, `TextFieldBuilder`, …; variant enums with `css_class()`
-  (`ButtonVariant`, `BadgeVariant`, `CardVariant`, `AlertVariant`, `InputType`); `IconData`;
+  (`ButtonVariant`, whose `Danger` is a destructive confirmation's own button, `ButtonSize`, `BadgeVariant`,
+  `BadgeSize`, `CardVariant`, `AlertVariant`, `InputType`); `IconData`;
   playground `router`, `COMPONENT_NAV`
 - **Public interface:** the `mosaic-tiles` crate (`ComponentBuilder`, `components::*`);
   two CSS files consumers `@import` — `tiles/src/components/theme_provider/tokens.css` and
@@ -651,7 +657,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - Registration is in `tiles/src/components/mod.rs`, not `lib.rs`; `modules/mosaic/CLAUDE.md`
     and the `add-mosaic-component` skill say `lib.rs` — stale, fix on next touch (**docs-only**).
 - **Durable state:** none. The playground E2E suite is dormant (no recipe, no CI job runs it).
-- **Fingerprint:** `187b4146e63a`
+- **Fingerprint:** `f54296c452e3`
 
 ### shared/fair
 

@@ -183,13 +183,13 @@ fn removal_cell(row: &CreatedRow) -> Markup {
 /// project and its draft. `refusal` says why a `POST` did not remove it.
 pub fn confirm_removal(shortcode: &str, name: &str, refusal: Option<&str>) -> Markup {
     html! {
-        div class="max-w-lg py-8" {
-            h1 class="font-display text-2xl mb-2" { "Remove project " (shortcode) "?" }
+        div class="max-w-lg py-8 flex flex-col gap-4" {
+            h1 class="font-display text-2xl" { "Remove project " (shortcode) "?" }
             @if let Some(refusal) = refusal {
-                p class="mb-4" { (refusal) }
-                (link("Back to the projects", "/projects"))
+                p { (refusal) }
+                p { (link("Back to the projects", "/projects")) }
             } @else {
-                p class="text-gray-600 mb-4" {
+                p class="text-gray-600" {
                     "This deletes the project "
                     (name)
                     " with its draft, including anything a depositor has entered, its review history and \
@@ -199,12 +199,12 @@ pub fn confirm_removal(shortcode: &str, name: &str, refusal: Option<&str>) -> Ma
                 form
                     method="post"
                     action={ "/projects/" (shortcode) "/remove" }
-                    class="flex items-center gap-3"
+                    class="flex items-center gap-4"
                 {
                     ({
                         button("Remove project")
                             .button_type(ButtonType::Submit)
-                            .variant(ButtonVariant::Secondary)
+                            .variant(ButtonVariant::Danger)
                     })
                     (link("Cancel", "/projects"))
                 }

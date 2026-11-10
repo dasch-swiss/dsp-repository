@@ -25,4 +25,7 @@
   .btn-soft {
     @apply bg-neutral-100 text-neutral-600 shadow-none not-disabled:hover:bg-neutral-200 not-disabled:hover:text-neutral-700;
   }
+  .btn-danger {
+    @apply bg-white text-danger-700 ring-1 ring-inset ring-danger-600 not-disabled:hover:bg-danger-50;
+  }
 }

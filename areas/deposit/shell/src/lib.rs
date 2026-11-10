@@ -16,7 +16,7 @@ pub mod pages;
 pub mod sign_in;
 pub mod view;
 
-pub use components::form_card;
+pub use components::{form_card, impact_card};
 
 /// What a depositor is told if they find their way to an RDU-only page.
 ///

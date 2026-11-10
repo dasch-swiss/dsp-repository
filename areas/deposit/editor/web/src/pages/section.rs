@@ -18,6 +18,7 @@
 //! cannot hold a half-typed date, so with it off, fiddling the year of a real
 //! date and saving would clear it.
 
+use deposit_shell::impact_card;
 use editor_core::agents::AgentScope;
 use editor_core::draft::ProjectDraft;
 use editor_core::form::format::Finding;
@@ -1396,18 +1397,49 @@ const fn discard_consequence(created: bool) -> &'static str {
 /// `consequence`, so both are announced on entry, with focus on the control carrying `autofocus`
 /// (the safe choice), on a page load and where the enhanced path morphs the panel in.
 fn confirmation(heading: &str, consequence: &str, choices: Markup) -> Markup {
+    let panel = html! {
+        h3 id="confirm-heading" class="font-bold" { (heading) }
+        p id="confirm-consequence" { (consequence) }
+        div class="mt-2 flex items-center gap-4" { (choices) }
+    };
     html! {
-        div class="rounded border border-neutral-300 bg-white p-4 flex flex-col gap-3"
-            role="group"
+        div role="group"
             aria-labelledby="confirm-heading"
             aria-describedby="confirm-consequence"
             data-init=(FOCUS_AUTOFOCUS)
-        {
-            h3 id="confirm-heading" class="font-bold" { (heading) }
-            p id="confirm-consequence" { (consequence) }
-            div class="flex items-center gap-4" { (choices) }
-        }
+        { (impact_card(panel)) }
     }
+}
+
+/// The inline question before discarding the draft or taking the submission back.
+fn confirmation_of(view: &SectionView<'_>, confirming: Confirmation) -> Markup {
+    let (heading, consequence, confirm, intent, keep) = match confirming {
+        Confirmation::Discard => (
+            "Discard the draft?",
+            discard_consequence(view.created),
+            "Yes, discard the draft",
+            DISCARD,
+            "Keep the draft",
+        ),
+        Confirmation::Withdrawal => (
+            "Take the submission back?",
+            "Taking the submission back removes it from RDU's queue, along with anything a reviewer has already \
+             recorded on it. Your draft is kept, so you can keep editing and submit again.",
+            "Yes, take it back",
+            WITHDRAW,
+            "Keep waiting",
+        ),
+    };
+    let choices = html! {
+        ({
+            button(confirm)
+                .variant(ButtonVariant::Danger)
+                .button_type(ButtonType::Submit)
+                .name_value(INTENT, intent)
+        })
+        (link(keep, view.action()).autofocus())
+    };
+    confirmation(heading, consequence, choices)
 }
 
 /// The write controls, which depend on where the project sits in the cycle.
@@ -1416,34 +1448,12 @@ fn confirmation(heading: &str, consequence: &str, choices: Markup) -> Markup {
 /// `SubmitEvent.submitter`, while a `formaction` would be silently ignored on the
 /// enhanced path.
 fn controls(view: &SectionView<'_>) -> Markup {
+    if let Some(confirming) = view.confirming {
+        return confirmation_of(view, confirming);
+    }
     let editable = view.section.has_editable_field(view.audience);
     html! {
-        @if view.confirming == Some(Confirmation::Discard) {
-            ({
-                confirmation(
-                    "Discard the draft?",
-                    discard_consequence(view.created),
-                    html! {
-                        ({ button("Yes, discard the draft")
-                        .button_type(ButtonType::Submit).name_value(INTENT, DISCARD) })
-                        (link("Keep the draft", view.action()).autofocus())
-                    },
-                )
-            })
-        } @else if view.confirming == Some(Confirmation::Withdrawal) {
-            ({
-                confirmation(
-                    "Take the submission back?",
-                    "Taking the submission back removes it from RDU's queue, along with anything a reviewer \
-                     has already recorded on it. Your draft is kept, so you can keep editing and submit again.",
-                    html! {
-                        ({ button("Yes, take it back").button_type(ButtonType::Submit)
-                        .name_value(INTENT, WITHDRAW) }) (link("Keep waiting", view
-                        .action()).autofocus())
-                    },
-                )
-            })
-        } @else if view.locked.is_some() {
+        @if view.locked.is_some() {
             @if view.may_withdraw {
                 div class=(CONTROL_ROW) {
                     ({

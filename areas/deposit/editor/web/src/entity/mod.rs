@@ -10,6 +10,7 @@
 
 pub mod origin;
 
+use deposit_shell::impact_card;
 use editor_core::agents::AgentScope;
 use editor_core::countries::{takes_canton, CANTONS, COUNTRIES, SWITZERLAND};
 use editor_core::draft::ProjectDraft;
@@ -19,6 +20,7 @@ use editor_core::form::{FormBody, Shape};
 use editor_core::proposals::{EntityProposal, ProposalKind, ProposalOperation};
 use maud::{html, Markup};
 use mosaic_tiles::alert::{alert, AlertVariant};
+use mosaic_tiles::badge::{badge, BadgeVariant};
 use mosaic_tiles::button::{button, ButtonType, ButtonVariant};
 use mosaic_tiles::link::link;
 use mosaic_tiles::select::select;
@@ -551,12 +553,28 @@ fn heading(view: &EntityView<'_>) -> Markup {
         None => format!("/projects/{}", view.shortcode),
     };
     html! {
-        div class="mb-6" {
-            h1 class="font-display text-2xl mb-1" { (label) }
-            p class="text-gray-600" {
+        div class="mb-6 flex flex-col gap-2" {
+            p {
                 a href=(back) class="underline" { "Back to the project" }
             }
+            div class="flex flex-wrap items-center gap-3" {
+                h1 class="font-display text-2xl" { (label) }
+                ({
+                    badge(kind_badge(view.proposal.kind, view.proposal.operation))
+                        .variant(BadgeVariant::Secondary)
+                })
+            }
         }
+    }
+}
+
+/// What is being proposed, beside the heading, which names only the entity.
+const fn kind_badge(kind: ProposalKind, operation: ProposalOperation) -> &'static str {
+    match (operation, kind) {
+        (ProposalOperation::New, ProposalKind::Person) => "New person",
+        (ProposalOperation::New, ProposalKind::Organization) => "New organisation",
+        (ProposalOperation::Change, ProposalKind::Person) => "Change to a person",
+        (ProposalOperation::Change, ProposalKind::Organization) => "Change to an organisation",
     }
 }
 
@@ -593,15 +611,27 @@ fn status(view: &EntityView<'_>) -> Markup {
 /// rendering of every field, and the reason nothing here can be changed.
 fn locked(view: &EntityView<'_>, over: Over) -> Markup {
     html! {
-        (alert(over.message()).variant(AlertVariant::Info).title(over.heading()))
-        div class="flex flex-col gap-6 mt-6" {
-            @for field in view.fields() {
-                (entity_field_row(field, view.draft, Mode::ReadOnly, view.rows(None)))
+        div class="flex flex-col gap-6" {
+            (alert(over.message()).variant(AlertVariant::Info).title(over.heading()))
+            div class=(FIELDS_CARD) {
+                @for field in view.fields() {
+                    ({
+                        entity_field_row(
+                            field,
+                            view.draft,
+                            Mode::ReadOnly,
+                            view.rows(None),
+                        )
+                    })
+                }
+                @if view.proposal.kind == ProposalKind::Organization { (address_group(view, true)) }
             }
-            @if view.proposal.kind == ProposalKind::Organization { (address_group(view, true)) }
         }
     }
 }
+
+/// The section form's card, without its heading.
+const FIELDS_CARD: &str = "flex flex-col gap-6 rounded-md border border-neutral-200 bg-white p-4";
 
 /// The proposal's fields, and the controls that save or discard it.
 fn form(view: &EntityView<'_>) -> Markup {
@@ -623,17 +653,19 @@ fn form(view: &EntityView<'_>) -> Markup {
                     input type="hidden" name=(origin::FIELD) value=(field.id);
                 }
             }
-            @for field in view.fields() {
-                ({
-                    entity_field_row(
-                        field,
-                        view.draft,
-                        view.mode(),
-                        view.rows(Some(&agents_path)),
-                    )
-                })
+            div class=(FIELDS_CARD) {
+                @for field in view.fields() {
+                    ({
+                        entity_field_row(
+                            field,
+                            view.draft,
+                            view.mode(),
+                            view.rows(Some(&agents_path)),
+                        )
+                    })
+                }
+                @if view.proposal.kind == ProposalKind::Organization { (address_group(view, false)) }
             }
-            @if view.proposal.kind == ProposalKind::Organization { (address_group(view, false)) }
             (controls(view))
         }
     }
@@ -760,45 +792,50 @@ fn choice_select(member: &AddressMember, list: &'static [&'static str], placehol
 /// Save, and Discard behind its confirmation — the two controls this entity form has, each a
 /// named submit on this one form, like the section form's own.
 fn controls(view: &EntityView<'_>) -> Markup {
-    let label = entity_label(view.proposal.kind, &view.proposal.entity_id, view.agents, Precedence::Proposed);
+    if view.confirming == Some(Confirmation::Discard) {
+        return discard_confirmation(view);
+    }
     html! {
-        @if view.confirming == Some(Confirmation::Discard) {
-            div class="rounded border border-neutral-300 bg-white p-4 flex flex-col gap-3" {
-                p {
-                    "Discarding the proposal for "
-                    (label)
-                    " removes it. It cannot be undone. The record stays on \
-                     file as a placeholder, so nothing published while this proposal was live can end up naming \
-                     a different person or organisation."
-                    @if view.proposal.operation == ProposalOperation::New {
-                        " It is also taken out of this project's contributors, contact point and funding."
-                    }
-                }
-                div class="flex items-center gap-4" {
-                    ({
-                        button("Yes, discard this proposal")
-                            .button_type(ButtonType::Submit)
-                            .name_value(INTENT, DISCARD)
-                    })
-                    (link("Keep it", view.action()))
-                }
-            }
-        } @else {
-            div class="flex flex-wrap items-center gap-4" {
-                ({
-                    button("Save draft")
-                        .button_type(ButtonType::Submit)
-                        .name_value(INTENT, SAVE)
-                })
-                ({
-                    button("Discard this proposal")
-                        .variant(ButtonVariant::Secondary)
-                        .button_type(ButtonType::Submit)
-                        .name_value(INTENT, DISCARD_CONFIRM)
-                })
-            }
+        div class="flex flex-wrap items-center gap-4" {
+            ({
+                button("Save draft")
+                    .button_type(ButtonType::Submit)
+                    .name_value(INTENT, SAVE)
+            })
+            ({
+                button("Discard this proposal")
+                    .variant(ButtonVariant::Secondary)
+                    .button_type(ButtonType::Submit)
+                    .name_value(INTENT, DISCARD_CONFIRM)
+            })
         }
     }
+}
+
+/// The question before discarding the proposal, in place of Save and Discard.
+fn discard_confirmation(view: &EntityView<'_>) -> Markup {
+    let label = entity_label(view.proposal.kind, &view.proposal.entity_id, view.agents, Precedence::Proposed);
+    let panel = html! {
+        p {
+            "Discarding the proposal for "
+            (label)
+            " removes it. It cannot be undone. The record stays on file as a placeholder, so nothing published \
+             while this proposal was live can end up naming a different person or organisation."
+            @if view.proposal.operation == ProposalOperation::New {
+                " It is also taken out of this project's contributors, contact point and funding."
+            }
+        }
+        div class="mt-2 flex items-center gap-4" {
+            ({
+                button("Yes, discard this proposal")
+                    .variant(ButtonVariant::Danger)
+                    .button_type(ButtonType::Submit)
+                    .name_value(INTENT, DISCARD)
+            })
+            (link("Keep it", view.action()))
+        }
+    };
+    impact_card(panel)
 }
 
 #[cfg(test)]

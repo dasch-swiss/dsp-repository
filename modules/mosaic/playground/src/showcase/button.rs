@@ -17,7 +17,7 @@ fn examples() -> Markup {
             example(
                 "button-variants",
                 "Button Variants",
-                "Available button styles: Primary, Secondary, Outline, Ghost, and Soft",
+                "Available button styles: Primary, Secondary, Outline, Ghost, Soft, and Danger",
                 variants(),
             )
         })
@@ -87,6 +87,7 @@ fn variants() -> Markup {
             (btn(ButtonVariant::Outline, "Outline Button"))
             (btn(ButtonVariant::Ghost, "Ghost Button"))
             (btn(ButtonVariant::Soft, "Soft Button"))
+            (btn(ButtonVariant::Danger, "Danger Button"))
         }
     }
 }

@@ -11,6 +11,7 @@
 //! configuration) the caller states once. Named fields rather than positional
 //! `&str` arguments, since three adjacent strings are silently interchangeable.
 
+use deposit_shell::impact_card;
 use maud::{html, Markup};
 use mosaic_tiles::alert::{alert, AlertVariant};
 use mosaic_tiles::button::{button, ButtonType, ButtonVariant};
@@ -243,7 +244,7 @@ fn depositor_form(action: &str, submit_label: &str, fields: &DepositorFields<'_>
             (shortcodes_field)
             div class="flex items-center gap-3" {
                 (button(submit_label).button_type(ButtonType::Submit))
-                a href="/depositors" class="underline" { "Cancel" }
+                (link("Cancel", "/depositors"))
             }
         }
     }
@@ -268,70 +269,64 @@ pub struct RemovalImpact<'a> {
 /// approved or rejected but never returned. Drafts and submissions survive,
 /// since the editor's database keeps the author's id rather than the row.
 pub fn confirm_removal(id: &str, impact: &RemovalImpact<'_>) -> Markup {
+    let destroyed = html! {
+        p class="font-bold" { "Their address, which is deleted with the account" }
+        p class="font-mono text-sm" { (impact.email) }
+        p class="text-gray-600 text-sm" {
+            "Copy it now if you may need to ask them about work in progress."
+        }
+        (removal_impact(impact))
+    };
     html! {
-        div class="max-w-lg py-8" {
-            h1 class="font-display text-2xl mb-2" { "Remove " (impact.name) "?" }
-            p class="text-gray-600 mb-4" {
+        div class="max-w-lg py-8 flex flex-col gap-4" {
+            h1 class="font-display text-2xl" { "Remove " (impact.name) "?" }
+            p class="text-gray-600" {
                 "This deletes the account and signs it out everywhere. It cannot be undone."
             }
-            div class="border border-gray-300 rounded p-4 mb-4" {
-                p class="font-bold mb-1" { "Their address, which is deleted with the account" }
-                p class="font-mono text-sm" { (impact.email) }
-                p class="text-gray-600 text-sm mt-1" {
-                    "Copy it now if you may need to ask them about work in progress."
-                }
-            }
-            (removal_impact(impact))
+            (impact_card(destroyed))
             form
                 method="post"
                 action={ "/depositors/" (id) "/remove" }
-                class="flex items-center gap-3"
+                class="flex items-center gap-4"
             {
                 ({
                     button("Remove permanently")
                         .button_type(ButtonType::Submit)
-                        .variant(ButtonVariant::Secondary)
+                        .variant(ButtonVariant::Danger)
                 })
-                a href="/depositors" class="underline" { "Cancel" }
+                (link("Cancel", "/depositors"))
             }
         }
     }
 }
 
-/// The "what this leaves behind" block of [`confirm_removal`].
+/// The "what this leaves behind" part of [`confirm_removal`]'s impact card.
 fn removal_impact(impact: &RemovalImpact<'_>) -> Markup {
     html! {
         @if impact.draft_shortcodes.is_empty() && impact.submission_shortcodes.is_empty() {
-            p class="mb-6 text-gray-600" {
+            p class="mt-3 text-gray-600" {
                 "This account has no drafts and no submission awaiting review."
             }
-        } @else { (leaves_behind(impact)) }
-    }
-}
-
-/// The consequences block of [`removal_impact`].
-fn leaves_behind(impact: &RemovalImpact<'_>) -> Markup {
-    let items = html! {
-        ul class="flex flex-col gap-2 list-disc pl-5" {
-            @if !impact.draft_shortcodes.is_empty() {
-                li {
-                    "Drafts on "
-                    (impact.draft_shortcodes.join(", "))
-                    ". The work is kept; the last editor becomes unknown."
+        } @else {
+            p class="mt-3 font-bold" { "What this leaves behind" }
+            ul class="flex flex-col gap-2 list-disc pl-5" {
+                @if !impact.draft_shortcodes.is_empty() {
+                    li {
+                        "Drafts on "
+                        (impact.draft_shortcodes.join(", "))
+                        ". The work is kept; the last editor becomes unknown."
+                    }
                 }
-            }
-            @if !impact.submission_shortcodes.is_empty() {
-                li {
-                    "A submission awaiting review on "
-                    (impact.submission_shortcodes.join(", "))
-                    ". It can still be approved or rejected, but it can no longer be returned to its depositor \
-                     for changes."
+                @if !impact.submission_shortcodes.is_empty() {
+                    li {
+                        "A submission awaiting review on "
+                        (impact.submission_shortcodes.join(", "))
+                        ". It can still be approved or rejected, but it can no longer be returned to its depositor \
+                         for changes."
+                    }
                 }
             }
         }
-    };
-    html! {
-        (alert(items).variant(AlertVariant::Warning).title("What this leaves behind"))
     }
 }
 

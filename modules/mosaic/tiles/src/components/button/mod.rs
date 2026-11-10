@@ -22,6 +22,8 @@ pub enum ButtonVariant {
     Outline,
     Ghost,
     Soft,
+    /// For an action that destroys something; the confirmation's own button, not the link to it.
+    Danger,
 }
 
 impl ButtonVariant {
@@ -33,6 +35,7 @@ impl ButtonVariant {
             ButtonVariant::Outline => "btn btn-outline",
             ButtonVariant::Ghost => "btn btn-ghost",
             ButtonVariant::Soft => "btn btn-soft",
+            ButtonVariant::Danger => "btn btn-danger",
         }
     }
 }
@@ -310,6 +313,7 @@ mod tests {
         assert_eq!(ButtonVariant::Outline.css_class(), "btn btn-outline");
         assert_eq!(ButtonVariant::Ghost.css_class(), "btn btn-ghost");
         assert_eq!(ButtonVariant::Soft.css_class(), "btn btn-soft");
+        assert_eq!(ButtonVariant::Danger.css_class(), "btn btn-danger");
     }
 
     #[test]

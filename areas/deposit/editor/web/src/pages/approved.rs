@@ -11,6 +11,7 @@
 //! binds a depositor's screens does not apply here: a reviewer needs the
 //! mechanism named, so this page says "pull request" plainly.
 
+use deposit_shell::impact_card;
 use editor_core::status::RecordClassification;
 use maud::{html, Markup};
 use mosaic_tiles::badge::{badge, BadgeVariant};
@@ -165,40 +166,39 @@ pub struct DiscardImpact<'a> {
 
 /// `GET /approved/{id}/discard`: the confirmation before the `POST` that deletes the record.
 pub fn confirm_discard(id: &str, impact: &DiscardImpact<'_>) -> Markup {
+    let destroyed = html! {
+        p class="font-bold" { "What is being destroyed" }
+        @match impact.project_name {
+            Some(name) => p { (name) }
+            None => p class="italic text-neutral-600" { "Not in the published projects" }
+        }
+        p class="font-mono text-sm" { (impact.shortcode) }
+        p class="text-gray-600 text-sm" { "Approved " (impact.approved_at) "." }
+        p class="mt-1" {
+            ({
+                badge(status_label_and_variant(impact.state).0)
+                    .variant(status_label_and_variant(impact.state).1)
+            })
+        }
+        p class="text-sm" { (pull_requests_link(impact.pull_requests_url, impact.shortcode)) }
+    };
     html! {
-        div class="max-w-lg py-8" {
-            h1 class="font-display text-2xl mb-2" { "Discard this record?" }
-            p class="text-gray-600 mb-4" {
+        div class="max-w-lg py-8 flex flex-col gap-4" {
+            h1 class="font-display text-2xl" { "Discard this record?" }
+            p class="text-gray-600" {
                 "This deletes the only copy of what was approved. It cannot be undone. The pull request is not \
                  touched: close it on GitHub."
             }
-            div class="border border-gray-300 rounded p-4 mb-4" {
-                p class="font-bold mb-1" { "What is being destroyed" }
-                @match impact.project_name {
-                    Some(name) => p { (name) }
-                    None => p class="italic text-neutral-600" { "Not in the published projects" }
-                }
-                p class="font-mono text-sm" { (impact.shortcode) }
-                p class="text-gray-600 text-sm mt-1" { "Approved " (impact.approved_at) "." }
-                p class="mt-2" {
-                    ({
-                        badge(status_label_and_variant(impact.state).0)
-                            .variant(status_label_and_variant(impact.state).1)
-                    })
-                }
-                p class="text-sm mt-1" {
-                    (pull_requests_link(impact.pull_requests_url, impact.shortcode))
-                }
-            }
+            (impact_card(destroyed))
             form
                 method="post"
                 action={ "/approved/" (id) "/discard" }
-                class="flex items-center gap-3"
+                class="flex items-center gap-4"
             {
                 ({
                     button("Discard permanently")
                         .button_type(ButtonType::Submit)
-                        .variant(ButtonVariant::Secondary)
+                        .variant(ButtonVariant::Danger)
                 })
                 (link("Cancel", "/approved"))
             }

@@ -76,8 +76,8 @@ test("after Take over the review, reviewer-b holds it and rdu is told so", async
       .locator("main")
       .getByRole("button", { name: "Take over the review" })
       .click();
-    // A plain post and redirect in both passes, so no "You are now reviewing"
-    // notice (DEV-7809): the fresh load is the outcome.
+    // Without JavaScript this is a plain post and redirect, so the fresh load
+    // is the outcome; the notice is asserted separately for the JS pass.
     await expectHeldByViewer(second);
   });
 
@@ -109,10 +109,6 @@ test("Take over the review tells the new holder they are now reviewing it", asyn
   page,
 }) => {
   test.skip(!isJs(), "without JavaScript the take-over is a plain redirect");
-  test.fail(
-    true,
-    "DEV-7809: the take-over form has no Datastar handler, so the notice never renders",
-  );
   await page.goto(review());
   const main = page.locator("main");
   await main.getByRole("button", { name: "Take over the review" }).click();

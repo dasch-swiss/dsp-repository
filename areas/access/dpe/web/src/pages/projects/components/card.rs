@@ -46,16 +46,22 @@ fn render_project_card(project: &Project, keywords: &[String], cover: Option<&st
 
     let card_content = html! {
         figure class="bg-neutral-900 relative rounded-t-[inherit]" {
-            div class="overflow-hidden rounded-t-[inherit]" {
+            div class="relative overflow-hidden rounded-t-[inherit]" {
                 @match cover {
                     Some(src) => {
+                        // The covers come from unrelated projects. A light desaturation, a
+                        // hint of sepia and a faint vignette calm them into one set while
+                        // keeping their colours. The vignette is DSP-APP's
+                        // (`project-image-cover.component.ts`).
                         img src=(src)
                             alt=(project.name)
-                            class="w-full h-48 object-cover"
+                            class="w-full h-48 object-cover grayscale-25 sepia-15"
                             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'";
                         div class="w-full h-48 bg-gray-100 items-center justify-center hidden" {
                             (placeholder_icon)
                         }
+                        div class="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,transparent_50%,rgb(0_0_0/0.1)_100%)]"
+                            aria-hidden="true" {}
                     }
                     None => {
                         div class="w-full h-48 bg-gray-100 flex items-center justify-center" {
@@ -135,6 +141,22 @@ mod tests {
             "{out}"
         );
         assert!(out.contains("this.nextElementSibling.style.display='flex'"), "{out}");
+    }
+
+    #[test]
+    fn tones_the_cover_image_but_not_the_placeholder() {
+        // The uniform filter + vignette treatment belongs to real covers only.
+        let with_cover = render_project_card(&sample_project(), &[], COVER).into_string();
+        assert!(
+            with_cover.contains(r#"class="w-full h-48 object-cover grayscale-25 sepia-15""#),
+            "{with_cover}"
+        );
+        assert!(with_cover.contains("bg-[radial-gradient("), "{with_cover}");
+
+        let without = render_project_card(&sample_project(), &[], None).into_string();
+        assert!(!without.contains("grayscale"), "{without}");
+        assert!(!without.contains("sepia"), "{without}");
+        assert!(!without.contains("radial-gradient"), "{without}");
     }
 
     #[test]

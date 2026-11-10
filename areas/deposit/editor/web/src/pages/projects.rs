@@ -20,13 +20,10 @@ use mosaic_tiles::link::link;
 use mosaic_tiles::table::{table, table_cell, table_head_cell};
 use mosaic_tiles::text_field::text_field;
 
+use super::LIST_TABLE;
 use crate::state_badge::state_badge;
 
 const TEXT_LINK: &str = "text-primary-600 underline underline-offset-2";
-
-const LIST_TABLE: &str = "bg-white border border-neutral-200 [&_th]:bg-neutral-50 [&_th]:border-b \
-                          [&_th]:border-neutral-200 [&_th]:text-xs [&_th]:uppercase [&_th]:tracking-wider \
-                          [&_th]:text-neutral-600 [&_td]:border-neutral-100";
 
 /// One row of a depositor's list: the published project, plus where that
 /// depositor's own changes have got to. A pair rather than two parallel slices,

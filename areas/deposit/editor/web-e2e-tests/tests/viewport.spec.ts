@@ -20,14 +20,17 @@ async function saveFromBelowTheFold(page: Page): Promise<void> {
   const save = page.getByRole("button", { name: "Save draft" });
   await expect(save).toBeAttached();
 
-  // The premise. If the control is not actually below the fold this test
-  // proves nothing about scrolling, and must say so rather than pass.
-  const box = await save.boundingBox();
-  if (!box) throw new Error("Save draft has no layout box");
+  // The premise: the status region's natural place is scrolled out of view. Save
+  // draft is in the sticky row, so its own position proves nothing.
+  await page
+    .locator("#section-form")
+    .evaluate((el) => el.scrollIntoView({ block: "end" }));
+  const heading = await page.locator("h1").first().boundingBox();
+  if (!heading) throw new Error("the page heading has no layout box");
   expect(
-    box.y,
-    "Save draft is not below the fold at 1280x720, so this no longer exercises the sticky notice",
-  ).toBeGreaterThan(720);
+    heading.y + heading.height,
+    "the heading is still in view at 1280x720, so this no longer exercises the sticky notice",
+  ).toBeLessThan(0);
 
   await save.click();
 }
@@ -133,6 +136,32 @@ test.describe("at 320px wide", () => {
   });
 });
 
+// SC 1.4.10 Reflow: 400% zoom on 1280x1024 is 320x256, where the wrapped row would cover half.
+test.describe("at 400% zoom", () => {
+  test.use({
+    storageState: DEPOSITOR_STATE,
+    viewport: { width: 320, height: 256 },
+  });
+
+  test("the control row is not sticky", async ({ page }) => {
+    await page.goto(`/projects/${NOTICE_SHORTCODE}/sections/overview`);
+    const row = page
+      .getByRole("button", { name: "Save draft" })
+      .locator("xpath=..");
+    await expect(row).toBeAttached();
+    const position = await row.evaluate((el) => getComputedStyle(el).position);
+    expect(position, "the control row is sticky in a 256px-tall viewport").toBe(
+      "static",
+    );
+
+    await page.setViewportSize({ width: 320, height: 640 });
+    const tall = await row.evaluate((el) => getComputedStyle(el).position);
+    expect(tall, "the control row is not sticky at 320x640 either").toBe(
+      "sticky",
+    );
+  });
+});
+
 // SC 2.4.11 Focus Not Obscured: a refused submit fills the status region, and a field the
 // reader returns to must not end up underneath it.
 test.describe("a refused submit", () => {
@@ -179,6 +208,26 @@ test.describe("a refused submit", () => {
       const field = page
         .locator("#section-form input:not([type=hidden])")
         .first();
+      await field.evaluate((el) => {
+        el.scrollIntoView({ block: "start" });
+        el.focus({ preventScroll: true });
+      });
+
+      // Then the bottom edge, where the sticky control row sits.
+      const save = page.getByRole("button", { name: "Save draft" });
+      const row = save.locator("xpath=..");
+      await field.evaluate((el) => {
+        el.scrollIntoView({ block: "end" });
+        el.focus({ preventScroll: true });
+      });
+      const rowBox = await row.boundingBox();
+      const lowerBox = await field.boundingBox();
+      if (!rowBox || !lowerBox) throw new Error("no layout box");
+      expect(
+        lowerBox.y + lowerBox.height,
+        `the focused field's bottom is ${lowerBox.y + lowerBox.height}, under the control row starting at ${rowBox.y}`,
+      ).toBeLessThanOrEqual(rowBox.y);
+
       await field.evaluate((el) => {
         el.scrollIntoView({ block: "start" });
         el.focus({ preventScroll: true });

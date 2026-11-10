@@ -30,3 +30,16 @@
 @source '../../shell/**/*.rs';
 @source '../../identity/web/**/*.rs';
 @source '../../../../modules/mosaic/tiles/src/**/*.rs';
+
+/* Keeps a scrolled-to or focused control clear of the sticky control row. Same media condition
+   as `CONTROL_ROW` in pages/section.rs; more room below 700px, where the row wraps. */
+@media (min-height: 30rem) {
+  html:has(#section-form) {
+    scroll-padding-bottom: 9rem;
+  }
+}
+@media (min-height: 30rem) and (min-width: 700px) {
+  html:has(#section-form) {
+    scroll-padding-bottom: 6rem;
+  }
+}

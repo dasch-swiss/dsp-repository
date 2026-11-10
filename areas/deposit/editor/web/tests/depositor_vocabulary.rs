@@ -198,6 +198,7 @@ fn every_form_section_a_depositor_sees_carries_none_of_the_forbidden_words() {
         });
         let view = section::SectionView {
             shortcode: "0801d",
+            state: editor_core::status::ProjectState::Draft,
             project_name: Some("A Project"),
             created,
             section: section_def,
@@ -390,6 +391,7 @@ fn the_new_proposal_notice_names_no_id() {
     ] {
         let view = section::SectionView {
             shortcode: "0801d",
+            state: editor_core::status::ProjectState::Draft,
             project_name: Some("A Project"),
             section: section_def,
             audience: Audience::Everyone,
@@ -455,6 +457,7 @@ fn the_proposals_box_and_its_findings_name_each_proposal_and_carry_no_id() {
         .expect("the section holding the agent fields");
     let view = section::SectionView {
         shortcode: "0801d",
+        state: editor_core::status::ProjectState::Draft,
         project_name: Some("A Project"),
         section: section_def,
         audience: Audience::Everyone,

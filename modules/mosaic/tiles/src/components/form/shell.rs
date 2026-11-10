@@ -133,6 +133,7 @@ pub(super) fn group_shell(
     legend: &Markup,
     hint: Option<&Markup>,
     error: Option<&Markup>,
+    legend_hidden: bool,
     controls: Markup,
 ) -> Markup {
     let shell = FieldShell {
@@ -141,7 +142,7 @@ pub(super) fn group_shell(
         hint,
         counter: None,
         error,
-        label_hidden: false,
+        label_hidden: legend_hidden,
     };
     let hint_id = shell.hint_id();
     let described_by = shell.described_by();
@@ -254,7 +255,7 @@ mod tests {
         let controls = html! {
             input type="checkbox";
         };
-        let out = group_shell("kinds", &label(), Some(&hint), None, controls).into_string();
+        let out = group_shell("kinds", &label(), Some(&hint), None, false, controls).into_string();
         assert!(out.contains("<fieldset"), "{out}");
         assert!(out.contains(r#"<legend class="field-label">Name</legend>"#), "{out}");
         assert!(!out.contains("for="), "{out}");
@@ -267,7 +268,7 @@ mod tests {
         let controls = html! {
             input type="checkbox";
         };
-        let out = group_shell("kinds", &label(), Some(&hint), None, controls).into_string();
+        let out = group_shell("kinds", &label(), Some(&hint), None, false, controls).into_string();
         assert!(out.find("Pick any that apply.") < out.find("<input"), "{out}");
     }
 
@@ -277,7 +278,7 @@ mod tests {
         let controls = html! {
             input type="checkbox";
         };
-        let out = group_shell("kinds", &label(), None, Some(&error), controls).into_string();
+        let out = group_shell("kinds", &label(), None, Some(&error), false, controls).into_string();
         assert!(out.contains(r#"data-invalid="true""#), "{out}");
         assert!(!out.contains("aria-invalid"), "{out}");
         assert!(out.contains(r#"aria-describedby="kinds-error""#), "{out}");

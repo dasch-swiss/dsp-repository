@@ -107,7 +107,7 @@ impl CheckboxGroupBuilder {
         let controls = html! {
             div class="field-choices" data-testid=[self.test_id.as_deref()] { (controls) }
         };
-        group_shell(id, &self.legend, self.hint.as_ref(), self.error.as_ref(), controls)
+        group_shell(id, &self.legend, self.hint.as_ref(), self.error.as_ref(), false, controls)
     }
 }
 

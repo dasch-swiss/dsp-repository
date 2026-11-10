@@ -77,4 +77,48 @@
   .field-choice-label {
     @apply leading-snug;
   }
+
+  /*
+   * A radio group as one segmented control. Each radio stays real and covers its
+   * segment transparently, so a click lands on the input and the group posts
+   * without JavaScript; the segment shows the checked and focus states the hidden
+   * native control no longer draws. The outer border is Neutral 500, the 3:1 an
+   * input's border needs; the dividers between segments are decorative.
+   */
+  .field-group:has(> .field-choices-segmented) {
+    @apply ml-0 pl-0;
+  }
+
+  .field-choices-segmented {
+    @apply inline-flex w-fit flex-row flex-wrap gap-0 rounded border border-neutral-500 bg-white;
+  }
+
+  .field-choices-segmented .field-choice {
+    @apply relative items-center px-3 py-1 text-sm font-bold text-neutral-700 first:rounded-l-[3px] last:rounded-r-[3px];
+  }
+
+  .field-choices-segmented .field-choice + .field-choice {
+    @apply border-l border-neutral-300;
+  }
+
+  .field-choices-segmented .field-choice-input {
+    @apply absolute inset-0 m-0 size-full cursor-pointer opacity-0;
+  }
+
+  .field-choices-segmented .field-choice:has(:checked) {
+    @apply bg-primary-600 text-white;
+  }
+
+  .field-choices-segmented .field-choice:has(:focus-visible) {
+    @apply z-10 outline-2 outline-offset-2 outline-primary-600;
+  }
+
+  /* Forced colours drops the fill, which is the only checked marker left once the radio is transparent. */
+  @media (forced-colors: active) {
+    .field-choices-segmented .field-choice:has(:checked) {
+      forced-color-adjust: none;
+      background-color: Highlight;
+      color: HighlightText;
+    }
+  }
 }

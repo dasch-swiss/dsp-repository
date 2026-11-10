@@ -234,7 +234,7 @@ impl RepeatableListBuilder {
                 })
             }
         };
-        group_shell(id, &self.legend, self.hint.as_ref(), self.error.as_ref(), body)
+        group_shell(id, &self.legend, self.hint.as_ref(), self.error.as_ref(), false, body)
     }
 }
 

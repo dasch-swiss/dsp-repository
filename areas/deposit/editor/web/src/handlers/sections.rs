@@ -305,6 +305,8 @@ struct Context<'a> {
     published: Option<ProjectDraft>,
     /// The registration, for a project RDU created and the published set does not carry yet.
     created: Option<CreatedProject>,
+    /// The state the project list shows for this project, for the rail's state card.
+    project_state: editor_core::status::ProjectState,
 }
 
 /// One round's owned strings and values, so the view can borrow them.
@@ -560,6 +562,11 @@ async fn context<'a>(
         None => published.map(ProjectDraft::from_raw).unwrap_or_default(),
     };
 
+    let project_state = match crate::handlers::projects::project_state(state, shortcode).await {
+        Ok(project_state) => project_state,
+        Err(error) => return Err(storage_error(state, user, SURFACE, "read this project's state", &error)),
+    };
+
     Ok(Context {
         section,
         audience,
@@ -578,6 +585,7 @@ async fn context<'a>(
         project_name: published.map(|project| project.name.as_str()),
         published: published.map(ProjectDraft::from_raw),
         created,
+        project_state,
     })
 }
 
@@ -1109,6 +1117,12 @@ async fn apply_and_store(
         return Err(refused(state, user, shortcode, context, headers.clone(), SAVE_REFUSED_STORAGE));
     }
     context.record = Some(record.clone());
+    // Read after the write: a first draft turns an Online project into a Draft, and the
+    // enhanced path renders the rail's state card from this context.
+    context.project_state = match crate::handlers::projects::project_state(state, shortcode).await {
+        Ok(project_state) => project_state,
+        Err(error) => return Err(storage_error(state, user, SURFACE, "read this project's state", &error)),
+    };
     tracing::debug!(fields.applied = applied, "applied a posted form body");
     Ok(record)
 }
@@ -2244,6 +2258,7 @@ fn view<'a>(
         shortcode,
         project_name: context.name(),
         created: context.created.is_some(),
+        state: context.project_state,
         section: context.section,
         audience: context.audience,
         draft: &context.draft,
@@ -2306,6 +2321,7 @@ mod tests {
     use editor_core::form::registry::SHORT_DESCRIPTION_MAX;
     use editor_core::published::PublishedProjects;
     use editor_core::repository::ApprovedRecordRepository;
+    use editor_core::status::ProjectState;
     use editor_ports::Role;
     use editor_store::test_support::{Faults, FaultyStore};
     use serde_json::{json, Value};
@@ -2318,6 +2334,7 @@ mod tests {
         with_cookie, TestState,
     };
     use crate::handlers::DATASTAR_REQUEST;
+    use crate::state_badge::state_badge;
 
     /// Percent-encode a form value.
     ///
@@ -2493,6 +2510,20 @@ mod tests {
         let unmarked = body_string(as_session(&app, get(OVERVIEW), &session).await).await;
         assert!(!unmarked.contains("Draft saved."), "{unmarked}");
         assert!(!title_of(&unmarked).starts_with("Draft saved — "), "{}", title_of(&unmarked));
+    }
+
+    #[tokio::test]
+    async fn a_first_enhanced_save_of_an_online_project_shows_it_as_a_draft_in_the_rail() {
+        // Online until the first stored draft; the enhanced region must show the state after it.
+        let (_, app, session) = a_depositor_on("section-state-after-save").await;
+        let card = |state: ProjectState| state_badge(state).into_string();
+
+        let before = body_string(as_session(&app, get(OVERVIEW), &session).await).await;
+        assert!(before.contains(&card(ProjectState::Online)), "{before}");
+
+        let region = body_string(as_session(&app, enhanced(OVERVIEW, "name=A%20name"), &session).await).await;
+        assert!(region.contains(&card(ProjectState::Draft)), "{region}");
+        assert!(!region.contains(&card(ProjectState::Online)), "{region}");
     }
 
     #[tokio::test]

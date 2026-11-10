@@ -31,7 +31,7 @@ use editor_core::multilingual::{
 };
 use editor_core::vocabulary::{self, List};
 use maud::{html, Markup, Render};
-use mosaic_tiles::badge::{badge, BadgeVariant};
+use mosaic_tiles::badge::{badge, BadgeSize, BadgeVariant};
 use mosaic_tiles::button::{button, ButtonSize, ButtonType, ButtonVariant};
 use mosaic_tiles::checkbox_group::checkbox_group;
 use mosaic_tiles::combobox::{
@@ -89,7 +89,7 @@ pub(crate) const NO_VALUE: &str = "Not set";
 pub fn field_row(field: &Field, draft: &ProjectDraft, mode: Mode, rows: Rows<'_>) -> Markup {
     match (mode, field.shape) {
         (Mode::Editable, Some(shape)) => control(field, draft, shape, rows),
-        (Mode::Accepted, _) => stated(field, draft, Some(ACCEPTED_BY_RDU), rows.label_hidden),
+        (Mode::Accepted, _) => stated_row(field, draft, Some(ACCEPTED_BY_RDU), rows.label_hidden, true),
         // A locked field and a display-only one render the same way, which is
         // the point: neither posts, so neither can be cleared.
         (Mode::ReadOnly, _) | (_, None) => stated(field, draft, None, rows.label_hidden),
@@ -101,6 +101,12 @@ pub fn field_row(field: &Field, draft: &ProjectDraft, mode: Mode, rows: Rows<'_>
 /// nothing is worse than none. `pub(crate)` because `crate::entity` reuses this
 /// for a proposal that is no longer live.
 pub(crate) fn stated(field: &Field, draft: &ProjectDraft, why: Option<&str>, label_hidden: bool) -> Markup {
+    stated_row(field, draft, why, label_hidden, false)
+}
+
+/// The badge is the label's sibling, neither inside nor around it: inside, it would join the
+/// value's accessible name; around, it would change the label's parent, which holds the value.
+fn stated_row(field: &Field, draft: &ProjectDraft, why: Option<&str>, label_hidden: bool, fixed: bool) -> Markup {
     // Without an obligation no pill stays visible, so the whole label is sr-only: an empty
     // visible element would still take its gap.
     let (label_class, label) = match (label_hidden, field.obligation) {
@@ -113,6 +119,9 @@ pub(crate) fn stated(field: &Field, draft: &ProjectDraft, why: Option<&str>, lab
     html! {
         div class="field" {
             p class=(label_class) id=(label_id) { (label) }
+            @if fixed {
+                div { (fixed_badge()) }
+            }
             (value_display(field, draft, &label_id))
             @if editable_but_unbuilt {
                 p class="field-hint" { (NOT_READ_YET) }
@@ -125,6 +134,14 @@ pub(crate) fn stated(field: &Field, draft: &ProjectDraft, why: Option<&str>, lab
             }
         }
     }
+}
+
+fn fixed_badge() -> Markup {
+    badge("Accepted, fixed")
+        .variant(BadgeVariant::Success)
+        .size(BadgeSize::Small)
+        .status()
+        .build()
 }
 
 /// The stored value, rendered for reading. `label_id` is the id of the field's
@@ -2172,8 +2189,10 @@ const CHOOSE_LANGUAGE: &str = "Choose language";
 
 const LANGUAGE_MISSING: &str = "Choose a language for this line.";
 
-/// Shared by the heading and every line so the two columns stay aligned.
-const LINE_COLUMNS: &str = "grid grid-cols-[minmax(0,1fr)_minmax(6rem,12rem)] items-start gap-2";
+/// Shared by the heading and every line so the two columns stay aligned. The language column is
+/// clamped, not `minmax(…, 12rem)`: a track with a fixed maximum grows to it before `1fr` gets
+/// anything, which squeezes the text input in a narrow card.
+const LINE_COLUMNS: &str = "grid grid-cols-[minmax(0,1fr)_clamp(6rem,35%,12rem)] items-start gap-2";
 
 /// A list of language maps: one row per map, each a text field and a language
 /// select per language the map holds, added and removed by server round-trip.
@@ -2753,7 +2772,9 @@ fn name_hidden(field: &Field) -> Markup {
 /// by scanning source text, so a class built at runtime renders unstyled.
 const fn pill_class(obligation: Obligation) -> &'static str {
     match obligation {
-        Obligation::Required => "w-fit rounded bg-warning-50 px-2 py-0.5 text-xs font-bold text-warning-800",
+        Obligation::Required => {
+            "w-fit rounded border border-danger-200 bg-danger-50 px-2 py-0.5 text-xs font-bold text-danger-700"
+        }
         Obligation::Recommended => "w-fit rounded bg-info-50 px-2 py-0.5 text-xs font-bold text-info-800",
         Obligation::Optional => "w-fit rounded bg-neutral-100 px-2 py-0.5 text-xs font-bold text-neutral-700",
     }
@@ -5424,5 +5445,27 @@ mod tests {
             out.contains(r#"<dd class="whitespace-pre-line text-neutral-900">Odd</dd>"#),
             "{out}"
         );
+    }
+
+    #[test]
+    fn only_an_accepted_field_carries_the_fixed_badge() {
+        let draft = published_draft();
+        let field = FIELDS
+            .iter()
+            .find(|field| field.shape.is_some() && !field.display_only)
+            .expect("an editable field");
+        for label_hidden in [false, true] {
+            let rows = Rows { label_hidden, ..Rows::default() };
+            let accepted = field_row(field, &draft, Mode::Accepted, rows).into_string();
+            assert!(accepted.contains(">Accepted, fixed</span>"), "{accepted}");
+            assert!(accepted.contains(ACCEPTED_BY_RDU), "{accepted}");
+            // DEV-7769's review-outcomes spec reads the value from the label's parent.
+            let (label, _) = accepted.split_once("</p>").expect("a label");
+            assert!(label.starts_with(r#"<div class="field"><p "#), "{accepted}");
+            assert!(label.contains(&format!(r#"id="{}-label""#, field.id)), "{accepted}");
+            assert!(!label.contains("Accepted, fixed"), "{accepted}");
+            let locked = field_row(field, &draft, Mode::ReadOnly, rows).into_string();
+            assert!(!locked.contains("Accepted, fixed"), "{locked}");
+        }
     }
 }

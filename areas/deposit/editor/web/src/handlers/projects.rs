@@ -473,7 +473,7 @@ fn confirm_removal(
 /// whose publication is in question: a draft differing from published data is
 /// just an edit in progress, and comparing it would make every unsaved change
 /// look like a pending release.
-async fn project_state(state: &EditorState, shortcode: &str) -> Result<ProjectState, RepositoryError> {
+pub(crate) async fn project_state(state: &EditorState, shortcode: &str) -> Result<ProjectState, RepositoryError> {
     // The three record tables key on the *normalized* shortcode, while the
     // summary carries the published set's own spelling. Querying `080C` against
     // rows stored as `080c` finds nothing, which would read as "no local record"

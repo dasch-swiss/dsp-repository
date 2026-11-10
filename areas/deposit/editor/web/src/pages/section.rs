@@ -3,7 +3,8 @@
 //! [`page`] is the whole page; [`region`] is the part a save replaces. Both come
 //! from one [`SectionView`], so the plain and enhanced paths cannot drift.
 //!
-//! The region is the rail, the status and the form together, under one id:
+//! The region is the rail (state card, round or lock box, section list), the status and the form
+//! together, under one id:
 //! patching only the `<form>` leaves the rail showing the counts from before the
 //! save. The status region is rendered empty from the first load for the
 //! enhanced path: an `aria-live` region announces a change to content it
@@ -26,6 +27,7 @@ use editor_core::form::submit::LineWithoutLanguage;
 use editor_core::form::FormBody;
 use editor_core::proposals::{EntityProposal, ProposalKind};
 use editor_core::records::ReviewOutcome;
+use editor_core::status::ProjectState;
 use maud::{html, Markup};
 use mosaic_tiles::alert::{alert, AlertVariant};
 use mosaic_tiles::button::{button, ButtonType, ButtonVariant};
@@ -422,6 +424,8 @@ pub struct SectionView<'a> {
     pub project_name: Option<&'a str>,
     /// A project RDU created in the editor, which "Discard draft" reseeds rather than empties.
     pub created: bool,
+    /// The state the project list shows for this project, in the rail's state card.
+    pub state: ProjectState,
     pub section: &'static Section,
     /// Which fields and sections this reader sees. The registry is consulted by
     /// the decoder too, so the form and the save cannot disagree.
@@ -455,10 +459,10 @@ pub struct SectionView<'a> {
     /// `is_live()` here, so one place decides which proposals show.
     pub proposals: &'a [EntityProposal],
     /// The latest finished review round, or `None` for a project nobody has
-    /// reviewed. On the form because that is where a depositor acts on it, and
-    /// inside the region so a save leaves it in place. It shows until the depositor
-    /// submits again, which is what makes a returned draft distinguishable from
-    /// one never submitted without a sixth lifecycle state.
+    /// reviewed. In the rail: outside the live region, so a save does not
+    /// re-announce it, and inside the patched region, so a save leaves it in place.
+    /// It shows until the depositor submits again, which is what makes a returned
+    /// draft distinguishable from one never submitted without a sixth lifecycle state.
     pub round: Option<RoundSummary<'a>>,
     /// Who last saved the draft, when that was somebody other than this reader;
     /// `None` for their own saves and for a removed account.
@@ -653,6 +657,11 @@ pub fn page(view: &SectionView<'_>) -> Markup {
     }
 }
 
+/// Sticky only in a viewport at least 30rem tall: at 400% zoom the wrapped row would cover half
+/// the screen (WCAG 1.4.10). Keep in step with `scroll-padding-bottom` in `style/main.css`.
+const CONTROL_ROW: &str =
+    "[@media(min-height:30rem)]:sticky bottom-0 z-10 flex flex-wrap items-center gap-4 bg-white pt-3 pb-3";
+
 /// The rail, the status region and the form — everything a save can change.
 ///
 /// Rendered on its own for the enhanced path's patch, and spliced into [`page`]
@@ -661,15 +670,12 @@ pub fn region(view: &SectionView<'_>) -> Markup {
     html! {
         section
             id=(REGION_ID)
-            class="grid gap-6 md:grid-cols-[16rem_1fr] items-start"
+            class="grid min-[700px]:grid-cols-[200px_1fr] items-start"
             data-init=[view.focus_finding.then_some(FOCUS_AUTOFOCUS)]
         {
             (rail(view))
-            div class="md:[&_:is(input,select,textarea,fieldset)]:scroll-mt-[33vh]" {
-                (status(view))
-                (proposals_summary(view))
-                (form(view))
-            }
+            div class="min-[700px]:pl-6 pt-6 md:[&_:is(input,select,textarea,fieldset)]:scroll-mt-[33vh]"
+            { (status(view)) (proposals_summary(view)) (form(view)) }
         }
     }
 }
@@ -714,35 +720,150 @@ fn rail_link_label(title: &str, progress: &SectionProgress) -> Option<String> {
 /// the link is silently unstyled.
 const fn rail_link_class(current: bool) -> &'static str {
     if current {
-        "flex flex-col rounded bg-neutral-100 px-3 py-2 font-bold focus-visible:outline-2 \
-         focus-visible:outline-primary-600"
+        "flex items-center gap-2 rounded bg-primary-50 px-2 py-1.5 text-[12.5px] font-bold text-primary-700 \
+         focus-visible:outline-2 focus-visible:outline-primary-600"
     } else {
-        "flex flex-col rounded px-3 py-2 hover:bg-neutral-100 focus-visible:outline-2 \
-         focus-visible:outline-primary-600"
+        "flex items-center gap-2 rounded px-2 py-1.5 text-[12.5px] font-bold text-neutral-700 \
+         hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-primary-600"
     }
 }
 
-/// The section rail: a `<nav>` with a list, so a screen reader user can jump to
-/// it and count the items; the current section carries `aria-current="page"`.
+/// One complete class literal per look, for Tailwind's scan. `aria-hidden`: the link's name and
+/// summary carry the meaning.
+fn rail_glyph(progress: &SectionProgress) -> Markup {
+    html! {
+        @if !progress.has_requirements() {
+            span
+                class="size-4 shrink-0 rounded-full border-[1.5px] border-neutral-300"
+                aria-hidden="true" {}
+        } @else if progress.is_complete() {
+            span
+                class="flex size-4 shrink-0 items-center justify-center rounded-full bg-success-600 text-[10px] \
+                       font-bold text-white"
+                aria-hidden="true"
+            { "✓" }
+        } @else {
+            span
+                class="flex size-4 shrink-0 items-center justify-center rounded-full bg-danger-600 text-[10px] \
+                       font-bold text-white"
+                aria-hidden="true"
+            { "!" }
+        }
+    }
+}
+
+/// The rule is `unsatisfied_required`'s; this only narrows it to the fields this page shows.
+fn missing_here(view: &SectionView<'_>) -> Vec<&'static Field> {
+    let shown: Vec<&str> = view.section.fields_for(view.audience).map(|field| field.id).collect();
+    editor_core::form::obligation::unsatisfied_required(view.audience, view.draft)
+        .into_iter()
+        .filter(|field| shown.contains(&field.id))
+        .collect()
+}
+
+/// `None` where the field renders no control, so the chip is text, not a dead link. Must match
+/// [`field_row`]'s editable arm.
+fn missing_href(view: &SectionView<'_>, field: &Field) -> Option<String> {
+    (view.mode_of(field.id) == Mode::Editable && field.shape.is_some()).then(|| format!("#{}", field.id))
+}
+
+fn missing_chips(view: &SectionView<'_>) -> Markup {
+    let missing = missing_here(view);
+    html! {
+        @if !missing.is_empty() {
+            ul  class="mt-1 mb-1 ml-8 flex flex-wrap gap-1.5"
+                aria-label="Required fields not filled in"
+            {
+                @for field in missing {
+                    li {
+                        @if let Some(href) = missing_href(view, field) {
+                            a   href=(href)
+                                class="inline-block rounded-[3px] border border-danger-200 px-1.5 py-1 text-[10px] \
+                                       font-bold text-danger-700 hover:bg-danger-50 focus-visible:outline-2 \
+                                       focus-visible:outline-primary-600"
+                            { (field.label) }
+                        } @else {
+                            span
+                                class="inline-block rounded-[3px] border border-danger-200 px-1.5 py-1 text-[10px] font-bold text-danger-700"
+                            { (field.label) }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Only where a save is possible: a locked form, or one showing a confirmation, has no draft to
+/// describe.
+fn saved_line(view: &SectionView<'_>) -> Markup {
+    let editable = view.section.has_editable_field(view.audience);
+    html! {
+        @if view.confirming.is_none() && view.locked.is_none() && editable {
+            @if let Some(saved_at) = view.saved_at {
+                p class="mt-1 text-sm text-neutral-600" {
+                    "Draft last saved "
+                    (saved_at)
+                    // Named only when it was somebody else: "saved by you"
+                    // is the ordinary case and reads as noise.
+                    @if let Some(editor) = view.last_editor { " by " (editor) }
+                    "."
+                }
+            } @else {
+                p class="mt-1 text-sm text-neutral-600" {
+                    "Nothing saved yet — this form shows the project's published metadata."
+                }
+            }
+        }
+    }
+}
+
+fn state_card(view: &SectionView<'_>) -> Markup {
+    html! {
+        div class="rounded-md border border-neutral-200 bg-neutral-50 p-3" {
+            (crate::state_badge::state_badge(view.state))
+            (saved_line(view))
+        }
+    }
+}
+
+/// The section list is a `<nav>` with a list, so a screen reader user can jump to it and count
+/// the items. The round and lock box sit outside [`status`], the one live region: a save
+/// re-renders the whole region and must not announce a standing note again.
 fn rail(view: &SectionView<'_>) -> Markup {
     html! {
-        nav class="md:sticky md:top-4" aria-label="Form sections" {
-            ol class="flex flex-col gap-1" {
-                @for section in sections_for(view.audience) {
-                    @let progress = section_progress(section, view.audience, view.draft);
-                    @let current = section.id == view.section.id;
-                    li {
-                        a   href={ "/projects/" (view.shortcode) "/sections/" (section.id) }
-                            class=(rail_link_class(current))
-                            aria-current=[current.then_some("page")]
-                            aria-label=[rail_link_label(section.title, &progress)]
-                        {
-                            span { (section.title) }
-                            @if progress.has_requirements() {
-                                // Both numbers, in words: a rail showing only what is outstanding
-                                // cannot tell a finished section from an empty one.
-                                span class="text-xs text-neutral-600" { (progress.summary()) }
+        // Not sticky itself: a sticky box taller than the viewport hides its own bottom.
+        div class="flex flex-col gap-3 self-stretch bg-white p-3 border-b border-neutral-200 min-[700px]:border-b-0 min-[700px]:border-r"
+        {
+            (state_card(view))
+            (persistent_box(view))
+            nav aria-label="Form sections" class="min-[700px]:sticky min-[700px]:top-4" {
+                p   class="mb-1 px-2 text-[11px] font-bold uppercase tracking-wide text-neutral-600"
+                    aria-hidden="true"
+                { "Sections" }
+                ol class="flex flex-col gap-0.5" {
+                    @for section in sections_for(view.audience) {
+                        @let progress = section_progress(section, view.audience, view.draft);
+                        @let current = section.id == view.section.id;
+                        li {
+                            a   href={ "/projects/" (view.shortcode) "/sections/" (section.id) }
+                                class=(rail_link_class(current))
+                                aria-current=[current.then_some("page")]
+                                aria-label=[rail_link_label(section.title, &progress)]
+                            {
+                                (rail_glyph(&progress))
+                                span class="flex flex-col" {
+                                    span { (section.title) }
+                                    @if progress.has_requirements() {
+                                        // Both numbers, in words: a rail showing only what is outstanding
+                                        // cannot tell a finished section from an empty one.
+                                        span class="text-xs font-normal text-neutral-600" {
+                                            (progress.summary())
+                                        }
+                                    }
+                                }
                             }
+                            @if current { (missing_chips(view)) }
                         }
                     }
                 }
@@ -873,12 +994,6 @@ fn form(view: &SectionView<'_>) -> Markup {
     let vocabulary_path = format!("{action}/vocabulary");
     let fields: Vec<&Field> = view.section.fields_for(view.audience).collect();
     html! {
-        (persistent_box(view))
-        h2 class="font-display text-xl mb-4" { (view.section.title) }
-        // Depositor guidance: RDU is not told to send anything to itself.
-        @if let (Some(intro), Audience::Everyone) = (view.section.intro, view.audience) {
-            p class="field-hint mb-4" { (intro) }
-        }
         // The action is the URL this form was fetched from, so a rejected save
         // re-renders somewhere that answers GET. No __prevent: Datastar calls
         // preventDefault unconditionally on a form's submit. With no script it is an
@@ -895,7 +1010,7 @@ fn form(view: &SectionView<'_>) -> Markup {
             id="section-form"
             method="post"
             action=(action)
-            class="flex flex-col gap-6"
+            class="flex flex-col"
             data-on:submit=(datastar::post(&action).submitter_first().form())
             "data-on:change__debounce.1s"=[autosave]
         {
@@ -903,19 +1018,26 @@ fn form(view: &SectionView<'_>) -> Markup {
             @if let Some(baseline) = view.baseline {
                 input type="hidden" name=(BASELINE) value=(baseline);
             }
-            @for field in &fields {
-                // No obligation pill here: it is inside the field's own label, the only
-                // way it reaches a screen reader now that nothing is required.
-                ({
-                    field_row(
-                        field,
-                        view.draft,
-                        view.mode_of(field.id),
-                        view.rows(&agents_path, &vocabulary_path),
-                    )
-                })
-                @for message in view.errors_for(field.id) {
-                    (alert(message).variant(AlertVariant::Warning))
+            div class="flex flex-col gap-6 rounded-md border border-neutral-200 bg-white p-4" {
+                h2 class="font-display text-xl" { (view.section.title) }
+                // Depositor guidance: RDU is not told to send anything to itself.
+                @if let (Some(intro), Audience::Everyone) = (view.section.intro, view.audience) {
+                    p class="field-hint" { (intro) }
+                }
+                @for field in &fields {
+                    // No obligation pill here: it is inside the field's own label, the only
+                    // way it reaches a screen reader now that nothing is required.
+                    ({
+                        field_row(
+                            field,
+                            view.draft,
+                            view.mode_of(field.id),
+                            view.rows(&agents_path, &vocabulary_path),
+                        )
+                    })
+                    @for message in view.errors_for(field.id) {
+                        (alert(message).variant(AlertVariant::Warning))
+                    }
                 }
             }
             (controls(view))
@@ -1323,7 +1445,7 @@ fn controls(view: &SectionView<'_>) -> Markup {
             })
         } @else if view.locked.is_some() {
             @if view.may_withdraw {
-                div class="flex items-center gap-4" {
+                div class=(CONTROL_ROW) {
                     ({
                         button("Take the submission back")
                             .variant(ButtonVariant::Secondary)
@@ -1333,7 +1455,7 @@ fn controls(view: &SectionView<'_>) -> Markup {
                 }
             }
         } @else if editable {
-            div class="flex flex-wrap items-center gap-4" {
+            div class=(CONTROL_ROW) {
                 ({
                     button("Save draft")
                         .variant(ButtonVariant::Secondary)
@@ -1352,20 +1474,6 @@ fn controls(view: &SectionView<'_>) -> Markup {
                             .button_type(ButtonType::Submit)
                             .name_value(INTENT, DISCARD_CONFIRM)
                     })
-                }
-                @if let Some(saved_at) = view.saved_at {
-                    p class="text-sm text-gray-600" {
-                        "Draft last saved "
-                        (saved_at)
-                        // Named only when it was somebody else: "saved by you"
-                        // is the ordinary case and reads as noise.
-                        @if let Some(editor) = view.last_editor { " by " (editor) }
-                        "."
-                    }
-                } @else {
-                    p class="text-sm text-gray-600" {
-                        "Nothing saved yet — this form shows the project's published metadata."
-                    }
                 }
             }
         }
@@ -1460,6 +1568,7 @@ mod tests {
             shortcode: "0801d",
             project_name: Some("Bernoulli-Euler Online"),
             created: false,
+            state: ProjectState::Draft,
             section: section(section_id).expect("a known section"),
             audience,
             draft,
@@ -1855,6 +1964,27 @@ mod tests {
     }
 
     #[test]
+    fn the_control_row_buttons_post_with_the_form() {
+        let draft = published_draft();
+        let inside_form = |html: &str, label: &str| {
+            let start = html.find(r#"id="section-form""#).expect("form");
+            let end = start + html[start..].find("</form>").expect("form end");
+            html[start..end].contains(label)
+        };
+
+        let editable = page(&view(&draft, "overview", Audience::RduOnly)).into_string();
+        for label in ["Save draft", "Submit for review"] {
+            assert!(inside_form(&editable, label), "{label} is outside the form");
+        }
+
+        let mut locked = view(&draft, "legal", Audience::RduOnly);
+        locked.locked = Some(Locked::Submitted);
+        locked.may_withdraw = true;
+        let locked = page(&locked).into_string();
+        assert!(inside_form(&locked, "Take the submission back"), "outside the form");
+    }
+
+    #[test]
     fn no_page_ships_the_whole_agent_set_and_every_picker_can_be_searched() {
         // Nothing may ship the agent set as a <datalist>: a page carries at most one,
         // the language names, and only the dataset section has it. The reasons against
@@ -2022,6 +2152,94 @@ mod tests {
         let progress = section_progress(section("overview").expect("overview"), Audience::Everyone, &draft);
         assert!(filled.contains(&progress.summary()), "{filled}");
         assert!(empty.contains(&format!("0 of {} required", progress.required)), "{empty}");
+    }
+
+    #[test]
+    fn the_round_and_locked_boxes_sit_in_the_rail_and_outside_the_live_region() {
+        let draft = published_draft();
+        let mut returned = view(&draft, "overview", Audience::Everyone);
+        returned.round = Some(RoundSummary {
+            outcome: ReviewOutcome::ChangesRequested,
+            note: Some("Please add a description."),
+            at: "1 January 2026",
+            substitutions: &[],
+        });
+        let (heading, _, _) = round_wording(ReviewOutcome::ChangesRequested, Audience::Everyone);
+        let mut locked = view(&draft, "overview", Audience::Everyone);
+        locked.locked = Some(Locked::InReview);
+        for (view, heading) in [(&returned, heading), (&locked, Locked::InReview.heading())] {
+            assert!(rail(view).into_string().contains(heading), "{heading}");
+            assert!(!status(view).into_string().contains(heading), "{heading}");
+            assert!(!rail(view).into_string().contains("aria-live"), "{heading}");
+            let out = page(view).into_string();
+            assert_eq!(out.matches(heading).count(), 1, "{heading}: {out}");
+            assert!(out.find(heading) < out.find(r#"aria-live="polite""#), "{heading}");
+        }
+    }
+
+    #[test]
+    fn the_saved_at_line_is_in_the_rail_and_not_in_the_controls() {
+        let draft = published_draft();
+        let mut view = view(&draft, "overview", Audience::Everyone);
+        view.saved_at = Some("14:02");
+        view.last_editor = Some("Daisy Duck");
+        let rail = rail(&view).into_string();
+        assert!(rail.contains("Draft last saved 14:02 by Daisy Duck."), "{rail}");
+        assert!(!controls(&view).into_string().contains("Draft last saved"));
+        view.locked = Some(Locked::Submitted);
+        assert!(!self::rail(&view).into_string().contains("Draft last saved"));
+    }
+
+    #[test]
+    fn the_chips_list_the_current_sections_missing_required_fields_and_link_to_them() {
+        let empty = ProjectDraft::default();
+        let view = view(&empty, "overview", Audience::Everyone);
+        let missing = missing_here(&view);
+        assert!(!missing.is_empty());
+        let rail = rail(&view).into_string();
+        assert!(rail.contains(r#"aria-label="Required fields not filled in""#), "{rail}");
+        for field in &missing {
+            assert!(rail.contains(&format!(r##"href="#{}""##, field.id)), "{}: {rail}", field.id);
+        }
+        // Another section's gaps are not this section's chips.
+        let elsewhere = editor_core::form::obligation::unsatisfied_required(Audience::Everyone, &empty)
+            .into_iter()
+            .filter(|field| !missing.iter().any(|m| m.id == field.id));
+        for field in elsewhere {
+            assert!(!rail.contains(&format!(r##"href="#{}""##, field.id)), "{}", field.id);
+        }
+        // A locked form has no controls, so no chip links.
+        let mut locked = self::view(&empty, "overview", Audience::Everyone);
+        locked.locked = Some(Locked::Submitted);
+        let rail = self::rail(&locked).into_string();
+        assert!(rail.contains(r#"aria-label="Required fields not filled in""#), "{rail}");
+        assert!(!rail.contains(r##"href="#"##), "{rail}");
+        // A finished section shows none.
+        let draft = published_draft();
+        let done = self::rail(&self::view(&draft, "overview", Audience::Everyone)).into_string();
+        assert!(!done.contains("Required fields not filled in"), "{done}");
+    }
+
+    #[test]
+    fn every_chip_that_links_into_the_page_lands_on_an_element_there() {
+        let empty = ProjectDraft::default();
+        for audience in [Audience::Everyone, Audience::RduOnly] {
+            for section in editor_core::form::registry::SECTIONS {
+                let view = view(&empty, section.id, audience);
+                let html = page(&view).into_string();
+                for field in missing_here(&view) {
+                    let href = format!(r##"href="#{}""##, field.id);
+                    if html.contains(&href) {
+                        assert!(
+                            html.contains(&format!(r#"id="{}""#, field.id)),
+                            "{}/{}: no target",
+                            section.id,
+                            field.id
+                        );
+                    }
+                }
+            }
+        }
     }
 
     #[test]

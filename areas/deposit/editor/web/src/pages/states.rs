@@ -6,15 +6,20 @@
 use editor_core::status::ProjectState;
 use maud::{html, Markup};
 
+use crate::state_badge::state_badge;
+
 /// The state-explanation page.
 pub fn explanation() -> Markup {
     html! {
         div class="max-w-2xl py-8" {
-            h1 class="font-display text-2xl mb-2" { "What the states mean" }
-            p class="text-gray-600 mb-6" {
+            h1 class="font-display font-semibold text-2xl text-neutral-900 mb-2" {
+                "What the states mean"
+            }
+            p class="text-neutral-600 mb-6" {
                 "Every project you edit moves through these states. You will see the current one beside the \
                  project in your list."
             }
+            (journey())
             // Spacing lives on a wrapper, never on the `dl`: overriding a list
             // element's `display` can strip its implicit list role in
             // Safari/VoiceOver (WCAG 1.3.1), and axe reads the DOM rather than
@@ -24,7 +29,32 @@ pub fn explanation() -> Markup {
                     @for state in ProjectState::ALL {
                         div class="mb-6 last:mb-0" {
                             dt class="font-bold" { (state.label()) }
-                            dd class="text-gray-600 mt-1" { (state.explanation()) }
+                            dd class="text-neutral-600 mt-1" { (state.explanation()) }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// The states in order as a strip of the list's badges, with the expected wait on Approved.
+/// `role="list"` stays: a flex `ol` without markers loses its list role in Safari/VoiceOver.
+fn journey() -> Markup {
+    html! {
+        ol  role="list"
+            aria-label="The states in order"
+            class="flex flex-wrap items-start gap-x-2 gap-y-3 mb-8"
+        {
+            @for (index, state) in ProjectState::ALL.into_iter().enumerate() {
+                li class="flex items-start gap-2" {
+                    @if index > 0 {
+                        span aria-hidden="true" class="mt-2.5 w-6 border-t-2 border-neutral-300" {}
+                    }
+                    span class="flex flex-col items-start gap-1" {
+                        (state_badge(state))
+                        @if state == ProjectState::Approved {
+                            span class="text-xs text-neutral-600" { "usually same working day" }
                         }
                     }
                 }

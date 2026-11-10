@@ -10,6 +10,7 @@
 //! exists only locally, is a real state. The two empty states say different
 //! things, because they send the reader to different people.
 
+use deposit_shell::form_card;
 use editor_core::published::ProjectSummary;
 use editor_core::status::ProjectState;
 use maud::{html, Markup};
@@ -18,6 +19,14 @@ use mosaic_tiles::button::{button, ButtonType, ButtonVariant};
 use mosaic_tiles::link::link;
 use mosaic_tiles::table::{table, table_cell, table_head_cell};
 use mosaic_tiles::text_field::text_field;
+
+use crate::state_badge::state_badge;
+
+const TEXT_LINK: &str = "text-primary-600 underline underline-offset-2";
+
+const LIST_TABLE: &str = "bg-white border border-neutral-200 [&_th]:bg-neutral-50 [&_th]:border-b \
+                          [&_th]:border-neutral-200 [&_th]:text-xs [&_th]:uppercase [&_th]:tracking-wider \
+                          [&_th]:text-neutral-600 [&_td]:border-neutral-100";
 
 /// One row of a depositor's list: the published project, plus where that
 /// depositor's own changes have got to. A pair rather than two parallel slices,
@@ -37,20 +46,20 @@ pub const NOT_PUBLISHED_YET: &str = "Not published yet";
 pub fn assigned(rows: &[AssignedProject<'_>], unknown: &[&str]) -> Markup {
     html! {
         div class="max-w-4xl py-8" {
-            h1 class="font-display text-2xl mb-2" { "Your projects" }
+            h1 class="font-display font-semibold text-2xl text-neutral-900 mb-2" { "Your projects" }
             @if !rows.is_empty() {
-                p class="text-gray-600 mb-6" { "These are the projects you may edit." }
-                (assigned_table("The projects assigned to your account", rows))
-                p class="text-gray-600 mt-4" {
-                    a href="/states" class="underline" { "What do these states mean?" }
+                p class="text-neutral-600 mb-6" { "These are the projects you may edit." }
+                (assigned_cards("The projects assigned to your account", rows))
+                p class="mt-4" {
+                    a href="/states" class=(TEXT_LINK) { "What do these states mean?" }
                 }
             } @else if unknown.is_empty() {
-                p class="text-gray-600" {
+                p class="text-neutral-600" {
                     "No projects are assigned to your account yet. RDU assigns them; ask them to add yours."
                 }
             }
             @if !unknown.is_empty() {
-                p class="text-gray-600 mt-4" {
+                p class="text-neutral-600 mt-4" {
                     "DaSCH has no project with the shortcode "
                     @for (index, shortcode) in unknown.iter().enumerate() {
                         @if index > 0 { ", " }
@@ -82,7 +91,7 @@ pub struct CreatedRow {
 pub fn rdu_overview(rows: &[ProjectSummary<'_>], created: &[CreatedRow], removed: Option<&str>) -> Markup {
     html! {
         div class="max-w-4xl py-8" {
-            h1 class="font-display text-2xl mb-2" { "Projects" }
+            h1 class="font-display font-semibold text-2xl text-neutral-900 mb-2" { "Projects" }
             @if let Some(shortcode) = removed {
                 div class="mb-4" {
                     ({
@@ -92,26 +101,33 @@ pub fn rdu_overview(rows: &[ProjectSummary<'_>], created: &[CreatedRow], removed
                 }
             }
             p class="mb-6" {
-                a href="/projects/new" class="underline font-bold" { "Create a project" }
+                ({
+                    link("Create a project", "/projects/new")
+                        .as_button(ButtonVariant::Primary)
+                })
             }
             @if !created.is_empty() {
-                h2 class="font-display text-xl mb-2" { "New projects" }
-                p class="text-gray-600 mb-4" {
+                h2 class="font-display font-semibold text-xl text-neutral-900 mb-2" {
+                    "New projects"
+                }
+                p class="text-neutral-600 mb-4" {
                     "Created in the editor and not published yet. A project with nothing submitted or approved \
                      can be removed."
                 }
                 (created_table(created))
-                h2 class="font-display text-xl mt-8 mb-2" { "Published projects" }
+                h2 class="font-display font-semibold text-xl text-neutral-900 mt-8 mb-2" {
+                    "Published projects"
+                }
             }
             @if rows.is_empty() {
-                p class="text-gray-600 mb-4" {
+                p class="text-neutral-600 mb-4" {
                     "This deployment carries no published project set, so there is nothing to list. A project \
                      is still reachable by shortcode at "
                     code class="font-mono" { "/projects/{shortcode}" }
                     "."
                 }
             } @else {
-                p class="text-gray-600 mb-6" {
+                p class="text-neutral-600 mb-6" {
                     "Your access is role-based rather than per-project, so every project here is open to you."
                 }
                 (project_table("Every published project", rows))
@@ -140,7 +156,12 @@ fn created_table(rows: &[CreatedRow]) -> Markup {
         }
     };
     html! {
-        (table("Projects created in the editor").head(head).body(body))
+        ({
+            table("Projects created in the editor")
+                .head(head)
+                .body(body)
+                .class(LIST_TABLE)
+        })
     }
 }
 
@@ -149,11 +170,11 @@ fn removal_cell(row: &CreatedRow) -> Markup {
     html! {
         @if row.removable {
             a   href={ "/projects/" (row.shortcode) "/remove" }
-                class="underline"
+                class=(TEXT_LINK)
                 aria-label={ "Remove project " (row.shortcode) }
             { "Remove" }
         } @else {
-            span class="text-gray-600" { "Submitted or approved" }
+            span class="text-neutral-600" { "Submitted or approved" }
         }
     }
 }
@@ -230,52 +251,69 @@ pub fn new_project(fields: NewProjectFields<'_>, errors: &NewProjectErrors) -> M
             name = name.autofocus();
         }
     }
-    html! {
-        div class="max-w-lg py-8" {
-            h1 class="font-display text-2xl mb-2" { "Create a project" }
-            p class="text-gray-600 mb-6" {
-                "The project is held in the editor until it is published. Assign it to its depositors on "
-                a href="/depositors" class="underline" { "Manage depositor accounts" }
-                "."
-            }
-            form method="post" action="/projects/new" class="flex flex-col gap-4" {
-                (shortcode)
-                (name)
-                div class="flex items-center gap-3" {
-                    (button("Create project").button_type(ButtonType::Submit))
-                    a href="/projects" class="underline" { "Cancel" }
-                }
+    let body = html! {
+        p class="text-neutral-600" {
+            "The project is held in the editor until it is published. Assign it to its depositors on "
+            a href="/depositors" class=(TEXT_LINK) { "Manage depositor accounts" }
+            "."
+        }
+        form method="post" action="/projects/new" class="flex flex-col gap-4" {
+            (shortcode)
+            (name)
+            div class="flex items-center gap-3" {
+                (button("Create project").button_type(ButtonType::Submit))
+                a href="/projects" class=(TEXT_LINK) { "Cancel" }
             }
         }
+    };
+    html! {
+        div class="py-8" { (form_card("Create a project", body)) }
     }
 }
 
-/// A depositor's list: [`project_table`] plus the state column.
+/// A depositor's list: one card per project, still a table with a visually hidden header row.
+/// The state column is headed "Your changes", since "Status" is the research project's.
 ///
-/// Not folded into `project_table` behind an `Option`: RDU's overview has no
-/// depositor whose changes a state could describe. Headed "Your changes" rather
-/// than a second "Status", which the neighbouring column already carries.
-fn assigned_table(caption: &str, rows: &[AssignedProject<'_>]) -> Markup {
-    let head = html! {
-        tr {
-            (table_head_cell("Shortcode"))
-            (table_head_cell("Name"))
-            (table_head_cell("Status"))
-            (table_head_cell("Your changes"))
-        }
-    };
-    let body = html! {
-        @for row in rows {
-            tr {
-                (table_cell(project_link(&row.summary)))
-                (table_cell(row.summary.name))
-                (table_cell(status_label(row.summary.status)))
-                (table_cell(row.state.label()))
+/// Keep the explicit `role`s: Safari drops table semantics once rows are `display: grid`, and axe
+/// cannot see it; `test_the_card_list_keeps_explicit_table_roles_on_every_level` pins them.
+fn assigned_cards(caption: &str, rows: &[AssignedProject<'_>]) -> Markup {
+    html! {
+        table role="table" class="block w-full" {
+            caption class="sr-only" { (caption) }
+            thead role="rowgroup" class="sr-only" {
+                tr role="row" {
+                    th role="columnheader" scope="col" { "Shortcode" }
+                    th role="columnheader" scope="col" { "Name" }
+                    th role="columnheader" scope="col" { "Status" }
+                    th role="columnheader" scope="col" { "Your changes" }
+                }
+            }
+            tbody
+                role="rowgroup"
+                class="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-3"
+            {
+                @for row in rows {
+                    tr  role="row"
+                        class="grid grid-cols-[1fr_auto] grid-rows-[auto_auto_1fr_auto] overflow-hidden rounded-md \
+                               border border-neutral-200 bg-white before:col-span-2 before:h-2 before:bg-primary-600 \
+                               before:content-['']"
+                    {
+                        td role="cell" class="col-span-2 px-3 pt-3" {
+                            (shortcode_link(row.summary.shortcode))
+                        }
+                        td  role="cell"
+                            class="col-span-2 px-3 pt-1 pb-3 font-display font-semibold text-lg text-neutral-900"
+                        { (row.summary.name) }
+                        td  role="cell"
+                            class="border-t border-neutral-100 px-3 py-2 text-sm text-neutral-600"
+                        { "Status: " (status_label(row.summary.status)) }
+                        td role="cell" class="border-t border-neutral-100 px-3 py-2 text-right" {
+                            (state_badge(row.state))
+                        }
+                    }
+                }
             }
         }
-    };
-    html! {
-        (table(caption).head(head).body(body))
     }
 }
 
@@ -294,7 +332,7 @@ fn project_table(caption: &str, rows: &[ProjectSummary<'_>]) -> Markup {
         }
     };
     html! {
-        (table(caption).head(head).body(body))
+        (table(caption).head(head).body(body).class(LIST_TABLE))
     }
 }
 
@@ -307,7 +345,9 @@ fn project_link(row: &ProjectSummary<'_>) -> Markup {
 
 fn shortcode_link(shortcode: &str) -> Markup {
     html! {
-        a href={ "/projects/" (shortcode) } class="underline font-mono font-bold" { (shortcode) }
+        a href={ "/projects/" (shortcode) } class={ (TEXT_LINK) " font-mono font-bold" } {
+            (shortcode)
+        }
     }
 }
 
@@ -348,6 +388,23 @@ mod tests {
         assert!(out.contains("Bernoulli-Euler Online"), "{out}");
         assert!(out.contains(r#"<a href="/projects/080C""#), "{out}");
         assert!(out.contains("Anton Webern"), "{out}");
+    }
+
+    #[test]
+    fn test_the_card_list_keeps_explicit_table_roles_on_every_level() {
+        let out = assigned(&[row("0801d", "Bernoulli-Euler Online", "ongoing")], &[]).into_string();
+        for (tag, role) in [
+            ("table", "table"),
+            ("thead", "rowgroup"),
+            ("tbody", "rowgroup"),
+            ("tr", "row"),
+            ("th", "columnheader"),
+            ("td", "cell"),
+        ] {
+            let tags = out.matches(&format!("<{tag} ")).count() + out.matches(&format!("<{tag}>")).count();
+            let with_role = out.matches(&format!(r#"<{tag} role="{role}""#)).count();
+            assert!(tags > 0 && tags == with_role, "<{tag}> without role={role} in {out}");
+        }
     }
 
     #[test]

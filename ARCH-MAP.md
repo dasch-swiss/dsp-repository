@@ -1555,7 +1555,7 @@ Not code components; they span the repo and are staleness-exempt here:
 - **Build, toolchain and dev loop:** `Cargo.toml`, `Cargo.lock`, `.cargo/config.toml` (rustflags), `rust-toolchain.toml`,
   `.rustfmt.toml`, `deny.toml`, `bacon.toml`, `justfile`, `tailwind.pins`, `flake.nix`,
   `flake.lock`, `.envrc`, `.node-version`, `.gitignore`, `.dockerignore`, `.worktreeinclude`,
-  `.commitlintrc.yml`, `.kodus-readiness.yml`
+  `.commitlintrc.yml`, `.kodus-readiness.yml`, `.rustfmt-nightly`, `.git-blame-ignore-revs`
 - **CI:** `.github/**` — workflows, composite actions, the gate scripts
   (`check-shared-paths.sh`, `check-datastar-attributes.sh`, `check-commit-count.sh`,
   `verify-checksums.sh`, `check-adr-refs.sh`, `check-live-tests-ignored.sh`, `check-cpe-seam.sh`, `check-capability-deps.sh`, `check-views-no-axum.sh`),

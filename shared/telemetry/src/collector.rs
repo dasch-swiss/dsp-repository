@@ -149,7 +149,7 @@ const MAX_SIGNALS: usize = 50;
 ///
 /// Receives browser telemetry beacons and converts them to OTel signals.
 /// Always returns 204 (or 413 if payload too large) — never blocks on failures.
-pub async fn collect_handler(headers: HeaderMap, body: Bytes) -> StatusCode {
+pub(crate) async fn collect_handler(headers: HeaderMap, body: Bytes) -> StatusCode {
     if body.len() > MAX_PAYLOAD_SIZE {
         return StatusCode::PAYLOAD_TOO_LARGE;
     }

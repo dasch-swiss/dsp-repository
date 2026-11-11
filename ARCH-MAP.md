@@ -808,8 +808,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Key entities:** `BeaconPayload`, `Signal`, `WebVitalSignal`, `ErrorSignal`, `LoafSignal`,
   `NavigationSignal`, `collect_route`, `collect_handler`, `process_signal`, `BROWSER_METRICS`,
   `PAGE_URL_NORMALIZER`, `is_allowed_origin`, `is_valid_traceparent`
-- **Public interface:** `collector::collect_route(namespace, normalize_page_url)` — the intended
-  wiring point (`collect_handler` is also `pub`, contradicting its doc comment); `beacon::*`,
+- **Public interface:** `collector::collect_route(namespace, normalize_page_url)` — the only
+  wiring point (`collect_handler` is `pub(crate)`); `beacon::*`,
   `origin::is_allowed_origin`, `traceparent::{is_valid_traceparent, validated_traceparent}`.
 - **Local-context kit:** `shared/telemetry/src/beacon.rs`,
   `shared/telemetry/src/collector.rs`, `areas/access/dpe/public/telemetry.js`,
@@ -837,7 +837,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `BROWSER_METRICS`) make the crate one-service-per-process by construction. Three fuzz targets
   (`beacon_payload`, `origin_validation`, `traceparent_validation`) exist but `fuzz.yml` runs
   only DPE's two.
-- **Fingerprint:** `31be7dec978d`
+- **Fingerprint:** `bb7edab4dc04`
 
 ### shared/datastar
 

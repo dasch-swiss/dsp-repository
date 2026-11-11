@@ -652,8 +652,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - Consumers use tiles through the crate API; 13 consumer source files hardcode Mosaic class strings
     instead (`card card-bordered`, `btn btn-outline`, `field-label`, and `tooltip`, which has no
     tile at all) — a reach-in, recorded (**review**).
-  - Registration is in `tiles/src/components/mod.rs`, not `lib.rs`; `modules/mosaic/CLAUDE.md`
-    and the `add-mosaic-component` skill say `lib.rs` — stale, fix on next touch (**docs-only**).
+  - A tile is declared in `tiles/src/components/mod.rs`; `lib.rs` re-exports the module with one
+    glob and is never edited (**docs-only** — `modules/mosaic/CLAUDE.md` and the
+    `add-mosaic-component` skill).
 - **Durable state:** none. The playground E2E suite is dormant (no recipe, no CI job runs it).
 - **Fingerprint:** `f54296c452e3`
 

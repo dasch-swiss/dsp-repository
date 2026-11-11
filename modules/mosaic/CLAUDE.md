@@ -8,7 +8,7 @@ Mosaic is the DaSCH design system. It has two crates:
 ## Architecture
 
 - Components are plain functions returning `maud::Markup` — server-rendered HTML, MPA-first.
-- Each component lives in `tiles/src/components/` either as a directory (`mod.rs` + a co-located `.css`) or a single `.rs` file (e.g. `copy_button.rs`, `loading.rs`). Exported from `tiles/src/lib.rs`.
+- Each component lives in `tiles/src/components/` either as a directory (`mod.rs` + a co-located `.css`) or a single `.rs` file (e.g. `copy_button.rs`, `loading.rs`). Each is declared in `tiles/src/components/mod.rs` (a form input in `components/form/mod.rs`); `tiles/src/lib.rs` re-exports them all with one `pub use components::*;` and needs no edit.
 - Variant enums derive `Clone, Copy, Default` and expose a `css_class()` that returns **complete literal class strings** (so Tailwind's content scan sees them). Multi-option tiles are builders: `name(content) -> NameBuilder` with chained setters (e.g. `.variant(…)`, `.size(…)`) and a `.build()`; each builder implements `Render` so it can be spliced into `html!` directly. Content and labels are `impl Render`, not bare `Markup` (see `docs/src/mosaic/component-api-conventions.md`).
 - The tiles library has two sanctioned `PreEscaped` sites: the `IconData` SVG (`icondata`) and the leading newline the `textarea` control emits, which HTML parsers eat and which must therefore be written back. Both splice a constant; neither takes caller content.
 - Interactivity, where needed, is CSS-only (e.g. `Tabs` uses hidden radio inputs) or a small inline handler (e.g. `copy_button`'s clipboard `onclick`).
@@ -18,7 +18,7 @@ Mosaic is the DaSCH design system. It has two crates:
 
 The `/add-mosaic-component` skill walks through this. In short:
 
-1. Add `fn name(...) -> maud::Markup` in `tiles/src/components/<name>/mod.rs` (plus a co-located `<name>.css` if it needs component styles), and export it in `tiles/src/lib.rs`.
+1. Add `fn name(...) -> maud::Markup` in `tiles/src/components/<name>/mod.rs` (plus a co-located `<name>.css` if it needs component styles), and declare it with `pub mod <name>;` in `tiles/src/components/mod.rs` (a form input goes under `components/form/` and is declared in `components/form/mod.rs`).
 2. If you added a CSS file, `@import` it into the barrel `tiles/src/components/components.css` — that one edit reaches every consuming Tailwind entry. Never add per-file imports to the entries themselves.
 3. Add a hand-written showcase page `playground/src/showcase/<name>.rs` (component title + description + rendered examples), export it in `playground/src/showcase/mod.rs`, and register the route + sidebar nav entry in `playground/src/app.rs`.
 4. Add unit tests rendering the component and asserting on its output.

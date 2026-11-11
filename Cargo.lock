@@ -1016,7 +1016,6 @@ dependencies = [
  "shared-metadata",
  "tempfile",
  "tracing",
- "ureq",
 ]
 
 [[package]]

@@ -9,9 +9,6 @@ use shared_metadata::Record;
 
 use super::corpus::Corpus;
 
-static BEARER: &str = "Bearer eyJ0eXAiO...";
-// update the bearer to download the records locally, if needed
-
 type RecordCache = HashMap<String, Option<(Instant, Vec<Record>)>>;
 
 impl Corpus {
@@ -55,12 +52,7 @@ impl Corpus {
     }
 
     fn load_all_records(&self) -> Vec<Record> {
-        let mut cache = load_last_fetched(&self.records_dir());
-
-        // localhost cache warmup code (network or filesystem)
-        find_records("0803", &self.records_dir(), &mut cache);
-        find_records("0868", &self.records_dir(), &mut cache);
-        find_records("081C", &self.records_dir(), &mut cache);
+        let cache = load_last_fetched(&self.records_dir());
 
         // Ingress, as in `project_cache`: every consumer of a record — the graph
         // builders, the OAI payloads, the file endpoint — reads this vector, so the
@@ -88,46 +80,6 @@ pub fn index_by_shortcode(records: &[Record]) -> HashMap<String, Vec<&Record>> {
         index.entry(record.pid.shortcode.to_uppercase()).or_default().push(record);
     }
     index
-}
-
-fn records_path(records_dir: &std::path::Path, shortcode: &str) -> std::path::PathBuf {
-    records_dir.join(format!("{shortcode}-records.json"))
-}
-
-fn save_records(records_dir: &std::path::Path, shortcode: &str, body: &str) -> std::io::Result<()> {
-    std::fs::create_dir_all(records_dir)?;
-    std::fs::write(records_path(records_dir, shortcode), body)
-}
-
-fn fetch_records(shortcode: &str) -> Result<String, ureq::Error> {
-    let agent: ureq::Agent = ureq::config::Config::builder().build().into();
-    let mut response = agent
-        .post("https://api.dev.dasch.swiss/v3/export/resources/oai")
-        .header("Authorization", BEARER)
-        .send(ureq::SendBody::from_owned_reader(std::io::Cursor::new(
-            serde_json::to_vec(&serde_json::json!({"shortcode": shortcode})).unwrap(),
-        )))?;
-    response.body_mut().read_to_string()
-}
-
-fn find_records(shortcode: &str, records_dir: &std::path::Path, cache: &mut RecordCache) -> Vec<Record> {
-    if let Some(Some((_, records))) = cache.get(shortcode) {
-        return records.clone();
-    }
-
-    match fetch_records(shortcode) {
-        Err(e) => tracing::error!(shortcode, error = %e, "failed to fetch records"),
-        Ok(body) => match serde_json::from_str::<Vec<Record>>(&body) {
-            Err(e) => tracing::error!(shortcode, error = %e, "failed to parse fetched records"),
-            Ok(records) => {
-                let _ = save_records(records_dir, shortcode, &body);
-                cache.insert(shortcode.to_string(), Some((Instant::now(), records.clone())));
-                return records;
-            }
-        },
-    }
-
-    Vec::new()
 }
 
 fn load_last_fetched(records_dir: &std::path::Path) -> RecordCache {

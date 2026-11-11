@@ -5,8 +5,8 @@
 //! rules for reading a value out of one — lives in `shared-metadata`, shared
 //! with the editor. What is here is DPE's: the `Project` view model, the
 //! [`Corpus`] a capability owns and everything cached on it, the repositories,
-//! cluster and collection membership, contributor resolution, and the DSP-API
-//! records client.
+//! cluster and collection membership, contributor resolution, and the reader of
+//! the committed record dumps.
 
 pub mod ark;
 pub mod chronontology_cache;

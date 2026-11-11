@@ -123,10 +123,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Durable state:** the corpus under `server/data/`. `projects/` has **two writers** — hand
   edits and `editor-core`'s `canonical_round_trip` test under `CANONICALIZE_PROJECT_FILES=1`,
   which is the canonical formatter, so the second writer is the intended one. `records/` has
-  **two writers with two upstreams** — `just fetch-records` (production API, explicit bearer) and
-  `dpe_core::record_cache::load_all_records`, which on a cache miss fetches from the dev API with a
-  placeholder bearer and writes into the tracked directory at startup; the shortcode list is
-  duplicated between `justfile` and `record_cache.rs` (single-writer violation, recorded). The
+  **one writer**, `just fetch-records` (production API, explicit bearer, shortcodes in the
+  `justfile`'s `RECORD_SHORTCODES`); `dpe_core::record_cache` only reads what is committed. The
   two lookup tables are written by `scripts/*.py`. Cover images: drop-at-path, hand-written.
   `editor-pull-requests` is a further writer of `projects/`, the first automated writer of `persons/`
   and `organizations/`, and a second writer of `temporal-coverage-enrichment.json` and
@@ -140,7 +138,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   bundled picker options, so a new reference needs that regeneration (**static-analysis** — the editor's drift tests,
   which also run on `editor-pull-requests`' pull requests: one publishing a place or period a depositor typed outside
   the lists stays red until the bundles are regenerated on its branch).
-- **Fingerprint:** `776709312525`
+- **Fingerprint:** `b6cddac7ab2e`
 
 ### areas/access/server
 
@@ -1546,7 +1544,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 | A `GET` route that writes, or a Datastar-enhanced control without a no-JS path | Defeats the `Sec-Fetch-Site` CSRF control; strands the no-JavaScript user | `POST` for every write; `formaction` on row controls; the E2E suite's no-JS pass (ADR-0004) | static-analysis (editor E2E) |
 | A client-side framework, WASM bundle, client router or BFF for a new screen | Splits UI state between two runtimes; the page stops being citable by URL and readable by a machine without a client | A Maud view in the `web` crate plus a Datastar-enhanced fragment (ADR-0004) | review |
 | Rendering a landing page differently by `Accept` | Leaves machine representations without a URL to cite or link; types every error path per media type | A dedicated URL per representation, `describedby` links, a `303` from the page as the only negotiation (ADR-0005) | static-analysis (the four `dpe-server` handler tests that bear on *this* clause — `a_browser_gets_the_page`, `a_harvester_asking_for_a_representation_is_redirected_to_it`, `every_landing_page_answer_varies_on_accept`, `an_unknown_shortcode_never_redirects_whatever_it_was_asked_for`; ADR-0005's full list is in `## Conventions`) |
-| A second writer for a corpus file (`records/` from the server at startup) | "Who wrote this?" has no single answer; a tracked directory changes under git | One recipe (`just fetch-records`) as the writer; the server reads only | review (open) |
+| A second writer for a corpus file (`records/` from the server at startup) | "Who wrote this?" has no single answer; a tracked directory changes under git | One recipe (`just fetch-records`) as the writer; the server reads only | review |
 | A dsp-cli dependency on an area crate | Turns the CLI into a second, out-of-process consumer of code meant to run inside one area's modulith on its own origin | Call the area's public HTTP surface, as any external client does | static-analysis (`cargo publish --dry-run`) → structure (ADR-0001) |
 
 ## Cross-cutting concerns

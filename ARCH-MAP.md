@@ -1,7 +1,7 @@
 ---
 dune_map: true
 schema_version: 2
-date: 2026-11-10
+date: 2026-11-11
 ---
 
 # Architecture Map
@@ -10,9 +10,11 @@ date: 2026-11-10
 
 `dsp-repository` is a Rust monorepo (a Cargo workspace today; Bazel per ADR-0001 once the migration lands) of
 server-rendered hypermedia services on Axum + Maud + Datastar, plus the crates they share.
-Two services exist — **DPE**, the public read-only Discovery and Presentation Environment,
-and the authenticated **metadata editor** — each a separate deployable on its own origin;
-they share `shared-metadata` (the research-metadata contract), `shared-rate-limit` (the rate
+Two deployables exist, one per area composition root, each on its own origin: `access-server`
+(`areas/access/server`) serves **DPE**, the public read-only Discovery and Presentation
+Environment, and **CPE**, the project-specific presentations under `/cpe` (ADR-0007);
+`deposit-server` (`areas/deposit/server`) serves the authenticated **metadata editor** and
+**identity** (`areas/deposit/ADR-0004`). The capabilities share `shared-metadata` (the research-metadata contract), `shared-rate-limit` (the rate
 limiters' client-IP key), `shared-telemetry` (the
 browser-beacon collector), `shared-datastar` (typed Datastar actions) and `mosaic-tiles` (the design system), and nothing else. The
 dependency arrow is one-way: `services → shared, mosaic`, and a service never imports
@@ -41,7 +43,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   vocabulary, DPE's until it is split; CPE's own terms are in `areas/access/cpe/CONTEXT.md`)
 - **Purpose:** The Discovery and Presentation Environment — the Access Area's first service.
   Four crates: `dpe-core` (view model, the `Corpus` value that owns the lazily-loaded caches,
-  filesystem repositories, a DSP-API client), `dpe-api-oai` (OAI-PMH 2.0), `dpe-web` (Maud pages
+  filesystem repositories, the reader of the committed record dumps), `dpe-api-oai` (OAI-PMH 2.0), `dpe-web` (Maud pages
   and components), `dpe-server` (a library: routes, page shell, Datastar SSE fragments, config,
   the `validate` logic; the binary is areas/access/server's). Also owns the published **corpus** under `server/data/` (projects, persons and
   organizations, whose sizes `corpus-manifest.json` records; plus 5 clusters, 3 record
@@ -75,7 +77,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   (`dpe-server`), shared/telemetry
   (`dpe-server`, `traceparent.rs`), shared/datastar (`dpe-web`), modules/mosaic (`dpe-web`, `dpe-server`); third-party: axum, tokio,
   tower / tower-http / tower_governor, maud, datastar, figment, serde / serde_json, quick-xml,
-  ureq, chrono (`dpe-api-oai`), futures and urlencoding (`dpe-server`, `dpe-web`), opentelemetry /
+  chrono (`dpe-api-oai`), futures and urlencoding (`dpe-server`, `dpe-web`), opentelemetry /
   tracing-opentelemetry, tower-livereload and notify (`dpe-server`'s `dev` feature, which
   `access-server`'s `dev` feature turns on); dev: insta (`dpe-server`)
 - **Used by:** areas/access/server (`dpe-server`'s library surface only: `serve.rs::assemble` merges
@@ -85,7 +87,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `editor_core::checkout_dpe_data_dir()` (`DPE_DATA_DIR`, the one Rust definition of the path); shared/metadata's and shared/fair's
   committed-data tests live here (`core/src/temporal_enrichment_cache.rs`,
   `api-oai/src/metadata/corpus.rs`); `editor-pull-requests` writes the corpus through a pull request
-  (see **Durable state** above), still never through a `dpe-*` import
+  (see **Durable state** below), still never through a `dpe-*` import
 - **Boundary rules:**
   - Never depends on an `editor-*` crate; the editor never depends on a `dpe-*` crate
     (**static-analysis** for both sides, `check-capability-deps.sh` fails an edge to another area;
@@ -138,7 +140,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   bundled picker options, so a new reference needs that regeneration (**static-analysis** — the editor's drift tests,
   which also run on `editor-pull-requests`' pull requests: one publishing a place or period a depositor typed outside
   the lists stays red until the bundles are regenerated on its branch).
-- **Fingerprint:** `b6cddac7ab2e`
+- **Fingerprint:** `1c96c5cced41`
 
 ### areas/access/server
 
@@ -233,7 +235,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   (`areas/deposit/server`, below; `areas/deposit/ADR-0004`), with identity's four crates in
   `areas/deposit/identity` and the area shell in `areas/deposit/shell`.
 - **Key entities:** `ProjectDraft`, `ProjectState`, `SubmissionState`, `ReviewState`,
-  `FieldReview`, `Decision`, `EntityProposal`, `Transition`, `PublishedProjects`, `Agents`,
+  `FieldReview`, `Decision`, `ProposalDecision`, `EntityProposal`, `Transition`, `PublishedProjects`, `Agents`,
   `EditorRepositories` (behind `EditorState.editor`), `ReviewRoundRepository`, `RecordClassification`, `classify_record`,
   `editor_core::form::registry::{FIELDS, SECTIONS, Field}`, `form::Shape`, `sections_for`, `fields_for`,
   `Section::has_editable_field`, `form::ChoiceSet::Languages`, `editor_core::languages::{LANGUAGES, canonical_code}`,
@@ -346,6 +348,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     stored; submit refuses one in the viewer's fields, approve in every field, RDU-only included; a
     length finding is exempt where the value equals the published one
     (**static-analysis** — `sections.rs`'s autosave and Save/Add/Submit parity tests).
+  - A new `Decision` or `ProposalDecision` value needs its colour in `style/main.css`, which keys the
+    review form's controls on `[value='…']` (**static-analysis** — `review.rs`'s
+    `every_decision_value_has_its_colour_in_the_editor_stylesheet`).
   - The missing-language check, `form::submit::{lines_without_language, LineWithoutLanguage}`, lives beside `form::format::findings` because the applier drops a multilingual line with no language, so the stored draft cannot say it was typed; such a line is refused at submit (and flagged on Save) by that check and is not a Finding.
   - `GIT_OWNED` members (`howToCite`, `legalInfo`) are not compared for a published project, and the
     pull-request run takes them from the published file (`with_git_owned`) (**static-analysis** —
@@ -398,7 +403,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `Editor::start`), approve's own transaction, which supersedes the project's earlier record, so a
   project holds at most one, and RDU's discard
   (`POST /approved/{id}/discard`).
-- **Fingerprint:** `0b95b67bba67`
+- **Fingerprint:** `48a3bcff8767`
 
 ### areas/deposit/shell
 
@@ -615,7 +620,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   codebases adopt it by copy, never by dependency, so nothing outside this repository can
   break when a tile changes.
 - **Key entities:** `ComponentBuilder`; constructors `badge`, `button`, `alert`, `card`, `link`,
-  `table`, `tabs`, `text_field`, `select`, `textarea`, `checkbox_group`, `radio_group`,
+  `table`, `tabs`, `text_field`, `select`, `textarea`, `checkbox_group`, `radio_group` (its
+  `RadioGroupBuilder` has `.segmented()` for a decision-like choice and `.legend_hidden()`),
   `repeatable_list`, `icon`, `copy_button`, `loading`, `breadcrumb`, `combobox` (with `combobox_results`,
   `combobox_listbox`, `combobox_groups`, `combobox_option`, `combobox_status`); builders
   `BadgeBuilder`, `ButtonBuilder`, `TextFieldBuilder`, …; variant enums with `css_class()`
@@ -649,14 +655,16 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - Accessibility is the tile's responsibility, not the caller's; the working a11y gate is the
     editor's axe-core suite, which `a11y-editor.yml` triggers on `modules/mosaic/**`
     (**static-analysis**, indirectly).
-  - Consumers use tiles through the crate API; 13 consumer source files hardcode Mosaic class strings
-    instead (`card card-bordered`, `btn btn-outline`, `field-label`, and `tooltip`, which has no
-    tile at all) — a reach-in, recorded (**review**).
-  - A tile is declared in `tiles/src/components/mod.rs`; `lib.rs` re-exports the module with one
-    glob and is never edited (**docs-only** — `modules/mosaic/CLAUDE.md` and the
+  - Consumers use tiles through the crate API; DPE's and the editor's markup still hardcodes Mosaic
+    class strings in places (`card card-bordered`, `btn btn-outline`, `field-label`, and `tooltip`,
+    which has no tile at all) — a reach-in, recorded (**review**). List them with
+    `grep -rnE --include='*.rs' '"[^"]*\b(card card-bordered|btn btn-[a-z]+|field-label|tooltip)\b[^"]*"' areas shared`.
+  - A tile is declared in `tiles/src/components/mod.rs`, a form input in
+    `tiles/src/components/form/mod.rs`; `lib.rs` re-exports the module with one glob and is never
+    edited (**docs-only** — `modules/mosaic/CLAUDE.md` and the
     `add-mosaic-component` skill).
 - **Durable state:** none. The playground E2E suite is dormant (no recipe, no CI job runs it).
-- **Fingerprint:** `f54296c452e3`
+- **Fingerprint:** `09e93cd1a9d4`
 
 ### shared/fair
 
@@ -892,11 +900,14 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Local-context kit:** `dsp-cli/CLAUDE.md`, `dsp-cli/CONTEXT.md`, `dsp-cli/src/cli/mod.rs`,
   `dsp-cli/src/client/mod.rs`, `dsp-cli/src/render/mod.rs`, `dsp-cli/src/diagnostic.rs`,
   `dsp-cli/tests/cli.rs` (the binary tests and the corrupt-cache log-leak guard, DEV-7446; their
-  mocks are `dsp-cli/tests/support/mod.rs`), `dsp-cli/docs/adr/0008-internal-architecture.md` (the
-  testing strategy is dsp-cli/ADR-0009)
+  mocks are `dsp-cli/tests/support/mod.rs`), `docs/src/dsp-cli/architecture.md` (the crate layout,
+  layers and `Renderer` methods; dsp-cli/ADR-0008 records the decision). Next reads:
+  `docs/src/dsp-cli/overview.md` (the vision), `docs/src/dsp-cli/testing-strategy.md`
+  (dsp-cli/ADR-0009), `dsp-cli/docs/adr/CLAUDE.md` (ADR rules and the qualified citation form)
 - **Depends on:** nothing in the workspace; third-party: clap, reqwest (blocking, rustls), serde,
-  serde_json, toml, tracing, chrono, jsonwebtoken, semver; in tests insta, wiremock, assert_cmd,
-  tempfile. Not `url` (`src/config/mod.rs` says why)
+  serde_json, toml, tracing, tracing-subscriber, thiserror, chrono, jsonwebtoken, semver, dotenvy,
+  dirs, percent-encoding, rpassword; in tests insta, wiremock, tokio (for wiremock only),
+  assert_cmd, predicates, tempfile. Not `url` (`src/config/mod.rs` says why)
 - **Used by:** — (top of the dependency graph; a published binary)
 - **Boundary rules:**
   - No dependency on an area crate (**static-analysis**, `cargo publish -p dsp-cli --dry-run`
@@ -905,7 +916,12 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - Integrates with an area over its public HTTP surface only, never by Rust import
     (**review**).
   - Live tests never run in the default suite (**static-analysis**,
-    `check-live-tests-ignored.sh`, run by `just check`).
+    `check-live-tests-ignored.sh`, run by `just check`); CI runs them strict against a pinned
+    stack in `dsp-cli-drift.yml` (dsp-cli/ADR-0009).
+  - No DSP-API vocabulary (`ontology`, `class`, `property`, `export`) above `src/client/`
+    (dsp-cli/ADR-0001); renderers write data, never logs; no async runtime outside tests
+    (dsp-cli/ADR-0008); anything `lib.rs` does not re-export is internal (**review** — the
+    *Code conventions* and *Review checklist* in `dsp-cli/CLAUDE.md`).
   - Unit-test mocks (`MockDspClient`) are local to each action file; `tests/support/mod.rs` is
     reachable from integration tests only (**structure**, Rust visibility).
   - A test that asserts on tracing or log output runs the real binary in `tests/cli.rs`, never
@@ -915,7 +931,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `AuthCache`; `~/.config/dsp-cli/update_check.toml` (the update-check cache, dsp-cli/ADR-0015) —
   single writer, the `update` module. Both are written atomically (a temporary file, then a rename).
   It reads `.env` from the current directory and never writes it.
-- **Fingerprint:** `b823e41dccc2`
+- **Fingerprint:** `322d0960bf2f`
 
 ### areas/archive (Spycherli)
 
@@ -1121,7 +1137,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Depends on:** `cpe-ports` depends on `std` alone. `cpe-core` depends on `kdl`,
   `pulldown-cmark`, `percent-encoding` and `thiserror`, and on no CPE crate, `cpe-ports`
   included. `cpe-image-viewer` depends on `maud` alone and on no CPE crate. `cpe-components` depends on
-  `cpe-core`, `cpe-image-viewer` and shared/datastar, and on `maud`, `pulldown-cmark` and `tracing`. `cpe-store` depends on
+  `cpe-core`, `cpe-image-viewer` and `shared-datastar`, and on `maud`, `pulldown-cmark` and `tracing`. `cpe-store` depends on
   `cpe-core`, and on `rusqlite`, `thiserror` and `tracing`. `cpe-store-build` depends on `cpe-core` and
   `cpe-ports`, and on `serde_json`, `thiserror` and `unicode-normalization`; it does not depend on `cpe-store`
   and reads `store/schema.sql` with `include_str!`; its tests alone depend on `sync-store` and `rusqlite`.
@@ -1253,7 +1269,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   the project's developers (**review**); the process reads it at activation and never writes it. Its
   configuration, narrative and curation are `media`'s (areas/access/media). `cpe-ports`, `cpe-core`,
   `cpe-components`, `cpe-image-viewer` and `cpe-store-build` hold none; `cpe-web`'s `Project` holds a project's store in memory, and `cpe-server` keeps the loaded projects until the next activation replaces them.
-- **Fingerprint:** `959f53b8321c`
+- **Fingerprint:** `c991321aa6ba`
 
 ### areas/access/datei
 
@@ -1527,7 +1543,10 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `areas/<area>/ADR-NNNN`, and a capability carries no series of its own (ADR-0006; `areas/deposit/` is the first).
   *Enforcement:* **docs-only** for the runbook and vocabulary docs; **static-analysis**
   (`check-adr-refs.sh`, `just check`) for the citation rule.
-- **Local-context kit budget:** ≤7 files per component. *Enforcement:* **docs-only**.
+- **Local-context kit budget:** ≤7 files per component. Two components exceed it, recorded:
+  `areas/access/cpe`, whose kit spans the entry points of its crates and the ADRs that bound it,
+  and `areas/access/sync`, which needs CPE's port and contract beside its own store. Splitting
+  either kit by task is open. *Enforcement:* **docs-only**.
 - **Commits:** `type(scope): subject`, scope = crate name or `dpe-data` / `ci` / `deps` / `docs`;
   one commit per PR. *Enforcement:* **static-analysis** (`just commit-lint`, the `gate` job).
 
@@ -1540,7 +1559,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 | Opening the area's Chischtli instance to read or write a graph another capability owns | A graph with two writers is a table with two writers; readers past the owner's ports freeze the owner's internal graph layout | Query through the owning capability's ports (`sync` for the archive projection); a new graph gets a new owner, not a second writer (ADR-0003) | review → structure (store handle visible to owners only) |
 | A relative path from a `shared-*` crate into `modules/<service>/`, in a source file or a test fixture | Makes the shared crate depend on one service's layout and configuration | Take the directory or table as a parameter (`load_from(data_dir)`); the repo-root `justfile` is what may name a module path | static-analysis (`shared/*/src/*.rs` and `shared/*/testdata/**`) |
 | Reading `dpe_core::Project` in the editor | The view model is lossy on `url` and `clusters`; the editor must preserve both | `ProjectRaw` → draft → `ProjectRaw` | review |
-| Hardcoding a Mosaic class string (`card card-bordered`, `tooltip`) in a service's markup | Freezes the design system's CSS contract in 19 call sites; a tile rename breaks silently | Call the tile; add the missing tile (`tooltip`) rather than the string | review |
+| Hardcoding a Mosaic class string (`card card-bordered`, `tooltip`) in a service's markup | Freezes the design system's CSS contract at every such call site; a tile rename breaks silently | Call the tile; add the missing tile (`tooltip`) rather than the string | review |
 | A `css_class()` that assembles its string at runtime | Tailwind's `source(none)` scan never sees the class; the failure is unstyled markup with no error | Complete literal strings, one per variant | docs-only (promote) |
 | A `GET` route that writes, or a Datastar-enhanced control without a no-JS path | Defeats the `Sec-Fetch-Site` CSRF control; strands the no-JavaScript user | `POST` for every write; `formaction` on row controls; the E2E suite's no-JS pass (ADR-0004) | static-analysis (editor E2E) |
 | A client-side framework, WASM bundle, client router or BFF for a new screen | Splits UI state between two runtimes; the page stops being citable by URL and readable by a machine without a client | A Maud view in the `web` crate plus a Datastar-enhanced fragment (ADR-0004) | review |
@@ -1555,7 +1574,8 @@ Not code components; they span the repo and are staleness-exempt here:
 - **Build, toolchain and dev loop:** `Cargo.toml`, `Cargo.lock`, `.cargo/config.toml` (rustflags), `rust-toolchain.toml`,
   `.rustfmt.toml`, `deny.toml`, `bacon.toml`, `justfile`, `tailwind.pins`, `flake.nix`,
   `flake.lock`, `.envrc`, `.node-version`, `.gitignore`, `.dockerignore`, `.worktreeinclude`,
-  `.commitlintrc.yml`, `.kodus-readiness.yml`, `.rustfmt-nightly`, `.git-blame-ignore-revs`, `.editorconfig`
+  `.commitlintrc.yml`, `.kodus-readiness.yml`, `.rustfmt-nightly`, `.git-blame-ignore-revs`, `.editorconfig`,
+  `.gitattributes`
 - **CI:** `.github/**` — workflows, composite actions, the gate scripts
   (`check-shared-paths.sh`, `check-datastar-attributes.sh`, `check-commit-count.sh`,
   `verify-checksums.sh`, `check-adr-refs.sh`, `check-live-tests-ignored.sh`, `check-cpe-seam.sh`, `check-capability-deps.sh`, `check-views-no-axum.sh`),
@@ -1563,5 +1583,5 @@ Not code components; they span the repo and are staleness-exempt here:
 - **Documentation:** `docs/**` (the mdBook under `docs/src/`, ADRs under `docs/adr/`), an area's decision records under `areas/<area>/docs/adr/` (`areas/deposit/docs/**` today),
   `README.md`, `CLAUDE.md`, `CONVENTIONS.md`, `REVIEW.md`, `CHANGELOG.md`, `LICENSE`,
   `CONTEXT.md`, `ARCH-MAP.md`, `shared/README.md`
-- **Agent configuration:** `.claude/**` (settings, the `add-mosaic-component` skill)
+- **Agent configuration:** `.claude/**` (settings, the `add-mosaic-component` skill), `eng.yaml`
 - **Data tooling:** `scripts/**` — the Python scripts that write DPE's lookup tables and the editor's bundled vocabularies (`core/data/*.json`)

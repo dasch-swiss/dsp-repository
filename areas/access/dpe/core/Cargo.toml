@@ -9,7 +9,6 @@ shared-metadata = { path = "../../../../shared/metadata" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tracing = { workspace = true }
-ureq = "3"
 
 [dev-dependencies]
 tempfile = "3"

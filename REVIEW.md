@@ -1,37 +1,60 @@
 # Code Review Checklist
 
-Agent reference card for the **review phase**. Full details in `docs/src/fundamentals/review-guidelines.md`.
+Agent reference card for the **review phase**. Pair with `CONVENTIONS.md`, the work-phase card. Full details in `docs/src/fundamentals/review-guidelines.md`.
 
 ## Always Check
+
+### Hypermedia and UI
 
 - [ ] Fragment endpoints follow resource-action nesting (`docs/src/dpe/architecture.md`)
 - [ ] Datastar interactions have `<a href>` fallback for graceful degradation
 - [ ] ARIA semantics on interactive components (`role`, `aria-selected`, `aria-controls`)
+
+### Tests
+
 - [ ] insta snapshots added/updated for changed SSR output
 - [ ] E2E test covers user-facing behavior
 - [ ] axe-core scan passes on affected pages
 - [ ] Unit tests for edge cases (invalid input, missing data)
+
+### Crate boundaries
+
 - [ ] New API crates follow `dpe-api-{name}` pattern (`docs/src/repo_structure.md`)
 - [ ] `dpe-core`, `shared-metadata` and `shared-fair` have no framework dependencies — a `shared-fair` writer returns a `String` or a `serde_json::Value`, never a response type
 - [ ] `shared-metadata` and `shared-fair` take no dependency on a service crate, and no path into a service's data directory. Both fail the build, so this is a spot-check: a service dependency is a Cargo cycle, a hardcoded path is caught by `just check-shared-paths`
+
+### FAIR metadata
+
 - [ ] A change to a landing page or to `shared-fair` was measured, not assumed: against a local `just dev`, run `just fair-check http://host.docker.internal:4000/dpe/projects/0862 16` and `just fair-check http://host.docker.internal:4000/dpe/projects/0868 21`, and record both scores as rows in `docs/src/dpe/machine-readable-metadata.md`. A test says the metadata is *there*; only this says it is *readable* (`docs/adr/0005-fair-landing-pages-in-the-access-area.md`). **Both projects, not just 0862**: no record dump is committed for 0862, so it emits no `distribution` and never exercises the file-describing paths. 0868 does, and takes a few minutes because the assessor downloads the files it advertises
-- [ ] CLI subcommands documented in help text
-- [ ] Documentation updated when patterns change
-- [ ] New env vars documented in `docs/src/dpe/operations.md` (editor: `docs/src/editor/operations.md`)
+
+### Security
+
 - [ ] Every state-changing editor route is a `POST` and has a test asserting it refuses `GET` — the `Sec-Fetch-Site` CSRF control exempts `GET` by necessity, so a state-changing `GET` is one nothing protects
 - [ ] Every new editor route takes `Authenticated` or `Rdu`, or is deliberately public — the guard is an extractor, so a handler that names neither is open, and the route table does not say so
 - [ ] Any new redirect target that comes from a request goes through `deposit_shell::sign_in::safe_next`, or, for the editor's entity return path, `entity::origin::Origin` (registry section and field ids only) — an unchecked one is an open redirect on a page reached mid-authentication
 - [ ] No email address reaches a log or a span: `#[instrument(skip_all)]` on anything taking one, and no transport error logged verbatim (an SMTP reply quotes the recipient)
+- [ ] No secrets in config files or git
+- [ ] Path parameters validated before filesystem access
+- [ ] Vendored JS changes reflected in the owning module's `public/vendor/README.md` (`areas/access/dpe/` or `areas/deposit/editor/`); `just check` fails on digest drift
+
+### Observability
+
+- [ ] New `#[instrument]` spans use `otel.kind = "internal"`, not `"server"`
+- [ ] New OTel metric attributes are bounded — no free-form strings, no per-request unique values
+- [ ] New DPE full-page routes added to `KNOWN_ROUTES` in `areas/access/dpe/server/src/page_url.rs` for page_url normalization
+
+### Documentation
+
+- [ ] CLI subcommands documented in help text
+- [ ] Documentation updated when patterns change
+- [ ] New env vars documented in `docs/src/dpe/operations.md` (editor: `docs/src/editor/operations.md`)
+
+### Commits
+
 - [ ] Commits follow conventional commits — one of the eight types, mandatory scope (`docs/src/git-conventions.md`)
 - [ ] Single commit, or `allow-many-commits` ticked with a reason
 - [ ] One topic per commit — apply the "and" test
 - [ ] Each commit builds and passes tests
-- [ ] No secrets in config files or git
-- [ ] Path parameters validated before filesystem access
-- [ ] New `#[instrument]` spans use `otel.kind = "internal"`, not `"server"`
-- [ ] New OTel metric attributes are bounded — no free-form strings, no per-request unique values
-- [ ] Vendored JS changes reflected in `areas/access/dpe/public/vendor/README.md`
-- [ ] New DPE full-page routes added to `KNOWN_ROUTES` in `areas/access/dpe/server/src/page_url.rs` for page_url normalization
 
 ## Style
 

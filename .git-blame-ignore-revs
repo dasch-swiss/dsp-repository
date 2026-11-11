@@ -1,0 +1,10 @@
+# Formatting-only commits that `git blame` skips. GitHub's blame view reads
+# this file by itself; local git needs it once per clone:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+#
+# Rebase-merge gives a commit a new SHA on main, so an entry is the SHA as it
+# landed on main, added in a follow-up commit. One line per commit, with its
+# subject as a comment above it.
+
+# chore(dsp-cli): format under the workspace rustfmt configuration
+141a016c5fbb50044340a4e03ef101c289cb7965

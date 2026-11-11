@@ -1,0 +1,28 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# rustfmt (.rustfmt.toml) is authoritative for Rust; these match it.
+[*.rs]
+indent_size = 4
+max_line_length = 120
+
+[{*.json,*.py,justfile}]
+indent_size = 4
+
+# insta compares snapshot bytes, trailing whitespace included.
+[*.snap]
+trim_trailing_whitespace = unset
+insert_final_newline = unset
+
+# The corpus is written by its own tools (the editor's canonical writer,
+# `just fetch-records`, scripts/*.py); leave their output byte-for-byte.
+[areas/access/dpe/server/data/**]
+insert_final_newline = unset
+trim_trailing_whitespace = unset

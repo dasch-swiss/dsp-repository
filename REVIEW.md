@@ -35,7 +35,7 @@ Agent reference card for the **review phase**. Pair with `CONVENTIONS.md`, the w
 - [ ] No email address reaches a log or a span: `#[instrument(skip_all)]` on anything taking one, and no transport error logged verbatim (an SMTP reply quotes the recipient)
 - [ ] No secrets in config files or git
 - [ ] Path parameters validated before filesystem access
-- [ ] Vendored JS changes reflected in the owning module's `public/vendor/README.md` (`areas/access/dpe/` or `areas/deposit/editor/`); `just check` fails on digest drift
+- [ ] Vendored JS changes reflected in the owning module's `areas/*/*/public/vendor/README.md`, and in the other module's README where both vendor the same package; `just check` fails on digest drift
 
 ### Observability
 

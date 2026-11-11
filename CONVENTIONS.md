@@ -17,6 +17,7 @@ Agent reference card for the **work phase**. Pair with `REVIEW.md`, the review-p
 - **Formatting**: Rust style in `.rustfmt.toml`. Run `just fmt`: `maudfmt` formats the `html!` Maud macro contents (stock rustfmt does not), then the nightly rustfmt pinned in `.rustfmt-nightly` handles the rest. To bump it: change the date, run `just fmt`, then `nix flake update rust-overlay`; CI, the justfile and `flake.nix` all read that file. `just check` verifies both. Land a whole-tree reformat as its own PR, and once it is on `main` add its SHA there to `.git-blame-ignore-revs`.
 - **No nested `html!` as a function argument**: bind non-trivial inner markup to a Rust `let` (`let body = html! { … }; card(body)`) or extract a `fn … -> Markup` helper — don't pass a multi-element `html! { … }` block directly into a call. `maudfmt` only formats `html!` at Rust statement/`let` position; a block nested as a call argument (or via Maud's in-macro `@let x = html! { … }`) is skipped and then mangled by `cargo fmt`. Trivial one-liners like `html! { (label) }` are fine inline.
 - **Linting**: Strict clippy warnings. Run `just check`.
+- **Vendored JS**: third-party browser files go in the owning module's `public/vendor/` (`areas/access/dpe/`, `areas/access/cpe/` or `areas/deposit/editor/`), each with its own `vendor/README.md` (file, package, version, SHA-256) to update when adding or updating. Where two modules vendor the same package, their READMEs say so; update those copies together. `just check` recomputes the digests and fails on drift either way (a changed file, a row without a file, a committed file without a row), so the table has to be correct, not just present. See `docs/src/security.md`.
 
 ## Comments
 
@@ -40,7 +41,6 @@ Agent reference card for the **work phase**. Pair with `REVIEW.md`, the review-p
 - Use `#[tracing::instrument]` for new handler and service functions
 - Use `otel.kind = "internal"` on handler-level spans (middleware provides the server span)
 - Metric attributes must be bounded — validate against known sets, normalize dynamic values. High-cardinality data goes to structured logs only, never to metric attributes
-- Vendored JS files go in the owning module's `public/vendor/` — `areas/access/dpe/public/vendor/` or `areas/deposit/editor/public/vendor/` — and each has its own `vendor/README.md` (file, package, version, SHA-256) to update when adding or updating. The two are independent: each is updated on its own, and neither README states the other's versions. `just check` recomputes those digests and fails on drift either way (a changed file, a row without a file, a committed file without a row), so the table has to be correct, not just present. See `docs/src/security.md`.
 
 ## Data Conventions
 

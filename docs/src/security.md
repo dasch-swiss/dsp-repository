@@ -83,7 +83,7 @@ Scanning answers "does this dependency carry a known CVE". It does not answer "a
 
 ### Vendored JavaScript
 
-`areas/access/dpe/public/vendor/` and `areas/deposit/editor/public/vendor/` hold third-party JavaScript served straight to browsers. Each directory's `README.md` records a SHA-256 per file. Those digests are now recomputed rather than merely asserted, so the table is a check instead of a claim.
+`areas/access/dpe/public/vendor/`, `areas/access/cpe/public/vendor/` and `areas/deposit/editor/public/vendor/` hold third-party JavaScript served straight to browsers. Each directory's `README.md` records a SHA-256 per file. Those digests are now recomputed rather than merely asserted, so the table is a check instead of a claim.
 
 Verification fails when:
 

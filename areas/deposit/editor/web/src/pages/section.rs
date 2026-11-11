@@ -659,9 +659,12 @@ pub fn page(view: &SectionView<'_>) -> Markup {
 }
 
 /// Sticky only in a viewport at least 30rem tall: at 400% zoom the wrapped row would cover half
-/// the screen (WCAG 1.4.10). Keep in step with `scroll-padding-bottom` in `style/main.css`.
-const CONTROL_ROW: &str =
-    "[@media(min-height:30rem)]:sticky bottom-0 z-10 flex flex-wrap items-center gap-4 bg-white pt-3 pb-3";
+/// the screen (WCAG 1.4.10). Keep in step with `scroll-padding-bottom` in `style/main.css`. The
+/// top border and upward shadow show the row floats over the form; without them the form reads as
+/// cut off.
+const CONTROL_ROW: &str = "[@media(min-height:30rem)]:sticky bottom-0 z-10 flex flex-wrap items-center gap-4 \
+                           border-t border-neutral-200 bg-white px-4 pt-3 pb-3 \
+                           [@media(min-height:30rem)]:shadow-[0_-6px_12px_-6px_rgb(0_0_0/0.12)]";
 
 /// The rail, the status region and the form — everything a save can change.
 ///
@@ -675,7 +678,7 @@ pub fn region(view: &SectionView<'_>) -> Markup {
             data-init=[view.focus_finding.then_some(FOCUS_AUTOFOCUS)]
         {
             (rail(view))
-            div class="min-[700px]:pl-6 pt-6 md:[&_:is(input,select,textarea,fieldset)]:scroll-mt-[33vh]"
+            div class="min-[700px]:pl-8 pt-6 md:[&_:is(input,select,textarea,fieldset)]:scroll-mt-[33vh]"
             { (status(view)) (proposals_summary(view)) (form(view)) }
         }
     }
@@ -834,7 +837,9 @@ fn state_card(view: &SectionView<'_>) -> Markup {
 fn rail(view: &SectionView<'_>) -> Markup {
     html! {
         // Not sticky itself: a sticky box taller than the viewport hides its own bottom.
-        div class="flex flex-col gap-3 self-stretch bg-white p-3 border-b border-neutral-200 min-[700px]:border-b-0 min-[700px]:border-r"
+        // Separated from the form by spacing alone when side by side: a right-only border read as a
+        // half-drawn box.
+        div class="flex flex-col gap-3 self-stretch p-3 border-b border-neutral-200 min-[700px]:border-b-0 min-[700px]:px-0"
         {
             (state_card(view))
             (persistent_box(view))

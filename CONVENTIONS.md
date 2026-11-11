@@ -1,6 +1,14 @@
 # Conventions
 
-Agent reference card for the **work phase**. All authoritative detail lives in `docs/src/`.
+Agent reference card for the **work phase**. Pair with `REVIEW.md`, the review-phase card. All authoritative detail lives in `docs/src/`.
+
+## Stack
+
+- Rust, one Cargo workspace (Bazel is the decided target, ADR-0001). Services are server-rendered hypermedia: Axum for routing, Maud for HTML, Datastar for interactivity over SSE; no client framework, no WASM (ADR-0004).
+- Stores are SQLite through `rusqlite`, pooled with `deadpool-sqlite` in the editor and identity stores.
+- CSS is Tailwind through its standalone CLI (`just css`); Node is needed only for the Playwright E2E suites.
+- Tests: `cargo test`, `insta` snapshots for rendered HTML, Playwright plus axe-core for E2E.
+- Toolchain: `nix develop`, or `just install-requirements`; `just --list` shows every recipe.
 
 ## Code Conventions
 
@@ -25,7 +33,7 @@ Agent reference card for the **work phase**. All authoritative detail lives in `
 
 - **Testing pyramid and strategy**: See `docs/src/dpe/testing-strategy.md`
 - **Test naming**: `test_{what}_{condition}_{expected}` (e.g., `test_parse_project_missing_title_returns_error`)
-- **Test locations**: `#[cfg(test)]` modules or adjacent `_tests.rs` files for unit tests; `web-e2e-tests/` for DPE E2E; `playground-e2e-tests/` for Mosaic E2E
+- **Test locations**: `#[cfg(test)]` modules or adjacent `_tests.rs` files for unit tests; `areas/access/dpe/web-e2e-tests/` and `areas/deposit/editor/web-e2e-tests/` for DPE and editor E2E; `modules/mosaic/playground-e2e-tests/` for Mosaic E2E
 
 ## Observability Conventions
 
@@ -56,3 +64,22 @@ Scopes are lowercase and name the concern a change serves, not the directory it 
 | Cross-cutting | `dpe-data` (project metadata files), `ci` (workflows, justfile), `deps` (dependency bumps), `docs` (repo-level docs) |
 
 Documentation *about* a crate takes that crate's scope; only repo-level docs take `docs`. There is no catch-all scope — ask before inventing one. The gate checks only that a scope is present, so this list is advisory; keep to it anyway.
+
+## Reviewers & Git History
+
+Before opening a PR, read `git log origin/main` and recent merged PRs. Use them for two things: to confirm how the commit-message rules above are applied in practice (subject wording, which scope a kind of change takes), and to find reviewers: the people who recently authored or committed changes to the files the PR touches. This repo keeps no `CODEOWNERS`, so git history is the reviewer signal.
+
+## Before Committing
+
+- `just fmt`, then `just check` (formatting, clippy, and the repo's static checks) and `just test`. While iterating, `just test-changed` runs only the packages changed since `origin/main` and their dependents.
+- `just validate-data` after any change under `areas/access/dpe/server/data/`.
+- `just commit-lint` before pushing; the `gate` CI job runs the same check.
+
+## Where to Go for Depth
+
+- `docs/src/SUMMARY.md`: index of the authoritative documentation.
+- `ARCH-MAP.md`: components, boundaries, local-context kits, banned constructs.
+- `CONTEXT.md` (root index plus one per bounded context): domain vocabulary.
+- `docs/adr/`: decisions in force.
+- `docs/src/dpe/testing-strategy.md`: the testing pyramid and CI pipeline.
+- `docs/src/git-conventions.md`: commits, PR shape, stacking.

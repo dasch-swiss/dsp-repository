@@ -12,7 +12,7 @@ This repository is a Rust-based monorepo for the DaSCH Service Platform. It cont
 
 ## Documentation
 
-All authoritative documentation lives in `docs/src/`; `docs/src/SUMMARY.md` is the index. `CONVENTIONS.md` holds coding conventions and the PR template (work phase); `REVIEW.md` holds the code review checklist (review phase). Architecture map: `ARCH-MAP.md`; domain vocabulary: `CONTEXT.md` (root index plus one per bounded context); decisions: `docs/adr/` (an ADR holds only the current decision, never its history; rules in `docs/adr/CLAUDE.md`). Load these on demand for blast-radius, boundary and naming questions. `eng.yaml` binds the `eng` plugin's conventions, commands, checks and reviewers to paths; audit or update it with `/eng:eng-yaml`.
+All authoritative documentation lives in `docs/src/`; `docs/src/SUMMARY.md` is the index. `CONVENTIONS.md` holds coding conventions (work phase); `REVIEW.md` holds the code review checklist (review phase). Architecture map: `ARCH-MAP.md`; domain vocabulary: `CONTEXT.md` (root index plus one per bounded context); decisions: `docs/adr/` (an ADR holds only the current decision, never its history; rules in `docs/adr/CLAUDE.md`). Load these on demand for blast-radius, boundary and naming questions. `eng.yaml` binds the `eng` plugin's conventions, commands, checks and reviewers to paths; audit or update it with `/eng:eng-yaml`.
 
 Specs (PRDs and implementation plans) live in `docs/specs/`, outside the mdBook, and are the source of truth for intended behaviour. They stay in this repo — never in the central `dasch-specs` repository; this overrides any workflow-skill routing that would send them there. See `docs/specs/README.md` for the convention (dated topic folders, per-folder `NN-slug` numbering, `assets/` in Git LFS).
 
@@ -25,11 +25,9 @@ Learnings (the documents `/eng:workflows:compound` writes) live in `docs/learnin
 
 Before considering a change done:
 
-- **Verify that changes compile and all checks pass** — run `just check` and `just test`. This covers formatting and linting, so there is no need to run them earlier.
+- **Run the checks in `CONVENTIONS.md` → *Before Committing*.** `just check` covers formatting and linting, so there is no need to run them earlier.
 - **Check if documentation needs updating** — consider `docs/src/`, `CLAUDE.md`, `CONVENTIONS.md`, and `REVIEW.md`.
-- **Commit messages** — `type(scope): subject`, both mandatory. Exactly eight types: `feat`, `fix`, `perf`, `refactor`, `docs`, `test`, `build`, `chore`. `revert`, `style`, and `ci` are **not** valid — use `chore(ci): ...`, fold formatting in, and `fix`/`chore` for reverts. Scope is a crate name or one of `dpe-data`, `ci`, `deps`, `docs` (see `CONVENTIONS.md`); there is no catch-all. Verify with `just commit-lint` before pushing — CI enforces it.
-- **One commit per PR** — we use rebase-merge, so every branch commit lands on main verbatim. CI caps a PR at one commit; tick `allow-many-commits` in the PR body only when the work is genuinely several independent, self-contained changes. A bug you introduced earlier in the same branch is not a `fix:` — amend it into the commit that introduced it. See `docs/src/git-conventions.md`. When the work doesn't fit one commit, choose between separate PRs, a stack and one PR with several commits by the ordered rules in `docs/src/git-conventions.md` → *One PR, several commits, or a stack*.
-- **PR creation** — see `docs/src/git-conventions.md` for the PR workflow and template.
+- **Commits and PRs follow `docs/src/git-conventions.md`**, summarised in `CONVENTIONS.md` → *Git, Commits, and Pull Requests* (types, scopes; the PR template is `.github/PULL_REQUEST_TEMPLATE.md`). Two rules agents miss: CI caps a PR at one commit, because rebase-merge lands every branch commit on `main` (the same file says when to split, stack or tick `allow-many-commits`); and a bug introduced earlier in the same branch is amended into the commit that introduced it, never committed as a `fix:`. `just commit-lint` checks the format before pushing.
 
 ## Testing Guidelines
 

@@ -4,6 +4,7 @@ import {
   DEPOSITOR_STATE,
   NOTICE_SHORTCODE,
   RDU_STATE,
+  REFLOW_SHORTCODE,
   REFUSED_SUBMIT_SHORTCODE,
 } from "../playwright.config";
 
@@ -132,6 +133,34 @@ test.describe("at 320px wide", () => {
       pageScroll,
       "the page scrolls sideways: an sr-only header escapes the table's scroll region; " +
         "check `relative` on .data-table-scroll in modules/mosaic/tiles/src/components/table/table.css",
+    ).toBeLessThanOrEqual(pageClient);
+  });
+});
+
+// SC 1.4.10 Reflow: a repeatable row's input shrinks to the column, so the page does not scroll.
+test.describe("at 320px wide with a repeatable row", () => {
+  test.use({
+    storageState: DEPOSITOR_STATE,
+    viewport: { width: 320, height: 800 },
+  });
+
+  test("the page does not scroll sideways", async ({ page }) => {
+    await page.goto(`/projects/${REFLOW_SHORTCODE}/sections/dataset`);
+    const rows = page.locator(
+      "#additionalMaterial > ol.repeatable-rows > li.repeatable-row",
+    );
+    if ((await rows.count()) === 0) {
+      await page.locator("#additionalMaterial button.repeatable-add").click();
+    }
+    await expect(rows.first()).toBeVisible();
+
+    const [pageScroll, pageClient] = await page.evaluate(() => [
+      document.documentElement.scrollWidth,
+      document.documentElement.clientWidth,
+    ]);
+    expect(
+      pageScroll,
+      "the page scrolls sideways at 320px (SC 1.4.10)",
     ).toBeLessThanOrEqual(pageClient);
   });
 });

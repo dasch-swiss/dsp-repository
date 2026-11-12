@@ -38,6 +38,14 @@
     @apply flex min-w-0 flex-1 flex-col gap-2;
   }
 
+  /*
+   * `w-full` makes the input's min-content zero; an ancestor's `min-w-0` does not, so without it a
+   * row overflows the page at 320px (SC 1.4.10).
+   */
+  .repeatable-row-body .field-input {
+    @apply w-full min-w-0;
+  }
+
   .repeatable-empty {
     @apply text-neutral-600;
   }

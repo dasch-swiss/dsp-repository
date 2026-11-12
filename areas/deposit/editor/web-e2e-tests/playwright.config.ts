@@ -104,6 +104,7 @@ export const DEPOSITOR_SHORTCODES = [
   "080C",
   "080E",
   "0816",
+  "081B",
 ] as const;
 
 /** Row add/remove assertions. */
@@ -266,6 +267,8 @@ export const PROPOSALS_NEW_SHORTCODES: Partial<Record<string, string>> = {
   "chromium-js": DEPOSITOR_SHORTCODES[30],
   "chromium-nojs": DEPOSITOR_SHORTCODES[31],
 };
+/** A section page measured at 320px with a repeatable row added to it. */
+export const REFLOW_SHORTCODE = DEPOSITOR_SHORTCODES[32];
 
 const PORT = Number(process.env.EDITOR_E2E_PORT ?? 4101);
 export const BASE_URL = `http://127.0.0.1:${PORT}`;

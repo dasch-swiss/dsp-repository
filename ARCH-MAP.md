@@ -385,10 +385,11 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     landing between `review::approval`'s read and the approve transaction is approved unchecked;
     writes to an `Accepted` row are refused (**review**).
 - **Durable state:** the SQLite file `editor.sqlite` — `drafts`, `submissions`, `review_rounds`,
-  `approved_records`, `entity_proposals`, `created_projects`, all `STRICT`, one baseline migration `0001` under
-  `editor/store/src/migrations/` (edited in place until the first deployment, then forward-only)
-  guarded by its own `PRAGMA user_version`; identity's tables are in `identity.sqlite`
-  (below). **Single writer:** `editor-store` through `editor-core`'s repository ports; several of
+  `approved_records`, `entity_proposals`, `created_projects`, all `STRICT`, created by the migrations under
+  `editor/store/src/migrations/` guarded by its own `PRAGMA user_version`; a merged migration is
+  never edited, a schema change is a new one (**static-analysis** —
+  `test_merged_migrations_are_never_edited` pins each merged migration's hash); identity's tables are in
+  `identity.sqlite` (below). **Single writer:** `editor-store` through `editor-core`'s repository ports; several of
   `editor-web`'s handlers call the same port, serialized by the one writer connection, and every
   multi-table transition is one repository method. The entity route's one draft write is
   `EntityProposalRepository::withdraw_rewriting_draft` (discarding a New proposal withdraws it and drops its
@@ -539,10 +540,11 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - Its Tailwind classes ship only through `@source '../../identity/web/**/*.rs'` in the editor's
     `style/main.css` (**review**).
 - **Durable state:** the SQLite file `identity.sqlite` — `users`, `user_shortcodes`,
-  `sessions`, `login_codes`, `mail_sends`, all `STRICT`, with four internal foreign keys, one
-  baseline migration `0001` under `identity/store/src/migrations/` guarded by its own
-  `PRAGMA user_version`. **Single writer:** `identity-store`, through `identity-core`'s
-  repository ports, called by `identity-web`'s handlers, the RDU bootstrap and the hourly
+  `sessions`, `login_codes`, `mail_sends`, all `STRICT`, with four internal foreign keys, created by the
+  migrations under `identity/store/src/migrations/` guarded by its own `PRAGMA user_version`; a
+  merged migration is never edited, a schema change is a new one (**static-analysis** —
+  `test_merged_migrations_are_never_edited` pins each merged migration's hash). **Single writer:** `identity-store`, through
+  `identity-core`'s repository ports, called by `identity-web`'s handlers, the RDU bootstrap and the hourly
   sweep, and by `session::current`'s idle touch (also through `LiveAuthenticator`).
 - **Fingerprint:** `5809c59f286f`
 

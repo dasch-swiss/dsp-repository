@@ -525,9 +525,8 @@ mod tests {
 
     #[test]
     fn appearance_query_unknown_value_gives_none_but_from_query_true() {
-        // Unparseable value → None (ignore), but from_query is still true
-        // (the key was present). The handler uses from_query && value.is_some()
-        // to decide whether to set a cookie, so this silently drops the bad input.
+        // The handler sets a cookie only for from_query && value.is_some(), so the bad input is
+        // dropped.
         let result = extract_appearance(&empty_headers(), Some("appearance=solarized"));
         assert!(result.from_query, "from_query must be true when ?appearance= key is present");
         assert_eq!(result.value, None, "unknown appearance must produce None");

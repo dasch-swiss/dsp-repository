@@ -1,30 +1,7 @@
-//! CPE's router: the overview of the projects, the shared static files, each
-//! project's assets and one explicit route per configured page, closed by a
-//! fallback.
+//! CPE's router: the overview, the static files, each project's assets and one route per page.
 //!
-//! ## Routing design
-//!
-//! The routes are the paths below the mount: a host nests this router at the
-//! base, and a handler sees the request path without it. What a handler
-//! writes into its answer (a page's links, a `Location`, a cookie's `Path`)
-//! is built from the base (`cpe_core::url`), and no handler writes the request
-//! path there in any other way.
-//!
-//! Every page is registered under its full path (`/<project id><route>`), so
-//! an unknown path under a project matches no route and reaches the fallback.
-//! [`build`] always sets that fallback. It renders the project's not-found
-//! page under a loaded project's id, answers 503 under the id of a project
-//! that did not load, and renders CPE's own not-found page otherwise. It never
-//! redirects and never puts the request path into the response; see
-//! `fallback_handler`.
-//!
-//! ## Route-param syntax boundary (axum 0.8 / matchit 0.8)
-//!
-//! axum 0.8 requires `{name}` and `{*path}` syntax; the old `:name`/`*path`
-//! panics at startup. CPE's config language and IR keep `:name` syntax
-//! (`docs/src/cpe/config-language.md`). The boundary translation is applied
-//! only where a route string is handed to `app.route(…)`, via
-//! `axum_route(...)`.
+//! A link, `Location` or cookie `Path` a handler writes is built from the base, and holds the
+//! request path only through it; the fallback never redirects and never echoes the path.
 
 use std::collections::HashMap;
 use std::convert::Infallible;
@@ -45,15 +22,9 @@ use crate::assets::AssetInventory;
 use crate::request::{query_pairs, RequestedAppearance, RequestedLang};
 use crate::{static_files, unavailable};
 
-/// Translate a CPE config-language route path to the syntax required by axum 0.8
-/// (matchit 0.8): `:name` → `{name}` and a trailing `*path` wildcard → `{*path}`.
-///
-/// CPE's config files and IR use `:name` syntax; this boundary translation is
-/// applied **only** where the route string is handed to `app.route(…)`. The
-/// config language, the IR and the param-extractor keep `:name`.
-///
-/// Paths with no param segments pass through unchanged.
-/// See the unit tests in the `tests` module for examples.
+/// CPE's `:name` and `*path` route syntax as axum 0.8's `{name}` and `{*path}`. Applied only
+/// where a route is handed to `app.route`: the config language, the IR and the param extractor
+/// keep `:name`.
 pub(crate) fn axum_route(route: &str) -> String {
     let mut out = String::with_capacity(route.len() + 4);
     for segment in route.split('/') {
@@ -75,8 +46,6 @@ pub(crate) fn axum_route(route: &str) -> String {
     out[1..].to_owned()
 }
 
-/// Map a page's [`cpe_core::view_data::PageStatus`] to the response's HTTP status:
-/// `Ok` → 200, `NotFound` → 404, `Error` → 500.
 fn status_code(status: cpe_core::view_data::PageStatus) -> StatusCode {
     match status {
         cpe_core::view_data::PageStatus::Ok => StatusCode::OK,
@@ -85,17 +54,9 @@ fn status_code(status: cpe_core::view_data::PageStatus) -> StatusCode {
     }
 }
 
-/// Build CPE's router over the loaded projects.
-///
-/// `unavailable` holds the ids of the project folders that did not load: no
-/// route is registered for them, and the fallback answers their prefix 503.
-/// `assets` is every loaded project's asset inventory. Each handler closure
-/// gets a clone of `origin_cfg` and resolves its own request's public origin
-/// from it, so one process can answer under several hosts.
-///
-/// `base` is where a host mounts the router. No route holds it: the route
-/// paths are the layout of `cpe_core::url` at the root, and `base` goes into
-/// what the handlers answer.
+/// `unavailable` holds the ids of the projects that did not load: no route is registered for
+/// them, and the fallback answers their prefix 503. No route holds `base`: the routes are
+/// `cpe_core::url`'s layout at the root, and `base` goes only into what the handlers answer.
 pub(crate) fn build(
     projects: &[Arc<cpe_web::project::Project>],
     unavailable: &[String],
@@ -316,8 +277,6 @@ pub(crate) fn build(
     app.fallback(fallback_handler(served, unavailable.into(), origin_cfg, base.clone()))
 }
 
-/// Serve the static table, and the viewer's files in its `image-viewer`
-/// directory, from `dir`.
 fn static_routes(app: Router, dir: &cpe_core::url::StaticDir) -> Router {
     app.route(
         &axum_route(&dir.file("*path")),
@@ -326,12 +285,8 @@ fn static_routes(app: Router, dir: &cpe_core::url::StaticDir) -> Router {
     .route(&axum_route(&dir.file("image-viewer/*path")), get(serve_viewer_asset))
 }
 
-/// The overview of the projects, at the router's root: one teaser per loaded
-/// project. A project that did not load has none, as its prefix answers 503.
-///
-/// `?appearance=` sets the cookie and redirects to the page without it, as
-/// on a project's page; no other query key is read or removed. The page is
-/// in one of the built-in languages: there is no project to declare any.
+/// The overview at the router's root. `?appearance=` redirects as on a project's page, and no
+/// other query key is read or removed. Its language is a built-in one: no project declares any.
 fn site_index_handler(
     projects: Arc<Vec<Arc<cpe_web::project::Project>>>,
     origin_cfg: crate::request::OriginConfig,
@@ -367,55 +322,10 @@ fn site_index_handler(
     }
 }
 
-/// Router-wide fallback for any path that matched no route registered above.
+/// Router-wide fallback for any path that matched no route.
 ///
-/// **Project resolution** is byte-level, undecoded, first-path-segment
-/// equality against the known project ids:
-/// - Strip exactly one leading `/`.
-/// - Take up to the next `/` (or the rest of the string).
-/// - Test the resulting slice for EXACT STRING EQUALITY against a project id — no percent-decoding,
-///   no case-folding, no normalization, no prefix matching.
-///
-/// This is why `//evil.example/x` resolves to the EMPTY segment, never
-/// `evil.example`: stripping one leading `/` from `//evil.example/x` leaves
-/// `/evil.example/x`, and taking up to the next `/` of THAT stops at index 0
-/// (empty). The extracted segment is used ONLY in the equality tests
-/// above — it is never echoed into a response.
-///
-/// - The id of a project that did not load → 503 ([`unavailable::response`]): the project exists
-///   and is not served, which is not a missing page.
-/// - A loaded project's id → `cpe_web::page::render_not_found_project`: the project's own 404, full
-///   project chrome and its `theme {}`.
-/// - No match → `cpe_web::page::render_not_found_site`: CPE's own 404, product-default knob,
-///   built-in language resolution.
-///
-/// **Security-load-bearing: this handler performs NO redirect and sets NO
-/// cookie.** It must NEVER call `override_redirect` or
-/// `redirect_without_keys` — both echo the request path into a `Location` header, which under a
-/// catch-all fallback is an open redirect via any `//attacker.example/...`-shaped path
-/// (browsers treat a scheme-relative `Location` as a redirect to that host).
-/// It renders the body directly and never returns early with anything but
-/// the 503 above.
-///
-/// **`current_path` for the chrome is pinned**, never the unmatched request
-/// path, and no query string is carried over: the project's 404 passes
-/// the project's home (`ProjectUrls::home`) with `current_query: None`, and
-/// CPE's own takes no path at all. The failed path therefore appears nowhere in the
-/// response — not in the visible copy, not in the lang-switcher or
-/// appearance-toggle hrefs `shell_header` builds from
-/// `current_path`/`current_query` either. Consequence: the language switcher
-/// of a project's 404 navigates to the project home rather than re-rendering
-/// the same 404.
-///
-/// Reads `RequestedLang`/`RequestedAppearance` from request extensions
-/// defensively (defaulting to empty prefs / no appearance) — `activation`
-/// layers `resolve_request_prefs` over the whole router including this
-/// fallback, but router-only tests build a bare `Router` without it,
-/// mirroring every other handler in this file.
-///
-/// O(1), no DB access, no body extractor — a fallback answers all HTTP
-/// methods on an unmatched path (a POST to `/nope` renders this page too);
-/// every matched route keeps its own method/405 behaviour.
+/// It never redirects and never echoes the request path: under a catch-all, a `Location` built
+/// from a `//attacker.example/...` path is an open redirect.
 fn fallback_handler(
     projects: Arc<Vec<Arc<cpe_web::project::Project>>>,
     unavailable: Arc<[String]>,
@@ -496,11 +406,6 @@ fn fallback_handler(
     }
 }
 
-/// Parse a named query parameter as a 1-based `u32`.
-///
-/// Returns the parsed value when present and `>= 1`; defaults to `1` in all
-/// failure cases: absent, empty, non-numeric, zero, or overflow.
-/// This function is **total** — it never panics.
 fn parse_u32_param(query: Option<&str>, name: &str) -> u32 {
     query_pairs(query)
         .find(|(k, _)| *k == name)
@@ -509,18 +414,9 @@ fn parse_u32_param(query: Option<&str>, name: &str) -> u32 {
         .unwrap_or(1)
 }
 
-/// Parse the `page=` query parameter as a 1-based `u32` page number.
-///
-/// Returns the parsed value when present and `>= 1`; defaults to `1` in all
-/// failure cases: absent, empty, non-numeric, or zero. On a numeric value
-/// that overflows `u32` (`ParseIntError::kind() == IntErrorKind::PosOverflow`)
-/// this SATURATES to `u32::MAX` instead of falling back to `1` — the
-/// pagination arithmetic behind `Project::page_data` clamps `page` to the
-/// last page *before* multiplying, so an absurdly large `page` still lands
-/// on the last page like any other out-of-range value, and
-/// `canonical_page_redirect` can canonicalise it to that effective page in
-/// one hop. Parses itself rather than delegating to `parse_u32_param`, which
-/// maps overflow to `1`, same as every other failure case.
+/// Like `parse_u32_param`, except that a value overflowing `u32` saturates to `u32::MAX`:
+/// `Project::page_data` clamps a page to the last before multiplying, so an absurd page lands
+/// on the last one and `canonical_page_redirect` fixes it in one hop.
 fn parse_page_param(query: Option<&str>) -> u32 {
     let raw = query_pairs(query).find(|(k, _)| *k == "page").map(|(_, v)| v);
     match raw {
@@ -534,30 +430,15 @@ fn parse_page_param(query: Option<&str>) -> u32 {
     }
 }
 
-/// Return the (first) raw value for the `page=` query parameter, borrowed
-/// from `query` (no allocation) — empty value included.
-///
-/// Uses the SAME occurrence semantics as `parse_u32_param`: the first `page`
-/// pair wins, regardless of emptiness. A bare `?page` (no `=`) yields
-/// `Some("")`. `None` iff no `page` key is present at all. Deliberately
-/// **not** `query_param_one`, which skips empty values — that would make
-/// `?page=&page=2` non-idempotent under `canonical_page_redirect`.
+/// The first `page` value, empty included. Not `query_param_one`, which skips empty values:
+/// that would make `?page=&page=2` non-idempotent under `canonical_page_redirect`.
 fn raw_page_param(query: Option<&str>) -> Option<&str> {
     query_pairs(query).find(|(k, _)| *k == "page").map(|(_, v)| v)
 }
 
-/// Rebuild `query`'s pairs, dropping every `page` pair (`page=…`, `page=`,
-/// bare `page`) and appending exactly one canonical `page=<page>` at the end.
-/// Every other pair is kept, in order, re-emitted as `k=v` (a bare key
-/// normalises to `k=`); empty-key pairs (`?&page=…`) are skipped. Both of
-/// those normalisations make repeated application idempotent.
-///
-/// `canonical_page_query(None, 2)` → `"page=2"`.
-///
-/// Deliberately NOT built on `cpe-components`' `override_query_param`:
-/// that helper rewrites each matching pair in place
-/// (`?page=&page=2` → `page=1&page=1`), which is loop-safe but not
-/// canonical — a different semantics than this needs.
+/// `query` without its `page` pairs and with one `page=<page>` at the end; a bare key becomes
+/// `k=` and an empty key goes, so a second pass changes nothing. Not `override_query_param`,
+/// which rewrites each `page` pair in place (`?page=&page=2` → `page=1&page=1`): not canonical.
 fn canonical_page_query(query: Option<&str>, page: u32) -> String {
     let mut kept: Vec<String> = query_pairs(query)
         .filter(|(k, _)| !k.is_empty() && *k != "page")
@@ -567,28 +448,9 @@ fn canonical_page_query(query: Option<&str>, page: u32) -> String {
     kept.join("&")
 }
 
-/// Guard-return for the two HTML page handlers: when a **page** request's
-/// raw `page` param is present and does not match the effective page after
-/// clamping, produce a `303 See Other` to the same path with exactly one
-/// canonical `page=<effective>` and every other pair preserved in order.
-///
-/// `None` (no redirect) when:
-/// - `status != 200` (a 404-ing sibling component must not be masked as a 303 → 404 — the visitor
-///   should see the real 404, not a redirect to it);
-/// - the page has no `List` component with `Pagination::PerPage(_)`;
-/// - `raw_page_param(query)` is `None` (no `page` param at all — never redirect just because a
-///   request omitted it).
-///
-/// Otherwise, `raw != effective.to_string()` is the redirect condition
-/// (covers out of range, `0`, `abc`, `03`, `+3`, empty — all canonicalise in
-/// one hop; `raw := effective` is a fixed point, so this never loops).
-///
-/// Called as a guard-return right AFTER `Project::page_data` (not before)
-/// because it needs the effective (clamped) `page` from the hydrated
-/// `ResourceListPage`. The one extra count+hydrate (and the page's side
-/// lookups) on an out-of-range request is the accepted cost of that order.
-/// `Location` is always a relative `path?query`, never built from
-/// `Host`/origin. `path` is the request's public path, the base included.
+/// A 303 to `path` (the public path, base included) with one canonical `page=<effective>` when
+/// the raw `page` differs from the clamped one. Never for a non-200 page (the visitor sees the
+/// real 404) nor without `page`; `raw == effective` is a fixed point, so it never loops.
 fn canonical_page_redirect(
     path: &str,
     query: Option<&str>,
@@ -612,39 +474,14 @@ fn canonical_page_redirect(
     Some(Redirect::to(&location).into_response())
 }
 
-/// Return the (first) raw value for a single-value query-param key, borrowed
-/// from `query` (no allocation).
-///
-/// `?sort=name` with `key="sort"` → `Some("name")`. Absent key, or a `key=`
-/// with no value, → `None`. If the key is repeated, the first **non-empty**
-/// value wins — empty values are skipped (`?sort=&sort=name` → `Some("name")`).
-/// This differs from `parse_u32_param`, which inspects the first occurrence
-/// regardless of emptiness (`?page=&page=2` fails to parse and defaults to 1).
-///
-/// This function is **total** — it never panics.
+/// The first non-empty value of `key`: `?sort=&sort=name` gives `name`.
 fn query_param_one<'q>(query: Option<&'q str>, key: &str) -> Option<&'q str> {
     query_pairs(query).find(|(k, v)| *k == key && !v.is_empty()).map(|(_, v)| v)
 }
 
-/// Read and decode the search-bar's `?q=` value: the free-text search query.
-///
-/// **Why `q` alone is decoded:** `query_pairs`/`query_param_one`/
-/// `query_param_all` (`request.rs`, this file) split a raw query string on
-/// `&` then `=` and hand back byte slices verbatim — no percent-decoding, no
-/// `+`-means-space handling. Every OTHER query value read here (facet/
-/// list-node ids, the `?sort=` closed vocabulary, language codes, numeric
-/// `page`/`member` indices) is a closed-vocabulary identifier that never
-/// legitimately contains a space or a reserved URL character. `q` is free
-/// text: a search term routinely contains a space (`"quantum cat"`), and
-/// BOTH of `search-bar`'s two input paths produce escaped bytes for that
-/// space — the zero-JS `<form method=get>` fallback submits
-/// `application/x-www-form-urlencoded` (space → `+`), and the DataStar
-/// debounced-live path's `encodeURIComponent` escapes it as `%20` — so `q`
-/// needs BOTH percent-decoding and `+`→space handling. Call THIS everywhere
-/// `q` is read, never raw `query_param_one(current_query, "q")`, so decoding
-/// is never forgotten at one call site and not another.
-///
-/// Returns `""` (never panics) when the key is absent or decoding fails.
+/// `?q=`, decoded: the zero-JS form sends a space as `+` and the Datastar path as `%20`. Other
+/// query values are closed-vocabulary ids and stay raw. Read `q` only through this, never
+/// through `query_param_one`.
 fn read_search_query_param(query: Option<&str>) -> String {
     let raw = query_param_one(query, "q").unwrap_or("");
     // Form encoding: `+` is a space, replaced before the `%XX` decoding, which leaves `+` as it is.
@@ -655,20 +492,9 @@ fn read_search_query_param(query: Option<&str>) -> String {
         .unwrap_or_else(|_| raw.to_owned())
 }
 
-/// Resolve the effective sort criteria for a `ResourceList` request, in
-/// three tiers: (1) the raw `?sort=` value parsed via `Sort::parse_wire` (the
-/// built-ins); else (2) the value matched against the list's declared
-/// `order-by` keys (`order_options` — the option's
-/// `OrderOption::sort`); else (3) `config_sorts`. Tier 3 also covers an
-/// absent param, `"default"`, and any unrecognized token — the documented
-/// silent "As curated" fallback.
-///
-/// `name_property` is the list's `order-name-property`: when `Some`, the
-/// built-in `name`/`name-desc` rows order by that property instead of `name`.
-/// The wire tokens themselves never change.
-///
-/// Extracted as a standalone pure function so the override/fallback logic is
-/// unit-testable without a full router/DB setup.
+/// `?sort=` as a built-in (`Sort::parse_wire`), else as one of the list's `order-by` keys, else
+/// the configured sorts: an unknown token falls back silently to "As curated". With
+/// `name_property`, the built-in `name` rows order by that property; the wire tokens stay.
 fn resolve_sorts(
     current_query: Option<&str>,
     config_sorts: &[cpe_core::ir::Sort],
@@ -690,14 +516,6 @@ fn resolve_sorts(
     }
 }
 
-/// Return **all** values for a repeated query-param key.
-///
-/// `?role=R_01&role=R_02` with `key="role"` → `["R_01", "R_02"]`.
-/// `?page=1` with `key="role"` → `[]`.
-/// `None` query → `[]`.
-///
-/// Values are returned in the order they appear in the query string.
-/// This function is **total** — it never panics.
 pub(crate) fn query_param_all(query: Option<&str>, key: &str) -> Vec<String> {
     query_pairs(query)
         .filter(|(k, v)| *k == key && !v.is_empty())
@@ -709,14 +527,8 @@ pub(crate) fn query_param_all(query: Option<&str>, key: &str) -> Vec<String> {
 /// contribute to a `TargetIn` where-clause.
 pub(crate) const MAX_FACET_VALUES: usize = 256;
 
-/// Return the deduplicated, capped set of values for a repeated facet
-/// query-param key, in first-occurrence order.
-///
-/// Built on top of [`query_param_all`]: duplicates are removed BEFORE the
-/// [`MAX_FACET_VALUES`] cap is applied, so a repeated value can never
-/// consume a slot in the capped list — `"role=R&role=R&role=R&..."` (however
-/// many times repeated) always yields `["R"]`, never an empty or truncated
-/// result starved by its own duplicates.
+/// Deduplicated before the [`MAX_FACET_VALUES`] cap, so a repeated value never takes more than one
+/// slot of the capped list.
 pub(crate) fn facet_param_values(query: Option<&str>, key: &str) -> Vec<String> {
     let all = query_param_all(query, key);
     let mut seen: std::collections::HashSet<&str> = std::collections::HashSet::new();
@@ -730,13 +542,9 @@ pub(crate) fn facet_param_values(query: Option<&str>, key: &str) -> Vec<String> 
     deduped
 }
 
-/// The request's query values as the store asks for them
-/// ([`cpe_core::view_data::PageParams`], read by `Project::page_data`).
-///
-/// Each method calls the reader that owns that value, so the decode
-/// points stay here: `?q=` is decoded only by `read_search_query_param`, and
-/// a compound reader's `?page=` reaches `Project::page_data` raw (it is decoded once,
-/// when it resolves the member).
+/// The request's query values as [`cpe_core::view_data::PageParams`]. `?q=` is decoded only by
+/// `read_search_query_param`; a compound reader's `?page=` reaches `Project::page_data` raw and
+/// is decoded once, when it resolves the member.
 struct RequestParams<'q>(Option<&'q str>);
 
 impl cpe_core::view_data::PageParams for RequestParams<'_> {
@@ -770,15 +578,9 @@ impl cpe_core::view_data::PageParams for RequestParams<'_> {
     }
 }
 
-/// Attach a `Set-Cookie: lang=<resolved>` header when the preference came from
-/// `?lang=`.
-///
-/// The cookie value is always the resolved language code (validated before
-/// this call), never the raw query-string value. This prevents cookie
-/// poisoning with unvalidated input.
-///
-/// Its `Path` is the base (`Base::cookie_path`), so the cookie reaches every
-/// project of CPE and nothing else on the host.
+/// `cookie_value` must be the resolved language, never the raw `?lang=` value: no unvalidated
+/// input reaches the cookie. Its `Path` is the base, so it reaches every project of CPE and
+/// nothing else.
 fn attach_lang_cookie(resp: &mut Response, requested: &RequestedLang, cookie_value: &str, base: &Base) {
     if requested.from_query {
         let cookie = format!("lang={cookie_value}; Path={}; SameSite=Lax", base.cookie_path());
@@ -788,16 +590,8 @@ fn attach_lang_cookie(resp: &mut Response, requested: &RequestedLang, cookie_val
     }
 }
 
-/// Manage the `appearance` cookie when the preference came from `?appearance=`.
-///
-/// The cookie only ever holds the non-default `dark` state:
-/// - `Some(Dark)` → `Set-Cookie: appearance=dark`.
-/// - `Some(Light)` → a clearing cookie (`Max-Age=0`); light is the default, so there is no
-///   `appearance=light` value to persist.
-/// - `None` (unknown/unparseable value) → no cookie at all.
-///
-/// The cookie value is a fixed literal, never the raw query string. Its
-/// `Path` is the base, as the language cookie's.
+/// The cookie holds only the non-default `dark`; `light` clears it. Its value is a fixed literal,
+/// never the raw query, and its `Path` is the base, as the language cookie's.
 fn attach_appearance_cookie(resp: &mut Response, requested: &RequestedAppearance, base: &Base) {
     if requested.from_query {
         let path = base.cookie_path();
@@ -813,20 +607,13 @@ fn attach_appearance_cookie(resp: &mut Response, requested: &RequestedAppearance
     }
 }
 
-/// Query keys `override_redirect` strips with a 303. `appearance` is live
-/// (it sets the appearance cookie); `accent`/`background`/`typeface`/`reset`
-/// are retired keys, stripped so an old inbound link carrying one never
-/// reaches an href the page emits (pager, language, facet links preserve the
-/// query).
+/// `appearance` sets the appearance cookie; the others are retired keys, stripped so an old
+/// inbound link carrying one never reaches an href the page emits.
 const STRIPPED_QUERY_KEYS: &[&str] = &["appearance", "accent", "background", "typeface", "reset"];
 
-/// If the query carries any of `keys` (bare or `key=value`), return a 303 to
-/// the SAME path with every such pair dropped and the rest kept in order, and
-/// attach the appearance cookie (a no-op unless `?appearance=` parsed).
-/// Returns `None` when no pair matches. The `Location` is the base and
-/// `uri.path()`, so a caller must be a matched route, never the catch-all
-/// fallback (whose path may be `//host/…`, which at a root mount would be
-/// written as it is). The overview's route matches `/` alone.
+/// A 303 to the same path without `keys`, attaching the appearance cookie. The `Location` holds
+/// `uri.path()`, so the caller must be a matched route, never the fallback: its path may be
+/// `//host/…`, an open redirect at a root mount.
 fn redirect_without_keys(uri: &Uri, keys: &[&str], appearance: &RequestedAppearance, base: &Base) -> Option<Response> {
     let pairs: Vec<&str> = uri.query().unwrap_or("").split('&').filter(|kv| !kv.is_empty()).collect();
     let kept: Vec<&str> = pairs
@@ -849,25 +636,10 @@ fn redirect_without_keys(uri: &Uri, keys: &[&str], appearance: &RequestedAppeara
     Some(resp)
 }
 
-/// Project pages: any [`STRIPPED_QUERY_KEYS`] key → 303 to the clean URL,
-/// setting only the appearance cookie. A guard-return at the top of each
-/// project handler, before any rendering.
 fn override_redirect(uri: &Uri, appearance: &RequestedAppearance, base: &Base) -> Option<Response> {
     redirect_without_keys(uri, STRIPPED_QUERY_KEYS, appearance, base)
 }
 
-/// Create a handler closure for a specific project page.
-///
-/// Captures `project` and `page_idx` by value. The handler:
-/// 1. Reads `RequestedLang` from request extensions (default: empty prefs, for router-only tests
-///    that do not layer the middleware).
-/// 2. Resolves the language against the project's declared languages.
-/// 3. Builds the page's data with one `Project::page_data` call (`PageScope::Page`); route params
-///    are empty for static pages — validation (`UndeclaredRouteParam`) forbids `$param` ids on
-///    static routes, so this is a safe invariant.
-/// 4. Calls `render_page` to produce the full HTML document.
-/// 5. If `from_query` is set, attaches a `Set-Cookie` response header using the resolved language
-///    code (never the raw `?lang=` value).
 fn make_handler(
     project: Arc<cpe_web::project::Project>,
     page_idx: usize,
@@ -968,15 +740,6 @@ fn make_handler(
     }
 }
 
-/// Create a handler closure for a page that has path parameters (e.g. `/characters/:id`).
-///
-/// Extends `make_handler`'s logic with:
-/// 1. Axum `Path<HashMap<String,String>>` extraction for the captured params.
-/// 2. `route_params` populated in `RenderContext` from the extracted map.
-/// 3. One `Project::page_data` call (`PageScope::Page`), which resolves both literal ids and
-///    `$param` references.
-/// 4. HTTP status mapping: `Ok(Some)` → 200; `Ok(None)` → 404 (page still rendered with the
-///    not-found body inside chrome); `Err(QueryError)` → 500 (logged).
 fn make_parameterized_handler(
     project: Arc<cpe_web::project::Project>,
     page_idx: usize,
@@ -1074,18 +837,8 @@ fn make_parameterized_handler(
     }
 }
 
-/// Strip the DataStar `datastar=<json>` marker from a raw request query string.
-///
-/// DataStar appends a `datastar=<json>` key-value pair to every `@get(…)` request; each
-/// fragment handler removes it before re-deriving `current_query`, so hrefs/params rendered
-/// back into the swapped-in fragment don't accumulate the marker on the next round-trip.
-///
-/// Splits on `&`, drops empty pairs and the pair whose key (the part before the first `=`,
-/// or the whole pair if there is no `=`) is exactly `"datastar"`, then rejoins the remaining
-/// pairs with `&` — same separator, same order. Returns `None` iff `raw_query` is `None`;
-/// returns `Some("")` if nothing is left after filtering (callers that want `Option<&str>`
-/// with empty-string collapsed to `None` do that themselves, e.g. via
-/// `.as_deref().filter(|s| !s.is_empty())`, matching every call site).
+/// Datastar appends `datastar=<json>` to every `@get`; a fragment handler drops it before it
+/// renders hrefs from the query, so the marker does not pile up over round trips.
 fn strip_datastar_marker(raw_query: Option<&str>) -> Option<String> {
     raw_query.map(|q| {
         let kept: Vec<&str> = q
@@ -1100,14 +853,8 @@ fn strip_datastar_marker(raw_query: Option<&str>) -> Option<String> {
     })
 }
 
-/// Compute the parent-page path by stripping the trailing `/<segment>` fragment suffix
-/// (e.g. `/_facets`) from the request path.
-///
-/// Every DataStar fragment handler needs the *page's* path (not the fragment endpoint's) so
-/// hrefs it emits stay page-relative instead of accumulating a repeated `/_<segment>/_<segment>`
-/// suffix. A fragment's route is only ever reached as `<page-path>/<segment>`, so a path without
-/// the suffix means a caller passed the wrong segment: a debug build panics on it, and a release
-/// build returns `full_path` unchanged.
+/// The page's path below a fragment endpoint, so a fragment's hrefs do not pile up
+/// `/_<segment>` suffixes.
 fn strip_fragment_suffix<'a>(full_path: &'a str, segment: &str) -> &'a str {
     let page = full_path.strip_suffix(segment).and_then(|page| page.strip_suffix('/'));
     debug_assert!(
@@ -1117,15 +864,8 @@ fn strip_fragment_suffix<'a>(full_path: &'a str, segment: &str) -> &'a str {
     page.unwrap_or(full_path)
 }
 
-/// Build the "throwaway" [`cpe_components::component::context::RenderContext`] the crumb-patch
-/// helper below needs — one shared by all three fragment handlers
-/// (`_facets`/`_sort`/`_search`). A
-/// crumb-line re-render only ever reads `base`/`lang`/`project_id`/`current_path`/
-/// `current_query`/`link_routes`/`media_properties`/
-/// `class_list_routes`/`public_origin` off the context — every resource/
-/// media/facet-selection field is irrelevant to composing a crumb line, so
-/// this helper hardcodes them to their empty/default values rather than
-/// making every call site plumb a dozen fields it will never use.
+/// A crumb line reads none of the resource, media-item or selection fields, so they are left
+/// empty here.
 fn crumb_render_ctx<'a>(
     req: &CrumbPatchRequest<'a>,
     empty_compound_parents: &'a HashMap<String, cpe_core::ir::Resource>,
@@ -1155,10 +895,6 @@ fn crumb_render_ctx<'a>(
     }
 }
 
-/// The shared per-request fields the crumb-patch helper needs — bundled
-/// into one struct so the builder fn below (and its three call sites)
-/// doesn't carry six near-identical positional arguments (clippy's
-/// `too_many_arguments`).
 struct CrumbPatchRequest<'a> {
     project: &'a cpe_web::project::Project,
     page: &'a cpe_core::ir::Page,
@@ -1169,15 +905,9 @@ struct CrumbPatchRequest<'a> {
     base: &'a Base,
 }
 
-/// Build the crumb-patch SSE `Event` for the BROWSE crumb-line variant —
-/// shared by the `_facets`/`_sort`/`_search` fragment handlers.
-/// Recomposes the crumb line via the SAME
-/// `cpe_web::page::render_browse_breadcrumb_for_page` helper the full-page
-/// render calls — the caller must never re-derive the crumb inline. Returns
-/// `None` when the page has no id-bearing `ResourceList` (the helper's own
-/// contract); every caller here is only ever registered for a page that
-/// does have one, but the branch degrades gracefully rather than panicking
-/// if that invariant is ever violated.
+/// The crumb line as the full page renders it, through the same
+/// `render_browse_breadcrumb_for_page`; never re-derive it inline. `None` when the page has no
+/// id-bearing `ResourceList`.
 fn browse_crumb_patch_event(
     req: &CrumbPatchRequest<'_>,
     comp_data: &[cpe_core::view_data::ComponentData],
@@ -1193,48 +923,13 @@ fn browse_crumb_patch_event(
     Some(PatchElements::new(crumb_markup.into_string()).selector(&crumb_selector).into())
 }
 
-/// Build the `datastar-patch-signals` SSE `Event` that resets the
-/// page-global `$copied` "Copied" receipt to `false`.
-///
-/// `$copied` is a DataStar signal, not an element — it survives ANY
-/// element patch untouched (re-applying `data-signals="{copied:false}"`
-/// on freshly patched crumb markup does NOT reset an already-set
-/// signal, and `data-class="{'is-copied': $copied}"` just re-applies the
-/// stale `true` to the new markup). Every refinement fragment response
-/// (`_facets`/`_sort`/`_search`) must emit this event
-/// alongside its `PatchElements` events so a refinement landing mid-receipt
-/// clears the "Copied" state — the copied link is no longer this view.
-/// One shared fn so all three handlers can't drift on the signal name or
-/// the JSON shape.
-///
-/// `_dataCopied` is the dataset panel's receipt (`cpe-components`'
-/// `data_links::DATA_SIGNALS`), reset the same way; on a page without a panel
-/// the key is created and never read.
+/// Resets the `$copied` and `_dataCopied` receipts. A Datastar signal survives every element
+/// patch, even one that re-declares it in `data-signals`, so a refinement landing mid-receipt
+/// must reset it here; on a page without a dataset panel `_dataCopied` is created, never read.
 fn copied_signal_reset_event() -> Event {
     PatchSignals::new("{copied: false, _dataCopied: ''}").into()
 }
 
-/// Create a handler closure for a DataStar SSE fragment for the
-/// compound-viewer member pager, for a STATIC page (no path params): a
-/// URL-writing `pushState` swap for FORWARD clicks only (Back/Forward is a
-/// real page load and never reaches this handler). Mirrors
-/// `make_facet_fragment_handler`'s overall shape (arg shape,
-/// `strip_datastar_marker`/`strip_fragment_suffix` use) — the route-param
-/// sibling below is the one exception (real `Path` extraction,
-/// `make_parameterized_handler`'s pattern), since a static-source
-/// compound-viewer never needs one.
-///
-/// This handler is registered at
-/// `/{project}/{page}/{COMPOUND_FRAGMENT_SEGMENT}` for every STATIC page
-/// whose body contains a `CompoundViewer` component. It renders the viewer +
-/// crumb + header controls (and, on an annotated reader, the
-/// `#cv-annotations` register) via
-/// `cpe_web::page::render_compound_fragment`, resets the annotation signals
-/// (annotated readers only), `$copied` and (on a `layout="pages"` swap) the
-/// viewer's page-global signals, and pushes the `pushState` +
-/// `window.__cpeReaderUrl` update + title/focus `ExecuteScript` — see
-/// [`compound_fragment_response`]'s own doc comment for the full event shape
-/// and ordering.
 fn make_compound_fragment_handler(
     project: Arc<cpe_web::project::Project>,
     page_idx: usize,
@@ -1253,14 +948,6 @@ fn make_compound_fragment_handler(
     }
 }
 
-/// The route-param sibling of [`make_compound_fragment_handler`] — extracts a
-/// real `Path<HashMap<String, String>>` (`make_parameterized_handler`'s
-/// pattern), because a route-param compound page's `compound-viewer
-/// source="$id"` needs the real `:id` value to resolve at all (Incunabula's
-/// book reader, `/incunabula/books/:id`).
-/// `make_facet_fragment_handler`'s param-less shape (`&HashMap::new()`) is
-/// fine for `_facets`/`_sort`/`_search` — no facet/sort/search page needs a
-/// route param to resolve — but wrong here.
 fn make_compound_fragment_handler_param(
     project: Arc<cpe_web::project::Project>,
     page_idx: usize,
@@ -1279,38 +966,8 @@ fn make_compound_fragment_handler_param(
     }
 }
 
-/// Shared body for both compound-fragment handlers above — the only
-/// difference between a static and a route-param compound page is whether
-/// `route_params` is empty or populated from a real `Path` extraction.
-///
-/// SSE must NOT 303: same rationale as the facet/sort/search handlers —
-/// `override_redirect` never runs here (only `datastar` is stripped from
-/// `current_query`), and a redirect would break the SSE response;
-/// `canonical_page_redirect` is never called from any fragment
-/// handler, this one included.
-///
-/// This handler is reached ONLY by a JS-enhanced FORWARD click (a pager
-/// step, a rail link, or a page-picker entry). Back/Forward is a real page
-/// load: it never calls `@get` and never reaches this handler; see
-/// `cpe-components`' `data-on:popstate__window` doc comment
-/// (`component::compound_viewer`) for the `location.reload()` mechanism.
-/// There is therefore no `pushState`-vs-`replaceState` discrimination to
-/// make here — every response always `pushState`s.
-///
-/// Event order (mirroring how
-/// `_facets`/`_sort`/`_search` order their own events): `PatchElements` for
-/// `#compound-viewer`, then an optional `PatchElements` for `#crumb-<id>`,
-/// then a `PatchElements` for `#header-controls` (every swap, so the
-/// language and appearance hrefs follow the new `?page=`; the appearance is
-/// the request's `RequestedAppearance`, as on a full load),
-/// then, on an `annotations=#true` reader only, a `PatchElements` for
-/// `#cv-annotations` followed by a `PatchSignals` resetting the annotation
-/// signals (`cpe_components::component::annotation::annotation_reset_signals_json`), then an
-/// optional `PatchSignals` resetting the `<image-viewer>` unit's
-/// page-global signals (`layout="pages"` swaps only), then
-/// `copied_signal_reset_event()` (every swap), then one `ExecuteScript`
-/// combining `pushState` + the `window.__cpeReaderUrl` update + title +
-/// focus-restore.
+/// Shared by both compound-fragment handlers. Reached only by a forward click: Back and Forward
+/// reload the page (`compound_viewer`'s popstate listener), so every response pushes state.
 fn compound_fragment_response(
     project: &Arc<cpe_web::project::Project>,
     page_idx: usize,
@@ -1488,34 +1145,15 @@ fn compound_fragment_response(
     Sse::new(sse_stream).into_response()
 }
 
-/// Everything `cpe_web::page::SearchFragmentSurface::resolve` needs for one
-/// `resource-list`, scanned out of `page.body` + its resolved `ComponentData`.
-///
-/// The three fragment handlers (`_facets`/`_sort`/`_search`) all call
-/// `render_resource_list`/`render_active_filters` DIRECTLY — unlike the
-/// initial page render (`cpe_web::page::render_page` → `render_body`), which
-/// resolves this internally — so each needs this same lookup. Kept as one
-/// shared helper rather than three copies.
 struct SearchWiring<'a> {
-    /// The list's `Component::ResourceList.class` (empty string if somehow
-    /// not found — defensive; every handler that calls this already knows
-    /// `list_id` names a real `ResourceList` in `page.body`).
     class: &'a str,
-    /// The sibling facet-panel's RESOLVED `FacetGroup` data, or `None` when
-    /// this page has no facet-panel targeting `list_id` (or its data didn't
-    /// resolve this request) — the SAME source `render_active_filters`'s own
-    /// "Clear all" uses, never `Component::FacetPanel.facets` (config).
+    /// The sibling facet panel's resolved groups, never its configured `facets`: the source
+    /// `render_active_filters`'s "Clear all" uses.
     facet_groups: Option<&'a [cpe_core::ir::FacetGroup]>,
-    /// `Some(scope)` iff a `Component::SearchBar` targets `list_id` at all
-    /// (`scope` itself may be `None` — undeclared `scope` attr). `None` means
-    /// no search-bar targets this list — the caller must not attempt to
-    /// build a `SearchFragmentSurface` in that case.
+    /// `Some` when a search bar targets the list, holding its `scope`, which may be undeclared.
     search_bar_scope: Option<Option<&'a str>>,
 }
 
-/// Scan `page.body` (zipped with its resolved `comp_data`) for `list_id`'s
-/// class, its sibling facet-panel's resolved data, and whether a search-bar
-/// targets it at all.
 fn resolve_search_wiring<'a>(
     page: &'a cpe_core::ir::Page,
     comp_data: &'a [cpe_core::view_data::ComponentData],
@@ -1545,23 +1183,9 @@ fn resolve_search_wiring<'a>(
     SearchWiring { class, facet_groups, search_bar_scope }
 }
 
-/// Build the `Option<cpe_web::page::SearchFragmentSurface>` for `list_id`, or
-/// `None` when NEITHER a search-bar targets it NOR any facet is actually
-/// active. A page with a facet-panel but no search-bar can narrow to zero
-/// too, so the surface does not depend on a search-bar. `filters_active` is
-/// [`cpe_core::ir::any_facet_selected`] on `wiring.facet_groups` — the SAME
-/// predicate that gates `unfiltered_total` in the store's page builder
-/// (`query::page`), so copy and count can never disagree.
-///
-/// **`?q=` is never read when no search-bar targets `list_id`** —
-/// `read_search_query_param` is only called inside the `Some(scope)` arm; the
-/// `None` arm passes an empty `q` without touching the query string's `q` key
-/// at all (mirrors `cpe_web::page`'s `build_narrowed_owned`).
-///
-/// The caller then passes `.as_ref().and_then(|s| s.search_surface())`/
-/// `.active_query()`/`.narrowed_surface()` to `ResourceListCfg`/
-/// `render_active_filters` exactly like `cpe_web::page`'s `render_body` does
-/// internally.
+/// `None` when no search bar targets the list and no facet is active. `filters_active` is the
+/// predicate that gates the store's `unfiltered_total`, so copy and count agree; `?q=` is read
+/// only when a search bar targets the list.
 fn build_search_fragment_surface(
     project: &cpe_web::project::Project,
     page: &cpe_core::ir::Page,
@@ -1594,49 +1218,10 @@ fn build_search_fragment_surface(
     ))
 }
 
-/// Create a handler closure for a DataStar SSE fragment for the facet panel and its target list.
+/// The `_facets` fragment: the panel, the active-filter row, the list and the crumb line.
 ///
-/// This handler is registered at `/{project}/{page}/{FACET_FRAGMENT_SEGMENT}` for every
-/// page (static **and** parameterised) whose body contains a `FacetPanel` component. When
-/// the DataStar `@get(…)` fires on a facet toggle click, this handler:
-///
-/// 1. Strips the `datastar` key from the query string (DataStar appends it on `@get` requests;
-///    removing it prevents the re-rendered toggle hrefs from accumulating it on the next click —
-///    matches the compound handler).
-/// 2. Calls `Project::page_data` with the stripped query so both `Facets(..)` and the narrowed
-///    `List(..)` are built with the correct active facet state.
-/// 3. Renders the `FacetPanel` slot via `render_facet_panel`, the same slot's active-filter chip
-///    row via `render_active_filters`, and the target `ResourceList` slot via
-///    `render_resource_list`, using the same cfg-building logic as the page handler (the shared
-///    `ResourceListCfg::with_links` and direct `FacetPanelCfg` construction —
-///    `render_active_filters` reuses the same `FacetPanelCfg` as the panel).
-/// 4. Emits **four** `PatchElements` events in one SSE stream — panel, filterbar, list (any order
-///    is safe; this order mirrors `render_body`'s composition order) and the recomposed crumb line.
-///    Panel selector: `#facets-<list-id>`; filterbar selector: `#filters-<list-id>`; list selector:
-///    `#<list-id>`; crumb selector: `#crumb-<list-id>`. The filterbar is its own patch region —
-///    without it the chip row would go stale on a JS facet interaction (a removed chip would
-///    linger; Clear-all lives inside the row it must clear). The crumb event is an `Option` (a
-///    defensive degrade when the page has no id-bearing resource-list), so this is "up to four".
-///    `_sort` still morphs only the list + crumb — sort never changes facets.
-/// 5. Emits, in addition, ONE `PatchSignals` `$copied` reset event (`copied_signal_reset_event` — a
-///    distinct SSE event type, not counted towards the `datastar-patch-elements` total above), so a
-///    refinement landing mid-receipt clears the "Copied" state: five SSE events in all.
-///
-/// SSE must NOT 303: the `override_redirect` guard is deliberately absent — only `datastar`
-/// is stripped from `current_query`. A redirect would break the SSE response.
-///
-/// This handler takes only `Request` (no `Path` extractor). For a parameterised faceted page,
-/// the route path ends with `/{segment}` after any path params, so the same
-/// no-Path-extractor approach works: path params are NOT in the
-/// `_facets` URL (they are part of the registered route prefix).
-///
-/// ## Shared cfg-builder contract
-///
-/// Both the page handler (via `render_component` in `cpe-web`) and this fragment handler
-/// build `FacetPanelCfg` and `ResourceListCfg` from the same inputs. `FacetPanelCfg` has
-/// all-`pub` fields, so this crate constructs it directly. `ResourceListCfg` exposes
-/// `ResourceListCfg::with_links` (a factory that hides the `pub(crate)` `LinkResolver`)
-/// so this crate can build it without naming the crate-internal type.
+/// SSE must not 303: a redirect breaks the stream. The filter row is its own patch region, or
+/// it would go stale on a facet click.
 fn make_facet_fragment_handler(
     project: Arc<cpe_web::project::Project>,
     page_idx: usize,
@@ -1853,36 +1438,8 @@ fn make_facet_fragment_handler(
     }
 }
 
-/// Create a handler closure for a DataStar SSE fragment that re-renders only
-/// the target `resource-list` after a sort change.
-///
-/// This handler is registered at `/{project}/{page}/{SORT_FRAGMENT_SEGMENT}` for
-/// every page (static **and** parameterised) whose body contains a
-/// `ResourceList` component. When a row in the ordering control's
-/// `<details>` panel is submitted, this handler:
-///
-/// 1. Strips the `datastar` key from the query string (mirrors the facet and compound handlers).
-/// 2. Calls `Project::page_data` with the stripped query — `?sort=` is already honoured there via
-///    `resolve_sorts`, so the returned `List(..)` reflects the new sort order.
-/// 3. Renders the first named (`id: Some(..)`) `ResourceList` slot via `render_resource_list` and
-///    emits its `PatchElements` event targeting `#<list-id>`, plus a crumb-line `PatchElements`
-///    event (present whenever the page has an id-bearing resource-list, which every
-///    `_sort`-registered page does — the `Option` is a defensive degrade, not a text-diff check)
-///    and a `PatchSignals` copied-reset event — up to three events total (list, crumb,
-///    copied-reset). Facets/filters are untouched — sort never changes them (contrast with
-///    `_facets`'s three-region morph).
-///
-/// SSE must NOT 303: same rationale as the facet and compound handlers —
-/// `override_redirect` never runs here (only `datastar` is stripped from
-/// `current_query`), and a redirect would break the SSE response. For the
-/// same reason, `canonical_page_redirect` is never called from
-/// this handler — the canonical-page 303 fires only from the two HTML page
-/// handlers, never from any fragment/SSE handler, this one included.
-///
-/// A page whose only `ResourceList` has no `id` (no facet panel, no sort JS
-/// enhancement target) reaches this route only via a stray/malformed request;
-/// it 404s defensively rather than panicking — mirrors the facet handler's
-/// "no FacetPanel" defensive branch.
+/// The `_sort` fragment: the list and the crumb line. Facets are untouched: a sort never changes
+/// them.
 fn make_sort_fragment_handler(
     project: Arc<cpe_web::project::Project>,
     page_idx: usize,
@@ -2058,40 +1615,9 @@ fn make_sort_fragment_handler(
     }
 }
 
-/// Create a handler closure for a DataStar SSE fragment that re-renders the
-/// filterbar (when the page has a facet-panel) and the target `resource-list`
-/// after a live search keystroke or the search row's `×` clear.
-///
-/// This handler is registered at `/{project}/{page}/{SEARCH_FRAGMENT_SEGMENT}`
-/// for every page (static **and** parameterised) whose body contains a
-/// `SearchBar` component. When the search input's debounced
-/// `data-on:input`/the `×` clear button fires, this handler:
-///
-/// 1. Strips the `datastar` key from the query string (mirrors the facet, sort and compound
-///    handlers).
-/// 2. Calls `Project::page_data` with the stripped query — `?q=` is honoured there, so the returned
-///    `List(..)` reflects the narrowed/unnarrowed set.
-/// 3. Resolves the search-fragment surface via `build_search_fragment_surface` (the SAME
-///    `SearchFragmentSurface` seam `_facets`/`_sort` share) — populates `ResourceListCfg.search`
-///    only when `?q=` is active, and the filterbar's query-chip text the same way.
-/// 4. Emits **three** `PatchElements` events (`#filters-<list-id>` + `#<list-id>` + the recomposed
-///    crumb line `#crumb-<list-id>`) when this list also has a facet-panel resolving to at least
-///    one non-empty group; **two** (`#<list-id>` + the crumb line) when it does not — either no
-///    `FacetPanel` at all or one that resolves to zero groups (pinned by
-///    `search_fragment_zero_groups_facet_panel_returns_one_event`). Neither layout renders a
-///    filterbar element to patch. The crumb event is an `Option` (a defensive degrade when no
-///    id-bearing resource-list resolves), so those are upper bounds. The search row itself
-///    (`#q`/`.search-row`) is in NEITHER selector — it sits outside the swapped region by design,
-///    so the caret/selection is never disturbed. Emitted in addition is ONE `PatchSignals`
-///    `$copied` reset event (`copied_signal_reset_event` — a distinct SSE event type, not counted
-///    towards the `datastar-patch-elements` totals above), so a search landing mid-receipt clears
-///    the "Copied" state: four SSE events on a faceted page, three on a non-faceted one.
-/// 5. The facet-panel itself (`#facets-<list-id>`) is never patched here — facet counts stay static
-///    regardless of the active search, so only `_facets` (a real facet toggle) ever re-renders it.
-///
-/// SSE must NOT 303: same rationale as the other fragment handlers —
-/// `override_redirect` never runs here (only `datastar` is stripped from
-/// `current_query`), and a redirect would break the SSE response.
+/// The `_search` fragment: the list, the filter row on a faceted page, and the crumb line. The
+/// search row is never patched, so its caret and selection survive; neither is the facet panel,
+/// whose counts do not follow the search.
 fn make_search_fragment_handler(
     project: Arc<cpe_web::project::Project>,
     page_idx: usize,
@@ -2306,11 +1832,8 @@ fn make_search_fragment_handler(
     }
 }
 
-/// Serve an embedded `cpe-image-viewer` asset (the module, vendored
-/// OpenSeadragon, control sprites). `path` is the wildcard-captured suffix
-/// from `static_routes`' `image-viewer/*path`; `cpe_image_viewer::asset` is traversal-proof
-/// (rejects empty/dot/`..` segments), so the untrusted request tail can be
-/// forwarded straight in without a separate check.
+/// `cpe_image_viewer::asset` refuses empty, `.` and `..` segments, so the untrusted request tail
+/// goes to it without a check of its own.
 async fn serve_viewer_asset(Path(path): Path<String>) -> Response {
     match cpe_image_viewer::asset(&path) {
         Some(a) => (
@@ -2349,8 +1872,7 @@ fn status_for_outcomes(outcomes: &[FetchOutcome]) -> StatusCode {
     status_code(cpe_core::view_data::PageStatus::from_outcomes(outcomes))
 }
 
-/// The page's components and status. `ListFragment` asks for the fewest side
-/// lookups; neither result depends on the scope.
+/// `ListFragment` asks for the fewest side lookups; neither result depends on the scope.
 #[cfg(test)]
 fn build_component_data(
     project: &cpe_web::project::Project,
@@ -2470,9 +1992,6 @@ mod tests {
         assert_eq!(content_type("cover.webp"), "image/webp");
     }
 
-    /// The answer to `uri` with `headers`, from the router over `projects` at
-    /// `base`, with the request preferences resolved as `activation` layers
-    /// them.
     async fn site_index(
         projects: &[Arc<cpe_web::project::Project>],
         base: &Base,
@@ -2502,7 +2021,6 @@ mod tests {
         (parts.status, parts.headers, String::from_utf8_lossy(&body).into_owned())
     }
 
-    /// The overview's body at a root mount, in English.
     async fn site_index_body(projects: &[Arc<cpe_web::project::Project>]) -> String {
         let (status, _, body) = site_index(projects, &ROOT, "/", &[]).await;
         assert_eq!(status, StatusCode::OK, "{body}");
@@ -2535,8 +2053,7 @@ mod tests {
         }
     }
 
-    /// The brand mark is a wordmark and no heading, so the page's one `<h1>`
-    /// is the hidden one.
+    /// The brand mark is a wordmark and no heading.
     #[tokio::test]
     async fn site_index_has_exactly_one_visually_hidden_h1() {
         let body = site_index_body(&load_fixture_projects()).await;
@@ -2555,8 +2072,6 @@ mod tests {
         assert!(body.contains(r#"<main class="shell__main" id="main" tabindex="-1">"#), "{body}");
     }
 
-    /// The toggle's click: the cookie carries the choice, and the redirect
-    /// leaves no `?appearance=` in the address.
     #[tokio::test]
     async fn site_index_query_appearance_dark_redirects_clean_and_sets_cookie() {
         for (base, location, cookie) in [
@@ -2579,8 +2094,6 @@ mod tests {
         assert_eq!(headers[header::SET_COOKIE], "appearance=; Path=/cpe; Max-Age=0; SameSite=Lax");
     }
 
-    /// Only `appearance` is removed: any other key is kept by the redirect
-    /// and ignored by the page.
     #[tokio::test]
     async fn site_index_keeps_every_other_query_key() {
         let (status, headers, _) = site_index(&[], &cpe_base(), "/?lang=de&appearance=dark&accent=red", &[]).await;
@@ -2606,8 +2119,6 @@ mod tests {
         assert!(!body.contains("project-list") && !body.contains("class=\"teaser\""), "{body}");
     }
 
-    /// The degenerate crumb line: `CPE`, current and unlinked, with the share
-    /// control, whose link is the origin and the base.
     #[tokio::test]
     async fn site_index_has_degenerate_breadcrumb_with_share_control() {
         let body = site_index_body(&[]).await;
@@ -2636,7 +2147,6 @@ mod tests {
         assert!(body.contains("tokens.css") && body.contains("shell.css"), "{body}");
     }
 
-    /// Every URL the page writes has the base in front, once.
     #[tokio::test]
     async fn site_index_writes_every_url_under_the_base() {
         let (status, _, body) = site_index(&load_fixture_projects(), &cpe_base(), "/", &[]).await;
@@ -2655,8 +2165,7 @@ mod tests {
         }
     }
 
-    /// `alpha` declares `theme { accent "green" }`: its teaser carries the
-    /// project's accent, and the page its own.
+    /// `alpha` declares `theme { accent "green" }`.
     #[tokio::test]
     async fn site_index_teaser_renders_project_accent_data_attr() {
         let body = site_index_body(&load_fixture_projects()).await;
@@ -2670,8 +2179,7 @@ mod tests {
         );
     }
 
-    /// `alpha` declares `cover-image "assets/cover.webp"`, one of its own
-    /// files.
+    /// `alpha` declares `cover-image "assets/cover.webp"`.
     #[tokio::test]
     async fn site_index_teaser_with_cover_image_renders_img() {
         let body = site_index_body(&load_fixture_projects()).await;
@@ -2688,8 +2196,7 @@ mod tests {
         );
     }
 
-    /// `gamma` declares no cover and no credit. The credit line is there all
-    /// the same, empty, so that titles align across a row.
+    /// `gamma` has no cover and no credit; the empty credit line keeps titles aligned in a row.
     #[tokio::test]
     async fn site_index_teaser_without_cover_image_renders_ghost() {
         let projects = load_fixture_projects();
@@ -2722,8 +2229,7 @@ mod tests {
         );
     }
 
-    /// `alpha` declares `eyebrow "Test Eyebrow"` and `gamma` none: its
-    /// eyebrow line is there, empty.
+    /// `alpha` declares `eyebrow "Test Eyebrow"` and `gamma` none.
     #[tokio::test]
     async fn site_index_teaser_eyebrow_renders_when_configured() {
         let projects = load_fixture_projects();
@@ -2737,8 +2243,7 @@ mod tests {
         assert!(gamma.contains(r#"<p class="eyebrow teaser__eyebrow"></p>"#), "{gamma}");
     }
 
-    /// `delta` declares `image-credit "delta-credit"`, the id of a chrome
-    /// string: the teaser shows its translation and never the id.
+    /// `delta` declares `image-credit "delta-credit"`, the id of a chrome string.
     #[tokio::test]
     async fn site_index_teaser_shows_localized_credit_via_chrome_id() {
         let projects = load_fixture_projects();
@@ -2755,9 +2260,7 @@ mod tests {
         );
     }
 
-    /// `delta` declares `en` and `de`, and its chrome strings have no other
-    /// translation. French and Italian are built in: the page is in them and
-    /// `delta`'s teaser in English.
+    /// `delta` declares `en` and `de` only; French and Italian are built in.
     #[tokio::test]
     async fn site_index_teaser_never_leaks_chrome_id_for_undeclared_language() {
         let projects = load_fixture_projects();
@@ -2885,11 +2388,7 @@ mod tests {
         );
     }
 
-    /// Unknown nested path under a known project → 404 via the router
-    /// fallback (the project's not-found page). `?lang=en` forces English — the
-    /// alpha fixture declares `languages "de" "en"` (de first, hence
-    /// de-default); the middleware must be layered for the fallback to see the
-    /// query-derived `RequestedLang`.
+    /// `alpha` defaults to `de`, hence `?lang=en`, which needs the middleware layered.
     #[tokio::test]
     async fn unknown_nested_path_returns_404() {
         let projects = load_fixture_projects();
@@ -2995,7 +2494,6 @@ mod tests {
         );
     }
 
-    /// `/nope` (no known project prefix) renders bare chrome (CPE's own not-found page).
     #[tokio::test]
     async fn fallback_unknown_top_level_path_uses_site_chrome() {
         let delta = load_delta_project();
@@ -3031,8 +2529,6 @@ mod tests {
         );
     }
 
-    /// A POST to an unmatched path also renders the 404 body — the fallback
-    /// answers every HTTP method (matched routes keep their own 405 behaviour).
     #[tokio::test]
     async fn fallback_answers_non_get_methods() {
         let projects = load_fixture_projects();
@@ -3057,12 +2553,7 @@ mod tests {
         assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
 
-    /// Security invariant: the fallback must never redirect. A path shaped
-    /// like `//evil.example/x` combined with `?appearance=dark` (which on
-    /// every OTHER route triggers `override_redirect`'s 303-with-`Location`
-    /// dance) must still render the 404 body directly, with no `Location`
-    /// header — a `Location` here, under a catch-all fallback, would be an
-    /// open redirect to `evil.example`.
+    /// A `Location` here, under a catch-all fallback, would be an open redirect to `evil.example`.
     #[tokio::test]
     async fn fallback_never_redirects_on_scheme_relative_looking_path() {
         let projects = load_fixture_projects();
@@ -3097,9 +2588,6 @@ mod tests {
         );
     }
 
-    /// Project-id matching is raw string equality — case is NOT folded.
-    /// `DELTA` (uppercased) must not match the loaded `delta` project id, so
-    /// this renders CPE's own not-found page (bare chrome), not the project's.
     #[tokio::test]
     async fn fallback_project_id_match_does_not_fold_case() {
         let delta = load_delta_project();
@@ -3131,9 +2619,6 @@ mod tests {
         );
     }
 
-    /// Project-id matching is raw, undecoded byte equality — percent-encoded
-    /// segments are NOT decoded before the comparison. `%64elta`
-    /// must not match `delta`, so this renders CPE's own not-found page.
     #[tokio::test]
     async fn fallback_project_id_match_does_not_percent_decode() {
         let delta = load_delta_project();
@@ -3165,10 +2650,6 @@ mod tests {
         );
     }
 
-    /// A matched route keeps its own method behaviour — the fallback only
-    /// answers UNMATCHED paths (`fallback_answers_non_get_methods` above).
-    /// POSTing to the (GET-only) `/delta` list route
-    /// must 405, not fall through to the 404 fallback.
     #[tokio::test]
     async fn matched_route_keeps_method_behaviour_on_post() {
         let delta = load_delta_project();
@@ -3193,11 +2674,7 @@ mod tests {
         assert_eq!(response.status(), StatusCode::METHOD_NOT_ALLOWED);
     }
 
-    /// No-reflection invariant: a marker segment in the failed request path
-    /// must appear nowhere in the response — not the body, not any header
-    /// (in particular not in a lang-switcher/appearance-toggle href, which
-    /// would happen if `current_path` were NOT pinned to the project
-    /// home, or to `/` outside a project).
+    /// A language or appearance href would carry the path were `current_path` not pinned.
     #[tokio::test]
     async fn fallback_never_reflects_the_failed_path() {
         let delta = load_delta_project();
@@ -3257,7 +2734,6 @@ mod tests {
         Arc::new(cpe_web::project::Project::load(&ctx, &config_src, &data_sql, &[]).expect("delta project loads"))
     }
 
-    /// GET `/delta/characters/alice` → 200 + rendered resource (known property).
     #[tokio::test]
     async fn parameterized_known_id_returns_200_and_resource() {
         let delta = load_delta_project();
@@ -3297,7 +2773,6 @@ mod tests {
         );
     }
 
-    /// GET `/delta/characters/alice?lang=de` → 200 + German property values.
     #[tokio::test]
     async fn parameterized_lang_de_returns_german_values() {
         let delta = load_delta_project();
@@ -3359,10 +2834,8 @@ mod tests {
         Arc::new(cpe_web::project::Project::load(&ctx, &config_src, &data_sql, &[]).expect("epsilon project loads"))
     }
 
-    /// Load the zeta fixture project: a single search-only (non-faceted)
-    /// `resource-list id="things" class="Thing"` with a `search-bar
-    /// target="things" searches="name"` on `/things`. Used by the
-    /// search-query-injection tests.
+    /// `zeta`: a search-only `resource-list id="things" class="Thing"` with a
+    /// `search-bar target="things" searches="name"` on `/things`.
     fn load_zeta_project() -> Arc<cpe_web::project::Project> {
         let discovered = discover_sql_folders(&discovery_fixture());
         let zeta = discovered
@@ -3382,11 +2855,8 @@ mod tests {
         Arc::new(cpe_web::project::Project::load(&ctx, &config_src, &data_sql, &[]).expect("zeta project loads"))
     }
 
-    /// Load the eta fixture project: `resource-list id="widgets" class="Widget"`
-    /// with BOTH a `facet-panel` (kind="list" on "category") AND a `search-bar
-    /// target="widgets" searches="name"` on `/widgets` — the faceted
-    /// counterpart to `zeta` (search-only, no facet-panel), used by the
-    /// `_search` fragment-handler router tests.
+    /// `eta`: `resource-list id="widgets" class="Widget"` with a `facet-panel` on "category"
+    /// and a `search-bar target="widgets" searches="name"` on `/widgets`.
     fn load_eta_project() -> Arc<cpe_web::project::Project> {
         let discovered = discover_sql_folders(&discovery_fixture());
         let eta = discovered
@@ -3406,12 +2876,8 @@ mod tests {
         Arc::new(cpe_web::project::Project::load(&ctx, &config_src, &data_sql, &[]).expect("eta project loads"))
     }
 
-    /// Load the theta fixture project: `resource-list id="widgets" class="Widget"`
-    /// with BOTH a `facet-panel target="widgets"` declaring ZERO `facet`
-    /// children (so its resolved groups are always `Some([])`) AND a
-    /// `search-bar target="widgets" searches="name"` — the zero-groups
-    /// counterpart to `eta` (real, non-empty facet group), used by the
-    /// `_search` fragment-handler zero-groups test.
+    /// `theta`: like `eta`, but its `facet-panel target="widgets"` declares no `facet`, so its
+    /// resolved groups are always `Some([])`.
     fn load_theta_project() -> Arc<cpe_web::project::Project> {
         let discovered = discover_sql_folders(&discovery_fixture());
         let theta = discovered
@@ -3431,10 +2897,6 @@ mod tests {
         Arc::new(cpe_web::project::Project::load(&ctx, &config_src, &data_sql, &[]).expect("theta project loads"))
     }
 
-    /// GET `/epsilon/featured` → 200 + literal-id resource data rendered.
-    ///
-    /// A static route with a literal-id `resource-detail` must resolve and
-    /// render the resource, not the not-found body.
     #[tokio::test]
     async fn static_literal_id_resource_detail_renders_resource() {
         let epsilon = load_epsilon_project();
@@ -3483,7 +2945,6 @@ mod tests {
         );
     }
 
-    /// GET `/delta/characters/unknown-id` → 404 + not-found body.
     #[tokio::test]
     async fn parameterized_unknown_id_returns_404_and_not_found_body() {
         let delta = load_delta_project();
@@ -3553,8 +3014,6 @@ mod tests {
             .expect("ascii")
     }
 
-    /// Each retired key, with a value or bare, is stripped with no cookie;
-    /// unrelated params (`lang`, `view=grid`) and a near-miss key survive.
     #[test]
     fn override_redirect_strips_each_retired_key_without_a_cookie() {
         for retired in [
@@ -3578,8 +3037,6 @@ mod tests {
         }
     }
 
-    /// `?appearance=dark` alongside a retired key: both are stripped, and only
-    /// the appearance cookie is set.
     #[test]
     fn override_redirect_with_appearance_sets_only_the_appearance_cookie() {
         let uri: Uri = "/alice-in-daschland/?appearance=dark&accent=red&lang=de"
@@ -3739,8 +3196,6 @@ mod tests {
         assert_eq!(canonical_page_query(Some("&page=2"), 1), "page=1");
     }
 
-    /// Build a one-element `ComponentData` slice carrying a `List` with
-    /// `Pagination::PerPage(_)` at the given effective `page`.
     fn per_page_components(page: u32) -> Vec<cpe_core::view_data::ComponentData> {
         vec![cpe_core::view_data::ComponentData::List(
             cpe_core::ir::ResourceListPage {
@@ -3753,8 +3208,7 @@ mod tests {
         )]
     }
 
-    /// Same, but `Pagination::Limit` — never carries a pager, so the guard
-    /// must never redirect regardless of the raw page param.
+    /// `Pagination::Limit` carries no pager, so the guard never redirects for it.
     fn limit_components() -> Vec<cpe_core::view_data::ComponentData> {
         vec![cpe_core::view_data::ComponentData::List(
             cpe_core::ir::ResourceListPage {
@@ -4040,8 +3494,6 @@ mod tests {
         );
     }
 
-    /// `order-name-property` swaps the property the built-in name rows order
-    /// by, in both directions, without touching the wire token.
     #[test]
     fn resolve_sorts_name_rows_use_the_name_property() {
         let config = name_asc_config_sorts();
@@ -4061,9 +3513,6 @@ mod tests {
         );
     }
 
-    /// The name property reaches only the name rows: `id`, a declared key and
-    /// the config fallback are untouched, and with no name property `name`
-    /// still orders by `name`.
     #[test]
     fn resolve_sorts_name_property_reaches_only_the_name_rows() {
         let config = name_asc_config_sorts();
@@ -4127,8 +3576,6 @@ mod tests {
         ]
     }
 
-    /// Tier 2: a declared key resolves to its option's `Sort` (property +
-    /// direction), overriding the config sort.
     #[test]
     fn resolve_sorts_declared_key_overrides_config() {
         let config = name_asc_config_sorts();
@@ -4146,8 +3593,6 @@ mod tests {
         );
     }
 
-    /// Tier 1 still wins: a built-in token is parsed by `Sort::parse_wire`
-    /// even when the list declares options.
     #[test]
     fn resolve_sorts_builtin_still_resolves_with_declared_options() {
         let config = name_asc_config_sorts();
@@ -4160,9 +3605,7 @@ mod tests {
         );
     }
 
-    /// Tier 3: an undeclared token (and `default`, and an absent param) still
-    /// falls back silently to the config sort — and a key declared by a
-    /// DIFFERENT list (here: none passed) means nothing.
+    /// A key declared by another list means nothing (the last case passes no options).
     #[test]
     fn resolve_sorts_unknown_token_falls_back_with_declared_options() {
         let config = name_asc_config_sorts();
@@ -4340,8 +3783,6 @@ mod tests {
         assert_eq!(list_page.items[0].id, "thing-02");
     }
 
-    /// GET `/zeta/things?q=rab` → 200 + narrowed list content (zero-JS `?q=`
-    /// narrowing end-to-end).
     #[tokio::test]
     async fn zeta_http_get_things_with_query_narrows_response_body() {
         let zeta = load_zeta_project();
@@ -4388,11 +3829,6 @@ mod tests {
         );
     }
 
-    /// A faceted page's `_search` fragment (`eta`, facet-panel + search-bar
-    /// both bound to `widgets`) returns THREE `datastar-patch-elements`
-    /// events — filterbar (`#filters-widgets`) + list (`#widgets`) + the
-    /// recomposed crumb line (`#crumb-widgets`) — never the panel
-    /// (`#facets-widgets`; facet counts stay static).
     #[tokio::test]
     async fn search_fragment_faceted_returns_two_events() {
         let eta = load_eta_project();
@@ -4446,10 +3882,6 @@ mod tests {
         );
     }
 
-    /// A non-faceted page's `_search` fragment (`zeta`, search-bar only, no
-    /// facet-panel) returns exactly TWO events — the list plus the
-    /// recomposed crumb line (`#crumb-things`); there is no filterbar
-    /// element in the DOM to patch.
     #[tokio::test]
     async fn search_fragment_non_faceted_returns_one_event() {
         let zeta = load_zeta_project();
@@ -4499,17 +3931,7 @@ mod tests {
         );
     }
 
-    /// A page with BOTH a facet-panel that resolves to ZERO groups (`theta` —
-    /// `facet-panel target="widgets"` with no `facet` children) AND a search-bar
-    /// on the same list must emit exactly TWO `datastar-patch-elements` events
-    /// (the list plus the recomposed crumb line), never THREE. A gate in
-    /// `make_search_fragment_handler` on mere `facet_groups.is_some()` instead
-    /// of "non-empty groups" would emit an extra event trying to patch
-    /// `#filters-widgets`, a `<div>` the zero-groups (non-faceted) layout never
-    /// renders. `search_fragment_faceted_returns_two_events` (real, non-empty
-    /// facet group) and `search_fragment_non_faceted_returns_one_event` (no
-    /// facet-panel component at all) pass under that gate too — this is the
-    /// one case that catches it.
+    /// The one case that catches a gate on `facet_groups.is_some()` instead of non-empty groups.
     #[tokio::test]
     async fn search_fragment_zero_groups_facet_panel_returns_one_event() {
         let theta = load_theta_project();
@@ -4555,9 +3977,6 @@ mod tests {
         );
     }
 
-    /// The `_search` fragment's swapped-in list shows the localized "N of M"
-    /// narrowed count: the `unfiltered_total` gate reaches the RENDERED
-    /// fragment via `SearchFragmentSurface`.
     #[tokio::test]
     async fn search_fragment_query_narrows_with_unfiltered_total() {
         let eta = load_eta_project();
@@ -4608,11 +4027,7 @@ mod tests {
         );
     }
 
-    /// Caret-safety contract: the search row's `#q` input
-    /// and `.search-row` element are in NEITHER `_search` target selector —
-    /// they never appear in the fragment response at all, so the live
-    /// keystroke that triggered the request can never disturb its own
-    /// caret/selection.
+    /// The keystroke that sent the request must never disturb its own caret or selection.
     #[tokio::test]
     async fn search_fragment_never_includes_the_search_row_itself() {
         let eta = load_eta_project();
@@ -4651,9 +4066,7 @@ mod tests {
         );
     }
 
-    /// An inactive (whitespace-only) `?q=` on the `_search` endpoint clears
-    /// the narrowing — the list returns to the full unfiltered set and the
-    /// query chip disappears, mirroring the `×` clear button's own request.
+    /// The `×` clear button sends this request.
     #[tokio::test]
     async fn search_fragment_inactive_query_shows_full_list_no_chip() {
         let eta = load_eta_project();
@@ -4694,16 +4107,8 @@ mod tests {
         );
     }
 
-    /// A minimal equivalent of `cpe-web`'s `tests/projects/good-compound-viewer-param/`
-    /// (that fixture has no `compound_parts` rows, so it cannot answer for a
-    /// *known* id): two parameterised pages with a `$id`-sourced
-    /// `compound-viewer` —
-    /// - `/story/:id` — compound-only (no `resource-detail`);
-    /// - `/books/:id` — `resource-detail id="$id"` beside the compound-viewer (the Incunabula
-    ///   `/books/:id` reader shape);
-    ///
-    /// plus one static page with NO `CompoundViewer` at all (`/plain`) —
-    /// the `_compound` route-existence negative case.
+    /// A minimal `good-compound-viewer-param`: `cpe-web`'s fixture has no `compound_parts` rows,
+    /// so it cannot answer for a known id. `/plain` has no compound viewer, the negative case.
     fn load_param_compound_project() -> Arc<cpe_web::project::Project> {
         let config_src = r#"
 site {
@@ -4744,8 +4149,6 @@ INSERT INTO properties (resource_id, name, seq, value_type, value_text) VALUES (
         )
     }
 
-    /// GET `uri` against a router over the param-compound project; returns
-    /// (status, content-type, body).
     async fn get_param_compound(uri: &str) -> (StatusCode, String, String) {
         let router = build(
             &[load_param_compound_project()],
@@ -4775,10 +4178,8 @@ INSERT INTO properties (resource_id, name, seq, value_type, value_text) VALUES (
         (status, content_type, body)
     }
 
-    /// A synthetic strip/page/book bag: `b1`/`b2` BorderStrips (only `b1` is
-    /// linked to), Pages `p1`/`p2` that are members of Book `bk1`, and a
-    /// `/books/:id` reader page so rung 2 (member inside its parent's reader)
-    /// resolves. Page has no detail binding of its own.
+    /// The `/books/:id` reader lets rung 2 (a member inside its parent's reader) resolve; `Page`
+    /// has no detail page of its own.
     fn load_incoming_project() -> Arc<cpe_web::project::Project> {
         let config_src = r#"
 site {
@@ -4918,8 +4319,6 @@ INSERT INTO compound_parts (parent_id, child_id, seq) VALUES ('bk1', 'p2', 1);
         assert!(body.contains("Nichts verweist hierher."), "{body}");
     }
 
-    /// The markup of the first element opening with `open` up to its first
-    /// `close` — scopes a "no `data-on`" assertion to one element.
     fn element<'o>(body: &'o str, open: &str, close: &str) -> &'o str {
         let start = body.find(open).unwrap_or_else(|| panic!("`{open}` missing, got: {body}"));
         let end = body[start..]
@@ -4928,10 +4327,6 @@ INSERT INTO compound_parts (parent_id, child_id, seq) VALUES ('bk1', 'p2', 1);
         &body[start..start + end + close.len()]
     }
 
-    /// Member paging on a parameterised reader is a real page load AND
-    /// progressively enhanced: `?page=<id>` and the legacy `?member=N` both
-    /// land on the same member of a full page (the no-JS path), and every
-    /// active pager step / rail link ALSO carries `data-on:click__prevent`.
     #[tokio::test]
     async fn param_compound_paging_is_real_navigation() {
         for base in ["/param-compound/story/ST_001", "/param-compound/books/ST_001"] {
@@ -4963,9 +4358,6 @@ INSERT INTO compound_parts (parent_id, child_id, seq) VALUES ('bk1', 'p2', 1);
         }
     }
 
-    /// The `_compound` fragment endpoint: on both parameterised page shapes
-    /// it answers a real SSE stream (not the router fallback), with an event
-    /// patching `#compound-viewer`.
     #[tokio::test]
     async fn param_compound_fragment_route_exists() {
         for uri in [
@@ -4985,9 +4377,6 @@ INSERT INTO compound_parts (parent_id, child_id, seq) VALUES ('bk1', 'p2', 1);
         }
     }
 
-    /// The route-existence NEGATIVE case: a page with no `CompoundViewer`
-    /// component never gets a `_compound` route registered at all, so it 404s
-    /// gracefully through the router fallback — not an SSE stream, not a panic.
     #[tokio::test]
     async fn compound_fragment_route_absent_for_page_without_compound_viewer() {
         let (status, content_type, _body) = get_param_compound("/param-compound/plain/_compound").await;
@@ -4998,15 +4387,7 @@ INSERT INTO compound_parts (parent_id, child_id, seq) VALUES ('bk1', 'p2', 1);
         );
     }
 
-    /// A route-param compound page's `_compound` request resolves the REAL
-    /// `$id` value — not `ComponentData::Other` — via
-    /// `make_compound_fragment_handler_param`'s `Path` extraction.
-    /// The book page (`/books/:id`, mirroring Incunabula's reader) is the
-    /// load-bearing case: its `compound-viewer source="$id"` needs the route
-    /// param, unlike `_facets`/`_sort`/`_search`, which never need one. The
-    /// swapped-in `#compound-viewer` markup for `?page=SCH_002` must show
-    /// member 2 of 2 — proving `$id` (`ST_001`, from the URL's `:id`
-    /// segment) resolved to the right compound, not an empty/default one.
+    /// The book page's `compound-viewer source="$id"` cannot resolve without the route param.
     #[tokio::test]
     async fn param_compound_fragment_resolves_real_route_param_id() {
         let (status, _content_type, body) =
@@ -5023,13 +4404,7 @@ INSERT INTO compound_parts (parent_id, child_id, seq) VALUES ('bk1', 'p2', 1);
         );
     }
 
-    /// The morph contract (mirroring DPE's
-    /// `morph_contract_project_tabs_open_tag_identical`-style test): the
-    /// `_compound` fragment's `#compound-viewer` markup must open with the
-    /// byte-identical tag `render_page`'s own CompoundViewer render produces
-    /// for the same page/state — both paths go through the SAME
-    /// `render_compound_fragment`/`render_component` call internally, so this
-    /// guards against drift between the two.
+    /// The morph contract: the swap's open tag equals the full page's.
     #[tokio::test]
     async fn compound_fragment_viewer_open_tag_matches_full_page_render() {
         let (full_status, _ct, full_body) = get_param_compound("/param-compound/books/ST_001?page=SCH_002").await;
@@ -5053,9 +4428,7 @@ INSERT INTO compound_parts (parent_id, child_id, seq) VALUES ('bk1', 'p2', 1);
         );
     }
 
-    /// A `layout="pages"` compound-viewer fixture — the param-compound
-    /// project above is `layout="contents"` throughout, which cannot cover
-    /// the viewer-signal `PatchSignals` reset (pages-layout only).
+    /// `layout="pages"`, for the viewer-signal reset the `contents` fixture above cannot reach.
     fn load_pages_compound_project() -> Arc<cpe_web::project::Project> {
         let config_src = r#"
 site {
@@ -5092,9 +4465,6 @@ INSERT INTO representations (resource_id, kind, uri, width, height, seq) VALUES 
         )
     }
 
-    /// GET `uri` against a router over the pages-compound project; returns
-    /// (status, body). The handler is reached only by a forward click, so
-    /// there is nothing to vary per request beyond the URI.
     async fn get_pages_compound(uri: &str) -> (StatusCode, String) {
         let router = build(
             &[load_pages_compound_project()],
@@ -5118,16 +4488,7 @@ INSERT INTO representations (resource_id, kind, uri, width, height, seq) VALUES 
         (status, body)
     }
 
-    /// SSE event count and shape, `layout="contents"`:
-    /// viewer `PatchElements`, crumb `PatchElements`, `#header-controls`
-    /// `PatchElements` (sent even with no crumb) — the compound-only
-    /// `/story/:id` fixture page has no sibling `ResourceDetail`/
-    /// `ResourceList`/`Narrative`, so `render_compound_fragment` returns no
-    /// crumb here; the param-compound project's `/books/:id` page (used in
-    /// the other tests in this section) DOES pair a `resource-detail`, so
-    /// its crumb patch is exercised there. No viewer-signal `PatchSignals`
-    /// (contents layout has no viewer unit) — only the `$copied` reset — then
-    /// the `ExecuteScript`.
+    /// `/story/:id` has no sibling detail, list or narrative, so no crumb; `/books/:id` covers it.
     #[tokio::test]
     async fn compound_fragment_sse_shape_contents_layout() {
         let (status, _ct, body) = get_param_compound("/param-compound/story/ST_001/_compound?page=SCH_002").await;
@@ -5158,10 +4519,6 @@ INSERT INTO representations (resource_id, kind, uri, width, height, seq) VALUES 
         );
     }
 
-    /// SSE event count and shape, `layout="pages"`: the SAME
-    /// shape as the contents-layout case (`#header-controls` included),
-    /// PLUS one extra `PatchSignals` event resetting the `<image-viewer>` unit's page-global
-    /// signals — 2 `PatchSignals` total ($copied + the viewer reset).
     #[tokio::test]
     async fn compound_fragment_sse_shape_pages_layout() {
         let (status, body) = get_pages_compound("/pages-compound/story/ST_001/_compound?page=SCH_002").await;
@@ -5265,8 +4622,6 @@ INSERT INTO annotations (id, resource_id, shape, x, y, w, h, color) VALUES ('A1'
         (status, body)
     }
 
-    /// An annotated reader's swap patches the register target once, after
-    /// the viewer and the crumb and before every signal reset and the script.
     #[tokio::test]
     async fn compound_fragment_patches_the_annotation_register() {
         let (status, body) = get_annotated_book("/annotated-book/books/ST_001/_compound?page=SCH_002").await;
@@ -5281,8 +4636,7 @@ INSERT INTO annotations (id, resource_id, shape, x, y, w, h, color) VALUES ('A1'
         assert!(register < at("selector body"), "{body}");
     }
 
-    /// The header controls are patched after the viewer and the crumb and
-    /// before the register, so every DOM patch lands before the signal resets.
+    /// So that every DOM patch lands before the signal resets.
     #[tokio::test]
     async fn compound_fragment_patches_the_header_controls_between_crumb_and_register() {
         let (status, body) = get_annotated_book("/annotated-book/books/ST_001/_compound?page=SCH_002").await;
@@ -5294,9 +4648,6 @@ INSERT INTO annotations (id, resource_id, shape, x, y, w, h, color) VALUES ('A1'
         assert!(header < at("selector #cv-annotations"), "{body}");
     }
 
-    /// An annotated reader's swap resets hover, pin, arrival and the arrival
-    /// note in their own `PatchSignals`, after the register patch, and never
-    /// the toggle.
     #[tokio::test]
     async fn compound_fragment_resets_annotation_signals_but_not_the_toggle() {
         for uri in [
@@ -5321,8 +4672,7 @@ INSERT INTO annotations (id, resource_id, shape, x, y, w, h, color) VALUES ('A1'
         }
     }
 
-    /// A page of an annotated reader without a register still patches the
-    /// target, empty, so the previous page's register never lingers.
+    /// So that the previous page's register never lingers.
     #[tokio::test]
     async fn compound_fragment_patches_the_empty_register_target() {
         let (status, body) = get_annotated_book("/annotated-book/books/ST_001/_compound?page=SCH_001").await;
@@ -5331,10 +4681,6 @@ INSERT INTO annotations (id, resource_id, shape, x, y, w, h, color) VALUES ('A1'
         assert!(body.contains(r#"<div id="cv-annotations"></div>"#), "{body}");
     }
 
-    /// A forward click always emits `history.pushState` and the paired
-    /// `window.__cpeReaderUrl` update — never `replaceState` (Back/Forward is
-    /// a real page load, see `cpe_components::component::compound_viewer`'s
-    /// `data-on:popstate__window` doc comment).
     #[tokio::test]
     async fn compound_fragment_execute_script_pushes_state_on_forward_click() {
         let (status, body) = get_pages_compound("/pages-compound/story/ST_001/_compound?page=SCH_002").await;
@@ -5354,13 +4700,7 @@ INSERT INTO annotations (id, resource_id, shape, x, y, w, h, color) VALUES ('A1'
         );
     }
 
-    /// The URL in the `ExecuteScript` payload's `pushState` call is RELATIVE
-    /// (origin-free — starts with `/`, no scheme/host), never the absolute
-    /// `canonical_url` (`SecurityError` risk per the WHATWG spec if origin
-    /// derivation ever mismatches), and carries neither the `_compound`
-    /// fragment-endpoint segment nor the `#compound-viewer` anchor (the URL is
-    /// anchor-free at the source). The `window.__cpeReaderUrl` update
-    /// carries the SAME relative URL — the two must never drift.
+    /// Relative, or `pushState` throws `SecurityError` when the derived origin differs.
     #[tokio::test]
     async fn compound_fragment_execute_script_canonical_url_is_anchor_and_segment_free() {
         let (status, _ct, body) = get_param_compound("/param-compound/books/ST_001/_compound?page=SCH_002").await;
@@ -5391,8 +4731,6 @@ INSERT INTO annotations (id, resource_id, shape, x, y, w, h, color) VALUES ('A1'
         );
     }
 
-    /// A `_compound` fragment response carries no `X-CPE-Popstate` handling, no
-    /// guarded `replaceState` and no `currentPageQuery` `PatchSignals`.
     #[tokio::test]
     async fn compound_fragment_response_never_carries_retired_popstate_machinery() {
         let (status, body) = get_pages_compound("/pages-compound/story/ST_001/_compound?page=SCH_002").await;
@@ -5405,9 +4743,7 @@ INSERT INTO annotations (id, resource_id, shape, x, y, w, h, color) VALUES ('A1'
         }
     }
 
-    /// Both the title and the URL are escaped via `js_string_escape`
-    /// — asserted on a title containing an apostrophe (`ST_001`'s
-    /// `name` = "Alice's Story", `title-property="name"` on `/books/:id`).
+    /// `ST_001`'s name, "Alice's Story", holds the apostrophe.
     #[tokio::test]
     async fn compound_fragment_execute_script_escapes_title_and_url() {
         let (status, _ct, body) = get_param_compound("/param-compound/books/ST_001/_compound?page=SCH_002").await;

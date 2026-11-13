@@ -1,9 +1,7 @@
 //! Loading the projects: what [`crate::Cpe::activate`] stores.
 //!
-//! Every project folder is loaded on its own, and whatever goes wrong with
-//! one (a file, a port, the build, validation, a panic) is logged with its id
-//! and leaves that project unavailable: its prefix answers 503, and the others
-//! are served. Nothing here returns an error or panics.
+//! Whatever goes wrong with one project, a panic included, leaves that project alone
+//! unavailable (503 on its prefix). Nothing here returns an error or panics.
 
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::Arc;
@@ -20,16 +18,12 @@ use crate::{assets, request, router, CpeConfig, ProjectSummary};
 /// starts with `_`, and that is what keeps a project off CPE's own `_static` directory.
 const RESERVED_IDS: &[&str] = &["_static"];
 
-/// CPE once its projects are loaded: the router that serves them and lists
-/// them at its root, and the list a host reads.
 pub(crate) struct Activated {
     pub(crate) router: axum::Router,
     pub(crate) projects: Vec<ProjectSummary>,
 }
 
-/// What one project is loaded from, as its source gives it.
 struct Sources {
-    /// The text of the project's config.
     config: String,
     /// The name the config's diagnostics give its file.
     config_file: String,
@@ -38,13 +32,9 @@ struct Sources {
     /// Whether `narrative` is the project's whole narrative, as
     /// `ValidationContext::narrative_files_complete` takes it.
     narrative_complete: bool,
-    /// The store's SQL text.
     store_sql: String,
 }
 
-/// Every project folder with a `SHORTCODE`, loaded from the two ports: its
-/// config, narrative and curation from `files`, and the snapshot of its
-/// shortcode from `projection`, each asked once per project.
 pub(crate) fn from_ports(
     config: &CpeConfig,
     projection: &dyn ArchiveProjection,
@@ -67,7 +57,6 @@ pub(crate) fn from_ports(
     })
 }
 
-/// Every project folder that holds a `data.sql`, opened from that text.
 pub(crate) fn from_sql_folders(config: &CpeConfig) -> Activated {
     load_all(config, discovery::discover_sql_folders(&config.projects_dir), |discovered| {
         let config = discovered.config_source().map_err(|error| error.to_string())?;
@@ -87,10 +76,8 @@ pub(crate) fn from_sql_folders(config: &CpeConfig) -> Activated {
     })
 }
 
-/// Load each of `discovered` from what `sources` gives for it.
-///
-/// "Not ready" is not "not there": a folder that is a project and does not
-/// load is kept as unavailable, so that its prefix answers 503 and not 404.
+/// "Not ready" is not "not there": a project that does not load is kept as unavailable, so that
+/// its prefix answers 503 and not 404.
 fn load_all(
     config: &CpeConfig,
     discovered: Vec<DiscoveredProject>,
@@ -153,7 +140,6 @@ fn load_all(
     Activated { router, projects }
 }
 
-/// What a caught panic said, for the log.
 pub(crate) fn panic_message(payload: &(dyn std::any::Any + Send)) -> &str {
     payload
         .downcast_ref::<&str>()
@@ -162,8 +148,6 @@ pub(crate) fn panic_message(payload: &(dyn std::any::Any + Send)) -> &str {
         .unwrap_or("a panic without a message")
 }
 
-/// The file `name` of project `shortcode`, `None` when the project holds no such file. Any other
-/// failure names the file by its place in `media`, `<shortcode>/<name>`.
 fn deposited(files: &dyn DepositedFiles, shortcode: &str, name: &str) -> Result<Option<Vec<u8>>, String> {
     match files.file(shortcode, name) {
         Ok(bytes) => Ok(Some(bytes)),
@@ -172,13 +156,12 @@ fn deposited(files: &dyn DepositedFiles, shortcode: &str, name: &str) -> Result<
     }
 }
 
-/// `bytes` of the deposited file `file` as text.
 fn utf8(bytes: Vec<u8>, file: &str) -> Result<String, String> {
     String::from_utf8(bytes).map_err(|_| format!("{file} is not valid UTF-8"))
 }
 
-/// One project's sources from the ports. The narrative inventory is complete, so a file the
-/// config names and the port does not hold is `NarrativeFileNotFound`.
+/// The narrative inventory is complete, so a file the config names and the port does not hold
+/// is `NarrativeFileNotFound`.
 fn port_sources(
     projection: &dyn ArchiveProjection,
     files: &dyn DepositedFiles,
@@ -256,7 +239,6 @@ fn port_sources(
     })
 }
 
-/// Get one project's sources and load it. The error is a report ready to log.
 fn load(
     discovered: &DiscoveredProject,
     sources: &impl Fn(&DiscoveredProject) -> Result<Sources, String>,
@@ -290,10 +272,8 @@ fn load(
     with_routes_that_register(project)
 }
 
-/// Refuse a project whose routes axum cannot register. `Router::route` panics on two routes it
-/// cannot tell apart (`/books/:id` beside `/books/:name`), and validation does not rule that pair
-/// out. The trial registration here runs the same code as the real one and turns the panic into a
-/// refused project.
+/// Refuse a project whose routes axum cannot register: `Router::route` panics on two routes it
+/// cannot tell apart (`/books/:id` beside `/books/:name`), and validation does not rule that out.
 fn with_routes_that_register(project: Project) -> Result<Arc<Project>, String> {
     let project = Arc::new(project);
     catch_unwind(AssertUnwindSafe(|| {
@@ -328,7 +308,6 @@ mod tests {
     /// The fixture project's config, whose `remodel` block declares shortcode `0001`.
     const THINGS: &str = include_str!("../tests/fixtures/activation/things/config.kdl");
 
-    /// A snapshot of project `shortcode` with one Thing, `lamp`, named `name`.
     fn snapshot(shortcode: &str, name: &str) -> ProjectSnapshot {
         ProjectSnapshot {
             shortcode: shortcode.to_owned(),
@@ -351,8 +330,6 @@ mod tests {
         }
     }
 
-    /// A projects folder with one project per `(id, shortcode)`, each a folder holding its
-    /// `SHORTCODE`.
     fn projects(projects: &[(&str, &str)]) -> tempfile::TempDir {
         let root = tempfile::tempdir().expect("a temporary directory");
         for (id, shortcode) in projects {
@@ -363,7 +340,6 @@ mod tests {
         root
     }
 
-    /// Deposited files holding each `(shortcode, config)` as that project's `config.kdl`.
     fn configs(configs: &[(&str, &str)]) -> FakeDepositedFiles {
         configs
             .iter()
@@ -372,8 +348,6 @@ mod tests {
             })
     }
 
-    /// The one project of a projects folder whose folder `things` declares `shortcode`, as
-    /// activation discovers it.
     fn discovered(shortcode: &str) -> (tempfile::TempDir, DiscoveredProject) {
         let root = projects(&[("things", shortcode)]);
         let project = crate::discovery::discover_for_activation(root.path())
@@ -383,14 +357,12 @@ mod tests {
         (root, project)
     }
 
-    /// The fixture config under another shortcode.
     fn things_of(shortcode: &str) -> String {
         let config = THINGS.replace("shortcode \"0001\"", &format!("shortcode \"{shortcode}\""));
         assert_ne!(config, THINGS, "the fixture declares shortcode 0001");
         config
     }
 
-    /// The fixture config under `shortcode`, with `body` as its home page's body.
     fn things_with_home(shortcode: &str, body: &str) -> String {
         let things = if shortcode == "0001" {
             THINGS.to_owned()
@@ -405,12 +377,10 @@ mod tests {
         config
     }
 
-    /// The fixture config under `shortcode`, with a home page that shows `home.md`.
     fn things_with_narrative(shortcode: &str) -> String {
         things_with_home(shortcode, "    narrative file=\"home.md\"")
     }
 
-    /// `uri` answered by `router`, which the test took from a `Cpe` earlier.
     async fn get_from(router: &axum::Router, uri: &str) -> (StatusCode, axum::http::HeaderMap, String) {
         let request = axum::http::Request::builder()
             .uri(uri)
@@ -426,7 +396,6 @@ mod tests {
         (parts.status, parts.headers, String::from_utf8_lossy(&body).into_owned())
     }
 
-    /// The route template the answer to `uri` reports, if it reports one.
     async fn matched_route(router: &axum::Router, uri: &str) -> Option<String> {
         let request = axum::http::Request::builder()
             .uri(uri)
@@ -522,8 +491,6 @@ mod tests {
         }
     }
 
-    /// The projection of the cases below: `0001` and `0005` to `0018` are served, `0003` is
-    /// unavailable, and `0004` serves a snapshot of `0001`.
     fn failing_projection() -> Mismatching {
         let mismatched = ProjectSnapshot {
             shortcode: "0001".to_owned(),
@@ -536,8 +503,6 @@ mod tests {
         Mismatching(served.with_unavailable("0003"), mismatched)
     }
 
-    /// Each project that does not activate, as `(folder, SHORTCODE)`, the deposited files that
-    /// make it fail, and the cause its report names.
     fn failing_projects() -> (Vec<(&'static str, &'static str, &'static str)>, FakeDepositedFiles) {
         let delta = std::fs::read_to_string(fixture().join("delta/config.kdl")).expect("the fixture is readable");
         let reads_curation = things_of("0016").replace(
@@ -608,8 +573,7 @@ mod tests {
         (cases, files)
     }
 
-    /// Each cause of a project that does not activate is reported as that cause, so that the
-    /// 503s of the test below are not many times one unrelated failure.
+    /// Without it, the next test's 503s could all be one unrelated failure.
     #[test]
     fn a_project_that_cannot_be_loaded_is_reported_with_its_cause() {
         let projection = failing_projection();
@@ -679,8 +643,6 @@ mod tests {
         assert_eq!(files.requests(), [] as [(String, String); 0]);
     }
 
-    /// The names are the base files the config names and their variants, in the site's
-    /// languages (`en`, `de`); a name holding a path separator is never asked for.
     #[test]
     fn activation_asks_the_files_port_for_the_config_the_named_narrative_and_the_curation_only() {
         let config = things_with_home(
@@ -812,8 +774,7 @@ mod tests {
         }
     }
 
-    /// The store is a read model: it is rebuilt from empty from what the ports serve, holds
-    /// nothing else, and follows each of them (ADR-0008, ADR-0012).
+    /// The store is a read model (ADR-0008, ADR-0012).
     #[tokio::test]
     async fn the_store_is_rebuilt_from_the_ports_alone_and_follows_each() {
         let root = projects(&[("things", "0001")]);
@@ -879,7 +840,6 @@ mod tests {
         assert!(body.contains("Copper kettle") && !body.contains("Brass lamp"), "{body}");
     }
 
-    /// The committed project folders, `sync`'s committed data and `media`'s.
     fn committed_projects() -> PathBuf {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../projects")
     }
@@ -892,9 +852,7 @@ mod tests {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../../media/data")
     }
 
-    /// Incunabula as the area binary serves it: its committed folder, its store built from
-    /// `sync`'s adapter over the committed 0803 data, and its config, narrative and curation read
-    /// through `media`'s adapter over the committed deposited files.
+    /// Incunabula as the area binary serves it.
     #[tokio::test]
     async fn incunabula_activates_from_the_committed_data_and_serves_its_pages() {
         let cpe = Cpe::new(&config_for(&committed_projects()));
@@ -911,8 +869,7 @@ mod tests {
         }
     }
 
-    /// The start page, a book's page and a border strip's record page, each with its heading. The
-    /// last two headings are values of the committed data.
+    /// The last two headings are values of the committed data.
     const INCUNABULA_PAGES: [(&str, &str); 3] = [
         ("/incunabula/", "<h1>Die Bilderfolgen der Basler Frühdrucke"),
         (
@@ -922,16 +879,12 @@ mod tests {
         ("/incunabula/strips/l-10", "<h1 class=\"record__title\">l_10"),
     ];
 
-    /// The length and the SHA-256 of Incunabula's whole store text, header included. The header
-    /// names the two ports the text came through, so it differs from the prototype's `data.sql`;
-    /// the text below it is the prototype's, which the body pin below holds.
-    ///
-    /// The text follows the committed 0803 data, Incunabula's `remodel` block and the builder.
-    /// When one of them changes it on purpose, put the two values the failure prints here.
+    /// The length and the SHA-256 of Incunabula's whole store text, header included. When the
+    /// committed 0803 data, its `remodel` block or the builder changes it on purpose, put the two
+    /// values the failure prints here.
     const INCUNABULA_STORE_BYTES: usize = 5_631_888;
     const INCUNABULA_STORE_SHA256: &str = "36da32247854b09743fd7177fc91c70be2821dd143efa6bf73f49e9c601d0c86";
 
-    /// Incunabula's store text as the area binary builds it from the committed data.
     fn incunabula_store_text() -> String {
         let discovered = crate::discovery::discover_for_activation(&committed_projects())
             .projects
@@ -958,11 +911,9 @@ mod tests {
         );
     }
 
-    /// The length and the SHA-256 of Incunabula's store text below its header, which ends at the
-    /// first blank line. They are those of `dsp-incubator cpe/projects/incunabula/data.sql` at
-    /// `d68f214b` below its header, and they change only when the committed 0803 data,
-    /// Incunabula's `remodel` block or the builder's tables do: a change to the header alone
-    /// leaves them as they are.
+    /// The length and the SHA-256 of Incunabula's store text below its header (up to the first
+    /// blank line): those of `dsp-incubator` `cpe/projects/incunabula/data.sql` at `d68f214b`. A
+    /// change to the header alone leaves them as they are.
     const INCUNABULA_STORE_BODY_BYTES: usize = 5_631_489;
     const INCUNABULA_STORE_BODY_SHA256: &str = "dfd33273fd48b23b64986a2be880d02bdd9a91c7f65c8b1b8b3ef5e27a0f25af";
 
@@ -1000,7 +951,6 @@ mod tests {
         assert_incunabula_answers_503(&cpe).await;
     }
 
-    /// Incunabula answers 503, and the overview does not list it.
     async fn assert_incunabula_answers_503(cpe: &Cpe) {
         assert!(cpe.projects().is_empty());
         for uri in ["/incunabula/", "/incunabula/books"] {

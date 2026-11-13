@@ -1,10 +1,7 @@
 //! CPE's shared static files, compiled into the binary and served by lookup.
 //!
-//! The table holds the seven stylesheets of `cpe-components`' `style/` and the
-//! files of `areas/access/cpe/public/`. A file added to one of those folders
-//! needs a row here; `every_file_of_the_three_folders_has_a_row` fails until
-//! it has one. `shell.css` refers to `dasch-fingerprint.svg` by a relative
-//! URL, so the stylesheets and the images share the `cpe/` prefix.
+//! `shell.css` refers to `dasch-fingerprint.svg` by a relative URL, so the stylesheets and the
+//! images share the `cpe/` prefix.
 
 use axum::http::{header, StatusCode};
 use axum::response::{IntoResponse, Response};
@@ -88,9 +85,7 @@ mod tests {
         .expect("oneshot against an in-process router never fails")
     }
 
-    /// The three folders the table is written from, with the prefix their
-    /// files are served under. `README.md` documents `public/vendor/` and is
-    /// not served.
+    /// `README.md` documents `public/vendor/` and is not served.
     #[test]
     fn every_file_of_the_three_folders_has_a_row() {
         let cpe = Path::new(env!("CARGO_MANIFEST_DIR")).join("..");

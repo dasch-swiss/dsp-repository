@@ -1,9 +1,7 @@
 //! The answer for what CPE knows and cannot serve: status 503.
 //!
-//! "Not ready" is not "not there". A project that did not load, and all of
-//! CPE until its projects are loaded, answer 503 with `Retry-After` and
-//! `Cache-Control: no-store`, so that no client and no cache takes the answer
-//! for a missing page. 404 is kept for a path that names no project.
+//! "Not ready" is not "not there": `Retry-After` and `no-store` keep clients and caches from
+//! taking it for a missing page. 404 is kept for a path that names no project.
 
 use axum::http::{header, StatusCode};
 use axum::response::{IntoResponse, Response};
@@ -25,17 +23,14 @@ pub(crate) fn response() -> Response {
         .into_response()
 }
 
-/// The page's whole style. Light only, in the system's own typeface.
 const STYLE: &str = "\
 body{margin:0;font:1rem/1.5 system-ui,sans-serif;color:#1c1b19;background:#f7f4ee}\
 main{max-width:34rem;margin:0 auto;padding:4rem 1.5rem}\
 h1{margin:0 0 1rem;font-size:1.5rem;line-height:1.25}\
 p{margin:0}";
 
-/// A plain page in English that references no URL: no stylesheet, script,
-/// font, image or link. Until the projects are loaded every path of CPE is
-/// answered with this page, the static files included, so anything it asked
-/// for would be answered 503 too.
+/// A page that references no URL: until the projects are loaded every path of CPE answers 503,
+/// the static files included, so anything it asked for would be answered 503 too.
 fn page() -> Markup {
     html! {
         (DOCTYPE)
@@ -75,7 +70,6 @@ mod tests {
         assert!(body.contains("<h1>Temporarily unavailable</h1>"), "{body}");
     }
 
-    /// What a browser would fetch, or a reader follow, from the page: nothing.
     #[test]
     fn the_page_references_no_url() {
         let page = page().into_string();

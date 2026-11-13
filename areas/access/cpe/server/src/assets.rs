@@ -1,8 +1,7 @@
 //! The projects' own files (a cover image), read once and served by lookup.
 //!
-//! A request is answered by looking its project segment and its path up as
-//! strings. Neither is ever joined onto a directory, so no request can name a
-//! file that discovery did not list under a project's `assets/` folder.
+//! A request's project and path are looked up as strings, never joined onto a directory, so no
+//! request can name a file that discovery did not list under a project's `assets/` folder.
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -18,14 +17,12 @@ use crate::router::content_type;
 /// of this origin: the policy keeps it usable as an image and lets no script in it run.
 const ASSET_CSP: &str = "default-src 'none'; style-src 'unsafe-inline'; sandbox";
 
-/// Every served project's asset files, by project id and then by the path a
-/// `site.cover-image` value carries (`assets/cover.webp`, with the `assets/`
-/// segment). Cheap to clone.
+/// Every served project's asset files, by project id and then by the path a `site.cover-image`
+/// value carries (`assets/cover.webp`, with the `assets/` segment).
 #[derive(Clone, Default)]
 pub(crate) struct AssetInventory(Arc<HashMap<String, HashMap<String, Bytes>>>);
 
 impl AssetInventory {
-    /// Read the asset files of `projects` from disk.
     pub(crate) fn of(projects: &[DiscoveredProject]) -> Self {
         let by_project = projects
             .iter()
@@ -83,8 +80,7 @@ mod tests {
             .expect("the header is ASCII")
     }
 
-    /// `uri` answered by CPE over the fixture projects: a project's files are
-    /// routed under the project, so the route exists for a loaded project only.
+    /// A project's files are routed under the project: the route exists for a loaded project only.
     async fn get(uri: &str) -> (StatusCode, axum::http::HeaderMap) {
         let cpe = crate::Cpe::from_sql_folders(&config_for(&fixture()));
         let (status, headers, _) = crate::tests::get(&cpe, uri).await;
@@ -109,9 +105,7 @@ mod tests {
         assert_eq!(body.as_ref(), on_disk.as_slice());
     }
 
-    /// The route half of the validator↔route agreement: a nested asset path
-    /// is servable, which is why `DiscoveredProject::asset_files` walks
-    /// `assets/` recursively. Change both together.
+    /// `DiscoveredProject::asset_files` walks `assets/` recursively for this: change both together.
     #[test]
     fn serve_project_asset_returns_file_for_nested_path() {
         let response = fixture_assets().serve("alpha", "assets/covers/nested.webp");
@@ -142,8 +136,6 @@ mod tests {
         }
     }
 
-    /// `config.kdl` and `data.sql` are in the project folder and not under
-    /// `assets/`, so the inventory does not hold them.
     #[test]
     fn serve_project_asset_never_reaches_non_asset_project_files() {
         let assets = fixture_assets();
@@ -160,7 +152,6 @@ mod tests {
         assert_eq!(headers[header::CONTENT_SECURITY_POLICY], ASSET_CSP);
     }
 
-    /// A project's files are served under the project's own segment and at no other path.
     #[tokio::test]
     async fn the_assets_are_under_the_project_and_nowhere_else() {
         for uri in [
@@ -172,10 +163,7 @@ mod tests {
         }
     }
 
-    /// The route decodes percent-escapes before the lookup, so each tail below
-    /// reaches the inventory as `..`, a slash, a backslash, a NUL byte or an
-    /// absolute path. None is a key. The first request shows that the route
-    /// is reached at all.
+    /// The route decodes percent-escapes before the lookup; the first request shows it is reached.
     #[tokio::test]
     async fn assets_route_answers_404_to_every_tail_that_is_not_an_inventory_key() {
         assert_eq!(get("/alpha/_assets/assets/cover.webp").await.0, StatusCode::OK);

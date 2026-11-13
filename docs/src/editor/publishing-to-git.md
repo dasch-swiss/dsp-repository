@@ -118,7 +118,7 @@ A pull request opened by the run must satisfy `commit-hygiene.yml` like any othe
 
 | Name | Kind | Why |
 |---|---|---|
-| `EDITOR_BASE_URL` | repository variable | The editor's origin. A variable, not a secret: it is not one, and the hostname is still open with Infra (DEV-6921), so settling it needs no code change. |
+| `EDITOR_BASE_URL` | repository variable | The editor's origin, `https://deposit.dasch.swiss`. A variable, not a secret: it is not one. Never stage's origin: the run opens pull requests against the published data from whatever approved records it reads there. |
 | `GH_TOKEN` | secret | Used against GitHub. Not `github.token`, see above. |
 
 The workflow refuses to start when the variable is empty, before checkout: GitHub substitutes an empty string for an unset variable rather than failing the run.

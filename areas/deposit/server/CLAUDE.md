@@ -8,7 +8,7 @@ The Deposit Area's composition root (`areas/deposit/ADR-0004`), binary `deposit-
 
 ## Router assembly: the traced/untraced order matters
 
-`router.rs` is kept apart from `serve()` so the assembly is unit-testable. `build_router` merges the editor's and identity's routers, puts `ServeDir` with the app's 404 as the fallback, then applies the OTel layers. `build_app` then adds `/healthz` and `POST /telemetry/collect` *after* those `.layer()` calls, so they stay untraced, and wraps everything in `csrf::require_same_origin`, so the CSRF check covers every route including the beacon. Only the anti-framing and `nosniff` header layers sit outside it, so CSRF refusals carry those headers too. Axum wraps only routes declared before a `.layer()`: do not reorder without checking `router.rs`'s tests.
+`router.rs` is kept apart from `serve()` so the assembly is unit-testable. `build_router` merges the editor's and identity's routers, puts `ServeDir` with the app's 404 as the fallback, then applies the OTel layers. `build_app` then adds `/healthz` and `POST /telemetry/collect` *after* those `.layer()` calls, so they stay untraced, and wraps everything in `csrf::require_same_origin`, so the CSRF check covers every route including the beacon. Only the security-header layers (anti-framing, `nosniff`, and `Cache-Control: private, no-store` on everything but a static file) sit outside it, so CSRF refusals carry those headers too. Axum wraps only routes declared before a `.layer()`: do not reorder without checking `router.rs`'s tests.
 
 ## Dependency boundary
 

@@ -1,5 +1,150 @@
 # Changelog
 
+## [0.8.11](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.10...v0.8.11) (2026-11-13)
+
+
+### Features
+
+* **cpe-ports,media-store,cpe-store-build,sync-store,cpe-server:** Activate CPE from the archive projection and media's deposited files (DEV-7511, DEV-7512) ([5da01f2](https://github.com/dasch-swiss/dsp-repository/commit/5da01f26574b8ce48d288621b471fb824bc695a6))
+* **deposit-shell,editor-web,identity-web,identity-ports,editor-store,editor-core,deposit-server:** Header navigation on every signed-in page (DEV-7694) ([bafb0ae](https://github.com/dasch-swiss/dsp-repository/commit/bafb0aebcbde944bd8aac794ee56cb2b383826a7))
+* **deposit-shell,identity-web,editor-web:** The editor's shell, login and error pages in the visual-pass look ([411c7c2](https://github.com/dasch-swiss/dsp-repository/commit/411c7c2685ce45d585eb6fec73eae8b1d1069e5e))
+* **deposit-shell:** Show the build version in the footer ([6bc64dd](https://github.com/dasch-swiss/dsp-repository/commit/6bc64dd395f717d45cf12a4beacce4fec804b706))
+* **dpe-web:** Calm project cover images on the projects grid with a light filter and a vignette ([555596e](https://github.com/dasch-swiss/dsp-repository/commit/555596ee0f56c6cb39dee6d8a7cd92768363d6e1))
+* **editor-collector:** Write a per-record run summary instead of reporting to the editor ([51f3364](https://github.com/dasch-swiss/dsp-repository/commit/51f3364fc7f694c585223b99ec79c97f5adddb7b))
+* **editor-core,editor-store,editor-web:** Propose changes from the contributor card and return to where it started (DEV-7686) ([9dc02c8](https://github.com/dasch-swiss/dsp-repository/commit/9dc02c85fbcc520b0ba13f7c05c1fd3f8ee9e00c))
+* **editor-core,editor-web,mosaic-tiles,mosaic-playground,deposit-server:** Short description live character counter and a server-side 200-character limit (DEV-7689) ([03d3a7b](https://github.com/dasch-swiss/dsp-repository/commit/03d3a7b322b49dc81e4ee6852a92e2e7727bc07c))
+* **editor-core,editor-web,mosaic-tiles,mosaic-playground:** Hints per field, hidden row numbers, lang on tagged values, Country and Canton dropdowns (DEV-7690) ([e1d055e](https://github.com/dasch-swiss/dsp-repository/commit/e1d055e227a16f3dfa292ff0c2060a477e10825d))
+* **editor-core,editor-web,mosaic-tiles,mosaic-playground:** Search pickers over bundled vocabularies for disciplines, places and periods (DEV-7698) ([40f153f](https://github.com/dasch-swiss/dsp-repository/commit/40f153fece9813784621a4fe46958baac067bbe6))
+* **editor-core,editor-web,mosaic-tiles:** One header row, text before language and no English default on language rows (DEV-7703) ([57c598a](https://github.com/dasch-swiss/dsp-repository/commit/57c598ade767517069830edb0e7c3734e064610f))
+* **editor-core,editor-web:** Project image section says to send the image to RDU (DEV-7696) ([0d732f8](https://github.com/dasch-swiss/dsp-repository/commit/0d732f86207e9567227c75119e8d95694b610e44))
+* **editor-core,editor-web:** Record a discipline from the SNSF list and name the UNESCO source after the nomenclature (DEV-7710) ([c1c357a](https://github.com/dasch-swiss/dsp-repository/commit/c1c357a3d9c90d799da68e55dea8d0f0411a22ac))
+* **editor-web,editor-core,mosaic-tiles:** Edit keywords and alternative names one value per row with a language dropdown (DEV-7688) ([39ee04b](https://github.com/dasch-swiss/dsp-repository/commit/39ee04b22c338f97b275e95ca22fbb66a121168e))
+* **editor-web,editor-pull-requests:** Replace the collection vocabulary with pull requests and approved records ([5c522fb](https://github.com/dasch-swiss/dsp-repository/commit/5c522fb042f5d84f7fe8acdc23d90a1d0a26e9e7))
+* **editor-web,editor-store,deposit-server:** Drop the collection report and its token ([cf97bfe](https://github.com/dasch-swiss/dsp-repository/commit/cf97bfe9c2a89d89de3955c6329e643558adc841))
+* **editor-web,editor-store,editor-collector:** Approving a project always supersedes its earlier record ([fa49637](https://github.com/dasch-swiss/dsp-repository/commit/fa4963795aa06b5d7fa8f8c70407b5f525dd8525))
+* **editor-web,identity-web,deposit-shell,mosaic-tiles:** The proposal page and the destructive confirmations in the visual-pass look ([20e19dc](https://github.com/dasch-swiss/dsp-repository/commit/20e19dc8485746a8d17943b1317ddbb0d3bd7114))
+* **editor-web:** Let RDU create a project (DEV-7695) ([5337207](https://github.com/dasch-swiss/dsp-repository/commit/5337207a92d18a22e13f67a3af3a8908514e09a4))
+* **editor-web:** The projects list and the states page in the visual-pass look ([21cc52b](https://github.com/dasch-swiss/dsp-repository/commit/21cc52b4cace5aaea29a9a68f9a8f0b48ac94692))
+* **editor-web:** The review queue, review page and approved records in the visual-pass look ([9701689](https://github.com/dasch-swiss/dsp-repository/commit/9701689007b458853c39d40d538a6c84a5bdbecc))
+* **editor-web:** The section form, rail and review-round notices in the visual-pass look ([abdad5d](https://github.com/dasch-swiss/dsp-repository/commit/abdad5d5daa8cc1f6a6a0f6d6c0673edf8beb92c))
+* **identity-store,deposit-server:** DKIM-sign login mails sent through the unibas relay (DEV-7659) ([d300601](https://github.com/dasch-swiss/dsp-repository/commit/d300601a58fd953ffb79350237f6d0aae496cf3c))
+* **identity-web:** Explain an empty code page on a deployment that reveals the code (DEV-7675) ([ac5e04a](https://github.com/dasch-swiss/dsp-repository/commit/ac5e04afb90af9022a7b26b334d55d76e796c8f5))
+* **identity-web:** Explain the depositor form fields and warn on an unknown shortcode (DEV-7677) ([c2d828b](https://github.com/dasch-swiss/dsp-repository/commit/c2d828bb00586273adf1639dda0d96136f2ee971))
+* **mosaic-tiles,mosaic-playground,editor-core,editor-web:** Show chosen contributors and contact points as cards with one type-ahead search (DEV-7702) ([a6bb1eb](https://github.com/dasch-swiss/dsp-repository/commit/a6bb1ebfdac7cd057f9c97fbd826f4d53aacf688))
+* **mosaic-tiles,mosaic-playground,editor-web,editor-core:** Align the editor form, its selects and the review queue (DEV-7691) ([540f661](https://github.com/dasch-swiss/dsp-repository/commit/540f6613b163cf6483f6f5b336ed04c08994f619))
+* **mosaic-tiles,mosaic-playground:** A segmented radio group with an optional hidden legend ([106764f](https://github.com/dasch-swiss/dsp-repository/commit/106764f9c15a1262771a86e9305299e6a8bf094e))
+* **mosaic-tiles,mosaic-playground:** State badges, striped alerts and a monospace code field ([2c444d6](https://github.com/dasch-swiss/dsp-repository/commit/2c444d6892bd8919dce5d6dfc5f2a744495f1208))
+
+
+### Bug Fixes
+
+* **cpe-components:** Stop a boolean value's styling hook from reading as a key-less data-on (DEV-7369) ([39983f2](https://github.com/dasch-swiss/dsp-repository/commit/39983f200631ebe90dbb40d9054fff7cbfcf912b))
+* **deposit-server:** Keep signed-in pages out of the browser's and shared caches (DEV-7765) ([31fc1a1](https://github.com/dasch-swiss/dsp-repository/commit/31fc1a101287fe937932832f996559dcc7159798))
+* **deposit-server:** Refuse framing and MIME sniffing on every editor response (DEV-7676) ([350ac83](https://github.com/dasch-swiss/dsp-repository/commit/350ac8302d98ef44896fe9c514223d16ef137665))
+* **editor-collector:** Skip a merged pull request only for the record it names ([638e66e](https://github.com/dasch-swiss/dsp-repository/commit/638e66e3dbb4105d195c4c0b2ffe6e72ed1e8cb3))
+* **editor-core,editor-web:** Bound a posted body's row keys and refuse an over-cap save before the conflict check (DEV-7688) ([6636804](https://github.com/dasch-swiss/dsp-repository/commit/6636804554c7366077af60579ccaa9112ac56f76))
+* **editor-core,editor-web:** Show one neutral status message after submit, approve and discard (DEV-7682) ([4114a07](https://github.com/dasch-swiss/dsp-repository/commit/4114a078c8d20744b20f83d8a15a39a3d61d3e32))
+* **editor-core:** Check the format of links and DOIs (DEV-7685) ([a8d990f](https://github.com/dasch-swiss/dsp-repository/commit/a8d990fdf71e7f6566cafa4faf4ba04ebddb01ad))
+* **editor-web,editor-core,mosaic-tiles,mosaic-playground:** Label repeatable name and job-title rows by what they hold, not "Link" (DEV-7701) ([a66ecc5](https://github.com/dasch-swiss/dsp-repository/commit/a66ecc5a303c771abe9856be3188b7bc8026a3a9))
+* **editor-web,editor-core:** Clear "Add another" after its value lands and store data languages as ISO 639 codes (DEV-7683) ([2290ee3](https://github.com/dasch-swiss/dsp-repository/commit/2290ee3c38c9a3d6faa4f925412f6b80db1a751a))
+* **editor-web,editor-core:** Keep a row whose variant was just chosen through the autosave (DEV-7680) ([55bbb56](https://github.com/dasch-swiss/dsp-repository/commit/55bbb565ec96a685a77efd0106af7528abaf5847))
+* **editor-web,editor-core:** Show legal info's content and no form buttons on a section with nothing to edit (DEV-7684) ([2e543c6](https://github.com/dasch-swiss/dsp-repository/commit/2e543c61fd2044bf7b6d54e07abc34466d133abf))
+* **editor-web,editor-store:** List a submitted or approved project once in the review queue (DEV-7687) ([7661023](https://github.com/dasch-swiss/dsp-repository/commit/766102351e6154ba6e01658806e681889514ca51))
+* **editor-web,identity-web,editor-core:** Show names instead of internal ids and settings (DEV-7693) ([aa684bf](https://github.com/dasch-swiss/dsp-repository/commit/aa684bfc77b4347cbab25cc87860fe9f81d7b4a0))
+* **editor-web:** Choose a picker's match with a button under its search box (DEV-7681) ([bd9111a](https://github.com/dasch-swiss/dsp-repository/commit/bd9111a48030fe81106372db0899ba1e70bc0d34))
+* **editor-web:** Drop the rail's one-sided border and give the floating control row an edge ([770b5a5](https://github.com/dasch-swiss/dsp-repository/commit/770b5a5388415d92722c6bc43ae8cdc6c4810e21))
+* **editor-web:** Never empty a typed value; show format errors inline (DEV-7711) ([46cda6e](https://github.com/dasch-swiss/dsp-repository/commit/46cda6eb65dca3c7bb1f3ed9a8ddeb2fcdbc1540))
+* **editor-web:** Show the take-over notice by posting the claim form through Datastar ([4ba7445](https://github.com/dasch-swiss/dsp-repository/commit/4ba7445227ce3d4bb2be58a3d60a77866ecb5c33))
+* **editor-web:** Warn on a saved draft that still holds a value submit refuses ([69bec99](https://github.com/dasch-swiss/dsp-repository/commit/69bec99075d56717df9e76016e90a91f01873493))
+* **mosaic-tiles,editor-web:** Keep a table's sr-only header inside its scroll region ([05cab0d](https://github.com/dasch-swiss/dsp-repository/commit/05cab0d9695d8004563295cc9fb5d9543bdcf5c6))
+* **mosaic-tiles,editor-web:** Pass WCAG AA contrast on buttons and drop orange from normal states (DEV-7692) ([06f037e](https://github.com/dasch-swiss/dsp-repository/commit/06f037e661ca5989b14cd43380fac5818efea589))
+* **mosaic-tiles:** Let a repeatable row's input shrink so a section page fits 320px ([b7453ca](https://github.com/dasch-swiss/dsp-repository/commit/b7453ca6fc5d4174be54d2207e919edbc097b44e))
+
+
+### Code Refactoring
+
+* **cpe-components:** Build CPE's Datastar actions with shared-datastar (DEV-7369) ([ed37569](https://github.com/dasch-swiss/dsp-repository/commit/ed375697503521052c30d226354a6843c44b906f))
+* **deposit-server,identity-web,identity-store:** Make deposit-server the area's composition root ([d6a467a](https://github.com/dasch-swiss/dsp-repository/commit/d6a467a8920d1116ed46dfaa77cf6cd559d5a384))
+* **deposit-shell,editor-server,editor-web:** Move the document shell and the sign-in link into the area shell ([5d7d626](https://github.com/dasch-swiss/dsp-repository/commit/5d7d6268ffddd0d4d1625cff90b950bf4ac40983))
+* **dpe-core:** Read records only from the committed dumps ([4066bc7](https://github.com/dasch-swiss/dsp-repository/commit/4066bc70a7ce4580ae05a1aa425b58f69aed907c))
+* **editor-core:** Decide the approve gates in editor-core ([124b086](https://github.com/dasch-swiss/dsp-repository/commit/124b0868c078feafc322a553847b6cc86df39f3d))
+* **editor-core:** Decide the depositor-side predicates in editor-core ([072fa8e](https://github.com/dasch-swiss/dsp-repository/commit/072fa8e9fa6cc2d6c4f92803051219fd37766cb7))
+* **editor-core:** Decide the submit gates in editor-core ([9a2819d](https://github.com/dasch-swiss/dsp-repository/commit/9a2819ddefbbb7111454c07525724e93c40ed3ed))
+* **editor-core:** Move the form registry, obligations and submit validation into editor-core ([7453d75](https://github.com/dasch-swiss/dsp-repository/commit/7453d7500c3505a9c649d968f087363aa36ba6f6))
+* **editor-ports,editor-web,identity-store:** Rename Principal to Actor ([4435908](https://github.com/dasch-swiss/dsp-repository/commit/443590875e4530823908a73f82ad27a0763415bc))
+* **editor-ports,identity-ports,identity-store,editor-store,editor-server:** Put the editor on Principal behind the capabilities' ports ([8e96cf0](https://github.com/dasch-swiss/dsp-repository/commit/8e96cf09229cd836d5cb6ac931bcf342f9dc067e))
+* **editor-server:** Build the page-URL normalizer from the route table ([62cb161](https://github.com/dasch-swiss/dsp-repository/commit/62cb16173de50df559143731443cdd71a6156858))
+* **editor-web,editor-server,editor-ports:** Move the editor's handlers, routes and startup into editor-web ([03e8120](https://github.com/dasch-swiss/dsp-repository/commit/03e812068cb651fa21a0cc25229d90fc38af25ed))
+* **editor-web:** Build the editor's Datastar actions with shared-datastar (DEV-7369) ([b55f542](https://github.com/dasch-swiss/dsp-repository/commit/b55f542d0fc656f8f636bdd409ddacbd919d3a2c))
+* **editor-web:** One storage_error for the editor's handlers ([76fa87f](https://github.com/dasch-swiss/dsp-repository/commit/76fa87fafbaaa0427571b9e1b5b3d89a254e54ee))
+* **identity-core,editor-core,editor-server:** Extract identity's domain into identity-core ([08630a9](https://github.com/dasch-swiss/dsp-repository/commit/08630a9cc12779923aad96157eae1da9715a1c7d))
+* **identity-ports,editor-store,identity-web:** Rename AuthoredWork to OpenWork ([142b099](https://github.com/dasch-swiss/dsp-repository/commit/142b099eec11accbb5d4c030cda637bd8670ad94))
+* **identity-store,editor-ports,editor-web:** Rename Assignment to Assigned project ([ea999b1](https://github.com/dasch-swiss/dsp-repository/commit/ea999b1edbe23cad0cd028ce84015344ae59d059))
+* **identity-store,editor-store,editor-server:** Split the store into two crates over two database files ([44dfb6e](https://github.com/dasch-swiss/dsp-repository/commit/44dfb6e425ec1ded3ffe9ab7391f3a3682425d85))
+* **identity-web,editor-server,editor-web:** Move identity's pages, handlers, routes and startup into identity-web ([e2dacde](https://github.com/dasch-swiss/dsp-repository/commit/e2dacde7b0d35d118f8d5617bb3cab7037bcf1be))
+* **shared-datastar,dpe-web:** Build DPE's Datastar actions with a typed builder (DEV-7369) ([b52b650](https://github.com/dasch-swiss/dsp-repository/commit/b52b65059b35b15b09454560d1d24c4c6999b239))
+* **shared-rate-limit:** One RightmostXffKeyExtractor for every per-IP rate limit ([abeed45](https://github.com/dasch-swiss/dsp-repository/commit/abeed45cfa4cbf3b7e764569fa6a7f6ec4f58611))
+* **shared-telemetry:** Make collect_route the only way to mount the collector ([24e22ed](https://github.com/dasch-swiss/dsp-repository/commit/24e22ed3f2b5b8bf2995f63e2e909b5310e3afe3))
+
+
+### Documentation
+
+* **docs:** Add the "feat: editor form polish from the 2026-10-28 stage test" plan ([528ded3](https://github.com/dasch-swiss/dsp-repository/commit/528ded308b6ebd56b9c62fbd88ffc92f109cd626))
+* **docs:** Add the "feat: editor pickers as in the prototype" plan ([1ffcd73](https://github.com/dasch-swiss/dsp-repository/commit/1ffcd735736b6cea35e3ef24ebd77412a9a16af0))
+* **docs:** Add the "fix: editor fixes before prod from the 2026-10-28 stage test" plan ([74c3a98](https://github.com/dasch-swiss/dsp-repository/commit/74c3a982852555212d4892160c3df1ca5d4ce1c0))
+* **docs:** Add the "fix: editor prod blockers from the 2026-10-28 stage test" plan ([2cc7f7f](https://github.com/dasch-swiss/dsp-repository/commit/2cc7f7f25614753c504196bbde8e7d64d5edce1e))
+* **docs:** Add the "test: lock down the editor's behaviour before the visual pass" plan ([9d170c8](https://github.com/dasch-swiss/dsp-repository/commit/9d170c82181ac0f90b781daa27be074785f5d755))
+* **docs:** Add the just test-changed plan (DEV-7615) ([3ef06a9](https://github.com/dasch-swiss/dsp-repository/commit/3ef06a9d5db4f7ec395e5655c6a523ab7a54418c))
+* **docs:** Add the typed Datastar actions plan (DEV-7369) ([3686f3b](https://github.com/dasch-swiss/dsp-repository/commit/3686f3bb411c1012c8ba059988066b0bcdddbf71))
+* **docs:** Align CLAUDE.md, CONVENTIONS.md and REVIEW.md with the eng shape ([931d20a](https://github.com/dasch-swiss/dsp-repository/commit/931d20a7b00b030c10bb4a313299fc3daee50102))
+* **docs:** Amend areas/deposit/ADR-0004 where the code disproved it, and plan the refactor ([32f57d6](https://github.com/dasch-swiss/dsp-repository/commit/32f57d6244932599aa86e678eb31d52f54182c09))
+* **docs:** Decide the two archive channels, deposited files through media, and one authorisation decision (DEV-7442, DEV-7488) ([c89f338](https://github.com/dasch-swiss/dsp-repository/commit/c89f338cb5259c1f5c3295782e1132ab53880b28))
+* **docs:** Keep only the current decision in an ADR, and its history in git ([f48fa0b](https://github.com/dasch-swiss/dsp-repository/commit/f48fa0be366b30fe588c2a84ecf9d6fb412b5324))
+* **docs:** Name ARCH-MAP's deployables by composition root and record the kit-budget exceptions ([cb98551](https://github.com/dasch-swiss/dsp-repository/commit/cb985518137f72412ccab7e32c5ef299a3ae508f))
+* **docs:** Name every vendor directory where the docs list them ([f98e323](https://github.com/dasch-swiss/dsp-repository/commit/f98e3237913562e27960970ee7b59c4aafa0a2f4))
+* **docs:** Plan moving the editor's rules into editor-core ([6b87aea](https://github.com/dasch-swiss/dsp-repository/commit/6b87aeaac71b8b70e42fec2da5845bdec0ac176a))
+* **docs:** Refresh ARCH-MAP.md for project creation and the known-project seam ([4a7c5c7](https://github.com/dasch-swiss/dsp-repository/commit/4a7c5c7694db52af32948a9a69d7f0d53757fb06))
+* **docs:** Refresh the ARCH-MAP entries this PR changes ([6bff53c](https://github.com/dasch-swiss/dsp-repository/commit/6bff53c74ba26729e2fcfda50a8d2a1a04ed8235))
+* **docs:** Retire three ADRs that no longer decide anything, keeping their numbers ([e9d6261](https://github.com/dasch-swiss/dsp-repository/commit/e9d6261b5a46a22b4b6f1ca2667455cbc701f71a))
+* **docs:** Rewrite every ADR to the decision in force, keeping what is still to come ([8565887](https://github.com/dasch-swiss/dsp-repository/commit/8565887b48416b44b5be57cc11d9c7f7c076e8bd))
+* **dsp-cli,docs:** Re-home the incubator's vision and conventions ([d89a65a](https://github.com/dasch-swiss/dsp-repository/commit/d89a65ab6ed45f1a9ff741fea45265c91d1a43f7))
+* **mosaic-tiles:** Name components/mod.rs as where a new tile is declared ([0455214](https://github.com/dasch-swiss/dsp-repository/commit/0455214537d8f998645fdd6f4816d2affcda3323))
+
+
+### Tests
+
+* **editor-store,identity-store:** Freeze every merged migration, 0001 included ([624f80c](https://github.com/dasch-swiss/dsp-repository/commit/624f80c32ea8557c18aed2be37917250b5c40255))
+* **editor-web:** Add the harness the lockdown specs share (DEV-7769) ([973826f](https://github.com/dasch-swiss/dsp-repository/commit/973826fc1482f2dc5b66858cc16fbd0e2bdefc4c))
+* **editor-web:** Find agents and vocabulary options by their text, not a styling class (DEV-7769) ([e3e2b5c](https://github.com/dasch-swiss/dsp-repository/commit/e3e2b5ca97d03369afe0e5446ec10e4af9aa1e0f))
+* **editor-web:** Pin discarding a draft and taking a submission back in section-lifecycle.spec.ts (DEV-7769) ([97f0c7e](https://github.com/dasch-swiss/dsp-repository/commit/97f0c7ec1128eb94e4737d95aca91d530239fb88))
+* **editor-web:** Pin editing and removing a depositor account in depositors.spec.ts (DEV-7769) ([927e9bc](https://github.com/dasch-swiss/dsp-repository/commit/927e9bc713d670491885192709b239fabc7c8973))
+* **editor-web:** Pin one reviewer taking over another's review in review-takeover.spec.ts (DEV-7769) ([2eefca8](https://github.com/dasch-swiss/dsp-repository/commit/2eefca879e64d1c09be01d6d61c185f17461a717))
+* **editor-web:** Pin per-field review decisions and what an approval stores in review-decisions.spec.ts (DEV-7769) ([137e0a2](https://github.com/dasch-swiss/dsp-repository/commit/137e0a21b3ed4470baccffa7f4cd0f3c0efd9f95))
+* **editor-web:** Pin proposing a new person and organisation and RDU's decisions on a proposed person (DEV-7769) ([b9eede8](https://github.com/dasch-swiss/dsp-repository/commit/b9eede8e10b74a253175d92c67b5199a668e2c7a))
+* **editor-web:** Pin request changes, reject and the depositor's notices in review-outcomes.spec.ts (DEV-7769) ([c4270d4](https://github.com/dasch-swiss/dsp-repository/commit/c4270d487ad5acf6ea2ff92f87c58d7582948a4c))
+* **editor-web:** Pin sign-in, sign-out, the header menus and the error pages in shell.spec.ts (DEV-7769) ([ef5fa49](https://github.com/dasch-swiss/dsp-repository/commit/ef5fa498f3b3e96c2ab55b1a84ce295225d93161))
+* **editor-web:** Pin the project list, create refusals and project removal in projects.spec.ts (DEV-7769) ([aa1f03f](https://github.com/dasch-swiss/dsp-repository/commit/aa1f03f6578c3a91a44e9fcb07184391c5f85a81))
+* **editor-web:** Scan the editor's remaining pages with axe in accessibility.spec.ts (DEV-7769) ([08ab9aa](https://github.com/dasch-swiss/dsp-repository/commit/08ab9aa5f53ac8820b6227777046ed60f9cf59ba))
+
+
+### Miscellaneous Chores
+
+* **ci:** Add .git-blame-ignore-revs for formatting-only commits ([4c4870b](https://github.com/dasch-swiss/dsp-repository/commit/4c4870bd571b02141b8acea4e2bc49321102245b))
+* **ci:** Add an .editorconfig that agrees with the formatters ([23a22c7](https://github.com/dasch-swiss/dsp-repository/commit/23a22c7ced6bf0c1004dcbf6bece940b386610da))
+* **ci:** Add just test-changed to test only the packages a change touches ([c25ca4e](https://github.com/dasch-swiss/dsp-repository/commit/c25ca4e429f43b66922f831c0a9a20f1d58cb1ac))
+* **ci:** Deploy the editor to prod on every v* release ([ac3f30a](https://github.com/dasch-swiss/dsp-repository/commit/ac3f30ae2de9f2003e44c979cd198562303f52b4))
+* **ci:** Deploy the editor to the deposit stack's stage on every merge to main ([c0857bf](https://github.com/dasch-swiss/dsp-repository/commit/c0857bf95502737a5e4229f23e30b58296f24c42))
+* **ci:** Drop macOS split debug info so stale .o files stop piling up ([19434c6](https://github.com/dasch-swiss/dsp-repository/commit/19434c6a756d669ca15fa680d9d2407da04273fb))
+* **ci:** Fail a composition root that depends on another area's crate ([c3b74d4](https://github.com/dasch-swiss/dsp-repository/commit/c3b74d43dc41fc3b3ec8e4b43e52cbdb961ea75d))
+* **ci:** Fail a view of editor-web or identity-web that uses axum ([9ca1672](https://github.com/dasch-swiss/dsp-repository/commit/9ca1672bbc14ddf5d0703c895b09ce33543cef88))
+* **ci:** Gate the Deposit Area's crate graph with check-capability-deps.sh ([a659795](https://github.com/dasch-swiss/dsp-repository/commit/a659795d44c35d58d5e954fab8e532bc5b3eb897))
+* **ci:** Give eng workers the scoped test-changed run as their targeted test ([7089388](https://github.com/dasch-swiss/dsp-repository/commit/70893881764bb54ab1badc226fe7add264582fe2))
+* **ci:** Hold Datastar attribute names to a whitelist grammar and keep actions typed (DEV-7369) ([b538098](https://github.com/dasch-swiss/dsp-repository/commit/b53809857708307f669f89d42d1e5ef5df1bbb5a))
+* **ci:** Hold the Access Area's crates to their roles in check-capability-deps.sh ([daae0d0](https://github.com/dasch-swiss/dsp-repository/commit/daae0d035f17db9b1b8dae0e484c48e9d019002d))
+* **ci:** Make the editor E2E port configurable ([c067a03](https://github.com/dasch-swiss/dsp-repository/commit/c067a031a92bdbdac951084e1bbbe91b82e3ecb2))
+* **ci:** Pin nightly rustfmt to 2026-10-23 for CI, justfile and Nix ([93116e7](https://github.com/dasch-swiss/dsp-repository/commit/93116e7f06326450e283b1fb4a7e3fcaf558c763))
+* **ci:** Run the gate scripts' tests in CI ([abd76f3](https://github.com/dasch-swiss/dsp-repository/commit/abd76f3cc888d098be1dc32e3fee91862d3cda99))
+
 ## [0.8.10](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.9...v0.8.10) (2026-10-19)
 
 

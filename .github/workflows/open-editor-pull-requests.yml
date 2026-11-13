@@ -37,7 +37,7 @@ jobs:
         run: |
           if [ -z "$EDITOR_BASE_URL" ]; then
             echo "not configured: variable EDITOR_BASE_URL" >&2
-            echo "See DEV-6921, which owns the editor hostname." >&2
+            echo "Set it to prod's origin, never stage's: docs/src/editor/publishing-to-git.md" >&2
             exit 1
           fi
 

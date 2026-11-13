@@ -1,12 +1,7 @@
 //! CPE's runtime configuration.
 //!
-//! Loaded with figment, in order of increasing priority: the defaults in
-//! `Default`, an optional `cpe.toml` in the working directory, and `CPE_*`
-//! environment variables.
-//!
-//! Loading never fails. CPE is one capability of the area binary, and a wrong
-//! `CPE_*` value must not stop the others: a configuration that cannot be used
-//! is kept with its reason, and `Cpe`'s router then answers 503 on every path.
+//! Loading never fails: a wrong `CPE_*` value must not stop the area binary's other capabilities.
+//! A configuration that cannot be used is kept with its reason, and CPE answers 503 on every path.
 
 use std::path::PathBuf;
 
@@ -22,24 +17,18 @@ pub struct CpeConfig {
     #[serde(deserialize_with = "path_from_scalar")]
     pub projects_dir: PathBuf,
 
-    /// The origin CPE's absolute links start with, e.g.
-    /// `https://repository.dasch.swiss` (`CPE_PUBLIC_ORIGIN`). A scheme and a
-    /// host, with no path, query or trailing slash. Unset or blank: each
-    /// request's origin is derived from its `X-Forwarded-Proto` and `Host`
-    /// headers, so a preview deployment reports its own host. `Cpe::new`
-    /// logs once that it is derived.
+    /// The origin CPE's absolute links start with, e.g. `https://repository.dasch.swiss`
+    /// (`CPE_PUBLIC_ORIGIN`): a scheme and a host, with no path, query or trailing slash. Unset
+    /// or blank: each request's origin is derived from its `X-Forwarded-Proto` and `Host`
+    /// headers, so a preview deployment reports its own host.
     pub public_origin: Option<String>,
 
-    /// The path CPE is mounted at (`CPE_BASE`): empty for a mount at the root
-    /// of the host, else a path that starts with `/` and does not end with
-    /// one, e.g. `/cpe`. Every link, redirect and cookie CPE writes starts
-    /// with it, and a host mounts CPE's router at [`crate::Cpe::base`], so the
-    /// two cannot differ.
+    /// The path CPE is mounted at (`CPE_BASE`): empty for a mount at the root of the host, else a
+    /// path that starts with `/` and does not end with one, e.g. `/cpe`. A host mounts CPE's router
+    /// at [`crate::Cpe::base`], never at this value.
     #[serde(deserialize_with = "text_from_scalar")]
     pub base: String,
 
-    /// Why the files and variables could not be read, when [`CpeConfig::load`]
-    /// fell back to the defaults. Never read from a file or a variable.
     #[serde(skip)]
     pub(crate) load_error: Option<String>,
 }
@@ -75,14 +64,10 @@ impl CpeConfig {
         }
     }
 
-    /// Whether no origin is configured, so that each request's own headers
-    /// give the origin of its absolute URLs.
     pub(crate) fn derives_origin(&self) -> bool {
         self.public_origin.as_deref().is_none_or(|origin| origin.trim().is_empty())
     }
 
-    /// Why CPE cannot be served with this configuration, in a sentence that
-    /// names the variable; `None` when it can.
     pub(crate) fn refusal(&self) -> Option<String> {
         if let Some(error) = &self.load_error {
             return Some(error.clone());
@@ -111,8 +96,6 @@ fn path_from_scalar<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result
     text_from_scalar(deserializer).map(PathBuf::from)
 }
 
-/// The value as the text it was written as. A base that figment read as a number is then refused
-/// by the base's own rule, with a reason that names `CPE_BASE`.
 fn text_from_scalar<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<String, D::Error> {
     #[derive(Deserialize)]
     #[serde(untagged)]
@@ -234,7 +217,7 @@ mod tests {
         }
     }
 
-    /// figment reads `2024` as a number. It loads, and the base's own rule refuses it.
+    /// figment reads `2024` as a number.
     #[test]
     fn a_refused_base_loads_and_is_refused_with_the_variables_name() {
         for bad in ["cpe/", "2024", "true"] {

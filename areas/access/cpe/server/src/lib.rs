@@ -1,22 +1,15 @@
 //! `cpe-server`: CPE's configuration, its router and the activation of its projects.
 //!
-//! This crate is a library only; a composition root owns `main`, the listener
-//! and the tracing layers, mounts [`Cpe::router`] and calls [`Cpe::activate`].
-//! Nothing here may name a type of `cpe-core`, `cpe-store`, `cpe-store-build`,
-//! `cpe-web`, `cpe-components` or `cpe-image-viewer` in a `pub` signature:
-//! that boundary is what lets a host depend on this crate and `cpe-ports`
-//! alone. `tests::no_pub_item_names_another_cpe_crate` holds it, and relies on
-//! this file and `config.rs` importing no CPE crate with `use`.
+//! A library only: a composition root owns `main`, the listener and the tracing layers, mounts
+//! [`Cpe::router`] and calls [`Cpe::activate`], the one way a host is meant to load projects.
+//! No `pub` signature here may name a type of a CPE crate other than `cpe-ports`: that boundary
+//! lets a host depend on this crate and `cpe-ports` alone
+//! (`tests::no_pub_item_names_another_cpe_crate`).
 //!
-//! CPE never stops its host. Nothing here fails or panics on what it finds: a
-//! configuration that is refused, a projects folder that is missing, a port
-//! that cannot be read and a project that does not load are logged and
-//! answered over HTTP (see `unavailable`).
+//! CPE never stops its host: a refused configuration, a missing projects folder, an unreadable
+//! port and a project that does not load are logged and answered over HTTP (see `unavailable`).
 //!
-//! A project's store comes from the two ports and from nowhere else (ADR-0008, ADR-0012): the
-//! archive projection's snapshot, and the config, narrative and curation the project deposited,
-//! read through the bytes port. `activation` is where it is built, and [`Cpe::activate`] is the
-//! one way in that a host is meant to use.
+//! A project's store comes from the two ports and nowhere else (ADR-0008, ADR-0012).
 
 mod activation;
 mod assets;
@@ -94,22 +87,16 @@ impl Cpe {
         }
     }
 
-    /// Load every project folder that holds a `SHORTCODE`, each from what
-    /// the two ports serve for that shortcode: its config, narrative and
-    /// curation from `files`, and a store built from `projection`'s snapshot.
-    /// Serve them from then on.
+    /// Load every project folder that holds a `SHORTCODE`: its config, narrative and curation
+    /// from `files`, its store from `projection`'s snapshot. Serve them from then on.
     ///
-    /// Blocking: it reads the projects folder and asks each port for each
-    /// project, so an async host calls it inside `spawn_blocking`, after its
-    /// listener is bound. It returns nothing and never panics. A project
-    /// that does not load is logged with its id and answers 503 on its
-    /// prefix, and the others are served and listed at the base; any other
-    /// path that names no project is CPE's not-found. A later call loads
-    /// everything again and replaces what is served; if it panics outside a
-    /// project's own load, what was served before stays.
+    /// Blocking: an async host calls it inside `spawn_blocking`, after its listener is bound. It
+    /// never panics. A project that does not load is logged with its id and answers 503 on its
+    /// prefix, and the others are served and listed at the base; any other path that names no
+    /// project is CPE's not-found. A later call loads everything again and replaces what is served;
+    /// if it panics outside a project's own load, what was served before stays.
     ///
-    /// "Never panics" rests on unwinding: a binary built with
-    /// `panic = "abort"` loses it.
+    /// "Never panics" rests on unwinding: a binary built with `panic = "abort"` loses it.
     pub fn activate(&self, projection: &dyn cpe_ports::ArchiveProjection, files: &dyn cpe_ports::DepositedFiles) {
         if self.config.refusal().is_some() {
             return;
@@ -126,15 +113,12 @@ impl Cpe {
         }
     }
 
-    /// CPE over the project folders that hold a `config.kdl` and a
-    /// `data.sql`, each opened from that SQL text, its config and narrative
-    /// read from the folder. Blocking: it reads the projects folder.
+    /// CPE over the project folders that hold a `config.kdl` and a `data.sql`, each opened from
+    /// that SQL text. Blocking: it reads the projects folder. For the incubator's host and for
+    /// tests only; removable once no project ships a `data.sql` (DEV-7498).
     ///
-    /// For the incubator's host and for tests only. Removable once no project
-    /// ships a `data.sql` (DEV-7498).
-    ///
-    /// A folder without a `data.sql`, and a project that does not load, are
-    /// answered 503 on their prefix; the others are served.
+    /// A folder without a `data.sql`, and a project that does not load, answer 503 on their
+    /// prefix; the others are served.
     #[doc(hidden)]
     #[must_use]
     pub fn from_sql_folders(config: &CpeConfig) -> Self {
@@ -157,34 +141,26 @@ impl Cpe {
         self.active.read().unwrap_or_else(PoisonError::into_inner).clone()
     }
 
-    /// The path a host mounts [`Cpe::router`] at: empty for the root of the
-    /// host, else a path like `/cpe`, with a leading slash and no trailing
-    /// one. This is `CPE_BASE`, and the one source of it: CPE writes it in
-    /// front of every link, redirect and cookie path, so a router mounted
+    /// The path a host mounts [`Cpe::router`] at: empty for the root of the host, else a path like
+    /// `/cpe`, with a leading slash and no trailing one. This is `CPE_BASE`, and the one source of
+    /// it: CPE writes it in front of every link, redirect and cookie path, so a router mounted
     /// anywhere else serves pages whose links leave the mount.
     ///
-    /// Empty too when the configured value is refused. CPE then answers 503
-    /// on every path, wherever it is mounted; a host that serves CPE only
-    /// under a base has nowhere to mount it, and serves no CPE.
+    /// Empty too when the configured value is refused. CPE then answers 503 on every path; a host
+    /// that serves CPE only under a base has nowhere to mount it, and serves no CPE.
     #[must_use]
     pub fn base(&self) -> &str {
         self.base.as_str()
     }
 
-    /// CPE's routes: the overview of the projects at the root, the shared
-    /// static files, each project's assets and pages, and CPE's own
-    /// fallback. It carries no tracing layer, and a
-    /// host's layer sees one service here and no route: the route that
-    /// answered is in the response's extensions, as [`MatchedRoute`].
+    /// CPE's routes, below [`Cpe::base`]: the overview at the root, the static files, each
+    /// project's assets and pages. The host removes the base before the request arrives here, as
+    /// `axum::Router::nest` does. It carries no tracing layer, and a host's layer sees one service
+    /// and no route: the route that answered is in the response's extensions, as [`MatchedRoute`].
     ///
-    /// The routes are the paths below [`Cpe::base`]: the host removes the
-    /// base before the request arrives here, as `axum::Router::nest` does.
-    ///
-    /// The router has one service, a fallback that answers every path and
-    /// method: 503 until the projects are loaded, and the loaded projects'
-    /// router from then on, whenever this router was taken. Because it has a
-    /// fallback of its own, a host that nests it keeps its own fallback for
-    /// its own paths only.
+    /// The one service is a fallback that answers every path and method: 503 until the projects
+    /// are loaded, the loaded projects' router from then on, whenever this router was taken. A
+    /// host that nests it keeps its own fallback for its own paths only.
     pub fn router(&self) -> axum::Router {
         let cpe = self.clone();
         axum::Router::new().fallback(move |request: axum::extract::Request| {
@@ -258,8 +234,6 @@ mod tests {
         assert_eq!(headers[header::CACHE_CONTROL], "no-store", "{what}");
     }
 
-    /// A projects folder with a copy of the `delta` fixture, a project whose
-    /// config does not validate and a folder without a `data.sql`.
     fn mixed_projects() -> tempfile::TempDir {
         let root = tempfile::tempdir().expect("a temporary directory");
         let good = root.path().join("delta");
@@ -326,7 +300,6 @@ mod tests {
         assert!(!headers.contains_key(header::LOCATION));
     }
 
-    /// The folders hold a `config.kdl` and no `SHORTCODE`: the legacy path keeps reading them.
     #[tokio::test]
     async fn from_sql_folders_serves_its_folders_without_a_shortcode_while_activation_finds_none() {
         let root = mixed_projects();
@@ -441,8 +414,7 @@ mod tests {
         }
     }
 
-    /// Two pages whose routes axum cannot tell apart. `Router::route` panics on such a pair, so the
-    /// project must be refused before its routes are registered.
+    /// `Router::route` panics on routes axum cannot tell apart: refuse the project before that.
     #[tokio::test]
     async fn a_project_whose_routes_collide_is_unavailable_and_stops_nothing() {
         let root = mixed_projects();
@@ -460,8 +432,7 @@ mod tests {
         assert_unavailable(status, &headers, "/clash/");
     }
 
-    /// The names of the other CPE crates. `cpe_ports` is not among them: its
-    /// types are the one thing of CPE a host may see beside this crate's own.
+    /// Not `cpe_ports`: its types are the one thing of CPE a host may see beside this crate's own.
     const OTHER_CPE_CRATES: &[&str] = &[
         "cpe_core",
         "cpe_store",
@@ -471,7 +442,6 @@ mod tests {
         "cpe_image_viewer",
     ];
 
-    /// `source` up to its test module, without comment lines.
     fn production_lines(source: &str) -> Vec<&str> {
         source
             .lines()
@@ -480,8 +450,6 @@ mod tests {
             .collect()
     }
 
-    /// Every `pub` item of a file, each as the text from `pub` to the `{` or
-    /// `;` that ends its signature.
     fn pub_signatures(lines: &[&str]) -> Vec<String> {
         let mut signatures = Vec::new();
         let mut current: Option<String> = None;
@@ -502,10 +470,7 @@ mod tests {
         signatures
     }
 
-    /// A text check over the two files that hold every `pub` item of the
-    /// crate. It is sound because neither imports another CPE crate with
-    /// `use` (asserted below), so a signature can only name such a type by
-    /// its full path.
+    /// Sound because neither file imports a CPE crate with `use`: a signature names one by path.
     #[test]
     fn no_pub_item_names_another_cpe_crate() {
         let lib = include_str!("lib.rs");

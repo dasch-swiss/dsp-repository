@@ -1,12 +1,7 @@
 //! CPE mounted at a base: nothing it answers leaves the mount.
 //!
-//! The subject is Incunabula as the area binary serves it, activated once
-//! with `CPE_BASE=/cpe` and a configured public origin. Its narrative links
-//! start with `/incunabula/…`, it has a cover image, and its book page is a
-//! compound reader, so every kind of URL CPE writes is on its pages.
-//!
-//! A request is made as a host that nests the router makes it: the base is
-//! removed from the path first, as `axum::Router::nest` does.
+//! The subject is Incunabula, activated once with `CPE_BASE=/cpe`: its pages hold every kind of
+//! URL CPE writes. A request is made as a host that nests the router makes it.
 
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::path::{Path, PathBuf};
@@ -40,12 +35,10 @@ fn media_data() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../media/data")
 }
 
-/// Incunabula's two ports over the committed data.
 fn activate(cpe: &Cpe) {
     cpe.activate(&LiveArchiveProjection::new(sync_data()), &LiveDepositedFiles::new(media_data()));
 }
 
-/// Incunabula under `/cpe`, activated once for every test of this module.
 fn cpe() -> &'static Cpe {
     static CPE: OnceLock<Cpe> = OnceLock::new();
     CPE.get_or_init(|| {
@@ -76,8 +69,6 @@ impl Answer {
     }
 }
 
-/// The answer to the public URL `url`, which must be under the base. With
-/// `datastar`, as Datastar's `@get` asks.
 async fn answer(cpe: &Cpe, url: &str, datastar: bool) -> Answer {
     let below = url
         .strip_prefix(BASE)
@@ -110,18 +101,12 @@ async fn answer(cpe: &Cpe, url: &str, datastar: bool) -> Answer {
     }
 }
 
-/// What ends a URL where a page writes one: a quote, a bracket, white space.
 fn ends_url(c: char) -> bool {
     matches!(c, '"' | '\'' | '`' | ')' | '<' | '>' | '\\') || c.is_whitespace()
 }
 
-/// Every root-absolute path and every URL of the public origin that `text`
-/// holds, wherever it stands: an `href`, `src` or `action`, a Datastar
-/// `@get('…')`, a CSS `url(…)`, a script's string.
-///
-/// A path is taken where a `/` follows a quote, an opening bracket or a `=`
-/// (an unquoted attribute). That finds more than attributes on purpose: the
-/// reader's history URL is a string in a script.
+/// Every root-absolute path and URL of the public origin in `text`, wherever it stands: more
+/// than attributes on purpose, as the reader's history URL is a string in a script.
 fn urls_in(text: &str) -> Vec<String> {
     let text = text
         .replace("&quot;", "\"")
@@ -141,8 +126,7 @@ fn urls_in(text: &str) -> Vec<String> {
     found
 }
 
-/// Why `url` leaves the mount, if it does. A path that holds the base twice
-/// is under the base and wrong all the same: no project here is named `cpe`.
+/// A path that holds the base twice is wrong all the same: no project here is named `cpe`.
 fn leak(url: &str) -> Option<&'static str> {
     let path = match url.strip_prefix(ORIGIN) {
         Some(path) => path,
@@ -176,7 +160,6 @@ fn urls_in_css(css: &str) -> Vec<String> {
         .collect()
 }
 
-/// Fail on any URL of `answer` that leaves the mount; return those that stay.
 fn urls_under_the_base(what: &str, answer: &Answer) -> Vec<String> {
     let stylesheet = answer
         .header(header::CONTENT_TYPE)
@@ -198,7 +181,6 @@ fn urls_under_the_base(what: &str, answer: &Answer) -> Vec<String> {
     urls
 }
 
-/// The scanner finds what it is meant to find, and `leak` refuses it.
 #[test]
 fn the_scanner_sees_every_place_a_url_stands() {
     let page = concat!(
@@ -263,7 +245,6 @@ fn kind(url: &str) -> String {
     format!("{}?{}", shape.join("/"), keys.into_iter().collect::<Vec<_>>().join("&"))
 }
 
-/// What a crawl read.
 #[derive(Default)]
 struct Crawl {
     /// The URLs requested.
@@ -278,8 +259,6 @@ struct Crawl {
     dead: BTreeSet<String>,
 }
 
-/// Follow every URL found from `starts` on, a few of each kind, and fail on
-/// one that leaves the mount.
 async fn crawl(cpe: &Cpe, starts: &[String]) -> Crawl {
     const PER_KIND: usize = 4;
     let mut queue: VecDeque<String> = starts.iter().cloned().collect();
@@ -332,10 +311,7 @@ async fn crawl(cpe: &Cpe, starts: &[String]) -> Crawl {
     read
 }
 
-/// Every page and fragment that a crawl from the overview and the start pages
-/// reaches, a few of each kind, with both not-found pages and the 503. Incunabula has the
-/// narrative, the reader and the sort; the fixture projects have the facet
-/// panel and the search bar.
+/// Incunabula has the narrative, the reader and the sort; the fixtures the facets and search.
 #[tokio::test]
 async fn no_url_leaves_the_base() {
     let cpe = cpe();
@@ -447,15 +423,12 @@ async fn no_url_leaves_the_base() {
     assert!(urls.is_empty() && references_no_url(&not_ready.body), "{}", not_ready.body);
 }
 
-/// Whether a page holds no attribute and no CSS function that names a URL.
 fn references_no_url(page: &str) -> bool {
     !["href", "src", "url(", "@import", "action"]
         .iter()
         .any(|reference| page.contains(reference))
 }
 
-/// The files a page asks for are where it asks for them, for a project's
-/// page and for a page without a project.
 #[tokio::test]
 async fn the_static_files_and_the_assets_are_served_under_the_base() {
     for url in [
@@ -488,9 +461,6 @@ async fn the_static_files_and_the_assets_are_served_under_the_base() {
     assert!(folder.join("PROVENANCE.md").is_file());
 }
 
-/// The overview is the same page with and without the slash, and what it
-/// writes is under the base: the project's link and cover, its own static
-/// files and its share link.
 #[tokio::test]
 async fn the_overview_is_at_the_base_and_links_under_it() {
     let overview = answer(cpe(), "/cpe/", false).await;
@@ -520,8 +490,6 @@ async fn the_overview_is_at_the_base_and_links_under_it() {
     assert!(urls.contains(&"/cpe/incunabula/".to_owned()), "{urls:?}");
 }
 
-/// A teaser's texts are chrome strings of the project, in the reader's
-/// language where the project declares it.
 #[tokio::test]
 async fn the_overviews_teaser_is_in_the_readers_language() {
     let english = answer(cpe(), "/cpe/", false).await.body;
@@ -584,8 +552,6 @@ async fn both_cookies_are_scoped_to_the_base() {
     assert_eq!(german.cookies(), ["lang=de; Path=/cpe; SameSite=Lax"]);
 }
 
-/// The fallback answers a path that names another host with a page: no
-/// redirect, and nothing of the path in the answer.
 #[tokio::test]
 async fn a_path_that_names_another_host_is_not_echoed() {
     for url in ["/cpe//evil.example/x", "/cpe/incunabula//evil.example/x"] {
@@ -608,9 +574,6 @@ async fn the_base_has_one_source() {
     );
 }
 
-/// A base that is refused is never written: CPE answers 503 everywhere,
-/// activated or not, with a page that references no URL, and reports the
-/// root as its base.
 #[tokio::test]
 async fn a_refused_base_is_answered_503_and_never_written() {
     let refused = CpeConfig { base: "cpe/".to_owned(), ..config() };
@@ -625,8 +588,6 @@ async fn a_refused_base_is_answered_503_and_never_written() {
     }
 }
 
-/// A base of two segments is written whole, once: the page's own links, both
-/// cookies and the redirect of a fixture project under `/a/b`.
 #[tokio::test]
 async fn a_base_of_two_segments_is_written_whole() {
     let config = CpeConfig {

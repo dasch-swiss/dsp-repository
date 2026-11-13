@@ -319,7 +319,7 @@
 <h2 id="running-it"><a class="header" href="#running-it">Running it</a></h2>
 <p><code>workflow_dispatch</code> only. Dispatch it after approving: until a run force-pushes the newer record, an open pull request still carries the older one.</p>
 <div class="table-wrapper"><table><thead><tr><th>Name</th><th>Kind</th><th>Why</th></tr></thead><tbody>
-<tr><td><code>EDITOR_BASE_URL</code></td><td>repository variable</td><td>The editor's origin. A variable, not a secret: it is not one, and the hostname is still open with Infra (DEV-6921), so settling it needs no code change.</td></tr>
+<tr><td><code>EDITOR_BASE_URL</code></td><td>repository variable</td><td>The editor's origin, <code>https://deposit.dasch.swiss</code>. A variable, not a secret: it is not one. Never stage's origin: the run opens pull requests against the published data from whatever approved records it reads there.</td></tr>
 <tr><td><code>GH_TOKEN</code></td><td>secret</td><td>Used against GitHub. Not <code>github.token</code>, see above.</td></tr>
 </tbody></table>
 </div>

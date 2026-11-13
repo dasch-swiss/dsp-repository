@@ -36,7 +36,8 @@ const MAX_REQUEST_BODY: usize = 256 * 1024;
 /// [`crate::csrf::require_same_origin`] is applied **after every route**, so it
 /// covers every route here including any added later. Putting it inside
 /// `build_router` would leave `/telemetry/collect` unprotected. The security
-/// headers wrap it in turn, so CSRF refusals carry them too.
+/// headers, `Cache-Control: private, no-store` included, wrap it in turn, so
+/// CSRF refusals carry them too.
 pub(crate) fn build_app(identity: Router, editor: Router, css_href: String, public_dir: &std::path::Path) -> Router {
     use axum::http::{header, HeaderValue, StatusCode};
     use axum::routing::get;
@@ -82,6 +83,27 @@ pub(crate) fn build_app(identity: Router, editor: Router, css_href: String, publ
             header::X_CONTENT_TYPE_OPTIONS,
             HeaderValue::from_static("nosniff"),
         ))
+        // Every response but a static file, whatever its content type, so a new route is
+        // covered without opting in.
+        .layer(SetResponseHeaderLayer::overriding(
+            header::CACHE_CONTROL,
+            |response: &axum::response::Response| {
+                let is_static_file = response.extensions().get::<StaticFile>().is_some();
+                (!is_static_file).then(|| HeaderValue::from_static("private, no-store"))
+            },
+        ))
+}
+
+/// Marks a response as a file `ServeDir` found, the one kind the `no-store` layer leaves cacheable.
+#[derive(Clone, Copy)]
+struct StaticFile;
+
+async fn mark_static_file(mut response: axum::response::Response) -> axum::response::Response {
+    let status = response.status();
+    if status.is_success() || status == axum::http::StatusCode::NOT_MODIFIED {
+        response.extensions_mut().insert(StaticFile);
+    }
+    response
 }
 
 /// Assemble the traced app router: the editor's routes merged with identity's. Static assets are
@@ -96,12 +118,15 @@ fn build_router(identity: Router, editor: Router, css_href: String, public_dir: 
     use tower_http::services::ServeDir;
 
     let serve_dir = ServeDir::new(public_dir).not_found_service(get(crate::shell::not_found).with_state(css_href));
+    let static_files = Router::new()
+        .fallback_service(serve_dir)
+        .layer(axum::middleware::map_response(mark_static_file));
 
     // --- Traced routes (declared BEFORE .layer()) ---
     editor
         .merge(identity)
         // Static assets + 404 fallback.
-        .fallback_service(serve_dir)
+        .fallback_service(static_files)
         // --- Body limit: enforced by the extractor that reads the body (`Form`) ---
         .layer(DefaultBodyLimit::max(MAX_REQUEST_BODY))
         // --- OTel layers ---
@@ -432,6 +457,54 @@ mod tests {
             assert_eq!(headers["content-security-policy"], "frame-ancestors 'none'", "{method} {uri}");
             assert_eq!(headers["x-frame-options"], "DENY", "{method} {uri}");
             assert_eq!(headers["x-content-type-options"], "nosniff", "{method} {uri}");
+        }
+    }
+
+    #[tokio::test]
+    async fn pages_are_not_stored_and_static_assets_stay_cacheable() {
+        use identity_web::test_support::SESSION;
+
+        use crate::test_support::{a_session, a_user, get, with_cookie};
+
+        let public_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../editor/public");
+        let state = test_state("router").await.0;
+        let user = a_user(&state, "rdu@example.test", "A Reviewer", "rdu", &[]).await;
+        let session = a_session(&state, &user).await;
+        let app = build_app(
+            identity_router(&state),
+            editor_router(&state),
+            CSS_HREF.to_string(),
+            &public_dir,
+        );
+
+        // One page from each capability's router.
+        for uri in ["/projects", "/depositors"] {
+            let response = app.clone().oneshot(with_cookie(get(uri), SESSION, &session)).await.unwrap();
+            assert_eq!(response.status(), StatusCode::OK, "{uri}");
+            assert_eq!(response.headers()["cache-control"], "private, no-store", "{uri}");
+        }
+        // The 404 comes through the static-file service without being a file; the JSON shows the
+        // rule does not depend on the content type; the 403 is CSRF's, so it fails if this layer
+        // moves inside CSRF.
+        for (request, status) in [
+            (get("/no-such-page"), StatusCode::NOT_FOUND),
+            (get("/api/v1/approved-records"), StatusCode::OK),
+            (
+                Request::builder().method("POST").uri("/login").body(Body::empty()).unwrap(),
+                StatusCode::FORBIDDEN,
+            ),
+        ] {
+            let uri = request.uri().clone();
+            let response = app.clone().oneshot(request).await.unwrap();
+            assert_eq!(response.status(), status, "{uri}");
+            assert_eq!(response.headers()["cache-control"], "private, no-store", "{uri}");
+        }
+
+        // The hashed stylesheet is a build output, absent here; `ServeDir` serves it like these.
+        for uri in ["/vendor/datastar.js", "/logo.svg"] {
+            let response = app.clone().oneshot(get(uri)).await.unwrap();
+            assert_eq!(response.status(), StatusCode::OK, "{uri}");
+            assert!(response.headers().get("cache-control").is_none(), "{uri}");
         }
     }
 

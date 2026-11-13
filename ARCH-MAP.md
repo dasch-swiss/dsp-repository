@@ -593,8 +593,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     `POST /telemetry/collect` after them, so both stay untraced, then wraps everything in the
     CSRF layer (**static-analysis** — `router.rs`'s tests pin the order; the login `POST`s and
     a section save in `cross_capability.rs`, every other `POST` in `csrf.rs`), and that in the
-    `frame-ancestors`, `X-Frame-Options` and `nosniff` header layers, so CSRF refusals carry
-    them too (**static-analysis** — `every_response_forbids_framing_and_sniffing`). A new route
+    `frame-ancestors`, `X-Frame-Options`, `nosniff` and `no-store` header layers, so CSRF
+    refusals carry them too (**static-analysis** — `every_response_forbids_framing_and_sniffing`,
+    `pages_are_not_stored_and_static_assets_stay_cacheable`). A new route
     is declared above the CSRF layer: one below the layers escapes both (**review**).
   - The `page.url` label is built in `page_url.rs` from `editor_web::route_paths()` and
     `identity_web::route_paths()`, so a traced route cannot go unlabelled (**structure**); that

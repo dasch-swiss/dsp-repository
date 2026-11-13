@@ -27,4 +27,5 @@ tracing.workspace = true
 uuid.workspace = true
 
 [dev-dependencies]
+sha2 = "0.10"
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

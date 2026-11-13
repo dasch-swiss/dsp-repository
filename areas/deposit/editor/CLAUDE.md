@@ -76,9 +76,9 @@ The shell header renders `<form method="post" action="/logout">` on every signed
 
 `areas/deposit/editor/public/assets/app.css` is **gitignored and built**: `just css-editor` (dev, unhashed) or `just css-editor-release` (content-hashed, discovered by scanning the asset dir at startup). A stale local build makes a Tailwind-dependent assertion fail for a reason that has nothing to do with the code under test — `position: sticky` with every offset `auto` is inert, and that is what an absent `top-0` produces.
 
-### A schema change edits `0001` until the first deployment
+### A schema change is a new migration, never an edit to a merged one
 
-Each store holds one baseline, `areas/deposit/identity/store/src/migrations/` and `areas/deposit/editor/store/src/migrations/`. Until the first production deployment (DEV-6921), change the schema by editing the affected store's `0001_initial.sql` in place; from that deployment on, both `0001` files are frozen and every change is a new `0002_*`, `0003_*`, … migration. Adding a numbered file before then records a history nobody lived through; editing `0001` after then leaves every deployed database on the old shape. See `docs/src/editor/persistence.md#schema`.
+Each store keeps its migrations in `areas/deposit/identity/store/src/migrations/` and `areas/deposit/editor/store/src/migrations/`. Every schema change is a new `0002_*`, `0003_*`, … file, and a merged migration is never edited: deployed databases have run it, and the `user_version` guard skips it without an error, so the new code fails at its first query that touches the change. Each store's `schema.rs` pins the sha256 of every merged migration in `test_merged_migrations_are_never_edited`; a new migration appends its hash in the same change. See `docs/src/editor/persistence.md#schema`.
 
 ## The architecture docs describe the code as it is
 

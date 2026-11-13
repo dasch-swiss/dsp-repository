@@ -4,9 +4,9 @@
 -- `user_version` bump, so a crash part-way leaves the database at the previous
 -- version rather than half-migrated.
 --
--- Edited in place until the first production deployment (DEV-6921). After
--- it, frozen: the `user_version` guard never re-runs an applied migration, so a
--- change is a new numbered file.
+-- Frozen: deployed databases have run it, and the `user_version` guard never
+-- re-runs an applied migration, so a change is a new numbered file. A test in
+-- `schema.rs` pins this file's hash.
 --
 -- STRICT on every table. Without it SQLite accepts any value in any column and
 -- coerces silently, so a mapping bug surfaces as wrong data instead of an error.

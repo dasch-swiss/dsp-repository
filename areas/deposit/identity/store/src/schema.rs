@@ -3,9 +3,9 @@
 //!
 //! The rules that keep it honest:
 //!
-//! - Until the first production deployment (DEV-6921), a schema change edits `0001` in place. After
-//!   it, `0001` is frozen and a change is a new entry: the guard never re-runs an applied one. See
-//!   `docs/src/editor/persistence.md#schema`.
+//! - A schema change is a new entry, never an edit to a merged one: deployed databases have run it
+//!   and the guard never re-runs it. `test_merged_migrations_are_never_edited` pins each merged
+//!   entry's hash. See `docs/src/editor/persistence.md#schema`.
 //! - Everything runs inside one `BEGIN IMMEDIATE` transaction, the `user_version` bump included, so
 //!   a crash part-way leaves the database at the version it started from rather than half-migrated.
 //!   `BEGIN IMMEDIATE` also makes two processes starting at once safe: the second waits and then
@@ -70,6 +70,8 @@ fn apply_outstanding(tx: &rusqlite::Transaction<'_>, migrations: &[&str]) -> rus
 #[cfg(test)]
 mod tests {
     use std::time::Duration;
+
+    use sha2::{Digest, Sha256};
 
     use super::super::tests::test_db;
     use super::*;
@@ -153,6 +155,26 @@ mod tests {
 
         drop(second);
         std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn test_merged_migrations_are_never_edited() {
+        const MERGED: &[&str] = &["a372d3f028fe233eb4beb065615005107a9fb67a8b78517fe7d9741f25cf0a09"];
+
+        for (i, (sql, pinned)) in MIGRATIONS.iter().zip(MERGED).enumerate() {
+            assert_eq!(
+                format!("{:x}", Sha256::digest(sql.as_bytes())),
+                *pinned,
+                "migration {:04} changed after it merged: revert it and make the change a new numbered \
+                 migration (docs/src/editor/persistence.md#schema)",
+                i + 1
+            );
+        }
+        assert_eq!(
+            MIGRATIONS.len(),
+            MERGED.len(),
+            "a new migration appends its `shasum -a 256` to MERGED"
+        );
     }
 
     #[test]

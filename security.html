@@ -320,7 +320,7 @@ are detected</li>
 <h2 id="third-party-artifact-integrity"><a class="header" href="#third-party-artifact-integrity">Third-Party Artifact Integrity</a></h2>
 <p>Scanning answers "does this dependency carry a known CVE". It does not answer "are these the bytes we reviewed". Two kinds of third-party artifact in this repo are shipped or executed without passing through Cargo, so nothing else checks them. <code>just check</code> enforces both, which is what the CI <code>check</code> job runs.</p>
 <h3 id="vendored-javascript"><a class="header" href="#vendored-javascript">Vendored JavaScript</a></h3>
-<p><code>areas/access/dpe/public/vendor/</code> and <code>areas/deposit/editor/public/vendor/</code> hold third-party JavaScript served straight to browsers. Each directory's <code>README.md</code> records a SHA-256 per file. Those digests are now recomputed rather than merely asserted, so the table is a check instead of a claim.</p>
+<p><code>areas/access/dpe/public/vendor/</code>, <code>areas/access/cpe/public/vendor/</code> and <code>areas/deposit/editor/public/vendor/</code> hold third-party JavaScript served straight to browsers. Each directory's <code>README.md</code> records a SHA-256 per file. Those digests are now recomputed rather than merely asserted, so the table is a check instead of a claim.</p>
 <p>Verification fails when:</p>
 <ul>
 <li>a vendored file's bytes no longer match the digest its table records;</li>

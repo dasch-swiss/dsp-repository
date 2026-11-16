@@ -9,11 +9,8 @@ use axum::http::HeaderMap;
 use axum::middleware::Next;
 use axum::response::Response;
 
-/// Language preference extracted from a request before project dispatch.
-///
-/// Built by `resolve_request_prefs` middleware and stored in request extensions.
-/// The handler calls `cpe_core::lang::resolve(&requested.prefs, site)` to
-/// reconcile against a specific project's declared languages.
+/// Language preference extracted from a request before project dispatch; the handler resolves
+/// it against the project's declared languages.
 #[derive(Clone, Debug)]
 pub(crate) struct RequestedLang {
     /// Ordered preference list (lowercased primary subtags, region stripped).
@@ -23,32 +20,19 @@ pub(crate) struct RequestedLang {
     pub from_query: bool,
 }
 
-/// Appearance preference extracted from a request before project dispatch.
-///
-/// Built by `resolve_request_prefs` middleware (which also resolves appearance) and
-/// stored in request extensions alongside `RequestedLang`. Mirrors the
-/// `RequestedLang` pattern.
-///
-/// `value: None` means no recognised appearance signal was supplied (either
-/// absent or unparseable); the renderer falls back to the default
-/// [`cpe_core::theme::Appearance::Light`]. CPE does not follow the OS
-/// `prefers-color-scheme` — light is the CSS baseline and the header toggle is
+/// `value: None` means no recognised appearance signal; the renderer then uses light. CPE does
+/// not follow the OS `prefers-color-scheme`: light is the CSS baseline and the header toggle is
 /// the only switch to dark.
 #[derive(Clone, Debug)]
 pub(crate) struct RequestedAppearance {
     /// The parsed appearance value, or `None` when absent or unparseable.
     pub value: Option<cpe_core::theme::Appearance>,
-    /// `true` when the preference came from an explicit `?appearance=` query param.
-    /// The handler manages the `appearance` cookie only in this case: it sets
-    /// `appearance=dark` for `Some(Dark)`, clears the cookie for `Some(Light)`
-    /// (light is the default), and ignores unparseable input (`None`).
+    /// `true` when the preference came from an explicit `?appearance=` query param; the handler
+    /// manages the `appearance` cookie only in this case.
     pub from_query: bool,
 }
 
-/// Normalize a language tag for comparison: lowercase, strip the region
-/// subtag (everything from the first `-` onward), and trim whitespace.
-///
-/// Examples: `"en-US"` → `"en"`, `"DE"` → `"de"`, `" fr "` → `"fr"`.
+/// Normalize a language tag for comparison: lowercase, strip the region subtag, trim whitespace.
 pub(crate) fn normalize_lang(tag: &str) -> String {
     let primary = match tag.find('-') {
         Some(idx) => &tag[..idx],
@@ -57,24 +41,9 @@ pub(crate) fn normalize_lang(tag: &str) -> String {
     primary.trim().to_lowercase()
 }
 
-/// Axum `from_fn` middleware that extracts the request-scoped presentation
-/// preferences — language and appearance — and stores them in
-/// `req.extensions` as `RequestedLang` and `RequestedAppearance`.
-///
-/// Language preference order (highest to lowest):
-/// 1. `?lang=<code>` query parameter (sets `from_query = true`; only this source is consulted —
-///    cookie and Accept-Language are NOT appended).
-/// 2. `lang` cookie from the `Cookie` header.
-/// 3. `Accept-Language` header entries (source order; `;q=` weights ignored).
-///
-/// Appearance preference order (highest to lowest):
-/// 1. `?appearance=<value>` query parameter (marks the source `from_query`).
-/// 2. `appearance` cookie from the `Cookie` header.
-///
-/// This middleware never returns a 400 — unknown or garbage values simply
-/// produce `None`/default. Cookies are NOT set here; handlers set them after
-/// resolving against the specific project (lang against its declared
-/// languages).
+/// Stores the language and appearance preferences in the request's extensions. Never answers
+/// 400: unknown or garbage values give `None`. Sets no cookie: a handler does, once it has
+/// resolved the preference against its project.
 pub(crate) async fn resolve_request_prefs(mut req: Request, next: Next) -> Response {
     let (prefs, lang_from_query) = extract_lang_prefs(req.headers(), req.uri().query());
     if let Some(top) = prefs.first() {
@@ -89,9 +58,7 @@ pub(crate) async fn resolve_request_prefs(mut req: Request, next: Next) -> Respo
     next.run(req).await
 }
 
-/// Puts the route that matched into the response's extensions, as
-/// [`crate::MatchedRoute`]. The answer for a path that matches no route gets
-/// none.
+/// Puts the route that matched into the response's extensions, as [`crate::MatchedRoute`].
 pub(crate) async fn report_matched_route(
     State(base): State<cpe_core::url::Base>,
     req: Request,
@@ -108,8 +75,6 @@ pub(crate) async fn report_matched_route(
     response
 }
 
-/// Pure extraction helper — testable without building a full `Request`.
-///
 /// Returns `(prefs, from_query)`.
 pub(crate) fn extract_lang_prefs(headers: &HeaderMap, query: Option<&str>) -> (Vec<String>, bool) {
     if let Some(lang_q) = query_lang(query) {
@@ -148,15 +113,6 @@ pub(crate) fn extract_lang_prefs(headers: &HeaderMap, query: Option<&str>) -> (V
     (prefs, false)
 }
 
-/// Pure extraction helper for appearance preferences — testable without a full `Request`.
-///
-/// Preference order (highest to lowest):
-/// 1. `?appearance=<value>` query parameter (`from_query = true`).
-/// 2. `appearance` cookie from the `Cookie` header.
-///
-/// Unparseable or absent values produce `value: None` (the renderer then uses
-/// the default light scheme). The cookie is never touched here; the handler
-/// manages it when `from_query` is true (set `dark`, or clear for `light`).
 pub(crate) fn extract_appearance(headers: &HeaderMap, query: Option<&str>) -> RequestedAppearance {
     if let Some(raw) = query_appearance(query) {
         let value = cpe_core::theme::Appearance::parse_config_str(&raw);
@@ -171,17 +127,7 @@ pub(crate) fn extract_appearance(headers: &HeaderMap, query: Option<&str>) -> Re
     RequestedAppearance { value: None, from_query: false }
 }
 
-/// Iterate `(key, value)` pairs from a query string, splitting on `&` then the
-/// first `=` within each pair (a bare key with no `=` yields `(key, "")`).
-///
-/// Shared by every query-param reader (`query_appearance`,
-/// `query_lang`, `query_img` here; `parse_u32_param`,
-/// `query_param_one`, `query_param_all` in `router.rs`) so the query-string
-/// walk is written once instead of duplicated per key/shape (single value,
-/// all values, numeric parse with a default, …). An absent `query` yields an
-/// empty iterator. This is purely a read helper — `router.rs`'s
-/// `redirect_without_keys` / `strip_datastar_marker`
-/// rebuild a filtered query string (a different concern) and do not use this.
+/// Iterate `(key, value)` pairs from a query string; a bare key with no `=` yields `(key, "")`.
 pub(crate) fn query_pairs(query: Option<&str>) -> impl Iterator<Item = (&str, &str)> {
     query.into_iter().flat_map(|q| q.split('&')).map(|pair| match pair.find('=') {
         Some(idx) => (&pair[..idx], &pair[idx + 1..]),
@@ -195,8 +141,6 @@ fn query_appearance(query: Option<&str>) -> Option<String> {
     query_pairs(query).find(|(k, _)| *k == "appearance").map(|(_, v)| v.to_owned())
 }
 
-/// Extract the `appearance` cookie value from the `Cookie` request header.
-/// Returns `None` when absent.
 fn cookie_appearance(headers: &HeaderMap) -> Option<String> {
     let cookie_hdr = headers.get(axum::http::header::COOKIE)?;
     let cookie_str = cookie_hdr.to_str().ok()?;
@@ -217,13 +161,8 @@ fn query_lang(query: Option<&str>) -> Option<String> {
     query_pairs(query).find(|(k, _)| *k == "lang").map(|(_, v)| v.to_owned())
 }
 
-/// Extract the 1-based `img` index from the query string (e.g. `?img=2&lang=de`).
-///
-/// **1-based**, like `?member=` and the `.pg` pager. Returns the parsed
-/// positive integer when the key is present and parseable; defaults to `1`
-/// (the first image) when absent, zero, or unparseable (any garbage value is
-/// silently treated as the start of the sequence). Callers clamp against the
-/// actual media-item count.
+/// The 1-based `?img=` index, like `?member=` and the `.pg` pager; 1 when absent, zero or
+/// unparseable. Callers clamp it against the media-item count.
 pub(crate) fn query_img(query: Option<&str>) -> usize {
     query_pairs(query)
         .find(|(k, _)| *k == "img")
@@ -232,13 +171,9 @@ pub(crate) fn query_img(query: Option<&str>) -> usize {
         .unwrap_or(1)
 }
 
-/// Extract the record viewer's thumb-strip fold state from the query string
-/// (`?strip=0` closed; absent or any other value → open).
-///
-/// Open-on-load is the default. The record-viewer's own strip fold is a
-/// client-side `$stripOpen` signal (never a URL write,
-/// `dsp-incubator cpe/docs/adr/0007-fragment-swaps-are-transient.md`);
-/// `?strip=` is only the initial-load / zero-JS full-reload condition read here.
+/// The record viewer's thumb-strip fold on a full load: closed only for `?strip=0`. Folding it
+/// later is the client-side `$stripOpen` signal, never a URL write
+/// (`dsp-incubator cpe/docs/adr/0007-fragment-swaps-are-transient.md`).
 pub(crate) fn query_strip(query: Option<&str>) -> bool {
     query_pairs(query)
         .find(|(k, _)| *k == "strip")
@@ -246,8 +181,6 @@ pub(crate) fn query_strip(query: Option<&str>) -> bool {
         .unwrap_or(true)
 }
 
-/// Extract the `lang` cookie value from the `Cookie` request header.
-/// Returns `None` when absent.
 fn cookie_lang(headers: &HeaderMap) -> Option<String> {
     let cookie_hdr = headers.get(axum::http::header::COOKIE)?;
     let cookie_str = cookie_hdr.to_str().ok()?;
@@ -260,18 +193,9 @@ fn cookie_lang(headers: &HeaderMap) -> Option<String> {
     None
 }
 
-/// Where a request's public origin comes from.
-///
-/// A configured origin (`CPE_PUBLIC_ORIGIN`) is used for every request. With
-/// none, the origin is derived **per request** from `X-Forwarded-Proto`
-/// and `Host` ([`derive_request_origin`], which says what it takes of them), so local
-/// development, a preview deployment and the stable service each report
-/// their own host with no configuration. One origin resolved at start would
-/// be wrong for a preview deployed under another host with the same
-/// environment.
-///
-/// Cheaply `Clone` (`Option<Arc<str>>`), so every handler closure gets its
-/// own.
+/// Where a request's public origin comes from: the configured one, else each request's own
+/// headers. One origin resolved at start would be wrong for a preview deployed under another
+/// host with the same environment.
 #[derive(Clone, Debug)]
 pub(crate) struct OriginConfig {
     override_origin: Option<Arc<str>>,
@@ -298,13 +222,7 @@ impl OriginConfig {
         Self::new(Some(origin))
     }
 
-    /// Resolve this request's public origin: the configured origin when
-    /// there is one; otherwise derive from `headers` via
-    /// [`derive_request_origin`].
-    ///
-    /// No trailing slash is stripped/enforced here — `share_link::
-    /// compose_absolute_url` (every consumer) trims a trailing slash
-    /// itself, so an origin with or without one is safe either way.
+    /// Resolve this request's public origin: the configured one, else derived from `headers`.
     pub(crate) fn resolve(&self, headers: &HeaderMap) -> String {
         match &self.override_origin {
             Some(origin) => origin.to_string(),
@@ -313,16 +231,9 @@ impl OriginConfig {
     }
 }
 
-/// Derive an absolute origin (`scheme://host`, no path, no trailing slash)
-/// from one request's own headers: `X-Forwarded-Proto` and `Host`. Cloud Run
-/// sets both on every request it proxies, and a local `curl` or browser
-/// request always carries `Host`.
-///
-/// Both headers are a client's to send, and the origin becomes the start of
-/// the share links' `href`. So the scheme is `https` or `http` and nothing
-/// else (`http` for any other value), and a `Host` that
-/// [`crate::config::is_origin_host`] refuses is treated as absent:
-/// `http://localhost:<port>`. Never panics.
+/// The origin of one request from its `X-Forwarded-Proto` and `Host`. Both are a client's to
+/// send and the origin starts the share links' `href`: a scheme other than `https` is `http`,
+/// and a `Host` that [`crate::config::is_origin_host`] refuses is treated as absent.
 pub(crate) fn derive_request_origin(headers: &HeaderMap, port: u16) -> String {
     let host = headers
         .get(axum::http::header::HOST)

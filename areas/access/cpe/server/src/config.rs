@@ -1,12 +1,7 @@
 //! CPE's runtime configuration.
 //!
-//! Loaded with figment, in order of increasing priority: the defaults in
-//! `Default`, an optional `cpe.toml` in the working directory, and `CPE_*`
-//! environment variables.
-//!
-//! Loading never fails. CPE is one capability of the area binary, and a wrong
-//! `CPE_*` value must not stop the others: a configuration that cannot be used
-//! is kept with its reason, and `Cpe`'s router then answers 503 on every path.
+//! Loading never fails: a wrong `CPE_*` value must not stop the area binary's other capabilities.
+//! A configuration that cannot be used is kept with its reason, and CPE answers 503 on every path.
 
 use std::path::PathBuf;
 
@@ -22,19 +17,15 @@ pub struct CpeConfig {
     #[serde(deserialize_with = "path_from_scalar")]
     pub projects_dir: PathBuf,
 
-    /// The origin CPE's absolute links start with, e.g.
-    /// `https://repository.dasch.swiss` (`CPE_PUBLIC_ORIGIN`). A scheme and a
-    /// host, with no path, query or trailing slash. Unset or blank: each
-    /// request's origin is derived from its `X-Forwarded-Proto` and `Host`
-    /// headers, so a preview deployment reports its own host. `Cpe::new`
-    /// logs once that it is derived.
+    /// The origin CPE's absolute links start with, e.g. `https://repository.dasch.swiss`
+    /// (`CPE_PUBLIC_ORIGIN`): a scheme and a host, with no path, query or trailing slash. Unset
+    /// or blank: each request's origin is derived from its `X-Forwarded-Proto` and `Host`
+    /// headers, so a preview deployment reports its own host.
     pub public_origin: Option<String>,
 
-    /// The path CPE is mounted at (`CPE_BASE`): empty for a mount at the root
-    /// of the host, else a path that starts with `/` and does not end with
-    /// one, e.g. `/cpe`. Every link, redirect and cookie CPE writes starts
-    /// with it, and a host mounts CPE's router at [`crate::Cpe::base`], so the
-    /// two cannot differ.
+    /// The path CPE is mounted at (`CPE_BASE`): empty for a mount at the root of the host, else a
+    /// path that starts with `/` and does not end with one, e.g. `/cpe`. Every link, redirect and
+    /// cookie CPE writes starts with it, and a host mounts CPE's router at [`crate::Cpe::base`].
     #[serde(deserialize_with = "text_from_scalar")]
     pub base: String,
 

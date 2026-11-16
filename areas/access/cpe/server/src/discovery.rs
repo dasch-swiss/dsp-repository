@@ -1,17 +1,6 @@
 //! Project discovery: find the project folders under the projects directory.
 //!
-//! A direct subfolder is a project when its name passes `cpe-core`'s id rule;
-//! the name is the project id and the URL segment. What else makes it one
-//! depends on the caller:
-//!
-//! - [`discover_for_activation`], for `Cpe::activate`: a regular `SHORTCODE` file naming the
-//!   project whose deposited files and snapshot the ports serve. Its config and narrative come
-//!   through the bytes port, never from the folder.
-//! - [`discover_sql_folders`], the legacy path of `Cpe::from_sql_folders`: a `config.kdl`, read
-//!   from the folder with its flat `narrative/` and its `data.sql`.
-//!
-//! Either way `assets/` is walked to any depth. Nothing here follows a
-//! symbolic link, and every path read is built from a directory listing,
+//! Nothing here follows a symbolic link, and every path read is built from a directory listing,
 //! never from a request.
 
 use std::collections::BTreeMap;
@@ -38,7 +27,6 @@ pub(crate) struct Skipped {
     pub(crate) reason: SkipReason,
 }
 
-/// Why a folder is not a project to activate.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum SkipReason {
     /// The folder holds nothing named `SHORTCODE`.
@@ -62,7 +50,6 @@ pub(crate) struct Discovery {
     pub(crate) skipped: Vec<Skipped>,
 }
 
-/// What can go wrong reading the files of a discovered project.
 #[derive(Debug, thiserror::Error)]
 pub(crate) enum SourcesError {
     #[error("project '{id}': {file} cannot be read: {source}")]
@@ -82,9 +69,7 @@ fn is_real_dir(path: &Path) -> bool {
     fs::symlink_metadata(path).is_ok_and(|meta| meta.is_dir())
 }
 
-/// The names of the regular files directly in `dir`, sorted. Empty when `dir`
-/// is missing or is a symbolic link. A name that is not UTF-8 is left out: no
-/// config value could name it.
+/// A name that is not UTF-8 is left out: no config value could name it.
 fn file_names(dir: &Path) -> Vec<String> {
     if !is_real_dir(dir) {
         return Vec::new();
@@ -102,9 +87,7 @@ fn file_names(dir: &Path) -> Vec<String> {
     names
 }
 
-/// Push every regular file under `dir`, at any depth, into `out` as
-/// `<prefix>/<name>`. See [`DiscoveredProject::asset_files`] for why the walk
-/// must stay recursive.
+/// Push every regular file under `dir`, at any depth, into `out` as `<prefix>/<name>`.
 fn collect_files_recursively(dir: &Path, prefix: &str, out: &mut Vec<String>) {
     let Ok(entries) = fs::read_dir(dir) else {
         return;
@@ -132,7 +115,6 @@ impl DiscoveredProject {
         String::from_utf8(bytes).map_err(|_| SourcesError::NotUtf8 { id: self.id.clone(), file: file.to_owned() })
     }
 
-    /// Whether the folder holds a `data.sql`.
     pub(crate) fn has_data_sql(&self) -> bool {
         is_regular_file(&self.dir.join("data.sql"))
     }
@@ -142,14 +124,12 @@ impl DiscoveredProject {
         self.read_utf8("config.kdl")
     }
 
-    /// The content of `data.sql`.
     pub(crate) fn data_sql(&self) -> Result<String, SourcesError> {
         self.read_utf8("data.sql")
     }
 
-    /// `config.kdl` and `data.sql` for the router's tests, whose fixtures
-    /// include a folder without a `data.sql`: it yields `""`, which loads as
-    /// an empty store.
+    /// For the router's tests, whose fixtures include a folder without a `data.sql`: it yields
+    /// `""`, which loads as an empty store.
     #[cfg(test)]
     pub(crate) fn sources(&self) -> Result<(String, String), SourcesError> {
         let data = if self.has_data_sql() {
@@ -160,30 +140,14 @@ impl DiscoveredProject {
         Ok((self.config_source()?, data))
     }
 
-    /// The bare file names in the project's `narrative/` folder (e.g.
-    /// `["home.de.md", "home.md"]`), sorted. Empty when there is no such
-    /// folder. Only direct children: narrative files are flat by convention.
+    /// Only direct children, as bare names: narrative files are flat by convention.
     pub(crate) fn narrative_files(&self) -> Vec<String> {
         file_names(&self.dir.join("narrative"))
     }
 
-    /// The `assets/`-prefixed relative paths of the files under the project's
-    /// `assets/` folder (e.g. `["assets/cover.webp"]`), sorted. Empty when
-    /// there is no such folder.
-    ///
-    /// The `assets/` prefix is deliberate (unlike `narrative_files`'s bare
-    /// names): a `site.cover-image` value is a path relative to the project
-    /// folder INCLUDING the `assets/` segment (`cover-image
-    /// "assets/cover.webp"`), and `cpe-core`'s `CoverImageNotFound` check
-    /// compares it with this list.
-    ///
-    /// The walk is **recursive**: a file in a subfolder is listed with its
-    /// full relative path (`"assets/covers/x.webp"`). Neither the
-    /// `cover-image` path-shape validator nor the `/{id}/_assets/{*path}`
-    /// route rejects a nested path, and `CoverImageNotFound` treats this list
-    /// as complete, so a flat walk would refuse a nested cover image that the
-    /// route serves. Keep it recursive, or the validator and the route
-    /// disagree.
+    /// Paths with the `assets/` prefix, at any depth: `cpe-core`'s `CoverImageNotFound` compares a
+    /// `site.cover-image` value with this list as complete, and the `_assets` route serves nested
+    /// paths, so a flat walk would refuse a cover image the route serves.
     pub(crate) fn asset_files(&self) -> Vec<String> {
         let assets = self.dir.join("assets");
         if !is_real_dir(&assets) {
@@ -195,8 +159,7 @@ impl DiscoveredProject {
         files
     }
 
-    /// Every file of [`Self::asset_files`] with its bytes. A file that cannot
-    /// be read is logged and left out, so a request for it is answered 404.
+    /// A file that cannot be read is logged and left out, so a request for it is answered 404.
     pub(crate) fn assets(&self) -> Vec<(String, Vec<u8>)> {
         self.asset_files()
             .into_iter()
@@ -260,13 +223,9 @@ fn read_shortcode(dir: &Path) -> Result<String, SkipReason> {
     }
 }
 
-/// The projects under `root` that `Cpe::activate` loads: every folder with a
-/// regular `SHORTCODE` file that holds a shortcode, and whose name is a project
-/// id. Every other folder is skipped, with the reason.
-///
-/// Folders that declare one shortcode are each a project, refused with the
-/// names of the others: "not ready" is not "not there", so their prefixes
-/// answer 503 and not 404.
+/// The projects under `root` that `Cpe::activate` loads. Folders that declare one shortcode are
+/// each a project, refused with the names of the others: "not ready" is not "not there", so
+/// their prefixes answer 503 and not 404.
 pub(crate) fn discover_for_activation(root: &Path) -> Discovery {
     let mut projects = Vec::new();
     let mut skipped = Vec::new();
@@ -493,8 +452,6 @@ mod tests {
         );
     }
 
-    /// The walk must descend into subfolders of `assets/`; see
-    /// [`DiscoveredProject::asset_files`].
     #[test]
     fn asset_files_includes_nested_subdirectory_files() {
         let files = project("alpha").asset_files();

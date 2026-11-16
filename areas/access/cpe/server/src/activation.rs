@@ -1,9 +1,7 @@
 //! Loading the projects: what [`crate::Cpe::activate`] stores.
 //!
-//! Every project folder is loaded on its own, and whatever goes wrong with
-//! one (a file, a port, the build, validation, a panic) is logged with its id
-//! and leaves that project unavailable: its prefix answers 503, and the others
-//! are served. Nothing here returns an error or panics.
+//! Whatever goes wrong with one project, a panic included, leaves that project alone
+//! unavailable (503 on its prefix). Nothing here returns an error or panics.
 
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::Arc;
@@ -27,9 +25,7 @@ pub(crate) struct Activated {
     pub(crate) projects: Vec<ProjectSummary>,
 }
 
-/// What one project is loaded from, as its source gives it.
 struct Sources {
-    /// The text of the project's config.
     config: String,
     /// The name the config's diagnostics give its file.
     config_file: String,
@@ -38,13 +34,10 @@ struct Sources {
     /// Whether `narrative` is the project's whole narrative, as
     /// `ValidationContext::narrative_files_complete` takes it.
     narrative_complete: bool,
-    /// The store's SQL text.
     store_sql: String,
 }
 
-/// Every project folder with a `SHORTCODE`, loaded from the two ports: its
-/// config, narrative and curation from `files`, and the snapshot of its
-/// shortcode from `projection`, each asked once per project.
+/// Every project folder with a `SHORTCODE`, loaded from the two ports, each asked once per project.
 pub(crate) fn from_ports(
     config: &CpeConfig,
     projection: &dyn ArchiveProjection,
@@ -87,10 +80,8 @@ pub(crate) fn from_sql_folders(config: &CpeConfig) -> Activated {
     })
 }
 
-/// Load each of `discovered` from what `sources` gives for it.
-///
-/// "Not ready" is not "not there": a folder that is a project and does not
-/// load is kept as unavailable, so that its prefix answers 503 and not 404.
+/// "Not ready" is not "not there": a project that does not load is kept as unavailable, so that
+/// its prefix answers 503 and not 404.
 fn load_all(
     config: &CpeConfig,
     discovered: Vec<DiscoveredProject>,
@@ -153,7 +144,6 @@ fn load_all(
     Activated { router, projects }
 }
 
-/// What a caught panic said, for the log.
 pub(crate) fn panic_message(payload: &(dyn std::any::Any + Send)) -> &str {
     payload
         .downcast_ref::<&str>()
@@ -172,13 +162,12 @@ fn deposited(files: &dyn DepositedFiles, shortcode: &str, name: &str) -> Result<
     }
 }
 
-/// `bytes` of the deposited file `file` as text.
 fn utf8(bytes: Vec<u8>, file: &str) -> Result<String, String> {
     String::from_utf8(bytes).map_err(|_| format!("{file} is not valid UTF-8"))
 }
 
-/// One project's sources from the ports. The narrative inventory is complete, so a file the
-/// config names and the port does not hold is `NarrativeFileNotFound`.
+/// The narrative inventory is complete, so a file the config names and the port does not hold
+/// is `NarrativeFileNotFound`.
 fn port_sources(
     projection: &dyn ArchiveProjection,
     files: &dyn DepositedFiles,
@@ -290,10 +279,9 @@ fn load(
     with_routes_that_register(project)
 }
 
-/// Refuse a project whose routes axum cannot register. `Router::route` panics on two routes it
-/// cannot tell apart (`/books/:id` beside `/books/:name`), and validation does not rule that pair
-/// out. The trial registration here runs the same code as the real one and turns the panic into a
-/// refused project.
+/// Refuse a project whose routes axum cannot register: `Router::route` panics on two routes it
+/// cannot tell apart (`/books/:id` beside `/books/:name`), and validation does not rule that out.
+/// The trial registration runs the same code as the real one and turns the panic into a refusal.
 fn with_routes_that_register(project: Project) -> Result<Arc<Project>, String> {
     let project = Arc::new(project);
     catch_unwind(AssertUnwindSafe(|| {
@@ -812,8 +800,7 @@ mod tests {
         }
     }
 
-    /// The store is a read model: it is rebuilt from empty from what the ports serve, holds
-    /// nothing else, and follows each of them (ADR-0008, ADR-0012).
+    /// The store is a read model (ADR-0008, ADR-0012).
     #[tokio::test]
     async fn the_store_is_rebuilt_from_the_ports_alone_and_follows_each() {
         let root = projects(&[("things", "0001")]);
@@ -892,9 +879,7 @@ mod tests {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../../media/data")
     }
 
-    /// Incunabula as the area binary serves it: its committed folder, its store built from
-    /// `sync`'s adapter over the committed 0803 data, and its config, narrative and curation read
-    /// through `media`'s adapter over the committed deposited files.
+    /// Incunabula as the area binary serves it.
     #[tokio::test]
     async fn incunabula_activates_from_the_committed_data_and_serves_its_pages() {
         let cpe = Cpe::new(&config_for(&committed_projects()));
@@ -911,8 +896,7 @@ mod tests {
         }
     }
 
-    /// The start page, a book's page and a border strip's record page, each with its heading. The
-    /// last two headings are values of the committed data.
+    /// The last two headings are values of the committed data.
     const INCUNABULA_PAGES: [(&str, &str); 3] = [
         ("/incunabula/", "<h1>Die Bilderfolgen der Basler Frühdrucke"),
         (
@@ -922,12 +906,9 @@ mod tests {
         ("/incunabula/strips/l-10", "<h1 class=\"record__title\">l_10"),
     ];
 
-    /// The length and the SHA-256 of Incunabula's whole store text, header included. The header
-    /// names the two ports the text came through, so it differs from the prototype's `data.sql`;
-    /// the text below it is the prototype's, which the body pin below holds.
-    ///
-    /// The text follows the committed 0803 data, Incunabula's `remodel` block and the builder.
-    /// When one of them changes it on purpose, put the two values the failure prints here.
+    /// The length and the SHA-256 of Incunabula's whole store text, header included. When the
+    /// committed 0803 data, Incunabula's `remodel` block or the builder changes it on purpose, put
+    /// the two values the failure prints here.
     const INCUNABULA_STORE_BYTES: usize = 5_631_888;
     const INCUNABULA_STORE_SHA256: &str = "36da32247854b09743fd7177fc91c70be2821dd143efa6bf73f49e9c601d0c86";
 
@@ -958,11 +939,9 @@ mod tests {
         );
     }
 
-    /// The length and the SHA-256 of Incunabula's store text below its header, which ends at the
-    /// first blank line. They are those of `dsp-incubator cpe/projects/incunabula/data.sql` at
-    /// `d68f214b` below its header, and they change only when the committed 0803 data,
-    /// Incunabula's `remodel` block or the builder's tables do: a change to the header alone
-    /// leaves them as they are.
+    /// The length and the SHA-256 of Incunabula's store text below its header (up to the first
+    /// blank line): those of `dsp-incubator` `cpe/projects/incunabula/data.sql` at `d68f214b`. A
+    /// change to the header alone leaves them as they are.
     const INCUNABULA_STORE_BODY_BYTES: usize = 5_631_489;
     const INCUNABULA_STORE_BODY_SHA256: &str = "dfd33273fd48b23b64986a2be880d02bdd9a91c7f65c8b1b8b3ef5e27a0f25af";
 

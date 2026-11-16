@@ -1,12 +1,7 @@
 //! CPE mounted at a base: nothing it answers leaves the mount.
 //!
-//! The subject is Incunabula as the area binary serves it, activated once
-//! with `CPE_BASE=/cpe` and a configured public origin. Its narrative links
-//! start with `/incunabula/…`, it has a cover image, and its book page is a
-//! compound reader, so every kind of URL CPE writes is on its pages.
-//!
-//! A request is made as a host that nests the router makes it: the base is
-//! removed from the path first, as `axum::Router::nest` does.
+//! The subject is Incunabula, activated once with `CPE_BASE=/cpe`: its pages hold every kind of
+//! URL CPE writes. A request is made as a host that nests the router makes it.
 
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::path::{Path, PathBuf};
@@ -115,13 +110,8 @@ fn ends_url(c: char) -> bool {
     matches!(c, '"' | '\'' | '`' | ')' | '<' | '>' | '\\') || c.is_whitespace()
 }
 
-/// Every root-absolute path and every URL of the public origin that `text`
-/// holds, wherever it stands: an `href`, `src` or `action`, a Datastar
-/// `@get('…')`, a CSS `url(…)`, a script's string.
-///
-/// A path is taken where a `/` follows a quote, an opening bracket or a `=`
-/// (an unquoted attribute). That finds more than attributes on purpose: the
-/// reader's history URL is a string in a script.
+/// Every root-absolute path and URL of the public origin in `text`, wherever it stands: more
+/// than attributes on purpose, as the reader's history URL is a string in a script.
 fn urls_in(text: &str) -> Vec<String> {
     let text = text
         .replace("&quot;", "\"")
@@ -198,7 +188,6 @@ fn urls_under_the_base(what: &str, answer: &Answer) -> Vec<String> {
     urls
 }
 
-/// The scanner finds what it is meant to find, and `leak` refuses it.
 #[test]
 fn the_scanner_sees_every_place_a_url_stands() {
     let page = concat!(
@@ -263,7 +252,6 @@ fn kind(url: &str) -> String {
     format!("{}?{}", shape.join("/"), keys.into_iter().collect::<Vec<_>>().join("&"))
 }
 
-/// What a crawl read.
 #[derive(Default)]
 struct Crawl {
     /// The URLs requested.
@@ -332,10 +320,7 @@ async fn crawl(cpe: &Cpe, starts: &[String]) -> Crawl {
     read
 }
 
-/// Every page and fragment that a crawl from the overview and the start pages
-/// reaches, a few of each kind, with both not-found pages and the 503. Incunabula has the
-/// narrative, the reader and the sort; the fixture projects have the facet
-/// panel and the search bar.
+/// Incunabula has the narrative, the reader and the sort; the fixtures the facets and search.
 #[tokio::test]
 async fn no_url_leaves_the_base() {
     let cpe = cpe();
@@ -488,9 +473,6 @@ async fn the_static_files_and_the_assets_are_served_under_the_base() {
     assert!(folder.join("PROVENANCE.md").is_file());
 }
 
-/// The overview is the same page with and without the slash, and what it
-/// writes is under the base: the project's link and cover, its own static
-/// files and its share link.
 #[tokio::test]
 async fn the_overview_is_at_the_base_and_links_under_it() {
     let overview = answer(cpe(), "/cpe/", false).await;
@@ -608,9 +590,6 @@ async fn the_base_has_one_source() {
     );
 }
 
-/// A base that is refused is never written: CPE answers 503 everywhere,
-/// activated or not, with a page that references no URL, and reports the
-/// root as its base.
 #[tokio::test]
 async fn a_refused_base_is_answered_503_and_never_written() {
     let refused = CpeConfig { base: "cpe/".to_owned(), ..config() };
@@ -625,8 +604,6 @@ async fn a_refused_base_is_answered_503_and_never_written() {
     }
 }
 
-/// A base of two segments is written whole, once: the page's own links, both
-/// cookies and the redirect of a fixture project under `/a/b`.
 #[tokio::test]
 async fn a_base_of_two_segments_is_written_whole() {
     let config = CpeConfig {

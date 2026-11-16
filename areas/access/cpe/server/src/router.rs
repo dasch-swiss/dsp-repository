@@ -4491,7 +4491,7 @@ mod tests {
         assert_eq!(resolve_sorts(Some("sort=date"), &config, &[], None), config);
     }
 
-    // ── search-bar query injection ─────────────────────────────────────────────
+    // search-bar query injection
 
     #[test]
     fn zeta_search_query_narrows_list_and_sets_unfiltered_total() {

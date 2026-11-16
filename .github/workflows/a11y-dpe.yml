@@ -33,7 +33,8 @@ concurrency:
 
 jobs:
   a11y:
-    runs-on: ubuntu-latest
+    # Playwright 1.58.2 cannot install Chromium on ubuntu 26.04, which ubuntu-latest became.
+    runs-on: ubuntu-24.04
     name: a11y / dpe / WCAG 2.1 AA
     steps:
       - uses: actions/checkout@v4

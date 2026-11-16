@@ -77,7 +77,6 @@ pub(crate) fn normalize_lang(tag: &str) -> String {
 /// languages).
 pub(crate) async fn resolve_request_prefs(mut req: Request, next: Next) -> Response {
     let (prefs, lang_from_query) = extract_lang_prefs(req.headers(), req.uri().query());
-    // Record the top requested lang on the tracing span (best-effort).
     if let Some(top) = prefs.first() {
         tracing::Span::current().record("requested_lang", top.as_str());
     }
@@ -138,7 +137,6 @@ pub(crate) fn extract_lang_prefs(headers: &HeaderMap, query: Option<&str>) -> (V
     if let Some(al) = headers.get(axum::http::header::ACCEPT_LANGUAGE) {
         if let Ok(al_str) = al.to_str() {
             for entry in al_str.split(',') {
-                // Strip the ";q=…" quality weight, keep only the tag.
                 let tag = match entry.find(';') {
                     Some(idx) => &entry[..idx],
                     None => entry,
@@ -166,7 +164,6 @@ pub(crate) fn extract_lang_prefs(headers: &HeaderMap, query: Option<&str>) -> (V
 pub(crate) fn extract_appearance(headers: &HeaderMap, query: Option<&str>) -> RequestedAppearance {
     // --- ?appearance= query parameter ---
     if let Some(raw) = query_appearance(query) {
-        // The key was present; parse the value.
         let value = cpe_core::theme::Appearance::parse_config_str(&raw);
         return RequestedAppearance { value, from_query: true };
     }
@@ -177,7 +174,6 @@ pub(crate) fn extract_appearance(headers: &HeaderMap, query: Option<&str>) -> Re
         return RequestedAppearance { value, from_query: false };
     }
 
-    // No appearance signal at all.
     RequestedAppearance { value: None, from_query: false }
 }
 
@@ -479,7 +475,6 @@ mod tests {
             axum::http::HeaderValue::from_str("en-US,fr;q=0.8").unwrap(),
         );
         let (prefs, _) = extract_lang_prefs(&headers, None);
-        // cookie lang (de) comes first, then Accept-Language entries
         assert_eq!(
             prefs,
             vec!["de".to_owned(), "en".to_owned(), "fr".to_owned()],
@@ -498,7 +493,6 @@ mod tests {
         );
         let (prefs, from_query) = extract_lang_prefs(&headers, Some("lang=it"));
         assert!(from_query);
-        // ONLY the query value — cookie and accept-language NOT appended
         assert_eq!(prefs, vec!["it".to_owned()]);
     }
 
@@ -542,7 +536,6 @@ mod tests {
     #[test]
     fn appearance_adversarial_query_value_is_ignored() {
         // An attacker might try to inject cookie attributes via ?appearance=.
-        // The parse step must reject this and return None — no header injection.
         let result = extract_appearance(&empty_headers(), Some("appearance=dark%3BDomain%3Devil"));
         // Note: URL decoding is NOT done here (we operate on the raw query string),
         // so "dark%3BDomain%3Devil" is treated as an unrecognised literal → None.
@@ -550,7 +543,6 @@ mod tests {
             result.value, None,
             "adversarial ?appearance= value must not parse (no injection)"
         );
-        // from_query is true (key was present), but value is None → no cookie set.
         assert!(result.from_query);
     }
 
@@ -602,7 +594,6 @@ mod tests {
 
     #[test]
     fn appearance_query_takes_precedence_over_cookie() {
-        // Query param wins over cookie: ?appearance=light with Cookie: appearance=dark
         let headers = headers_with_appearance_cookie("dark");
         let result = extract_appearance(&headers, Some("appearance=light"));
         assert!(result.from_query);

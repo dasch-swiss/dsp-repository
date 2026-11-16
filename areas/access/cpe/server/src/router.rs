@@ -61,12 +61,10 @@ pub(crate) fn axum_route(route: &str) -> String {
     for segment in route.split('/') {
         out.push('/');
         if let Some(name) = segment.strip_prefix(':') {
-            // Named parameter: `:name` → `{name}`
             out.push('{');
             out.push_str(name);
             out.push('}');
         } else if let Some(name) = segment.strip_prefix('*') {
-            // Wildcard catch-all: `*path` → `{*path}`
             out.push('{');
             out.push('*');
             out.push_str(name);
@@ -132,7 +130,6 @@ pub(crate) fn build(
             get(move |Path(path): Path<String>| std::future::ready(project_assets.serve(&project_id, &path))),
         );
         for (idx, page) in project.config().pages.iter().enumerate() {
-            // Build the full path for this page.
             let home = routes.home();
             let p = if page.route == "/" {
                 home.trim_end_matches('/').to_owned()
@@ -141,7 +138,6 @@ pub(crate) fn build(
             };
 
             if page.params.is_empty() {
-                // Static page: no path parameters — use the simple handler.
                 app = app.route(
                     &axum_route(&p),
                     get(make_handler(Arc::clone(project), idx, origin_cfg.clone(), base.clone())),
@@ -490,16 +486,13 @@ fn fallback_handler(
     move |req: Request| {
         let public_origin = origin_cfg.resolve(req.headers());
         let path = req.uri().path();
-        // Byte-level, undecoded extraction — see the doc comment above for
-        // the `//evil.example/x` → "" (empty) worked example.
+        // Byte-level and undecoded: `//evil.example/x` gives the empty segment.
         let segment = path.strip_prefix('/').unwrap_or(path);
         let segment = match segment.find('/') {
             Some(idx) => &segment[..idx],
             None => segment,
         };
 
-        // An empty segment (the `//evil.example/x` sentinel) is no project's
-        // id; the guard below and this one keep that explicit.
         if !segment.is_empty() && unavailable.iter().any(|id| id == segment) {
             return std::future::ready(unavailable::response());
         }
@@ -530,7 +523,6 @@ fn fallback_handler(
 
         let markup = match matched_project {
             Some(project) => {
-                // The raw first segment matched a loaded project id.
                 let site = &project.config().site;
                 let lang = cpe_core::lang::resolve(&requested.prefs, site);
                 let home_path = base.project(project.id()).home();
@@ -563,7 +555,6 @@ fn fallback_handler(
                 cpe_web::page::render_not_found_project(site, &ctx)
             }
             None => {
-                // No loaded project id matches the raw first segment.
                 let lang = cpe_core::lang::resolve_builtin(&requested.prefs);
                 cpe_web::page::render_not_found_site(&base, &lang, appearance)
             }
@@ -882,7 +873,6 @@ fn attach_appearance_cookie(resp: &mut Response, requested: &RequestedAppearance
         let path = base.cookie_path();
         let cookie = match requested.value {
             Some(Appearance::Dark) => format!("appearance=dark; Path={path}; SameSite=Lax"),
-            // Light is the default; clear any persisted dark choice.
             Some(Appearance::Light) => format!("appearance=; Path={path}; Max-Age=0; SameSite=Lax"),
             None => return,
         };
@@ -1009,7 +999,6 @@ fn make_handler(
             resource_links,
         } = project.page_data(page, &request, &lang);
         let http_status = status_code(status);
-        // Canonical page 303 — guard-return, HTML page handler only.
         if let Some(redirect) = canonical_page_redirect(&path, query_str.as_deref(), http_status, &components) {
             return std::future::ready(redirect);
         }
@@ -1090,11 +1079,8 @@ fn make_parameterized_handler(
         let lang = cpe_core::lang::resolve(&requested.prefs, &project.config().site);
         let cookie_value = lang.as_str().to_owned();
 
-        // Build route_params from the extracted Path map, preserving the page's
-        // declared param order for deterministic downstream use.
         let route_params: Vec<(String, String)> = path_params.iter().map(|(k, v)| (k.clone(), v.clone())).collect();
 
-        // Any stripped key → 303 to the clean URL (guard-return).
         if let Some(redirect) = override_redirect(req.uri(), &requested_appearance, &base) {
             return std::future::ready(redirect);
         }
@@ -1120,7 +1106,6 @@ fn make_parameterized_handler(
             resource_links,
         } = project.page_data(page, &request, &lang);
         let http_status = status_code(status);
-        // Canonical page 303 — guard-return, HTML page handler only.
         if let Some(redirect) = canonical_page_redirect(&path, query_str.as_deref(), http_status, &components) {
             return std::future::ready(redirect);
         }
@@ -1429,14 +1414,10 @@ fn compound_fragment_response(
 
     let lang = cpe_core::lang::resolve(&requested.prefs, &project.config().site);
 
-    // Strip the `datastar` marker (mirrors the facet/sort/search handlers)
-    // so hrefs rendered back into the swapped-in fragment don't accumulate it.
     let raw_query = req.uri().query();
     let filtered_query: Option<String> = strip_datastar_marker(raw_query);
     let current_query: Option<&str> = filtered_query.as_deref().filter(|s| !s.is_empty());
 
-    // Compute current_path: strip the trailing `/_compound` suffix so
-    // emitted hrefs remain page-relative (avoid `…/_compound/_compound`).
     let full_path = base.request_path(req.uri().path());
     let current_path = strip_fragment_suffix(
         &full_path,
@@ -1815,8 +1796,6 @@ fn make_facet_fragment_handler(
         let filtered_query: Option<String> = strip_datastar_marker(raw_query);
         let current_query: Option<&str> = filtered_query.as_deref().filter(|s| !s.is_empty());
 
-        // Compute current_path: strip the trailing `/_facets` suffix so emitted
-        // toggle hrefs remain page-relative (avoid `…/_facets/_facets`).
         let full_path = base.request_path(req.uri().path());
         let current_path =
             strip_fragment_suffix(&full_path, cpe_components::component::facet_panel::FACET_FRAGMENT_SEGMENT);
@@ -1863,8 +1842,6 @@ fn make_facet_fragment_handler(
             }
         };
 
-        // Extract the Facets data and the List data from the component slice.
-        // Zip page.body against comp_data to find the matching slots.
         let mut facet_groups: Option<&[cpe_core::ir::FacetGroup]> = None;
         let mut list_page: Option<&cpe_core::ir::ResourceListPage> = None;
         // Annotated-row config, captured from the target list so the
@@ -1924,7 +1901,6 @@ fn make_facet_fragment_handler(
         let (groups, lp) = match (facet_groups, list_page) {
             (Some(g), Some(l)) => (g, l),
             _ => {
-                // Data not found — return 500 (DB error or unexpected state).
                 tracing::error!(
                     list_id,
                     "facet fragment handler: expected Facets + List slots not found in \
@@ -1934,7 +1910,6 @@ fn make_facet_fragment_handler(
             }
         };
 
-        // Build the FacetPanelCfg — all fields are pub, no factory needed.
         let panel_cfg = cpe_components::component::facet_panel::FacetPanelCfg { list_id, current_path, current_query };
 
         // Resolve the search-fragment surface — `None` when this list has no
@@ -1961,11 +1936,8 @@ fn make_facet_fragment_handler(
                 list_order_default_label,
                 &lang,
             );
-        // The list's declared `order-by` rows, via
-        // the same `pub` resolver `render_list_component` calls.
         let order_rows = cpe_core::labels::resolve_order_options(&project.config().site, list_order_options, &lang);
 
-        // Build the ResourceListCfg via the shared factory (hides pub(crate) LinkResolver).
         let resolved_gloss = list_gloss.map(|g| cpe_core::labels::resolve_gloss(&project.config().site, g, &lang));
         let list_cfg = cpe_components::component::resource_list::ResourceListCfg::with_links(
             base.project(project.id()),
@@ -1999,7 +1971,6 @@ fn make_facet_fragment_handler(
         let list_html =
             cpe_components::component::resource_list::render_resource_list(lp, &list_cfg, &lang).into_string();
 
-        // Build three PatchElements events: panel, filterbar, list.
         let panel_selector = format!("#facets-{list_id}");
         let filterbar_selector = format!("#filters-{list_id}");
         let list_selector = format!("#{list_id}");
@@ -2031,11 +2002,8 @@ fn make_facet_fragment_handler(
             events.push(Ok::<Event, Infallible>(crumb_event));
         }
 
-        // Reset the page-global $copied "Copied" receipt — a refinement landing
-        // mid-receipt clears it since the copied link is no longer this view.
         events.push(Ok::<Event, Infallible>(copied_signal_reset_event()));
 
-        // Emit all five events in one SSE stream (panel, filterbar, list, crumb, copied-reset).
         let sse_stream = stream::iter(events);
         std::future::ready(Sse::new(sse_stream).into_response())
     }
@@ -2125,7 +2093,6 @@ fn make_sort_fragment_handler(
             return std::future::ready(StatusCode::INTERNAL_SERVER_ERROR.into_response());
         }
 
-        // Find the first named ResourceList (id: Some(..)) and its rendered data.
         let mut list_id: Option<&str> = None;
         let mut list_page: Option<&cpe_core::ir::ResourceListPage> = None;
         // Annotated-row config, captured so the swapped list keeps its
@@ -2138,7 +2105,6 @@ fn make_sort_fragment_handler(
         let mut list_order_options: &[cpe_core::ir::OrderOption] = &[];
         let mut list_grid = false;
         let mut list_tile_ratio = None;
-        // The list's raw class name.
         let mut list_class: &str = "";
         for (c, d) in page.body.iter().zip(comp_data.iter()) {
             if let (
@@ -2212,12 +2178,8 @@ fn make_sort_fragment_handler(
                 list_order_default_label,
                 &lang,
             );
-        // The list's declared `order-by` rows, via
-        // the same `pub` resolver `render_list_component` calls.
         let order_rows = cpe_core::labels::resolve_order_options(&project.config().site, list_order_options, &lang);
 
-        // Build the ResourceListCfg via the shared factory (hides the pub(crate)
-        // LinkResolver) — same approach as the facet fragment handler.
         let resolved_gloss = list_gloss.map(|g| cpe_core::labels::resolve_gloss(&project.config().site, g, &lang));
         let list_cfg = cpe_components::component::resource_list::ResourceListCfg::with_links(
             base.project(project.id()),
@@ -2240,11 +2202,9 @@ fn make_sort_fragment_handler(
             &order_rows,
         );
 
-        // Render the list fragment.
         let list_html =
             cpe_components::component::resource_list::render_resource_list(lp, &list_cfg, &lang).into_string();
 
-        // Build the single PatchElements event targeting #<list-id>.
         let selector = format!("#{list_id}");
         let patch = PatchElements::new(list_html).selector(&selector);
         let list_event: Event = patch.into();
@@ -2269,11 +2229,8 @@ fn make_sort_fragment_handler(
             events.push(Ok::<Event, Infallible>(crumb_event));
         }
 
-        // Reset the page-global $copied "Copied" receipt — a refinement landing
-        // mid-receipt clears it since the copied link is no longer this view.
         events.push(Ok::<Event, Infallible>(copied_signal_reset_event()));
 
-        // Emit all three events (list, crumb, copied-reset) in one SSE stream.
         let sse_stream = stream::iter(events);
         std::future::ready(Sse::new(sse_stream).into_response())
     }
@@ -2335,13 +2292,10 @@ fn make_search_fragment_handler(
 
         let lang = cpe_core::lang::resolve(&requested.prefs, &project.config().site);
 
-        // Build current_query from the request query, stripping the `datastar` key.
         let raw_query = req.uri().query();
         let filtered_query: Option<String> = strip_datastar_marker(raw_query);
         let current_query: Option<&str> = filtered_query.as_deref().filter(|s| !s.is_empty());
 
-        // Compute current_path: strip the trailing `/_search` suffix so emitted
-        // hrefs remain page-relative (avoid `…/_search/_search`).
         let full_path = base.request_path(req.uri().path());
         let current_path =
             strip_fragment_suffix(&full_path, cpe_components::component::search_bar::SEARCH_FRAGMENT_SEGMENT);
@@ -2400,7 +2354,6 @@ fn make_search_fragment_handler(
         let mut list_grid = false;
         let mut list_tile_ratio = None;
         let mut facet_groups: Option<&[cpe_core::ir::FacetGroup]> = None;
-        // The list's raw class name.
         let mut list_class: &str = "";
 
         for (c, d) in page.body.iter().zip(comp_data.iter()) {
@@ -2477,11 +2430,8 @@ fn make_search_fragment_handler(
                 list_order_default_label,
                 &lang,
             );
-        // The list's declared `order-by` rows, via
-        // the same `pub` resolver `render_list_component` calls.
         let order_rows = cpe_core::labels::resolve_order_options(&project.config().site, list_order_options, &lang);
 
-        // Build the ResourceListCfg via the shared factory (hides pub(crate) LinkResolver).
         let resolved_gloss = list_gloss.map(|g| cpe_core::labels::resolve_gloss(&project.config().site, g, &lang));
         let list_cfg = cpe_components::component::resource_list::ResourceListCfg::with_links(
             base.project(project.id()),
@@ -2552,8 +2502,6 @@ fn make_search_fragment_handler(
             events.push(Ok::<Event, Infallible>(crumb_event));
         }
 
-        // Reset the page-global $copied "Copied" receipt — a refinement landing
-        // mid-receipt clears it since the copied link is no longer this view.
         events.push(Ok::<Event, Infallible>(copied_signal_reset_event()));
 
         let sse_stream = stream::iter(events);
@@ -2685,8 +2633,6 @@ mod tests {
 
     #[test]
     fn status_for_outcomes_error_takes_precedence_over_not_found() {
-        // Error (500) beats NotFound (404): the presence of a DB failure
-        // dominates over a missing resource.
         let outcomes = [FetchOutcome::NotFound, FetchOutcome::Error];
         assert_eq!(
             status_for_outcomes(&outcomes),
@@ -2865,7 +2811,6 @@ mod tests {
             body.contains("resource-list__empty"),
             "the message has the empty row's treatment: {body}"
         );
-        // The heading and the count stand above an empty list too.
         assert!(body.contains("index-list-head") && body.contains("0 projects"), "{body}");
         assert!(body.contains("class=\"shell\""), "{body}");
         assert!(!body.contains("project-list") && !body.contains("class=\"teaser\""), "{body}");
@@ -3399,7 +3344,6 @@ mod tests {
             .await
             .expect("response body is small and finite in tests");
         let body = String::from_utf8(body_bytes.into()).expect("test fixture bodies are valid UTF-8");
-        // CPE's not-found marker (see `unknown_project_returns_404`).
         assert!(
             body.contains("This address does not name a project."),
             "case-mismatched segment must render N2 (site chrome), got: {body}"
@@ -3434,7 +3378,6 @@ mod tests {
             .await
             .expect("response body is small and finite in tests");
         let body = String::from_utf8(body_bytes.into()).expect("test fixture bodies are valid UTF-8");
-        // CPE's not-found marker (see `unknown_project_returns_404`).
         assert!(
             body.contains("This address does not name a project."),
             "percent-encoded segment must render N2 (site chrome), got: {body}"
@@ -3810,7 +3753,6 @@ mod tests {
              (truncated) {}",
             &body[..body.len().min(600)]
         );
-        // Chrome must still be present (page rendered even on 404).
         assert!(
             body.contains("Delta Fixture"),
             "404 response must still include site chrome (title), got: (truncated) {}",
@@ -3916,7 +3858,6 @@ mod tests {
 
     #[test]
     fn axum_route_param_in_middle() {
-        // A route with multiple named segments (hypothetical but validates correctness).
         assert_eq!(axum_route("/projects/:proj/pages/:page"), "/projects/{proj}/pages/{page}");
     }
 
@@ -3952,7 +3893,6 @@ mod tests {
 
     #[test]
     fn parse_page_param_negative_returns_1() {
-        // u32 parse fails for negative strings.
         assert_eq!(parse_page_param(Some("page=-1")), 1);
     }
 
@@ -3962,7 +3902,6 @@ mod tests {
         // pagination clamps to the last page before multiplying, so an
         // absurd page still lands on the last page.
         assert_eq!(parse_page_param(Some("page=99999999999")), u32::MAX);
-        // A 40-digit numeric string lands the same way.
         assert_eq!(
             parse_page_param(Some("page=9999999999999999999999999999999999999999")),
             u32::MAX
@@ -3978,8 +3917,6 @@ mod tests {
 
     #[test]
     fn parse_page_param_first_match_wins() {
-        // In a well-formed query, page appears once; if somehow repeated we
-        // pick the first occurrence (consistent with query_img / query_lang).
         assert_eq!(parse_page_param(Some("lang=de&page=3&img=0")), 3);
     }
 
@@ -4141,7 +4078,6 @@ mod tests {
         let location = redirect_location(resp);
         assert_eq!(location, "/proj/characters?flag=&page=3");
 
-        // Idempotence: feeding the produced query back in must yield no redirect.
         let produced_query = location.split('?').nth(1).expect("query present");
         assert!(
             canonical_page_redirect("/proj/characters", Some(produced_query), StatusCode::OK, &components).is_none()
@@ -4201,7 +4137,6 @@ mod tests {
 
     #[test]
     fn query_param_all_preserves_order() {
-        // Values must come out in query-string order
         assert_eq!(
             query_param_all(Some("role=R_02&role=R_01&role=R_03"), "role"),
             vec!["R_02".to_owned(), "R_01".to_owned(), "R_03".to_owned()]
@@ -4218,7 +4153,6 @@ mod tests {
 
     #[test]
     fn query_param_all_empty_value_skipped() {
-        // A `key=` with no value should not add an empty string
         assert_eq!(query_param_all(Some("role=&role=R_01"), "role"), vec!["R_01".to_owned()]);
     }
 
@@ -4283,7 +4217,6 @@ mod tests {
 
     #[test]
     fn query_param_one_empty_value_returns_none() {
-        // A `key=` with no value is treated as absent.
         assert_eq!(query_param_one(Some("sort="), "sort"), None);
     }
 
@@ -5208,10 +5141,8 @@ INSERT INTO compound_parts (parent_id, child_id, seq) VALUES ('bk1', 'p2', 1);
         let ids: Vec<&str> = rows.rows.iter().map(|r| r.id.as_str()).collect();
         assert_eq!(ids, ["p1", "p2"], "compound-seq order");
 
-        // A page whose resource-detail declares no incoming-links ⇒ None.
         let book = project.config().pages.iter().find(|p| p.id == "book").expect("book page");
         assert!(resolve_incoming_links(&project, book, &components, &lang).is_none());
-        // No resolved resource ⇒ None.
         assert!(
             resolve_incoming_links(&project, page, &[cpe_core::view_data::ComponentData::Detail(None)], &lang)
                 .is_none()
@@ -5220,7 +5151,6 @@ INSERT INTO compound_parts (parent_id, child_id, seq) VALUES ('bk1', 'p2', 1);
 
     #[test]
     fn resolve_incoming_links_honours_small_limit() {
-        // A spec whose `limit` is smaller than its full match count.
         let project = load_incoming_project();
         let page = project
             .config()

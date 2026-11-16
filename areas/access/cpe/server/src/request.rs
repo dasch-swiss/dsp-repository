@@ -112,7 +112,6 @@ pub(crate) async fn report_matched_route(
 ///
 /// Returns `(prefs, from_query)`.
 pub(crate) fn extract_lang_prefs(headers: &HeaderMap, query: Option<&str>) -> (Vec<String>, bool) {
-    // --- ?lang= query parameter ---
     if let Some(lang_q) = query_lang(query) {
         if !lang_q.is_empty() {
             let normalized = normalize_lang(&lang_q);
@@ -122,10 +121,8 @@ pub(crate) fn extract_lang_prefs(headers: &HeaderMap, query: Option<&str>) -> (V
         }
     }
 
-    // --- cookie then Accept-Language ---
     let mut prefs: Vec<String> = Vec::new();
 
-    // Cookie: lang=<value>
     if let Some(cookie_val) = cookie_lang(headers) {
         let normalized = normalize_lang(&cookie_val);
         if !normalized.is_empty() {
@@ -133,7 +130,6 @@ pub(crate) fn extract_lang_prefs(headers: &HeaderMap, query: Option<&str>) -> (V
         }
     }
 
-    // Accept-Language: e.g. "en-US,de;q=0.9,fr;q=0.8"
     if let Some(al) = headers.get(axum::http::header::ACCEPT_LANGUAGE) {
         if let Ok(al_str) = al.to_str() {
             for entry in al_str.split(',') {
@@ -162,13 +158,11 @@ pub(crate) fn extract_lang_prefs(headers: &HeaderMap, query: Option<&str>) -> (V
 /// the default light scheme). The cookie is never touched here; the handler
 /// manages it when `from_query` is true (set `dark`, or clear for `light`).
 pub(crate) fn extract_appearance(headers: &HeaderMap, query: Option<&str>) -> RequestedAppearance {
-    // --- ?appearance= query parameter ---
     if let Some(raw) = query_appearance(query) {
         let value = cpe_core::theme::Appearance::parse_config_str(&raw);
         return RequestedAppearance { value, from_query: true };
     }
 
-    // --- appearance cookie ---
     if let Some(raw) = cookie_appearance(headers) {
         let value = cpe_core::theme::Appearance::parse_config_str(&raw);
         return RequestedAppearance { value, from_query: false };
@@ -350,8 +344,6 @@ pub(crate) fn derive_request_origin(headers: &HeaderMap, port: u16) -> String {
 mod tests {
     use super::*;
 
-    // ── Language middleware unit tests ─────────────────────────────────────────
-
     fn empty_headers() -> HeaderMap {
         HeaderMap::new()
     }
@@ -370,8 +362,6 @@ mod tests {
         );
         h
     }
-
-    // normalize_lang tests
 
     #[test]
     fn normalize_strips_region_subtag() {
@@ -395,8 +385,6 @@ mod tests {
         assert_eq!(normalize_lang("en"), "en");
         assert_eq!(normalize_lang("de"), "de");
     }
-
-    // extract_lang_prefs: ?lang= query parameter
 
     #[test]
     fn query_lang_de_sets_from_query_true() {
@@ -428,8 +416,6 @@ mod tests {
         assert!(prefs.is_empty());
     }
 
-    // extract_lang_prefs: cookie fallback
-
     #[test]
     fn cookie_lang_used_when_no_query() {
         let headers = headers_with_cookie("lang=de");
@@ -452,8 +438,6 @@ mod tests {
             "lang cookie found among other cookies"
         );
     }
-
-    // extract_lang_prefs: Accept-Language
 
     #[test]
     fn accept_language_source_order_region_stripped() {
@@ -482,8 +466,6 @@ mod tests {
         );
     }
 
-    // extract_lang_prefs: ?lang= takes exclusive precedence
-
     #[test]
     fn query_lang_does_not_include_cookie_or_accept() {
         let mut headers = headers_with_cookie("lang=de");
@@ -495,8 +477,6 @@ mod tests {
         assert!(from_query);
         assert_eq!(prefs, vec!["it".to_owned()]);
     }
-
-    // ── Appearance extraction tests ───────────────────────────────────────────
 
     fn headers_with_appearance_cookie(val: &str) -> HeaderMap {
         let cookie = format!("appearance={val}");
@@ -599,8 +579,6 @@ mod tests {
         assert_eq!(result.value, Some(cpe_core::theme::Appearance::Light));
     }
 
-    // ── query_img: ?img= extraction ──────────────────────────────────────────
-
     #[test]
     fn query_img_absent_returns_one() {
         assert_eq!(query_img(None), 1);
@@ -619,8 +597,6 @@ mod tests {
         // `img=0` is out of the 1-based vocabulary — treat it like absent.
         assert_eq!(query_img(Some("img=0&lang=en")), 1);
     }
-
-    // ── query_strip: ?strip= extraction ───────────────────────────────────────
 
     #[test]
     fn query_strip_absent_defaults_open() {
@@ -645,8 +621,6 @@ mod tests {
         assert_eq!(query_img(Some("img=")), 1);
     }
 
-    // ── query_pairs ────────────────────────────────────────────────────────
-
     #[test]
     fn query_pairs_splits_and_parses_ampersand_and_equals() {
         let pairs: Vec<(&str, &str)> = query_pairs(Some("a=1&b=2")).collect();
@@ -664,8 +638,6 @@ mod tests {
         let pairs: Vec<(&str, &str)> = query_pairs(None).collect();
         assert_eq!(pairs, Vec::<(&str, &str)>::new());
     }
-
-    // ── OriginConfig / derive_request_origin ──
 
     #[test]
     fn derive_request_origin_uses_forwarded_proto_and_host_when_both_present() {

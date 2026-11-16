@@ -45,8 +45,6 @@ use crate::assets::AssetInventory;
 use crate::request::{query_pairs, RequestedAppearance, RequestedLang};
 use crate::{static_files, unavailable};
 
-// ── Route-param syntax translation (CPE config syntax → axum 0.8 matchit) ────
-
 /// Translate a CPE config-language route path to the syntax required by axum 0.8
 /// (matchit 0.8): `:name` → `{name}` and a trailing `*path` wildcard → `{*path}`.
 ///
@@ -76,8 +74,6 @@ pub(crate) fn axum_route(route: &str) -> String {
     // strip the leading extra '/' added before the first (empty) segment from split
     out[1..].to_owned()
 }
-
-// ── Status-code mapping ───────────────────────────────────────────────────────
 
 /// Map a page's [`cpe_core::view_data::PageStatus`] to the response's HTTP status:
 /// `Ok` → 200, `NotFound` → 404, `Error` → 500.
@@ -2399,8 +2395,6 @@ mod tests {
         std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/discovery")
     }
 
-    // --- Unit tests for status_for_outcomes ---
-
     #[test]
     fn status_for_outcomes_empty_slice_is_200() {
         assert_eq!(status_for_outcomes(&[]), StatusCode::OK);
@@ -2475,8 +2469,6 @@ mod tests {
     fn content_type_webp() {
         assert_eq!(content_type("cover.webp"), "image/webp");
     }
-
-    // --- The overview of the projects, at `/` ---
 
     /// The answer to `uri` with `headers`, from the router over `projects` at
     /// `base`, with the request preferences resolved as `activation` layers
@@ -3244,8 +3236,6 @@ mod tests {
         );
     }
 
-    // --- Parameterised route tests ---
-
     /// Load the delta fixture project, which has a resource-detail page at
     /// `/characters/:id` with two known characters (alice, white-rabbit).
     fn load_delta_project() -> Arc<cpe_web::project::Project> {
@@ -3347,8 +3337,6 @@ mod tests {
             &body[..body.len().min(400)]
         );
     }
-
-    // --- Static-route literal-id resource-detail tests ---
 
     /// Load the epsilon fixture project, which has a static `/featured` page with
     /// a literal-id `resource-detail id="res-01"`.
@@ -3545,8 +3533,6 @@ mod tests {
         );
     }
 
-    // ── override_redirect: appearance + the retired knob keys ────────────────
-
     fn no_appearance() -> RequestedAppearance {
         RequestedAppearance { value: None, from_query: false }
     }
@@ -3614,8 +3600,6 @@ mod tests {
         );
     }
 
-    // ── axum_route: CPE config syntax → axum 0.8 matchit syntax ─────────────
-
     #[test]
     fn axum_route_translates_named_param() {
         assert_eq!(axum_route("/characters/:id"), "/characters/{id}");
@@ -3645,8 +3629,6 @@ mod tests {
     fn axum_route_param_in_middle() {
         assert_eq!(axum_route("/projects/:proj/pages/:page"), "/projects/{proj}/pages/{page}");
     }
-
-    // ── Unit tests for parse_page_param ──────────────────────────────────────
 
     #[test]
     fn parse_page_param_absent_query_returns_1() {
@@ -3703,8 +3685,6 @@ mod tests {
         assert_eq!(parse_page_param(Some("lang=de&page=3&img=0")), 3);
     }
 
-    // ── Unit tests for raw_page_param ─────────────────────────────────────────
-
     #[test]
     fn raw_page_param_absent_query_returns_none() {
         assert_eq!(raw_page_param(None), None);
@@ -3732,8 +3712,6 @@ mod tests {
         assert_eq!(raw_page_param(Some("page=&page=2")), Some(""));
     }
 
-    // ── Unit tests for canonical_page_query ───────────────────────────────────
-
     #[test]
     fn canonical_page_query_none_query() {
         assert_eq!(canonical_page_query(None, 2), "page=2");
@@ -3760,8 +3738,6 @@ mod tests {
     fn canonical_page_query_skips_empty_key_pairs() {
         assert_eq!(canonical_page_query(Some("&page=2"), 1), "page=1");
     }
-
-    // ── Unit tests for canonical_page_redirect ────────────────────────────────
 
     /// Build a one-element `ComponentData` slice carrying a `List` with
     /// `Pagination::PerPage(_)` at the given effective `page`.
@@ -3893,8 +3869,6 @@ mod tests {
         );
     }
 
-    // ── Unit tests for query_param_all ────────────────────────────────────────
-
     #[test]
     fn query_param_all_absent_query_returns_empty() {
         assert_eq!(query_param_all(None, "role"), Vec::<String>::new());
@@ -3947,8 +3921,6 @@ mod tests {
         );
     }
 
-    // ── Unit tests for facet_param_values ─────────────────────────────────────
-
     #[test]
     fn facet_param_values_dedupes_preserving_first_occurrence_order() {
         assert_eq!(
@@ -3986,8 +3958,6 @@ mod tests {
         assert_eq!(facet_param_values(Some("role=&keyword=K&role=R"), "role"), vec!["R".to_owned()]);
     }
 
-    // ── Unit tests for query_param_one ────────────────────────────────────────
-
     #[test]
     fn query_param_one_absent_query_returns_none() {
         assert_eq!(query_param_one(None, "sort"), None);
@@ -4020,8 +3990,6 @@ mod tests {
             Some("name-desc")
         );
     }
-
-    // ── Unit tests for resolve_sorts (?sort= override + config fallback) ──────
 
     fn name_asc_config_sorts() -> Vec<cpe_core::ir::Sort> {
         vec![cpe_core::ir::Sort {
@@ -4141,8 +4109,6 @@ mod tests {
             }]
         );
     }
-
-    // ── resolve_sorts: declared `order-by` options ─────────────────────────────
 
     fn declared_order_options() -> Vec<cpe_core::ir::OrderOption> {
         vec![
@@ -4421,8 +4387,6 @@ mod tests {
             "narrowed response must not contain a non-matching resource's name"
         );
     }
-
-    // ── `_search` fragment handler ────────────────────────────────────────────
 
     /// A faceted page's `_search` fragment (`eta`, facet-panel + search-bar
     /// both bound to `widgets`) returns THREE `datastar-patch-elements`
@@ -4730,8 +4694,6 @@ mod tests {
         );
     }
 
-    // --- Parameterised compound-viewer pages: real-navigation paging ---
-
     /// A minimal equivalent of `cpe-web`'s `tests/projects/good-compound-viewer-param/`
     /// (that fixture has no `compound_parts` rows, so it cannot answer for a
     /// *known* id): two parameterised pages with a `$id`-sourced
@@ -4812,8 +4774,6 @@ INSERT INTO properties (resource_id, name, seq, value_type, value_text) VALUES (
         .expect("UTF-8 body");
         (status, content_type, body)
     }
-
-    // --- Incoming links ---
 
     /// A synthetic strip/page/book bag: `b1`/`b2` BorderStrips (only `b1` is
     /// linked to), Pages `p1`/`p2` that are members of Book `bk1`, and a
@@ -5062,8 +5022,6 @@ INSERT INTO compound_parts (parent_id, child_id, seq) VALUES ('bk1', 'p2', 1);
             "must land on member 2 of 2, got: {body}"
         );
     }
-
-    // --- The `_compound` fragment's events ---
 
     /// The morph contract (mirroring DPE's
     /// `morph_contract_project_tabs_open_tag_identical`-style test): the

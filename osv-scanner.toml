@@ -1,0 +1,44 @@
+# Advisories `just audit` ignores in OSV-Scanner's scan of Cargo.Bazel.lock. Each entry carries the
+# reason it does not apply here and is revisited when that changes. A vulnerability cargo-audit
+# also fails on is passed to `cargo audit --ignore` in the `audit` recipe, with the same reason;
+# the unmaintained crates below are warnings there, and RustSec does not list the GHSA one.
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2023-0071"
+reason = "rsa Marvin timing side channel, no fixed release. The private-key operation is the DKIM signature of outgoing mail (identity-store), whose timing no attacker observes; jsonwebtoken's RSA support is unused (dsp-cli decodes without verifying)."
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0387"
+reason = "crypto-bigint 0.5 timing; the fix needs elliptic-curve 0.14, which jsonwebtoken 10 does not take. Reached only through jsonwebtoken's p256/p384; dsp-cli uses no ECDSA algorithm."
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0194"
+reason = "quick-xml 0.37 duplicate-attribute check on reading, fixed in 0.41, a breaking upgrade of its own. dpe-api-oai only writes XML with quick_xml::Writer; nothing here reads XML with quick-xml."
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0195"
+reason = "quick-xml 0.37 NsReader namespace allocation, fixed in 0.41, a breaking upgrade of its own. Nothing here reads XML with quick-xml."
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0344"
+reason = "ruzstd decompression bomb, fixed in 0.9. Reached through pyroscope's unwinder, which parses the objects mapped into the server's own process, not outside input."
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0459"
+reason = "Bundled SQLite before 3.54.0 reading a database with a crafted -wal file. Fixed in libsqlite3-sys 0.39, held back by the rusqlite 0.38 pin (MODULE.bazel). The servers open only database files they create in their own data directories."
+
+[[IgnoredVulns]]
+id = "GHSA-w9wp-h8wv-79jx"
+reason = "opentelemetry_sdk 0.31 W3C Baggage parser allocates without bound on an oversized baggage header; fixed in 0.32.1, which needs the opentelemetry crates moved together. Unreachable: both servers install the W3C Trace Context propagator alone after the subscriber init (observability.rs, with a test), so no baggage header is parsed."
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0543"
+reason = "chrono is unmaintained; informational, no vulnerability and no fixed release. Replacing it is a change of its own. cargo-audit reports it as a warning only."
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0105"
+reason = "core2 is unmaintained and yanked; informational, no vulnerability. Reached through libflate. cargo-audit reports it as a warning only."
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0441"
+reason = "pin-utils is unmaintained; informational, no vulnerability. Reached through hyper. cargo-audit reports it as a warning only."

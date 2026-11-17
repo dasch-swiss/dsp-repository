@@ -1,0 +1,62 @@
+# Bazel configuration. Version pinned in .bazelversion; docs/src/bazel.md describes the build.
+# Taken from Sipi's .bazelrc where the settings are the same; differences are commented.
+
+# Host environment variables stay out of action keys (a CI run id would otherwise miss the cache).
+build --incompatible_strict_action_env
+
+# Use the registered hermetic `llvm` toolchain, never an autodetected host compiler. `common
+# --repo_env` (Sipi: `build --action_env`): the detection runs in a repository rule, and Bazel 9
+# no longer passes `--action_env` to repository rules.
+common --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
+
+# `build:macos`, `build:linux` lines below apply on the matching host.
+common --enable_platform_specific_config
+
+# rules_fuzzing pulls a rules_python sdist build that calls `xcrun`, which the Nix dev shell's
+# apple-sdk stub cannot answer; the Command Line Tools path makes rules_python skip that call.
+# Repository rules only: compile actions use the SDK the toolchain fetches.
+common:macos --repo_env=DEVELOPER_DIR=/Library/Developer/CommandLineTools
+
+# `cc-rs` objects (`ring`, `libsqlite3-sys`) are built for macOS 14.0; the link must agree.
+build:macos --copt=-mmacosx-version-min=14.0
+build:macos --linkopt=-mmacosx-version-min=14.0
+build:macos --host_copt=-mmacosx-version-min=14.0
+build:macos --host_linkopt=-mmacosx-version-min=14.0
+build:macos --action_env=MACOSX_DEPLOYMENT_TARGET=14.0
+
+# The root `[profile.release]`: fat LTO, one codegen unit, size-optimised. `rules_rust` strips
+# debug info in `opt`; both servers' panic hooks need the line tables, so they are kept.
+# `extra_rustc_flag` (singular) accumulates; the plural form replaces the list.
+build:release --compilation_mode=opt
+build:release --@rules_rust//rust/settings:lto=fat
+build:release --@rules_rust//rust/settings:codegen_units=1
+build:release --@rules_rust//rust/settings:extra_rustc_flag=-Copt-level=z
+build:release --@rules_rust//rust/settings:extra_rustc_flag=-Cdebuginfo=line-tables-only
+build:release --@rules_rust//rust/settings:extra_rustc_flag=-Cstrip=none
+
+# CI rejects a MODULE.bazel.lock that does not match MODULE.bazel (`just repin` refreshes it).
+common:ci --lockfile_mode=error
+# The path the `bazel-setup` action restores and the calling job saves.
+common:ci --repository_cache=~/.cache/bazel-repo
+
+test --test_output=errors
+
+# The clippy aspect's flags (`just bazel-clippy`). Set for every build, not in the recipe: a flag
+# that differs between two commands changes the configuration and discards the analysis cache.
+# `-Dwarnings` is explicit because the aspect applies it by default only while no other clippy
+# flag is set.
+build --@rules_rust//rust/settings:clippy_flags=-Dwarnings
+
+# Remote cache and execution. The connection and mTLS flags come from the `bazel-rbe` action in
+# CI; these tuning flags do nothing without a remote configured.
+#   --remote_download_minimal: fetch only the outputs of the targets asked for.
+#   --remote_local_fallback: build locally when the endpoint is unreachable.
+#   --remote_timeout=600s: cold C compiles on the worker.
+#   --remote_max_connections=200: lookup parallelism while the graph is evaluated.
+build --remote_download_minimal
+build --remote_local_fallback
+build --remote_timeout=600s
+build --remote_max_connections=200
+
+# Personal settings, never committed.
+try-import %workspace%/user.bazelrc

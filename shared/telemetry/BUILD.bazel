@@ -1,0 +1,32 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+rust_library(
+    name = "shared_telemetry",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "shared_telemetry",
+    visibility = [
+        "//areas/access/dpe/server:__pkg__",
+        "//areas/access/server:__pkg__",
+        "//areas/deposit/editor/web:__pkg__",
+        "//areas/deposit/identity/web:__pkg__",
+        "//areas/deposit/server:__pkg__",
+    ],
+    deps = [
+        "@crates//:axum",
+        "@crates//:opentelemetry",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:tracing",
+        "@crates//:url",
+    ],
+)
+
+rust_test(
+    name = "shared_telemetry_test",
+    crate = ":shared_telemetry",
+    deps = [
+        "@crates//:proptest",
+        "@crates//:tokio",
+        "@crates//:tower",
+    ],
+)

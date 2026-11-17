@@ -69,3 +69,10 @@ __pycache__/
 # (dsp-cli/ADR-0007), so those files never belong in the repository.
 dsp-cli/.env
 dsp-cli/.env.*
+
+# Bazel: convenience symlinks, personal settings, and rust-analyzer's project file (`just
+# rust-project`) with its cache, which hold machine-absolute paths.
+/bazel-*
+/user.bazelrc
+/rust-project.json
+/.rules_rust_analyzer/

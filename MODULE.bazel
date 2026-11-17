@@ -1,0 +1,322 @@
+"""DaSCH Service Platform monorepo.
+
+Bazel module (version pinned in `.bazelversion`). The pins are Sipi's (DEV-7575), so both
+repositories upgrade together. docs/src/bazel.md describes the build; ADR-0001 records the decision.
+
+Never run `bazel mod tidy`: it strips `use_repo` lines the `llvm` extension needs. Refresh the lock
+with `bazel mod deps --lockfile_mode=update`, or `just repin` after a `crate.spec` change.
+"""
+
+module(name = "dsp_repository")
+
+bazel_dep(name = "platforms", version = "1.1.0")
+bazel_dep(name = "rules_cc", version = "0.2.25")
+
+# ── LLVM toolchain: hermetic, LLVM 23.1.2 ─────────────────────────────────
+#
+# hermeticbuild/hermetic-llvm is zero-sysroot: it builds the libc runtimes it links against from
+# source and fetches the macOS SDK itself, so no host compiler, Xcode or sysroot tarball is used.
+bazel_dep(name = "llvm", version = "0.8.25")
+
+# Both patches are Sipi's; each patch file's header says when to drop it.
+#   headers_glob: declares the Linux kernel and glibc headers file by file, because remote
+#     execution drops the subtrees of a bare source directory from the input tree.
+#   darwin_rtlib: drops the unused `-rtlib=compiler-rt` from macOS links, which rustc's
+#     `linker_messages` lint otherwise prints on every darwin Rust link.
+single_version_override(
+    module_name = "llvm",
+    patch_strip = 1,
+    patches = [
+        "//bazel/patches:hermetic_llvm_headers_glob.patch",
+        "//bazel/patches:hermetic_llvm_darwin_rtlib.patch",
+    ],
+)
+
+llvm = use_extension("@llvm//extensions:llvm.bzl", "llvm")
+llvm.version(llvm_version = "23.1.2")
+use_repo(llvm, "llvm-project")
+
+# `exec`: the hosts that build (developers' Macs, the CI runner, the remote worker).
+# `target`: the platforms built for. Linux on aarch64 is not built here.
+toolchain = use_extension("@llvm//extensions:toolchain.bzl", "toolchain")
+toolchain.exec(
+    arch = "aarch64",
+    os = "macos",
+)
+toolchain.exec(
+    arch = "x86_64",
+    os = "linux",
+)
+toolchain.target(
+    arch = "aarch64",
+    os = "macos",
+)
+toolchain.target(
+    arch = "x86_64",
+    os = "linux",
+)
+use_repo(toolchain, "llvm_toolchains")
+
+register_toolchains("@llvm_toolchains//:all")
+
+# ── Rust toolchain and crate universe ─────────────────────────────────────
+#
+# Registration order is load-bearing: the `llvm` toolchain above must be registered before the
+# `rust` extension, or crate build scripts (`ring`, `libsqlite3-sys`) silently use the host `cc`.
+bazel_dep(name = "rules_rust", version = "0.74.0")
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(
+    edition = "2021",
+    # The version `rust-toolchain.toml` holds, so the compiler does not change together with the
+    # build system. Bump both together.
+    versions = ["1.93.0"],
+)
+
+# The toolchains of the two exec platforms, each with every target it builds for. A set named like
+# one of `rules_rust`'s defaults replaces that default. Needed for musl: the default Linux
+# toolchain carries no libc constraint, comes first in the hub and would match the musl platform
+# too (rules_rust #2544, #3831). So the Linux targets are told apart by the `llvm` module's libc
+# constraint, `unconstrained` (glibc) or `musl`.
+rust.repository_set(
+    name = "rust_macos_aarch64",
+    edition = "2021",
+    exec_triple = "aarch64-apple-darwin",
+    target_compatible_with = [
+        "@platforms//os:macos",
+        "@platforms//cpu:aarch64",
+    ],
+    target_triple = "aarch64-apple-darwin",
+    versions = ["1.93.0"],
+)
+rust.repository_set(
+    name = "rust_macos_aarch64",
+    target_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+        "@llvm//constraints/libc:unconstrained",
+    ],
+    target_triple = "x86_64-unknown-linux-gnu",
+)
+rust.repository_set(
+    name = "rust_macos_aarch64",
+    target_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+        "@llvm//constraints/libc:musl",
+    ],
+    target_triple = "x86_64-unknown-linux-musl",
+)
+rust.repository_set(
+    name = "rust_linux_x86_64",
+    edition = "2021",
+    exec_triple = "x86_64-unknown-linux-gnu",
+    target_compatible_with = [
+        "@platforms//os:macos",
+        "@platforms//cpu:aarch64",
+    ],
+    target_triple = "aarch64-apple-darwin",
+    versions = ["1.93.0"],
+)
+rust.repository_set(
+    name = "rust_linux_x86_64",
+    target_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+        "@llvm//constraints/libc:unconstrained",
+    ],
+    target_triple = "x86_64-unknown-linux-gnu",
+)
+rust.repository_set(
+    name = "rust_linux_x86_64",
+    target_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+        "@llvm//constraints/libc:musl",
+    ],
+    target_triple = "x86_64-unknown-linux-musl",
+)
+
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")
+
+# Third-party crates: one `crate.spec` per crate a first-party target names directly, with the
+# union of the features every first-party crate asks for. Targets reference them as
+# `@crates//:<name>`. One hub means one feature set per crate: a feature Cargo enables only for
+# tests (figment's `test`) is compiled into production builds of that crate too.
+#
+# Each spec mirrors the Cargo manifests until Cargo is removed: a dependency change edits both,
+# and `just repin` refreshes the locks. A spec no target references lingers rather than failing a
+# build, so prune it with the last reference; the security floors below are the exception.
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+
+crate.spec(package = "async-trait", version = "0.1")
+
+# `macros` for `#[debug_handler]`, `ws` for the dev loop's live reload.
+crate.spec(package = "axum", version = "0.8.9", features = ["macros", "ws"])
+
+# The path router axum 0.8.9 matches with, pinned to axum's own version so a service's `page.url`
+# label is the route axum itself would match (`deposit-server`'s `page_url.rs`).
+crate.spec(package = "matchit", version = "=0.8.4")
+crate.spec(package = "base64", version = "0.22")
+crate.spec(package = "chrono", version = "0.4", features = ["clock", "serde"])
+crate.spec(package = "clap", version = "4", features = ["derive", "env"])
+crate.spec(package = "datastar", version = "0.3", features = ["axum"])
+
+# SQLite for the metadata editor. `bundled` compiles the amalgamation through `cc`, which makes
+# the static Linux binary self-contained. Held at 0.38: `deadpool-sqlite` 0.13 requires rusqlite
+# ^0.38, and two `libsqlite3-sys` versions cannot coexist (`links = "sqlite3"`). Bump both
+# together once deadpool-sqlite tracks a newer rusqlite.
+crate.spec(package = "rusqlite", version = "0.38", features = ["bundled", "chrono"])
+
+# Async pool wrapping each `rusqlite::Connection` in a thread of its own, so every call reaches it
+# through `interact()` and the `!Sync` connection is never held across an `.await`.
+crate.spec(package = "deadpool-sqlite", version = "0.13")
+crate.spec(package = "dirs", version = "5")
+crate.spec(package = "dotenvy", version = "0.15")
+
+# `test` enables `figment::Jail` for isolated environment-variable tests of the configuration.
+crate.spec(package = "figment", version = "0.10", features = ["env", "test", "toml"])
+crate.spec(package = "futures", version = "0.3")
+crate.spec(package = "futures-util", version = "0.3")
+crate.spec(package = "icondata", version = "0.7")
+
+# dsp-cli decodes the exp claim of a freshly issued token. v10 bundles no crypto backend:
+# `rust_crypto` is pure Rust; the other backend, `aws_lc_rs`, would bring `aws-lc-sys`.
+crate.spec(package = "jsonwebtoken", version = "10", features = ["rust_crypto"])
+
+# cpe-core's configuration language. `span` is required: diagnostics carry source positions. Held
+# at 6.5: kdl 6.6 and later need Rust 1.95 and turn `serde` on by default.
+crate.spec(package = "kdl", version = "~6.5", features = ["span"])
+
+# Mail. `rustls` rather than the default `native-tls`, which needs an OpenSSL to link against.
+# `ring` and `webpki-roots` are named explicitly: lettre picks its crypto provider from its own
+# features, whatever provider the rest of the graph enables.
+crate.spec(
+    package = "lettre",
+    version = "0.11.23",
+    default_features = False,
+    features = [
+        "builder",
+        "dkim",
+        "hostname",
+        "pool",
+        "ring",
+        "smtp-transport",
+        "tokio1",
+        "tokio1-rustls",
+        "webpki-roots",
+    ],
+)
+
+# Templating. `axum` gives `impl IntoResponse for Markup`.
+crate.spec(package = "maud", version = "0.27", features = ["axum"])
+
+# Dev-loop live reload (the `dev` targets only): browser refresh layer and asset-directory
+# watcher. tower-livereload injects only into text/html, never text/event-stream.
+crate.spec(package = "tower-livereload", version = "0.10.3")
+crate.spec(package = "notify", version = "8.2")
+
+# OpenTelemetry. The opentelemetry crates move in lockstep: their APIs are version-matched.
+crate.spec(package = "opentelemetry", version = "0.31", features = ["metrics"])
+crate.spec(package = "opentelemetry_sdk", version = "0.31", features = ["logs", "metrics", "rt-tokio"])
+crate.spec(package = "opentelemetry-otlp", version = "0.31", features = ["grpc-tonic", "logs", "metrics", "trace"])
+crate.spec(package = "opentelemetry-appender-tracing", version = "0.31")
+crate.spec(package = "tracing-opentelemetry", version = "0.32")
+crate.spec(package = "axum-tracing-opentelemetry", version = "0.33")
+crate.spec(package = "init-tracing-opentelemetry", version = "0.36", features = ["metrics", "otlp", "tracing_subscriber_ext"])
+
+# `sync-store` reads one committed N-Quads file per call: a strict, pure-Rust parser and its term
+# types, no triplestore. `rdf-12` stays off: the format has no RDF 1.2 triple terms.
+crate.spec(package = "oxrdf", version = "0.3.4", default_features = False)
+crate.spec(package = "oxttl", version = "0.2.4", default_features = False)
+crate.spec(package = "percent-encoding", version = "2")
+
+# cpe-core renders authored Markdown; its types cross into CPE's component library, so both crates
+# take this one entry (DEV-7401). Without default features: they add only the CLI's `getopts`.
+crate.spec(package = "pulldown-cmark", version = "0.13", default_features = False, features = ["html"])
+
+# Continuous profiling. `rustls-no-provider` instead of the default `rustls-tls`, which enables
+# reqwest's `rustls` and with it `aws-lc-sys`; the servers install `ring` themselves.
+crate.spec(package = "pyroscope", version = "2.0.4", default_features = False, features = ["backend-pprof-rs", "rustls-no-provider"])
+crate.spec(package = "quick-xml", version = "0.37")
+
+# The pull-request run and dsp-cli use the blocking client. `rustls-no-provider` leaves the crypto
+# provider to `rustls` below: reqwest's `rustls` feature would bring `aws-lc-sys`.
+crate.spec(package = "reqwest", version = "0.13", default_features = False, features = ["blocking", "json", "query", "rustls-no-provider"])
+crate.spec(package = "rpassword", version = "7")
+
+# Reads the DKIM key as PKCS#8, which lettre's `DkimSigningKey` cannot; the same major as lettre's
+# own `rsa`, so the lock holds one copy.
+crate.spec(package = "rsa", version = "0.9")
+
+# `ring` is the one TLS crypto provider. `default_features = False` is load-bearing: the default
+# features add `aws_lc_rs`, and `aws-lc-sys` does not build under Bazel. The cost: `ring` offers
+# no hybrid post-quantum key exchange (X25519MLKEM768). Named directly by the crates that install
+# it as the process default.
+crate.spec(package = "rustls", version = "0.23", default_features = False, features = ["ring", "std"])
+crate.spec(package = "semver", version = "1")
+crate.spec(package = "serde", version = "1", features = ["derive"])
+
+# `preserve_order` makes `serde_json::Value` order-preserving (IndexMap) instead of alphabetising
+# (BTreeMap). The canonical project writer round-trips `ProjectRaw` through `Value` to strip null
+# members, and must emit keys in the struct's declaration order, which is what the committed
+# project files hold. Under this feature `Map::remove` is swap-remove: use `retain` to drop
+# members in place. dsp-cli's `_meta`-first envelope depends on it too.
+#
+# `float_roundtrip`: `cpe-store-build` parses the archive's annotation geometry and must write the
+# numbers as they are; without the feature some parse one unit in the last place off.
+crate.spec(package = "serde_json", version = "1", features = ["float_roundtrip", "preserve_order"])
+crate.spec(package = "subtle", version = "2.6")
+crate.spec(package = "thiserror", version = "2.0.12")
+crate.spec(package = "tokio", version = "1", features = ["full"])
+crate.spec(package = "toml", version = "0.8")
+crate.spec(package = "tower", version = "0.5.3", features = ["util"])
+crate.spec(package = "tower-http", version = "0.6.11", features = ["cors", "fs", "set-header", "trace"])
+crate.spec(package = "tower_governor", version = "0.6")
+crate.spec(package = "tracing", version = "0.1.44")
+crate.spec(package = "tracing-subscriber", version = "0.3.22", features = ["env-filter", "fmt"])
+
+# cpe-store-build makes the ids in CPE's URLs from slugs (NFKD, combining marks dropped). The
+# requirement is that of `dao-lift` in dsp-incubator, whose slugs it must reproduce.
+crate.spec(package = "unicode-normalization", version = "0.1.25")
+crate.spec(package = "ureq", version = "3")
+crate.spec(package = "url", version = "2", features = ["serde"])
+crate.spec(package = "urlencoding", version = "2.1")
+crate.spec(package = "uuid", version = "1.23", features = ["serde", "v4", "v7"])
+
+# identity-core draws tokens with rand 0.9. identity-store's tests take 0.8, as `rand08` below.
+crate.spec(package = "rand", version = "0.9")
+
+# Test-only crates. `@crates` targets are public, so nothing stops a production target from
+# naming one: keep them out of production `deps` by review.
+crate.spec(package = "assert_cmd", version = "2")
+crate.spec(package = "http-body-util", version = "0.1")
+crate.spec(package = "insta", version = "1.47", features = ["filters", "yaml"])
+crate.spec(package = "jsonschema", version = "0.56.0", default_features = False)
+crate.spec(package = "predicates", version = "3")
+crate.spec(package = "proptest", version = "1")
+
+# identity-store's tests generate DKIM keys with `rsa` 0.9, which takes `rand_core` 0.6: rand 0.8,
+# not identity-core's 0.9. Referenced as `@crates//:rand08`.
+crate.spec(package = "rand", package_alias = "rand08", version = "0.8")
+crate.spec(package = "sha2", version = "0.10")
+crate.spec(package = "tempfile", version = "3")
+crate.spec(package = "wiremock", version = "0.6")
+
+crate.from_specs(
+    # A Cargo-format lock beside MODULE.bazel.lock, which `just audit` scans. Seeded from
+    # Cargo.lock, so both builds resolve the same versions.
+    cargo_lockfile = "//:Cargo.Bazel.lock",
+    # No musl triple: rules_rust has no musl `config_setting` for the generated selects to name,
+    # and a listed musl triple is dropped from them. The musl platform matches the
+    # `x86_64-unknown-linux-gnu` setting, which has no libc constraint, so musl builds take the gnu
+    # branch of every select. Correct while no crate in the graph conditions a dependency on
+    # `target_env = "gnu"` or `"musl"`; check the crates of a new spec for that when repinning.
+    supported_platform_triples = [
+        "aarch64-apple-darwin",
+        "x86_64-unknown-linux-gnu",
+    ],
+)
+use_repo(crate, "crates")

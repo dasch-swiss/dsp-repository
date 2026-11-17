@@ -1,0 +1,29 @@
+# No `rust_doc_test`: rustdoc links each doctest when the test runs, and the hermetic toolchain's
+# compiler-rt archive is not in the test's runfiles, so every doctest fails to link. The module
+# examples are `ignore` blocks; the unit tests render them.
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+rust_library(
+    name = "mosaic_tiles",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "mosaic_tiles",
+    visibility = [
+        "//areas/access/dpe/server:__pkg__",
+        "//areas/access/dpe/web:__pkg__",
+        "//areas/deposit/editor/web:__pkg__",
+        "//areas/deposit/identity/web:__pkg__",
+        "//areas/deposit/shell:__pkg__",
+        "//modules/mosaic/playground:__pkg__",
+    ],
+    deps = [
+        "@crates//:icondata",
+        "@crates//:maud",
+    ],
+)
+
+rust_test(
+    name = "mosaic_tiles_test",
+    # A test asserts against the stylesheet that carries the alert's margin.
+    compile_data = ["src/components/alert/alert.css"],
+    crate = ":mosaic_tiles",
+)

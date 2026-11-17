@@ -1,0 +1,56 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+
+# The playground's static files. `just css-mosaic` writes the stylesheet into `public/assets/`,
+# git-ignored; it stays out, or a stale build would reach the image.
+filegroup(
+    name = "public",
+    srcs = glob(
+        ["public/**"],
+        exclude = ["public/assets/**"],
+    ),
+)
+
+_SRCS = glob(["src/**/*.rs"])
+
+_DEPS = [
+    "//modules/mosaic/tiles:mosaic_tiles",
+    "@crates//:axum",
+    "@crates//:maud",
+    "@crates//:tokio",
+    "@crates//:tower-http",
+]
+
+_DEV_DEPS = _DEPS + [
+    "@crates//:notify",
+    "@crates//:tower-livereload",
+]
+
+rust_binary(
+    name = "mosaic_playground",
+    srcs = _SRCS,
+    crate_name = "mosaic_playground",
+    deps = _DEPS,
+)
+
+# The `dev` feature: live reload for `just watch-mosaic-playground`.
+rust_binary(
+    name = "mosaic_playground_dev",
+    srcs = _SRCS,
+    crate_features = ["dev"],
+    crate_name = "mosaic_playground",
+    deps = _DEV_DEPS,
+)
+
+rust_test(
+    name = "mosaic_playground_test",
+    crate = ":mosaic_playground",
+    deps = ["@crates//:tower"],
+)
+
+# `crate_features` is not inherited from `crate`.
+rust_test(
+    name = "mosaic_playground_dev_test",
+    crate = ":mosaic_playground_dev",
+    crate_features = ["dev"],
+    deps = ["@crates//:tower"],
+)

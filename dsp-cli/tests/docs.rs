@@ -11,7 +11,9 @@ use assert_cmd::Command;
 
 /// Helper: `dsp` with deterministic terminal settings (mirrors `tests/cli.rs`).
 fn dsp() -> Command {
-    let mut cmd = Command::cargo_bin("dsp").unwrap();
+    // `CARGO_BIN_EXE_dsp` is absolute under Cargo and runfiles-relative under Bazel. Absolute, the
+    // path does not depend on the working directory a test gives the command.
+    let mut cmd = Command::new(std::path::absolute(env!("CARGO_BIN_EXE_dsp")).unwrap());
     cmd.env("TERM", "dumb")
         .env("COLUMNS", "100")
         // Belt-and-suspenders: these tests already run non-TTY (piped stderr), so

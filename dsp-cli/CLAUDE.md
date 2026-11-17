@@ -20,6 +20,7 @@ dsp-cli like every other crate (dsp-cli/ADR-0009 layers 1-4); these are the crat
 ```bash
 just dsp-cli-run <args>       # cargo run --bin dsp -- <args>
 just dsp-cli-test-live        # live tests (dsp-cli/ADR-0009 layer 5; needs DSP_TEST_SERVER etc.)
+just bazel-dsp-cli-test-live  # the same live tests, built and run by Bazel
 just dsp-cli-snap-review      # cargo insta review
 just dsp-cli-stack-up         # start the pinned Fuseki + knora-api stack and load fixtures
 just dsp-cli-stack-fixtures   # reload fixtures into an already-running stack

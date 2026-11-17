@@ -32,6 +32,6 @@ The agent-facing Claude Code skill is not shipped from this repository. Its home
 - **A Homebrew tap or a Nix flake**: deferred, not rejected. Their value only emerges with non-Rust users; that is what would bring them back.
 - **Inherit the workspace version**: rejected. Every workspace release would bump dsp-cli with no dsp-cli change, and the published version would carry no dsp-cli semantics.
 
-Enforced by: the binary name `dsp`, by the integration tests that run it as `Command::cargo_bin("dsp")` (e.g. `dsp-cli/tests/cli.rs`,
+Enforced by: the binary name `dsp`, by the integration tests that run it through `CARGO_BIN_EXE_dsp` (e.g. `dsp-cli/tests/cli.rs`,
 `dsp-cli/tests/docs.rs`); the separate release-please package and the tag-prefix guard on the publish workflow (**static-analysis**);
 `cargo publish -p dsp-cli --dry-run` in the publish workflow; the rest by **review**.

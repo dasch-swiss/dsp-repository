@@ -14,7 +14,10 @@
       "package-name": "dsp-cli",
       "changelog-path": "CHANGELOG.md",
       "include-component-in-tag": true,
-      "extra-files": [{ "type": "toml", "path": "Cargo.toml", "jsonpath": "$.package.version" }]
+      "extra-files": [
+        { "type": "toml", "path": "Cargo.toml", "jsonpath": "$.package.version" },
+        { "type": "generic", "path": "BUILD.bazel" }
+      ]
     }
   },
   "separate-pull-requests": true,

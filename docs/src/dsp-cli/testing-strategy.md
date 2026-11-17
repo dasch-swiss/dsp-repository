@@ -37,6 +37,7 @@ under CI. `.github/scripts/check-live-tests-ignored.sh`, run by `just check`, en
 scans every `dsp-cli/tests/live_*.rs` file and fails if any `#[test]` lacks a matching `#[ignore]`.
 Run live tests explicitly with `just dsp-cli-test-live`, which passes `--features live` and
 `--ignored` (or the equivalent) so the ignored tests actually execute.
+`just bazel-dsp-cli-test-live` runs the same tests built by Bazel.
 
 ## Live-test environment variables
 

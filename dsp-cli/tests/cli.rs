@@ -43,7 +43,9 @@ use tempfile::TempDir;
 /// mechanism. `TERM=dumb` and `COLUMNS=100` are belt-and-braces for the
 /// test harness; all three are applied concurrently.
 fn dsp() -> Command {
-    let mut cmd = Command::cargo_bin("dsp").unwrap();
+    // `CARGO_BIN_EXE_dsp` is absolute under Cargo and runfiles-relative under Bazel. Absolute, the
+    // path does not depend on the working directory a test gives the command.
+    let mut cmd = Command::new(std::path::absolute(env!("CARGO_BIN_EXE_dsp")).unwrap());
     cmd.env("TERM", "dumb")
         .env("COLUMNS", "100")
         // Belt-and-suspenders: these tests already run non-TTY (piped stderr), so

@@ -26,6 +26,23 @@ fn single_source_renders_element_with_id_and_sources() {
     assert!(html.contains(r#"auth-mode="none""#));
 }
 
+/// The crate documentation's example, which runs nowhere as a doctest under Bazel.
+#[test]
+fn documented_example_renders() {
+    let viewer = Viewer::new("page-viewer", vec!["https://iiif.example/abcd/info.json".to_owned()])
+        .auth(Auth::Cookie)
+        .navigator(true)
+        .label("Page 1 recto");
+    let html = html! {
+        (viewer)
+    }
+    .into_string();
+    assert!(html.contains(r#"id="page-viewer""#));
+    assert!(html.contains(r#"auth-mode="cookie""#));
+    assert!(html.contains("navigator"));
+    assert!(html.contains(r#"label="Page 1 recto""#));
+}
+
 #[test]
 fn multiple_sources_are_json_encoded_in_order() {
     let html = render(&Viewer::new(

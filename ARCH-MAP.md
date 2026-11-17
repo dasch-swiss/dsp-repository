@@ -1289,7 +1289,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   library are open.
 - **Key entities:** (design vocabulary, `areas/access/datei/CONTEXT.md`) Presenter, Rebuild, Read
   model, Configuration, Edition file, ODD / Project CSS, Driving file, Table of contents; in the
-  incubator `tei-serve`, `ir::ingest`, `config_doc`, `viewer`
+  incubator `tei-serve`, `rebuild`, `config_doc`, `viewer`
 - **Public interface:** its router (planned), mounted by areas/access/server on the area's origin.
   `datei/ports` is not an interface DaTEI offers but the port it consumes: the files of one project
   with their bytes, which areas/access/media implements once DaTEI declares it; `media`'s adapter of it waits
@@ -1304,7 +1304,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `areas/access/server/src/serve.rs` (where it is mounted), `areas/access/CONTEXT.md`
 - **Depends on:** areas/access/media through `datei/ports` (DaTEI declares the port, `media`
   implements it); shared/telemetry (expected); never DPE's, CPE's or `sync`'s crates, never
-  Chischtli. Third-party, from the incubator: axum, maud, datastar, rusqlite (reconciled with the
+  Chischtli. Third-party, from the incubator: axum, maud, rusqlite (reconciled with the
   workspace's one pin on entry), quick-xml, roxmltree, toml
 - **Used by:** areas/access/server (expected: `datei-server` mounted beside DPE and CPE;
   `datei/ports` only where the root constructs the `Live<Port>` adapter)
@@ -1313,8 +1313,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   The read model is fed by the port only, the configuration included: nothing under `areas/access/datei/`
   is a configuration, an Edition file, ODD, CSS, driving file or table of contents (ADR-0012). The
   presenter never writes the read model and filters every request on the rights stored per row with
-  ADR-0013's decision (ADR-0012; **review**). A project fails alone (ADR-0007). The incubator's `<cpe-{name}>` element prefix and
-  its `ingest` identifier are renamed on entry (**docs-only** until code exists; then
+  ADR-0013's decision (ADR-0012; **review**). A project fails alone (ADR-0007). The incubator renders elements as `<tei-{name}>` and calls its build the Rebuild (**docs-only** until code exists; then
   **static-analysis** for one rebuild-from-empty test against a `Fake<Port>`, and **structure** via
   Bazel visibility after ADR-0001).
 - **Durable state:** one read model per project (SQLite), single writer the Rebuild, disposable and

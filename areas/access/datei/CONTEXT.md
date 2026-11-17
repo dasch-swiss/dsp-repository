@@ -22,15 +22,15 @@ _Avoid_: YAML, KDL (CPE's language), settings, "the user's configuration".
 
 **Edition file**:
 A TEI file the project handed over and the archive preserves; DaTEI reads its bytes through its port and never from a file under its own directory.
-_Avoid_: witness (in DaTEI a witness is one column of a synoptic axis, declared by `<witness xml:id>`; a file may hold several, or one may span files), media file, source, asset (the incubator's word for TEI, ODD and CSS uploads together).
+_Avoid_: witness (in DaTEI a witness is one column of a file-driven view's axis, declared by `<witness xml:id>`; a file may hold several, or one may span files), media file, source, asset (the incubator's word for TEI, ODD and CSS uploads together).
 
 **ODD** / **Project CSS**:
-The project's TEI customisation and its own stylesheet, handed over beside the Edition files and read only to preset the Configuration; never authoritative on rendering.
+The project's TEI customisation and its own stylesheet, handed over beside the Edition files and read to preset the Configuration; the ODD also stamps derived marker classes onto the loaded nodes, which the Configuration's styles may target. Never authoritative on rendering.
 _Avoid_: schema (Chischtli's Shape validation is also one), the styles (Applied CSS is what the browser gets).
 
 **Driving file**:
-A TEI artefact declaring which nodes of the Edition files align across a synoptic view's columns, loaded verbatim and never derived; asserted editorial fact, not operator preference. Deposited, whoever authored it, and read through the port (ADR-0012).
-_Avoid_: mapping, config, synoptic definition.
+A TEI artefact declaring the units of a file-driven view and which nodes of the Edition files align across its columns, loaded verbatim and never derived; asserted editorial fact, not operator preference. Deposited, whoever authored it, and read through the port (ADR-0012).
+_Avoid_: mapping, config.
 
 **Table of contents**:
 A TEI artefact declaring how a project's units are navigated: a tree of entries whose leaves name a window of a view. Deposited and read through the port (ADR-0012). Editorial pages are planned as an extension of it.
@@ -43,11 +43,11 @@ _Avoid_: narrative (CPE's Markdown), landing page (ADR-0005's term; no persisten
 ### How it is served
 
 **Rebuild**:
-Building a project's Read model from empty: read the Edition files, ODD, Project CSS, Driving files and Tables of contents through the port, apply the Configuration, recompute derived state. Runs when a project is activated and is the only writer of the Read model. In the incubator it is `ingest` plus `apply-config` plus the derived recompute, minus the uploaded snapshot.
+Building a project's Read model from empty, in five steps: load the Edition files (with the ODD and Project CSS) through the port, apply the Configuration, compute derived state, load the Driving files and Tables of contents, build the search index and the fields. Runs when a project is activated and is the only writer of the Read model. In the incubator it is `datei_engine::rebuild::rebuild`, which takes the Configuration beside the port.
 _Avoid_: ingest (the OAIS functional entity inside the Archive Area), transformer, import, restore (the incubator's snapshot-swap path).
 
 **Read model**:
-The project's SQLite database (`.tei-ir.sqlite` in the incubator): ingested, configuration and derived tables plus the loaded artefacts, in the sense of ADR-0008. Disposable, never committed, never repaired in place.
+The project's SQLite database (`.tei-ir.sqlite` in the incubator): loaded, configuration and derived tables plus the loaded artefacts, in the sense of ADR-0008. Disposable, never committed, never repaired in place.
 _Avoid_: IR (fine inside the code; as a concept name it says nothing about ownership), snapshot, showcase bundle (the incubator's committed copies, retired here).
 
 ## What the port serves
@@ -57,7 +57,7 @@ The files of one project, with their bytes: the Configuration, Edition files, OD
 ## Relationships
 
 - One DaTEI project presents exactly one contract **Project**, keyed by its **Shortcode**, under its own route prefix.
-- A project has one **Configuration**, one or more **Edition files**, zero or one **ODD**, zero or more **Project CSS** files, zero or more **Driving files** (one per synoptic view) and zero or more **Tables of contents** (one per view is possible); all of them deposited.
+- A project has one **Configuration**, one or more **Edition files**, zero or one **ODD**, zero or more **Project CSS** files, zero or more **Driving files** (one per file-driven view) and zero or more **Tables of contents** (one per view is possible); all of them deposited.
 - A **Rebuild** produces exactly one **Read model** per project from those; the **Presenter** reads it and nothing else.
 - DaTEI declares one port; `media` implements it (ADR-0012), once the port exists.
 
@@ -80,7 +80,7 @@ The files of one project, with their bytes: the Configuration, Edition files, OD
 
 - **Archived data versus authored content** (2026-09-29; resolved 2026-10-13, ADR-0012). Everything the Rebuild consumes is deposited, whoever authored it: Driving files, Tables of contents and the Configuration included. Nothing the Rebuild reads is authored beside the code.
 - **Where the Configuration is authored, and how it reaches DaTEI** (2026-09-29; resolved 2026-10-13, ADR-0012). The Configurator lives on the Deposit side; the TOML it writes is deposited and arrives through the port, and DaTEI's project folder, if any, holds only documents about the project's data. Until the archive exists it will sit in `media`'s stand-in directory, which holds no DaTEI project yet.
-- **"ingest"** is the incubator's word for TEI to IR and its `src/ir/ingest` module; the Archive Area owns the word. Resolution: **Rebuild** in all prose here; the identifier is renamed on entry.
+- **"ingest"**: the Archive Area owns the word. Resolution: **Rebuild** in all prose here; the incubator's code says Rebuild, and "load" for turning TEI into rows (resolved there 2026-10).
 - **"asset"** is the incubator's word for its uploads and its runtime directory (`assets/<id>/`); this repository already avoids it (see `vitrinli/CONTEXT.md`). Resolution: not used here; say Edition file, ODD, Project CSS, or "public assets" for static web files.
 - **"project"** in the incubator is an id-keyed directory (`assets/<id>`, a server-derived slug); here a DaTEI project is the contract Project by Shortcode. Resolution: say "DaTEI project" only for the presented unit; the identifier is the Shortcode.
-- **`<cpe-{name}>`**: the incubator renders every TEI element as a custom element with that prefix, which here names the sibling capability. Resolution: renamed on entry; the new prefix is not decided.
+- **`<cpe-{name}>`**: the incubator rendered every TEI element as a custom element with that prefix, which here names the sibling capability. Resolution: the incubator renders `<tei-{name}>` and names its own classes `datei-{group}` (resolved there 2026-10).

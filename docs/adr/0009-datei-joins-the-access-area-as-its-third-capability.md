@@ -62,10 +62,11 @@ whether DaTEI keeps its own CSS and component library, as CPE does, or adopts Mo
   identifier is renamed on entry. The incubator's `<cpe-{name}>` custom-element prefix names a sibling capability
   here and is renamed on entry; the new prefix is not decided.
 
-Not yet in code: `areas/access/datei/` holds only `CONTEXT.md`; DaTEI's presenter and rebuild are in
-`dsp-incubator/da-tei`, with no port, no rebuild against it and no test against a `Fake<Port>`, and 086A's TEI
-is in no repository DaSCH controls; committing it under `media`, with its provenance, is the first step of the
-move (not scheduled).
+Not yet in code: `areas/access/datei/` holds only `CONTEXT.md`. DaTEI's presenter and rebuild are in
+`dsp-incubator/da-tei`, where the rebuild reads a project's files through a port the engine declares
+(`FilePort`: a file layout, and bytes by content hash) and a reproduction test rebuilds from empty against an
+in-memory fake of it. 086A's TEI sits in the incubator's `da-tei/testcorpora/` without recorded provenance;
+committing it under `media`, with its provenance, is the first step of the move (not scheduled).
 
 Enforced by: review. The target is Bazel `visibility` per ADR-0001 for the capability and port seams
 (**structure**), and one test per read model that rebuilds it from empty against a `Fake<Port>` and asserts what

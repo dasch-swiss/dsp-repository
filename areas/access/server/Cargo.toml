@@ -37,6 +37,7 @@ opentelemetry_sdk.workspace = true
 opentelemetry-otlp.workspace = true
 opentelemetry-appender-tracing.workspace = true
 pyroscope.workspace = true
+rustls.workspace = true
 tower_governor.workspace = true
 
 [dev-dependencies]

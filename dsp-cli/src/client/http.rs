@@ -1370,14 +1370,14 @@ impl HttpDspClient {
     /// Returns `Err(Diagnostic::Internal(...))` if either reqwest client cannot be
     /// built (rare — only triggered by TLS backend misconfiguration).
     pub fn new() -> Result<Self, Diagnostic> {
-        let client = reqwest::blocking::Client::builder()
+        let client = super::tls::client_builder()
             .connect_timeout(Duration::from_secs(10))
             .timeout(Duration::from_secs(30))
             .user_agent(crate::util::USER_AGENT)
             .default_headers(dsp_api_default_headers())
             .build()
             .map_err(|e| Diagnostic::Internal(format!("failed to build HTTP client: {e}")))?;
-        let download_client = reqwest::blocking::Client::builder()
+        let download_client = super::tls::client_builder()
             .connect_timeout(Some(Duration::from_secs(30)))
             .timeout(None)
             .user_agent(crate::util::USER_AGENT)
@@ -3337,7 +3337,7 @@ project owns the existing dump; cannot safely proceed"
         // but a 307/308 **replays the request body** — here, the query text,
         // which D19 treats as privacy-sensitive — to a third host. Refusing to
         // follow removes the question instead of reasoning about it.
-        let sparql_client = reqwest::blocking::Client::builder()
+        let sparql_client = super::tls::client_builder()
             .connect_timeout(Duration::from_secs(10))
             .timeout(Duration::from_secs(timeout_secs))
             .redirect(reqwest::redirect::Policy::none())

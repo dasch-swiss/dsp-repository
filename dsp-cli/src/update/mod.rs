@@ -94,7 +94,7 @@ pub fn parse_latest_stable(body: &str) -> Option<semver::Version> {
 /// `url` is an explicit parameter (rather than derived from `SPARSE_INDEX_URL`
 /// internally) so tests can point this at a mock server.
 pub fn fetch_latest(url: &str) -> Result<Option<semver::Version>, crate::diagnostic::Diagnostic> {
-    let client = reqwest::blocking::Client::builder()
+    let client = crate::client::tls::client_builder()
         .timeout(HTTP_TIMEOUT)
         .redirect(reqwest::redirect::Policy::none())
         .user_agent(crate::util::USER_AGENT)

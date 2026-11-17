@@ -20,6 +20,9 @@ pub struct Editor {
 
 impl Editor {
     pub fn new(base_url: &str) -> Result<Self, String> {
+        // reqwest is built with `rustls-no-provider` and panics at `build()` when no
+        // provider is installed. An `Err` means one is installed already.
+        let _ = rustls::crypto::ring::default_provider().install_default();
         let http = reqwest::blocking::Client::builder()
             .timeout(TIMEOUT)
             .build()
@@ -47,5 +50,16 @@ impl Editor {
             .json()
             .map_err(|error| format!("GET {url} returned a body this run cannot read: {error}"))?;
         Ok(body.records)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Editor;
+
+    /// The only client in this binary: no other test installs a TLS provider first.
+    #[test]
+    fn the_editor_client_builds_without_a_provider_installed_by_the_caller() {
+        assert!(Editor::new("https://editor.example").is_ok());
     }
 }

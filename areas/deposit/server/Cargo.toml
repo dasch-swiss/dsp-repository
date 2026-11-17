@@ -36,6 +36,7 @@ opentelemetry-otlp.workspace = true
 opentelemetry-appender-tracing.workspace = true
 tracing-opentelemetry.workspace = true
 pyroscope.workspace = true
+rustls.workspace = true
 
 [dev-dependencies]
 # `test` feature enables figment::Jail for isolated env-var config tests.

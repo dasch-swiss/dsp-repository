@@ -19,8 +19,10 @@ serde.workspace = true
 serde_json.workspace = true
 # Blocking client: the pull-request run is a batch CLI with no concurrency, so an async
 # runtime would buy nothing. `rustls` avoids an OpenSSL build dependency, as in
-# `dsp-cli`.
-reqwest = { version = "0.13", default-features = false, features = ["blocking", "json", "rustls"] }
+# `dsp-cli`; `rustls-no-provider` leaves the crypto provider to `rustls` below.
+reqwest = { version = "0.13", default-features = false, features = ["blocking", "json", "rustls-no-provider"] }
+# `ring` as the TLS crypto provider, installed by `Editor::new`.
+rustls.workspace = true
 
 [dev-dependencies]
 # Named only from tests, which build a record by hand; the production path

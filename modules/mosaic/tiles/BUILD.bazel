@@ -27,3 +27,24 @@ rust_test(
     compile_data = ["src/components/alert/alert.css"],
     crate = ":mosaic_tiles",
 )
+
+_STYLESHEET_READERS = [
+    "//areas/access/dpe:__pkg__",
+    "//areas/deposit/editor:__pkg__",
+    "//modules/mosaic/playground:__pkg__",
+]
+
+# The token and component stylesheets every application's Tailwind entry imports.
+filegroup(
+    name = "stylesheets",
+    srcs = glob(["src/**/*.css"]),
+    visibility = _STYLESHEET_READERS,
+)
+
+# The files the applications' stylesheets scan for class names (their `@source` lines name
+# `src/**/*.rs`).
+filegroup(
+    name = "tailwind_sources",
+    srcs = glob(["src/**/*.rs"]),
+    visibility = _STYLESHEET_READERS,
+)

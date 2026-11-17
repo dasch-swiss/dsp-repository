@@ -14,7 +14,8 @@ filegroup(
         "//areas/deposit/editor/pull-requests:__pkg__",
         "//areas/deposit/editor/store:__pkg__",
         "//areas/deposit/editor/web:__pkg__",
-        # Its tests load the corpus through `editor-web`'s test support.
+        # The editor image's data directory; the server's tests load the corpus through
+        # `editor-web`'s test support.
         "//areas/deposit/server:__pkg__",
     ],
 )
@@ -108,4 +109,12 @@ rust_test(
     data = _TEST_DATA,
     env = _TEST_ENV,
     deps = _TEST_DEPS,
+)
+
+# The files the DPE stylesheet scans for class names (its `@source` lines), tests and nested
+# directories included. A nested package exports its own.
+filegroup(
+    name = "tailwind_sources",
+    srcs = glob(["**/*.rs"]),
+    visibility = ["//areas/access/dpe:__pkg__"],
 )

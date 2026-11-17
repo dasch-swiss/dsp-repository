@@ -1,4 +1,5 @@
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+load("//tools/image:defs.bzl", "MUSL", "app_image", "binary_layer", "files_layer")
 
 # The Deposit Area's composition root (ADR-0003, `areas/deposit/ADR-0004`): the binary links the two
 # web crates, the two store crates and the shell, and no `core` or `ports` crate. Its tests also
@@ -74,4 +75,65 @@ rust_test(
         "@crates//:chrono",
         "@crates//:tower",
     ],
+)
+
+# ── The editor image, `daschswiss/metadata-editor` ─────────────────────────
+#
+# A static musl binary on distroless `static` (`//tools/image:defs.bzl`), built with
+# `--config=release --stamp` (the version in the footer) by `just bazel-docker-build-editor`, which
+# loads it. Configuration as in `Dockerfile`, which stays the reference until the deploy path moves to
+# Bazel and documents `EDITOR_DB_DIR` and the user id; its `HEALTHCHECK` has no equivalent in an
+# OCI image, and `healthcheck` remains a subcommand.
+binary_layer(
+    name = "image_binary",
+    binary = ":deposit_server",
+    path = "/app/deposit-server",
+    target_compatible_with = MUSL,
+)
+
+files_layer(
+    name = "image_public",
+    srcs = [
+        "//areas/deposit/editor:css",
+        "//areas/deposit/editor:public",
+    ],
+    prefixes = {
+        "areas/deposit/editor/css": "app/public/assets",
+        "areas/deposit/editor/public": "app/public",
+    },
+    target_compatible_with = MUSL,
+)
+
+# DPE's published set as the editor's data directory: a data change reaches the editor when the
+# image is rebuilt, not at run time.
+files_layer(
+    name = "image_data",
+    srcs = ["//areas/access/dpe/server:corpus"],
+    prefixes = {"areas/access/dpe/server/data": "app/server/data"},
+    target_compatible_with = MUSL,
+)
+
+app_image(
+    name = "image",
+    repository = "index.docker.io/daschswiss/metadata-editor",
+    scan_tag = "local-scan/editor:latest",
+    cmd = ["serve"],
+    entrypoint = ["./deposit-server"],
+    # `EDITOR_DB_DIR` stays unset: an in-memory database, for the previews (`Dockerfile`).
+    env = {
+        "RUST_LOG": "info",
+        # The panic hook's backtrace, with the line tables `--config=release` keeps.
+        "RUST_BACKTRACE": "1",
+        "EDITOR_SITE_ADDR": "0.0.0.0:8080",
+        "EDITOR_ENV": "PROD",
+        "EDITOR_PUBLIC_DIR": "/app/public",
+        "EDITOR_DATA_DIR": "/app/server/data",
+    },
+    exposed_ports = ["8080/tcp"],
+    tars = [
+        ":image_binary",
+        ":image_public",
+        ":image_data",
+    ],
+    workdir = "/app",
 )

@@ -1,3 +1,5 @@
+load("//tools/tailwind:defs.bzl", "tailwind_css")
+
 # The editor's static files. The CSS recipes write `assets/app.css` and `assets/app.<hash8>.css`
 # here, git-ignored; they stay out, or a stale stylesheet would reach the tests and the image,
 # where the server picks its stylesheet by scanning the directory.
@@ -17,4 +19,20 @@ filegroup(
 exports_files(
     ["style/main.css"],
     visibility = ["//areas/deposit/editor/web:__pkg__"],
+)
+
+# The release stylesheet, `app.<hash8>.css` in a directory, as `just css-editor-release` writes it.
+# `srcs` holds what `style/main.css` imports and every file its `@source` lines scan.
+tailwind_css(
+    name = "css",
+    src = "style/main.css",
+    hashed = True,
+    srcs = [
+        "//areas/deposit/editor/web:tailwind_sources",
+        "//areas/deposit/identity/web:tailwind_sources",
+        "//areas/deposit/shell:tailwind_sources",
+        "//modules/mosaic/tiles:stylesheets",
+        "//modules/mosaic/tiles:tailwind_sources",
+    ],
+    visibility = ["//areas/deposit/server:__pkg__"],
 )

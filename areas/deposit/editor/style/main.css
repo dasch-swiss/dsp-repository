@@ -26,6 +26,9 @@
    imported above because the component files @apply against them. */
 @import '../../../../modules/mosaic/tiles/src/components/components.css';
 
+/* The image's stylesheet is built by Bazel, which gives Tailwind only the files `:css` in
+   areas/deposit/editor/BUILD.bazel lists. A line added here needs its files added there, or its classes are missing from
+   the image while the dev loop still shows them. */
 @source '../web/**/*.rs';
 @source '../../shell/**/*.rs';
 @source '../../identity/web/**/*.rs';

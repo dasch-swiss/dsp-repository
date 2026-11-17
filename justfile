@@ -296,6 +296,67 @@ audit:
     cargo audit --file Cargo.Bazel.lock "${ignores[@]}"
     osv-scanner scan source --lockfile=Cargo.lock:Cargo.Bazel.lock --config=osv-scanner.toml
 
+# The images' build flags: a release build, stamped (the editor's footer version). The targets select the musl platform themselves (`//tools/image:defs.bzl`).
+
+IMAGE_FLAGS := "--config=release --stamp"
+
+# Build the DPE image with Bazel and load it into Docker as `local-scan/dpe:latest`. FLAGS: extra Bazel flags, such as CI's.
+[group('bazel')]
+bazel-docker-build-dpe *FLAGS:
+    bazel run {{ FLAGS }} {{ IMAGE_FLAGS }} //areas/access/server:image_load
+
+# Build the editor image with Bazel and load it into Docker as `local-scan/editor:latest`. FLAGS: extra Bazel flags, such as CI's.
+[group('bazel')]
+bazel-docker-build-editor *FLAGS:
+    bazel run {{ FLAGS }} {{ IMAGE_FLAGS }} //areas/deposit/server:image_load
+
+# Build the Mosaic playground image with Bazel and load it into Docker as `local-scan/mosaic-playground:latest`. FLAGS: extra Bazel flags, such as CI's.
+[group('bazel')]
+bazel-docker-build-mosaic *FLAGS:
+    bazel run {{ FLAGS }} {{ IMAGE_FLAGS }} //modules/mosaic/playground:image_load
+
+# Build and load the three images, start each, and expect 200 from `/healthz` (the playground: `/`) and exit 0 from the server's `healthcheck` subcommand. FLAGS: extra Bazel flags, such as CI's.
+[group('bazel')]
+bazel-image-smoke *FLAGS:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    just bazel-docker-build-dpe {{ FLAGS }}
+    just bazel-docker-build-editor {{ FLAGS }}
+    just bazel-docker-build-mosaic {{ FLAGS }}
+    containers=()
+    trap 'for c in ${containers[@]+"${containers[@]}"}; do docker rm -f "$c" >/dev/null 2>&1 || true; done' EXIT
+    # usage: smoke <image> <path> <healthcheck binary, or empty> [docker run arguments]
+    smoke() {
+        local image=$1 path=$2 bin=$3 name="image-smoke-$$-${#containers[@]}"
+        shift 3
+        containers+=("$name")
+        # Loopback only, on a port Docker picks. The images are amd64 only (emulated on arm64 hosts).
+        docker run -d --platform linux/amd64 --name "$name" -p 127.0.0.1::8080 "$@" "$image" >/dev/null
+        fail() { echo >&2 "error: $image: $1"; docker logs "$name" >&2 || true; exit 1; }
+        local port code=""
+        # Fails when the container has already exited.
+        port="$(docker port "$name" 8080/tcp | head -n1 | sed 's/.*://')" || fail "not running"
+        for _ in $(seq 60); do
+            [ "$(docker inspect -f '{{{{.State.Running}}' "$name")" = true ] || fail "exited"
+            code="$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$port$path" || true)"
+            [ "$code" = 200 ] && break
+            sleep 1
+        done
+        [ "$code" = 200 ] || fail "answered $path with '$code', not 200"
+        # distroless `nonroot`'s user; a base digest of the root variant would leave it empty.
+        user="$(docker inspect -f '{{{{.Config.User}}' "$image")"
+        [ "$user" = 65532 ] || fail "runs as user '$user', not 65532"
+        # distroless has no shell: the binary is executed directly, from the image's working directory.
+        if [ -n "$bin" ]; then
+            docker exec "$name" "./$bin" healthcheck
+        fi
+        echo "ok: $image"
+    }
+    smoke local-scan/dpe:latest /healthz access-server
+    # DEV: PROD refuses to start without an SMTP relay (`run-docker-editor`).
+    smoke local-scan/editor:latest /healthz deposit-server -e EDITOR_ENV=DEV
+    smoke local-scan/mosaic-playground:latest / ""
+
 # Generate rust-project.json for rust-analyzer from the Bazel graph. Re-run after adding or moving a target.
 [group('bazel')]
 rust-project:

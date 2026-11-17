@@ -1,5 +1,6 @@
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("//tools/image:defs.bzl", "MUSL", "app_image", "binary_layer", "files_layer")
 
 # The Access Area's composition root (ADR-0003): it links each capability's server crate and the
 # adapters of CPE's ports, and no capability's core, web, api or CPE store crate.
@@ -76,4 +77,76 @@ rust_test(
     rustc_env = {"CARGO_MANIFEST_DIR": "areas/access/server/test_files/areas/access/server"},
     tags = ["no-sandbox"],
     deps = ["@crates//:tempfile"],
+)
+
+# ── The DPE image, `daschswiss/dpe` ────────────────────────────────────────
+#
+# A static musl binary on distroless `static` (`//tools/image:defs.bzl`), built with
+# `--config=release` by `just bazel-docker-build-dpe`, which loads it. Configuration as in `Dockerfile`,
+# which stays the reference until the deploy path moves to Bazel; its `HEALTHCHECK` has no
+# equivalent in an OCI image, and `healthcheck` remains a subcommand.
+binary_layer(
+    name = "image_binary",
+    binary = ":access_server",
+    path = "/app/access-server",
+    target_compatible_with = MUSL,
+)
+
+files_layer(
+    name = "image_public",
+    srcs = [
+        "//areas/access/dpe:css",
+        "//areas/access/dpe:public",
+    ],
+    prefixes = {
+        "areas/access/dpe/css": "app/public/assets",
+        "areas/access/dpe/public": "app/public",
+    },
+    target_compatible_with = MUSL,
+)
+
+files_layer(
+    name = "image_data",
+    srcs = [
+        "//areas/access/cpe:projects",
+        "//areas/access/dpe/server:corpus",
+        "//areas/access/media:data",
+        "//areas/access/sync:data",
+    ],
+    prefixes = {
+        "areas/access/cpe/projects": "app/cpe/projects",
+        "areas/access/dpe/server/data": "app/server/data",
+        "areas/access/media/data": "app/media/data",
+        "areas/access/sync/data": "app/sync/data",
+    },
+    target_compatible_with = MUSL,
+)
+
+app_image(
+    name = "image",
+    repository = "index.docker.io/daschswiss/dpe",
+    scan_tag = "local-scan/dpe:latest",
+    cmd = ["serve"],
+    entrypoint = ["./access-server"],
+    env = {
+        "RUST_LOG": "info",
+        # The panic hook's backtrace, with the line tables `--config=release` keeps.
+        "RUST_BACKTRACE": "1",
+        "DPE_SITE_ADDR": "0.0.0.0:8080",
+        "DPE_ENV": "PROD",
+        "DPE_PUBLIC_DIR": "/app/public",
+        "DPE_DATA_DIR": "/app/server/data",
+        "SYNC_DATA_DIR": "/app/sync/data",
+        "CPE_PROJECTS_DIR": "/app/cpe/projects",
+        "MEDIA_DATA_DIR": "/app/media/data",
+        # CPE is mounted only where a base is set. CPE_PUBLIC_ORIGIN is the deployment's to set.
+        "CPE_BASE": "/cpe",
+    },
+    exposed_ports = ["8080/tcp"],
+    tars = [
+        ":image_binary",
+        ":image_public",
+        ":image_data",
+    ],
+    workdir = "/app",
 )

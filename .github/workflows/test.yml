@@ -56,6 +56,10 @@ jobs:
       - name: just bazel-test
         if: matrix.toolchain == 'stable'
         run: just bazel-test ${{ steps.bazel.outputs.flags }}
+      # The three images, built from the same commit, started and answering.
+      - name: just bazel-image-smoke
+        if: matrix.toolchain == 'stable'
+        run: just bazel-image-smoke ${{ steps.bazel.outputs.flags }}
       - name: Save Bazel repository cache
         if: ${{ !cancelled() && steps.bazel.outputs.repo-cache-key != '' && steps.bazel.outputs.repo-cache-hit != 'true' }}
         uses: actions/cache/save@v4

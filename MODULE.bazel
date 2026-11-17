@@ -336,3 +336,57 @@ crate.from_specs(
     ],
 )
 use_repo(crate, "crates")
+
+# ── Stylesheets ───────────────────────────────────────────────────────────
+#
+# The Tailwind v4 standalone CLI, one binary per exec platform; `//tools/tailwind` picks one. The
+# version and hashes are `tailwind.pins`'s, which the `just css*` recipes read: a Tailwind bump
+# edits both until the recipes build through Bazel.
+http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+
+http_file(
+    name = "tailwindcss_linux_arm64",
+    executable = True,
+    sha256 = "30fa5ad8d26e8f5aaeb7e500da6015543c5bbbfb7d7d775b83fbc3fb9cd5ef7c",
+    urls = ["https://github.com/tailwindlabs/tailwindcss/releases/download/v4.2.4/tailwindcss-linux-arm64"],
+)
+
+http_file(
+    name = "tailwindcss_linux_x64",
+    executable = True,
+    sha256 = "cabeef049cdeab61a5fa6b65ea28a3e8e53b8a85e58883947868c730fc48bdec",
+    urls = ["https://github.com/tailwindlabs/tailwindcss/releases/download/v4.2.4/tailwindcss-linux-x64"],
+)
+
+http_file(
+    name = "tailwindcss_macos_arm64",
+    executable = True,
+    sha256 = "932f7045205283f4b26f9a4c3f027958526bf5bcc8577a7e2f18002e1eb5145e",
+    urls = ["https://github.com/tailwindlabs/tailwindcss/releases/download/v4.2.4/tailwindcss-macos-arm64"],
+)
+
+http_file(
+    name = "tailwindcss_macos_x64",
+    executable = True,
+    sha256 = "4fcbbf4e680e462365a41feaaf4414f92c25f5bcc0a7729a62432c05e8173733",
+    urls = ["https://github.com/tailwindlabs/tailwindcss/releases/download/v4.2.4/tailwindcss-macos-x64"],
+)
+
+# ── Container images ──────────────────────────────────────────────────────
+#
+# Sipi's pins. `tar.bzl` builds the layers with fixed mtimes and owners.
+bazel_dep(name = "rules_oci", version = "2.3.0")
+bazel_dep(name = "tar.bzl", version = "0.10.4")
+
+oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
+
+# The base the Dockerfiles name, pinned by the digest `nonroot` resolved to on 2026-11-17 (the
+# index; `platforms` picks the manifest). distroless no longer updates `-debian12` tags: the move
+# to `-debian13` is a change of its own. Single architecture, as the published images are.
+oci.pull(
+    name = "distroless_static",
+    digest = "sha256:afa5c872c891853ca7fcf1f12c3edb23f7eeef36189728842dd51042ff57f7ab",
+    image = "gcr.io/distroless/static-debian12",
+    platforms = ["linux/amd64"],
+)
+use_repo(oci, "distroless_static", "distroless_static_linux_amd64")

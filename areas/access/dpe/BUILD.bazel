@@ -1,3 +1,5 @@
+load("//tools/tailwind:defs.bzl", "tailwind_css")
+
 # DPE's static files. The CSS recipes write `assets/app.css` and `assets/app.<hash8>.css` here,
 # git-ignored; they stay out, or a stale stylesheet would reach the tests and the image, where the
 # server picks its stylesheet by scanning the directory.
@@ -14,4 +16,19 @@ filegroup(
         "//areas/access/dpe/server:__pkg__",
         "//areas/access/server:__pkg__",
     ],
+)
+
+# The release stylesheet, `app.<hash8>.css` in a directory, as `just css-release` writes it.
+# `srcs` holds what `style/main.css` imports and every file its `@source` lines scan.
+tailwind_css(
+    name = "css",
+    src = "style/main.css",
+    hashed = True,
+    srcs = [
+        "//areas/access/dpe/server:tailwind_sources",
+        "//areas/access/dpe/web:tailwind_sources",
+        "//modules/mosaic/tiles:stylesheets",
+        "//modules/mosaic/tiles:tailwind_sources",
+    ],
+    visibility = ["//areas/access/server:__pkg__"],
 )

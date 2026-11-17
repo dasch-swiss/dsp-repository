@@ -1,0 +1,44 @@
+# The Tailwind standalone CLI for the platform that runs the action. `tailwind_css` takes it as an
+# exec tool, so the `select` below resolves against the exec platform, not the target. Private:
+# only the rule, defined in this package, names it.
+alias(
+    name = "tailwind",
+    actual = select({
+        ":linux_arm64": "@tailwindcss_linux_arm64//file",
+        ":linux_x64": "@tailwindcss_linux_x64//file",
+        ":macos_arm64": "@tailwindcss_macos_arm64//file",
+        ":macos_x64": "@tailwindcss_macos_x64//file",
+    }),
+)
+
+config_setting(
+    name = "linux_arm64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:aarch64",
+    ],
+)
+
+config_setting(
+    name = "linux_x64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+config_setting(
+    name = "macos_arm64",
+    constraint_values = [
+        "@platforms//os:macos",
+        "@platforms//cpu:aarch64",
+    ],
+)
+
+config_setting(
+    name = "macos_x64",
+    constraint_values = [
+        "@platforms//os:macos",
+        "@platforms//cpu:x86_64",
+    ],
+)

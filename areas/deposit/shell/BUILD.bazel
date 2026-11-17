@@ -35,3 +35,11 @@ rust_test(
     name = "deposit_shell_test",
     crate = ":deposit_shell",
 )
+
+# The files the editor stylesheet scans for class names (its `@source` lines), tests and nested
+# directories included. A nested package exports its own.
+filegroup(
+    name = "tailwind_sources",
+    srcs = glob(["**/*.rs"]),
+    visibility = ["//areas/deposit/editor:__pkg__"],
+)

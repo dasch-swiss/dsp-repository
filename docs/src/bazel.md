@@ -1,6 +1,6 @@
 # Building with Bazel
 
-Bazel builds and tests the crates that have a `BUILD.bazel` file, beside the Cargo workspace (ADR-0001). Until Cargo is removed, both builds are gated on every pull request: `check` runs `just bazel-clippy` after `just check`, and `test / ubuntu / stable` runs `just bazel-test` after the Cargo tests.
+Bazel builds and tests the crates that have a `BUILD.bazel` file, beside the Cargo workspace (ADR-0001). Until Cargo is removed, both builds are gated on every pull request: `check` runs `just bazel-clippy` after `just check`, and `test / ubuntu / stable` runs `just bazel-test` after the Cargo tests, then `just bazel-image-smoke`.
 
 The pins are those of Sipi: Bazel in `.bazelversion`, the rulesets and the Rust version in `MODULE.bazel`. The C and C++ toolchain is hermetic (`llvm`, zero-sysroot): it fetches the macOS SDK itself and builds the Linux libc runtimes from source, so no Xcode and no host compiler is used for compiling.
 
@@ -25,6 +25,8 @@ While both exist, a change that touches dependencies or crates is made on both s
 | `just snap-accept <target>` | runs one test target from the checkout with `INSTA_UPDATE=always`, so `insta` rewrites the snapshots that changed |
 | `just bazel-dsp-cli-test-live` | the `dsp-cli` live tests against a DSP stack, with the `DSP_TEST_*` variables and `DSP_TOKEN` passed through |
 | `just canonicalize-projects` | runs the editor's canonical round-trip test from the checkout with `CANONICALIZE_PROJECT_FILES=1`, so it rewrites the committed project files |
+| `just bazel-docker-build-dpe`, `-editor`, `-mosaic` | builds an image and loads it into Docker as `local-scan/<name>:latest` |
+| `just bazel-image-smoke` | loads the three images, starts each, and expects 200 from `/healthz` (the playground: `/`) and exit 0 from the `healthcheck` subcommand |
 
 Each `bazel-*` recipe passes extra arguments to Bazel, for example `just bazel-test --test_output=all` or a single package: `bazel test //shared/telemetry/...`.
 
@@ -58,6 +60,22 @@ Snapshots are `data` of their test target. `just snap-accept <target>` accepts c
 Bazel runs no doctests: `rust_doc_test` cannot link against the hermetic toolchain. A doctest is an `ignore` block, and a unit test carries its assertion.
 
 A crate with the `test-support` feature (the Deposit Area's `ports`, `store` and `web` crates) has a second library, `<name>_test_support`, built with the feature and marked `testonly`, so its fixtures cannot reach a production binary. Inside a test's graph every crate that has such a variant uses it, or two builds of one crate meet in a compile; a crate whose tests take a sibling's fixtures therefore runs them on its own variant (`rust_test(crate = ":editor_web_test_support")`).
+
+## Stylesheets
+
+Each application's stylesheet is a build action: `//areas/access/dpe:css`, `//areas/deposit/editor:css` and `//modules/mosaic/playground:css`, a `tailwind_css` rule (`tools/tailwind/defs.bzl`) running the Tailwind standalone CLI. The DPE and editor stylesheets are directories holding `app.<hash8>.css`, as `just css-release` and `just css-editor-release` write them; the playground's is `app.css`. Their output is byte-identical to the `just css*` recipes' at the same commit.
+
+The entry files import `tailwindcss` with `source(none)`, so Tailwind reads only the files the target lists, and a class used in a file it does not list is silently missing from the stylesheet. Each scanned crate exports its `.rs` files as `tailwind_sources`, a glob over the whole package, tests included; a nested package exports its own. An `@source` line added to an entry file needs its files added to `srcs` of `:css` in the same edit: the dev loop's Tailwind watches the checkout and still shows the classes, the image does not. The entry files say so at their `@source` lines.
+
+The CLI is pinned twice until the `just css*` recipes build through Bazel: in `tailwind.pins`, which the recipes and the playground's `Dockerfile` read, and in the four `http_file`s in `MODULE.bazel`. A Tailwind bump edits both, with the same version and hashes.
+
+## Images
+
+`//areas/access/server:image`, `//areas/deposit/server:image` and `//modules/mosaic/playground:image` are the DPE, editor and Mosaic playground images: a static musl binary, built for `//platforms:linux_x86_64_musl` through a transition, on distroless `static-debian12:nonroot`, pinned by digest in `MODULE.bazel`. Layers are built by `tar.bzl` (`tools/image/defs.bzl`): the binary, the public directory with the stylesheet, and the data directories, each entry owned by root with a fixed modification time. Environment, entrypoint, command, port and working directory are those of the matching `Dockerfile`; `HEALTHCHECK` has no equivalent in an OCI image, and both servers keep their `healthcheck` subcommand.
+
+Each image has `:image_load`, which loads it into Docker as the tag the Scout workflow scans, and `:image_push`, which pushes to Docker Hub with the tags passed after `--` (`bazel run --config=release --stamp //areas/access/server:image_push -- --tag <tag>`). Both are `manual`, so `//...` does not build images. The image recipes add `--config=release`, the profile the published binaries are built with, and `--stamp` for the editor's footer version. Nothing publishes the Bazel images yet: the deploy workflows still build from the `Dockerfile`s.
+
+The images are `linux/amd64` only; on an arm64 Mac, Docker runs them emulated.
 
 ## Version stamping
 

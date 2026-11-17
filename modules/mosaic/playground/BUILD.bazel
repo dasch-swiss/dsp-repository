@@ -1,4 +1,6 @@
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+load("//tools/image:defs.bzl", "MUSL", "app_image", "binary_layer", "files_layer")
+load("//tools/tailwind:defs.bzl", "tailwind_css")
 
 # The playground's static files. `just css-mosaic` writes the stylesheet into `public/assets/`,
 # git-ignored; it stays out, or a stale build would reach the image.
@@ -11,6 +13,17 @@ filegroup(
 )
 
 _SRCS = glob(["src/**/*.rs"])
+
+# The stylesheet, a plain `app.css`, as `just css-mosaic` writes it. `srcs` holds what
+# `style/main.css` imports and every file its `@source` lines scan.
+tailwind_css(
+    name = "css",
+    src = "style/main.css",
+    srcs = _SRCS + [
+        "//modules/mosaic/tiles:stylesheets",
+        "//modules/mosaic/tiles:tailwind_sources",
+    ],
+)
 
 _DEPS = [
     "//modules/mosaic/tiles:mosaic_tiles",
@@ -53,4 +66,46 @@ rust_test(
     crate = ":mosaic_playground_dev",
     crate_features = ["dev"],
     deps = ["@crates//:tower"],
+)
+
+# ── The playground image, `daschswiss/mosaic-playground` ───────────────────
+#
+# A static musl binary on distroless `static` (`//tools/image:defs.bzl`), the same shape as the DPE
+# and editor images, built with `--config=release` by `just bazel-docker-build-mosaic`. `Dockerfile`, which compiles
+# with Cargo onto distroless `cc`, stays until the deploy path moves to Bazel.
+binary_layer(
+    name = "image_binary",
+    binary = ":mosaic_playground",
+    path = "/app/mosaic-playground",
+    target_compatible_with = MUSL,
+)
+
+files_layer(
+    name = "image_public",
+    srcs = [
+        ":css",
+        ":public",
+    ],
+    prefixes = {
+        "modules/mosaic/playground/css": "app/public/assets",
+        "modules/mosaic/playground/public": "app/public",
+    },
+    target_compatible_with = MUSL,
+)
+
+app_image(
+    name = "image",
+    repository = "index.docker.io/daschswiss/mosaic-playground",
+    scan_tag = "local-scan/mosaic-playground:latest",
+    entrypoint = ["/app/mosaic-playground"],
+    env = {
+        "MOSAIC_SITE_ADDR": "0.0.0.0:8080",
+        "MOSAIC_PUBLIC_DIR": "/app/public",
+    },
+    exposed_ports = ["8080/tcp"],
+    tars = [
+        ":image_binary",
+        ":image_public",
+    ],
+    workdir = "/app",
 )

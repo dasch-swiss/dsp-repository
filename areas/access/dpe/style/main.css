@@ -23,6 +23,9 @@
 
 @plugin "@tailwindcss/typography";
 
+/* The image's stylesheet is built by Bazel, which gives Tailwind only the files `:css` in
+   areas/access/dpe/BUILD.bazel lists. A line added here needs its files added there, or its classes are missing from
+   the image while the dev loop still shows them. */
 @source '../web/**/*.rs';
 @source '../server/**/*.rs';
 @source '../../../../modules/mosaic/tiles/src/**/*.rs';

@@ -24,3 +24,11 @@ rust_test(
     crate = ":dpe_web",
     data = ["//areas/access/dpe/server:corpus"],
 )
+
+# The files the DPE stylesheet scans for class names (its `@source` lines), tests and nested
+# directories included. A nested package exports its own.
+filegroup(
+    name = "tailwind_sources",
+    srcs = glob(["**/*.rs"]),
+    visibility = ["//areas/access/dpe:__pkg__"],
+)

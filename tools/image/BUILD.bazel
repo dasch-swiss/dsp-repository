@@ -1,0 +1,9 @@
+# Used by `files_layer` (defs.bzl), which runs in the package of each image.
+exports_files(
+    ["file_mode.awk"],
+    visibility = [
+        "//areas/access/server:__pkg__",
+        "//areas/deposit/server:__pkg__",
+        "//modules/mosaic/playground:__pkg__",
+    ],
+)

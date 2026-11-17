@@ -1,0 +1,50 @@
+# Throwaway (Phase 2 of the Bazel migration): never merged. Runs on the measure branch only.
+name: bazel-measure
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [build/bazel-02-measure]
+
+jobs:
+  crates:
+    runs-on: ubuntu-latest
+    name: measure / crates / ${{ matrix.platform }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [linux_x86_64, linux_x86_64_musl]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bazel setup
+        id: bazel
+        uses: ./.github/actions/bazel-setup
+        with:
+          rbe-runner-endpoint: ${{ vars.REMOTEBUILD_RUNNER_ENDPOINT }}
+          rbe-ca-cert: ${{ secrets.REMOTEBUILD_CA_CERT }}
+          rbe-client-cert: ${{ secrets.REMOTEBUILD_CLIENT_CERT }}
+          rbe-client-key: ${{ secrets.REMOTEBUILD_CLIENT_KEY }}
+      - name: Remote flags present
+        run: test -n "${{ steps.bazel.outputs.flags }}" && echo "${{ steps.bazel.outputs.flags }}" | grep -q remote_executor
+      # The hub's aliases are tagged `manual`, so `@crates//...` builds nothing: list them.
+      - name: Build every crate alias
+        shell: bash
+        run: |
+          bazel query 'kind(alias, @crates//:*)' > crate-labels.txt
+          wc -l crate-labels.txt
+          bazel build ${{ steps.bazel.outputs.flags }} --platforms=//platforms:${{ matrix.platform }} \
+            '--toolchain_resolution_debug=rust:toolchain_type' \
+            --target_pattern_file=crate-labels.txt 2>&1 | tee build.log | grep -vE '^\['
+      - name: Rust toolchains selected
+        if: always()
+        run: grep -E 'Selected execution platform' build.log | sort -u | head -20
+      - name: Rust toolchain for the target is the musl one
+        if: matrix.platform == 'linux_x86_64_musl'
+        shell: bash
+        run: |
+          grep -E 'Target platform //platforms:linux_x86_64_musl: Selected .*rust:toolchain_type' build.log | tee sel.txt
+          grep -q 'x86_64-unknown-linux-musl__stable_tools' sel.txt
+          ! grep -q 'x86_64-unknown-linux-gnu__stable_tools' sel.txt

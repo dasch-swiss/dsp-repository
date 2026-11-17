@@ -5,7 +5,7 @@ permissions:
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, build/bazel-02-measure ]
   pull_request:
 
 concurrency:
@@ -48,11 +48,6 @@ jobs:
         if: matrix.toolchain == 'stable'
         id: bazel
         uses: ./.github/actions/bazel-setup
-        with:
-          rbe-runner-endpoint: ${{ vars.REMOTEBUILD_RUNNER_ENDPOINT }}
-          rbe-ca-cert: ${{ secrets.REMOTEBUILD_CA_CERT }}
-          rbe-client-cert: ${{ secrets.REMOTEBUILD_CLIENT_CERT }}
-          rbe-client-key: ${{ secrets.REMOTEBUILD_CLIENT_KEY }}
       - name: just bazel-test
         if: matrix.toolchain == 'stable'
         run: just bazel-test ${{ steps.bazel.outputs.flags }}

@@ -582,9 +582,6 @@ fn every_committed_project_embeds_a_small_json_ld_block() {
 /// The host the committed corpus records every ARK under.
 const RECORDED_ARK_HOST: &str = "https://ark.dasch.swiss";
 
-/// A stand-in preview origin, shaped like the Cloud Run URL a PR preview gets.
-const PREVIEW_ORIGIN: &str = "https://dpe-pr-391-pbjdzenira-oa.a.run.app";
-
 /// The ARK path prefix, which is the identifier and must survive substitution
 /// byte for byte.
 const ARK_PATH: &str = "ark:/72163/1/";
@@ -614,19 +611,6 @@ fn rendered_representations(graph: &ProjectGraph, record: Option<&Record>) -> St
         out.push_str(&format!("{:?}", record_to_datacite(&record_graph)));
     }
     out
-}
-
-/// Every ARK path in `rendered`, in order, with its host stripped: what must be
-/// identical whichever host is substituted.
-fn ark_paths(rendered: &str) -> Vec<&str> {
-    rendered
-        .match_indices(ARK_PATH)
-        .map(|(at, _)| {
-            let rest = &rendered[at..];
-            let end = rest.find(['"', '<', '>', ' ', ',', ';', '\\']).unwrap_or(rest.len());
-            &rest[..end]
-        })
-        .collect()
 }
 
 /// One project and one of its records per committed dump, as the pair the

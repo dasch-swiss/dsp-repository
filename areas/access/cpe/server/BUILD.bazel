@@ -1,0 +1,77 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+
+# cpe-core's tests remodel the activation fixture.
+exports_files(
+    ["tests/fixtures/activation/things/config.kdl"],
+    visibility = ["//areas/access/cpe/core:__pkg__"],
+)
+
+rust_library(
+    name = "cpe_server",
+    srcs = glob(["src/**/*.rs"]),
+    # The stylesheets and static files the router serves, embedded.
+    compile_data = [
+        "//areas/access/cpe:public",
+        "//areas/access/cpe/components:style",
+    ],
+    crate_name = "cpe_server",
+    # The tests read their fixtures and the committed data through `CARGO_MANIFEST_DIR`.
+    rustc_env = {"CARGO_MANIFEST_DIR": "areas/access/cpe/server"},
+    visibility = ["//areas/access/server:__pkg__"],
+    deps = [
+        "//areas/access/cpe/components:cpe_components",
+        "//areas/access/cpe/core:cpe_core",
+        "//areas/access/cpe/image-viewer:cpe_image_viewer",
+        "//areas/access/cpe/ports:cpe_ports",
+        "//areas/access/cpe/store-build:cpe_store_build",
+        "//areas/access/cpe/web:cpe_web",
+        "@crates//:axum",
+        "@crates//:datastar",
+        "@crates//:figment",
+        "@crates//:futures-util",
+        "@crates//:maud",
+        "@crates//:percent-encoding",
+        "@crates//:serde",
+        "@crates//:thiserror",
+        "@crates//:tower",
+        "@crates//:tracing",
+    ],
+)
+
+# Discovery reads only regular files and real directories, and runfiles are symbolic links. The
+# files the tests read are copied at their repository paths (`root_paths = []`), so the `..` joins
+# from `CARGO_MANIFEST_DIR` stay inside the copy, and the test runs outside the local sandbox,
+# which would link each copied file again.
+copy_to_directory(
+    name = "test_files",
+    testonly = True,
+    srcs = [
+        "//areas/access/cpe:projects",
+        "//areas/access/cpe:public",
+        "//areas/access/cpe/components:style",
+        "//areas/access/media:data",
+        "//areas/access/sync:data",
+    ] + glob(["tests/fixtures/**"]),
+    root_paths = [],
+)
+
+rust_test(
+    name = "cpe_server_test",
+    crate = ":cpe_server",
+    compile_data = glob(["tests/fixtures/**"]),
+    data = [":test_files"],
+    # One test thread: the config tests' `figment::Jail` moves the process into a temporary
+    # directory while it runs, and every other test reads its files through the relative
+    # `CARGO_MANIFEST_DIR`.
+    env = {"RUST_TEST_THREADS": "1"},
+    rustc_env = {"CARGO_MANIFEST_DIR": "areas/access/cpe/server/test_files/areas/access/cpe/server"},
+    tags = ["no-sandbox"],
+    deps = [
+        "//areas/access/media/store:media_store_for_tests",
+        "//areas/access/sync/store:sync_store_for_tests",
+        "@crates//:sha2",
+        "@crates//:tempfile",
+        "@crates//:tokio",
+    ],
+)

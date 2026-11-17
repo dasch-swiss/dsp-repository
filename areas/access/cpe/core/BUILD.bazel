@@ -1,0 +1,33 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+# cpe-store-build's tests hold the builder's geometry against the validator's.
+exports_files(
+    ["src/validate.rs"],
+    visibility = ["//areas/access/cpe/store-build:__pkg__"],
+)
+
+# A leaf: depends on no other CPE crate (ADR-0007).
+rust_library(
+    name = "cpe_core",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "cpe_core",
+    visibility = [
+        "//areas/access/cpe/components:__pkg__",
+        "//areas/access/cpe/server:__pkg__",
+        "//areas/access/cpe/store:__pkg__",
+        "//areas/access/cpe/store-build:__pkg__",
+        "//areas/access/cpe/web:__pkg__",
+    ],
+    deps = [
+        "@crates//:kdl",
+        "@crates//:percent-encoding",
+        "@crates//:pulldown-cmark",
+        "@crates//:thiserror",
+    ],
+)
+
+rust_test(
+    name = "cpe_core_test",
+    crate = ":cpe_core",
+    compile_data = ["//areas/access/cpe/server:tests/fixtures/activation/things/config.kdl"],
+)

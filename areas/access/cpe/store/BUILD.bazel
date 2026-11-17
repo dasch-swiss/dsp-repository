@@ -1,0 +1,26 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+# cpe-store-build includes the schema of the store it fills, without depending on the store.
+exports_files(
+    ["schema.sql"],
+    visibility = ["//areas/access/cpe/store-build:__pkg__"],
+)
+
+rust_library(
+    name = "cpe_store",
+    srcs = glob(["src/**/*.rs"]),
+    compile_data = ["schema.sql"],
+    crate_name = "cpe_store",
+    visibility = ["//areas/access/cpe/web:__pkg__"],
+    deps = [
+        "//areas/access/cpe/core:cpe_core",
+        "@crates//:rusqlite",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ],
+)
+
+rust_test(
+    name = "cpe_store_test",
+    crate = ":cpe_store",
+)

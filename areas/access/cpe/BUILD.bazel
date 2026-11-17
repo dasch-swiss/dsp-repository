@@ -1,0 +1,20 @@
+# CPE's static files, embedded by cpe-server and listed by its tests.
+filegroup(
+    name = "public",
+    srcs = glob(["public/**"]),
+    visibility = [
+        "//areas/access/cpe/server:__pkg__",
+        "//areas/access/cpe/web:__pkg__",
+    ],
+)
+
+# The committed presentations, one folder each.
+filegroup(
+    name = "projects",
+    srcs = glob(["projects/**"]),
+    visibility = [
+        "//areas/access/cpe/server:__pkg__",
+        "//areas/access/cpe/store-build:__pkg__",
+        "//areas/access/server:__pkg__",
+    ],
+)

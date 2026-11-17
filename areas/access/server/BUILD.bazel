@@ -1,0 +1,79 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+
+# The Access Area's composition root (ADR-0003): it links each capability's server crate and the
+# adapters of CPE's ports, and no capability's core, web, api or CPE store crate.
+_DEPS = [
+    "//areas/access/cpe/ports:cpe_ports",
+    "//areas/access/cpe/server:cpe_server",
+    "//areas/access/media/store:media_store",
+    "//areas/access/sync/store:sync_store",
+    "//shared/rate-limit:shared_rate_limit",
+    "//shared/telemetry:shared_telemetry",
+    "@crates//:axum",
+    "@crates//:axum-tracing-opentelemetry",
+    "@crates//:clap",
+    "@crates//:init-tracing-opentelemetry",
+    "@crates//:opentelemetry",
+    "@crates//:opentelemetry-appender-tracing",
+    "@crates//:opentelemetry-otlp",
+    "@crates//:opentelemetry_sdk",
+    "@crates//:pyroscope",
+    "@crates//:rustls",
+    "@crates//:tokio",
+    "@crates//:tower",
+    "@crates//:tower_governor",
+    "@crates//:tracing",
+    "@crates//:tracing-opentelemetry",
+    "@crates//:tracing-subscriber",
+    "@crates//:ureq",
+]
+
+_SRCS = glob(["src/**/*.rs"])
+
+# The tests read the corpus, both public directories and their own sources through
+# `CARGO_MANIFEST_DIR`.
+_RUSTC_ENV = {"CARGO_MANIFEST_DIR": "areas/access/server"}
+
+rust_binary(
+    name = "access_server",
+    srcs = _SRCS,
+    crate_name = "access_server",
+    rustc_env = _RUSTC_ENV,
+    deps = _DEPS + ["//areas/access/dpe/server:dpe_server"],
+)
+
+# The `dev` feature: DPE with live reload, for the dev loop. No code of this crate's own.
+rust_binary(
+    name = "access_server_dev",
+    srcs = _SRCS,
+    crate_name = "access_server",
+    rustc_env = _RUSTC_ENV,
+    deps = _DEPS + ["//areas/access/dpe/server:dpe_server_dev"],
+)
+
+# CPE's discovery reads only regular files and real directories, and runfiles are symbolic links.
+# The files the tests read are copied at their repository paths (`root_paths = []`), so the
+# repository root the tests derive from `CARGO_MANIFEST_DIR` is the copy's, and the test runs
+# outside the local sandbox, which would link each copied file again.
+copy_to_directory(
+    name = "test_files",
+    testonly = True,
+    srcs = [
+        "//areas/access/cpe:projects",
+        "//areas/access/dpe:public",
+        "//areas/access/dpe/server:corpus",
+        "//areas/access/media:data",
+        "//areas/access/sync:data",
+    ] + _SRCS,
+    root_paths = [],
+)
+
+rust_test(
+    name = "access_server_test",
+    crate = ":access_server",
+    data = [":test_files"],
+    rustc_env = {"CARGO_MANIFEST_DIR": "areas/access/server/test_files/areas/access/server"},
+    tags = ["no-sandbox"],
+    deps = ["@crates//:tempfile"],
+)

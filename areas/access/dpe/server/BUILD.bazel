@@ -1,0 +1,105 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+# The published corpus. Outside the Access Area only the editor's tests and the editor image may
+# read it, the one cross-area path ADR-0002 names; no other grant leaves the area.
+filegroup(
+    name = "corpus",
+    srcs = glob(["data/**"]),
+    visibility = [
+        "//areas/access/dpe/api-oai:__pkg__",
+        "//areas/access/dpe/core:__pkg__",
+        "//areas/access/dpe/web:__pkg__",
+        "//areas/access/server:__pkg__",
+    ],
+)
+
+_SRCS = glob(["src/**/*.rs"])
+
+_DEPS = [
+    "//areas/access/dpe/api-oai:dpe_api_oai",
+    "//areas/access/dpe/core:dpe_core",
+    "//areas/access/dpe/web:dpe_web",
+    "//modules/mosaic/tiles:mosaic_tiles",
+    "//shared/fair:shared_fair",
+    "//shared/metadata:shared_metadata",
+    "//shared/rate-limit:shared_rate_limit",
+    "//shared/telemetry:shared_telemetry",
+    "@crates//:axum",
+    "@crates//:datastar",
+    "@crates//:figment",
+    "@crates//:futures",
+    "@crates//:maud",
+    "@crates//:opentelemetry",
+    "@crates//:serde",
+    "@crates//:serde_json",
+    "@crates//:tokio",
+    "@crates//:tower",
+    "@crates//:tower-http",
+    "@crates//:tower_governor",
+    "@crates//:tracing",
+    "@crates//:tracing-opentelemetry",
+    "@crates//:urlencoding",
+]
+
+# The tests read the corpus, the public directory and their own sources through
+# `CARGO_MANIFEST_DIR`.
+_RUSTC_ENV = {"CARGO_MANIFEST_DIR": "areas/access/dpe/server"}
+
+rust_library(
+    name = "dpe_server",
+    srcs = _SRCS,
+    crate_name = "dpe_server",
+    rustc_env = _RUSTC_ENV,
+    visibility = ["//areas/access/server:__pkg__"],
+    deps = _DEPS,
+)
+
+# The `dev` feature: live reload for `access_server_dev`.
+rust_library(
+    name = "dpe_server_dev",
+    srcs = _SRCS,
+    crate_features = ["dev"],
+    crate_name = "dpe_server",
+    rustc_env = _RUSTC_ENV,
+    visibility = ["//areas/access/server:__pkg__"],
+    deps = _DEPS + [
+        "@crates//:notify",
+        "@crates//:tower-livereload",
+    ],
+)
+
+_TEST_COMPILE_DATA = glob(["src/testdata/**"])
+
+_TEST_DATA = [
+    ":corpus",
+    "//areas/access/dpe:public",
+] + _SRCS + glob(["src/snapshots/**"])
+
+_TEST_DEPS = [
+    "@crates//:http-body-util",
+    "@crates//:insta",
+]
+
+# One test thread: the config tests' `figment::Jail` moves the process into a temporary directory
+# while it runs, and every other test reads its files through the relative `CARGO_MANIFEST_DIR`.
+_TEST_ENV = {"RUST_TEST_THREADS": "1"}
+
+rust_test(
+    name = "dpe_server_test",
+    crate = ":dpe_server",
+    compile_data = _TEST_COMPILE_DATA,
+    data = _TEST_DATA,
+    env = _TEST_ENV,
+    deps = _TEST_DEPS,
+)
+
+# `crate_features` is not inherited from `crate`.
+rust_test(
+    name = "dpe_server_dev_test",
+    crate = ":dpe_server_dev",
+    compile_data = _TEST_COMPILE_DATA,
+    crate_features = ["dev"],
+    data = _TEST_DATA,
+    env = _TEST_ENV,
+    deps = _TEST_DEPS,
+)

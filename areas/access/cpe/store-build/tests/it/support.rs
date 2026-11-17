@@ -414,12 +414,7 @@ pub fn fixture_member(
 }
 
 /// The mapping of the fixture project `minimal`.
-pub static MINIMAL: LazyLock<Remodel> = LazyLock::new(|| {
-    lowered(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/tests/fixtures/minimal/config.kdl"
-    )))
-});
+pub static MINIMAL: LazyLock<Remodel> = LazyLock::new(|| lowered(include_str!("../fixtures/minimal/config.kdl")));
 
 /// A resource of `class` with a label and nothing else.
 pub fn fixture_resource(iri: &str, class: &str, label: &str) -> Resource {

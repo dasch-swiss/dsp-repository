@@ -1,0 +1,51 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test", "rust_test_suite")
+load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+
+rust_library(
+    name = "cpe_web",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "cpe_web",
+    visibility = ["//areas/access/cpe/server:__pkg__"],
+    deps = [
+        "//areas/access/cpe/components:cpe_components",
+        "//areas/access/cpe/core:cpe_core",
+        "//areas/access/cpe/image-viewer:cpe_image_viewer",
+        "//areas/access/cpe/store:cpe_store",
+        "@crates//:maud",
+        "@crates//:thiserror",
+    ],
+)
+
+rust_test(
+    name = "cpe_web_test",
+    crate = ":cpe_web",
+    compile_data = [
+        "//areas/access/cpe:public",
+        "//areas/access/cpe/components:style",
+    ] + glob(["tests/projects/**"]),
+    data = glob(["src/snapshots/**"]),
+    deps = ["@crates//:insta"],
+)
+
+# `validation.rs` reads only the regular files of a fixture, as discovery does, and runfiles are
+# symbolic links. The fixtures are copied at their repository paths (`root_paths = []`), and the
+# test runs outside the local sandbox, which would link each copied file again.
+copy_to_directory(
+    name = "test_projects",
+    testonly = True,
+    srcs = glob(["tests/projects/**"]),
+    root_paths = [],
+)
+
+rust_test_suite(
+    name = "cpe_web_integration",
+    srcs = glob(["tests/*.rs"]),
+    compile_data = ["//areas/access/cpe/components:style"],
+    data = [":test_projects"],
+    rustc_env = {"CARGO_MANIFEST_DIR": "areas/access/cpe/web/test_projects/areas/access/cpe/web"},
+    tags = ["no-sandbox"],
+    deps = [
+        ":cpe_web",
+        "//areas/access/cpe/core:cpe_core",
+    ],
+)

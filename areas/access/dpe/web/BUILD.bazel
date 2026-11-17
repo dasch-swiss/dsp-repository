@@ -1,0 +1,26 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+rust_library(
+    name = "dpe_web",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "dpe_web",
+    # The tests read the corpus through `CARGO_MANIFEST_DIR`.
+    rustc_env = {"CARGO_MANIFEST_DIR": "areas/access/dpe/web"},
+    visibility = ["//areas/access/dpe/server:__pkg__"],
+    deps = [
+        "//areas/access/dpe/core:dpe_core",
+        "//modules/mosaic/tiles:mosaic_tiles",
+        "//shared/datastar:shared_datastar",
+        "//shared/metadata:shared_metadata",
+        "@crates//:maud",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:urlencoding",
+    ],
+)
+
+rust_test(
+    name = "dpe_web_test",
+    crate = ":dpe_web",
+    data = ["//areas/access/dpe/server:corpus"],
+)

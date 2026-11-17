@@ -28,12 +28,7 @@ use crate::support::{
 };
 
 /// The mapping of the fixture project `plain`.
-static PLAIN: LazyLock<Remodel> = LazyLock::new(|| {
-    lowered(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/tests/fixtures/plain/config.kdl"
-    )))
-});
+static PLAIN: LazyLock<Remodel> = LazyLock::new(|| lowered(include_str!("../fixtures/plain/config.kdl")));
 
 const SHORTCODE: &str = "0123";
 
@@ -1679,8 +1674,8 @@ fn with_nul_in(config: &str, text: &str) -> Remodel {
 /// refusal's detail names the place.
 #[test]
 fn test_build_nul_in_a_text_of_the_mapping_is_refused_naming_its_place() {
-    const PLAIN_CONFIG: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/plain/config.kdl"));
-    const HOOKED_CONFIG: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/hooked/config.kdl"));
+    const PLAIN_CONFIG: &str = include_str!("../fixtures/plain/config.kdl");
+    const HOOKED_CONFIG: &str = include_str!("../fixtures/hooked/config.kdl");
     let plain = |text: &str| with_nul_in(PLAIN_CONFIG, text);
     let changed = |change: fn(&mut Remodel)| {
         let mut mapping = PLAIN.clone();

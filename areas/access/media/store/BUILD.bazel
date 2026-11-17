@@ -1,0 +1,36 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+# media's adapter of CPE's deposited-files port. Only the composition root links it (ADR-0003,
+# ADR-0012).
+_SRCS = glob(["src/**/*.rs"])
+
+_DEPS = [
+    "//areas/access/cpe/ports:cpe_ports",
+    "@crates//:tracing",
+]
+
+rust_library(
+    name = "media_store",
+    srcs = _SRCS,
+    crate_name = "media_store",
+    visibility = ["//areas/access/server:__pkg__"],
+    deps = _DEPS,
+)
+
+# The only target another capability sees: cpe-server's tests read the committed files through
+# it (ADR-0012). A library of its own, not an `alias`: Bazel checks `testonly` on an alias's
+# actual target, so only a `testonly` library keeps it out of every production target.
+rust_library(
+    name = "media_store_for_tests",
+    testonly = True,
+    srcs = _SRCS,
+    crate_name = "media_store",
+    visibility = ["//areas/access/cpe/server:__pkg__"],
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "media_store_test",
+    crate = ":media_store",
+    deps = ["@crates//:tempfile"],
+)

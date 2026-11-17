@@ -1,0 +1,6 @@
+# cpe-store-build's tests check the worked example of the configuration language against the
+# builder.
+exports_files(
+    ["src/cpe/config-language.md"],
+    visibility = ["//areas/access/cpe/store-build:__pkg__"],
+)

@@ -1,0 +1,45 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test", "rust_test_suite")
+
+# `checkout_dpe_data_dir()` derives the repository root from `CARGO_MANIFEST_DIR`; relative, the
+# corpus path resolves from the runfiles root of every test that reads the corpus through it.
+_RUSTC_ENV = {"CARGO_MANIFEST_DIR": "areas/deposit/editor/core"}
+
+rust_library(
+    name = "editor_core",
+    srcs = glob(["src/**/*.rs"]),
+    compile_data = glob(["data/*.json"]),
+    crate_name = "editor_core",
+    proc_macro_deps = ["@crates//:async-trait"],
+    rustc_env = _RUSTC_ENV,
+    visibility = [
+        "//areas/deposit/editor/pull-requests:__pkg__",
+        "//areas/deposit/editor/store:__pkg__",
+        "//areas/deposit/editor/web:__pkg__",
+    ],
+    deps = [
+        "//shared/metadata:shared_metadata",
+        "@crates//:chrono",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:url",
+        "@crates//:uuid",
+    ],
+)
+
+rust_test(
+    name = "editor_core_test",
+    crate = ":editor_core",
+    data = ["//areas/access/dpe/server:corpus"],
+)
+
+rust_test_suite(
+    name = "editor_core_integration",
+    srcs = glob(["tests/*.rs"]),
+    data = ["//areas/access/dpe/server:corpus"],
+    deps = [
+        ":editor_core",
+        "//shared/metadata:shared_metadata",
+        "@crates//:serde_json",
+    ],
+)

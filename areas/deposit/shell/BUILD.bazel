@@ -1,0 +1,37 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+# `--stamp`, which only the image builds pass.
+config_setting(
+    name = "stamped",
+    values = {"stamp": "1"},
+)
+
+# The footer's version. Attached only when stamping: unstamped, `rules_rust` would leave the
+# placeholder in the value as literal text, and the footer reads `dev` from an unset variable.
+# `tools/workspace_status.sh` emits `dev` when `DEPOSIT_VERSION` is unset.
+rust_library(
+    name = "deposit_shell",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "deposit_shell",
+    rustc_env_files = select({
+        ":stamped": ["deposit_version.env"],
+        "//conditions:default": [],
+    }),
+    # A library ignores `--stamp` unless it asks for it.
+    stamp = -1,
+    visibility = [
+        "//areas/deposit/editor/web:__pkg__",
+        "//areas/deposit/identity/web:__pkg__",
+        "//areas/deposit/server:__pkg__",
+    ],
+    deps = [
+        "//modules/mosaic/tiles:mosaic_tiles",
+        "@crates//:maud",
+        "@crates//:tracing",
+    ],
+)
+
+rust_test(
+    name = "deposit_shell_test",
+    crate = ":deposit_shell",
+)

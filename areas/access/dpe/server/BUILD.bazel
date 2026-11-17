@@ -10,6 +10,12 @@ filegroup(
         "//areas/access/dpe/core:__pkg__",
         "//areas/access/dpe/web:__pkg__",
         "//areas/access/server:__pkg__",
+        "//areas/deposit/editor/core:__pkg__",
+        "//areas/deposit/editor/pull-requests:__pkg__",
+        "//areas/deposit/editor/store:__pkg__",
+        "//areas/deposit/editor/web:__pkg__",
+        # Its tests load the corpus through `editor-web`'s test support.
+        "//areas/deposit/server:__pkg__",
     ],
 )
 

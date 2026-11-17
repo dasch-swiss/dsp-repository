@@ -1,0 +1,26 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+rust_library(
+    name = "identity_core",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "identity_core",
+    proc_macro_deps = ["@crates//:async-trait"],
+    visibility = [
+        "//areas/deposit/identity/store:__pkg__",
+        "//areas/deposit/identity/web:__pkg__",
+    ],
+    deps = [
+        "@crates//:base64",
+        "@crates//:chrono",
+        "@crates//:rand",
+        "@crates//:subtle",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+        "@crates//:uuid",
+    ],
+)
+
+rust_test(
+    name = "identity_core_test",
+    crate = ":identity_core",
+)

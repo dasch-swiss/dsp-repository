@@ -1,0 +1,62 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+_SRCS = glob(["src/**/*.rs"])
+
+_DEPS = [
+    "//areas/deposit/identity/core:identity_core",
+    "//areas/deposit/shell:deposit_shell",
+    "//modules/mosaic/tiles:mosaic_tiles",
+    "//shared/metadata:shared_metadata",
+    "//shared/rate-limit:shared_rate_limit",
+    "//shared/telemetry:shared_telemetry",
+    "@crates//:axum",
+    "@crates//:chrono",
+    "@crates//:maud",
+    "@crates//:opentelemetry",
+    "@crates//:serde",
+    "@crates//:thiserror",
+    "@crates//:tokio",
+    "@crates//:tower_governor",
+    "@crates//:tracing",
+    "@crates//:tracing-opentelemetry",
+    "@crates//:uuid",
+]
+
+rust_library(
+    name = "identity_web",
+    srcs = _SRCS,
+    crate_name = "identity_web",
+    proc_macro_deps = ["@crates//:async-trait"],
+    visibility = ["//areas/deposit/server:__pkg__"],
+    deps = _DEPS + [
+        "//areas/deposit/identity/ports:identity_ports",
+        "//areas/deposit/identity/store:identity_store",
+    ],
+)
+
+# The `test-support` feature, for other crates' tests only. Its own tests run on it too: they take
+# the store's and the ports' fixtures, and one build of each crate may meet in a compile.
+rust_library(
+    name = "identity_web_test_support",
+    testonly = True,
+    srcs = _SRCS,
+    crate_features = ["test-support"],
+    crate_name = "identity_web",
+    proc_macro_deps = ["@crates//:async-trait"],
+    visibility = ["//areas/deposit/server:__pkg__"],
+    deps = _DEPS + [
+        "//areas/deposit/identity/ports:identity_ports_test_support",
+        "//areas/deposit/identity/store:identity_store_test_support",
+    ],
+)
+
+# `crate_features` is not inherited from `crate`.
+rust_test(
+    name = "identity_web_test",
+    crate = ":identity_web_test_support",
+    crate_features = ["test-support"],
+    deps = [
+        "@crates//:tower",
+        "@crates//:tracing-subscriber",
+    ],
+)

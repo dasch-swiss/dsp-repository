@@ -245,6 +245,18 @@ snap-accept target *FLAGS:
     INSTA_UPDATE=always INSTA_WORKSPACE_ROOT="$root" bazel run {{ FLAGS }} \
         --run_under="/bin/bash -c 'b=\$PWD/\$0; cd \"$root\" && exec \"\$b\" \"\$@\"'" {{ target }}
 
+# Rewrite the committed project files with what the editor's canonical writer produces: runs the round-trip test from the checkout with `CANONICALIZE_PROJECT_FILES=1`; review with `git diff`.
+[group('bazel')]
+canonicalize-projects *FLAGS:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    root="$PWD"
+    # The same `--run_under` wrapper as `snap-accept`: the test then resolves the corpus against
+    # the checkout, not its runfiles.
+    CANONICALIZE_PROJECT_FILES=1 bazel run {{ FLAGS }} \
+        --run_under="/bin/bash -c 'b=\$PWD/\$0; cd \"$root\" && exec \"\$b\" \"\$@\"'" \
+        //areas/deposit/editor/core:editor_core_integration_tests/canonical_round_trip_test
+
 # Re-resolve the crate universe after a `crate.spec` change, and refresh both locks. With a crate name, move only that crate, as for a security bump of a transitive crate. Never `bazel mod tidy`.
 [group('bazel')]
 repin crate="":

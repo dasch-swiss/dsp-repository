@@ -72,6 +72,14 @@
             pkgs.cargo-binstall
             pkgs.jq           # `just fair-check` reads F-UJI's JSON result with it
 
+            # Bazel: Bazelisk reads .bazelversion. nixpkgs installs no `bazel` command, which the
+            # recipes call, so a shim provides it.
+            pkgs.bazelisk
+            (pkgs.writeShellScriptBin "bazel" ''exec ${pkgs.bazelisk}/bin/bazelisk "$@"'')
+            # The two halves of `just audit`, both reading Cargo.Bazel.lock.
+            pkgs.cargo-audit
+            pkgs.osv-scanner
+
           ] ++ darwinDeps;
 
           shellHook = ''

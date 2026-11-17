@@ -1,0 +1,23 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+rust_library(
+    name = "shared_rate_limit",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "shared_rate_limit",
+    visibility = [
+        "//areas/access/dpe/server:__pkg__",
+        "//areas/access/server:__pkg__",
+        "//areas/deposit/editor/web:__pkg__",
+        "//areas/deposit/identity/web:__pkg__",
+        "//areas/deposit/server:__pkg__",
+    ],
+    deps = [
+        "@crates//:axum",
+        "@crates//:tower_governor",
+    ],
+)
+
+rust_test(
+    name = "shared_rate_limit_test",
+    crate = ":shared_rate_limit",
+)

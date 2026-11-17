@@ -4,6 +4,10 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    # Paused while Cargo and Bazel coexist: a Cargo.lock bump leaves Bazel's crate universe stale
+    # until someone runs `just repin`. Security updates still open pull requests; see
+    # docs/src/bazel.md for how to finish one.
+    open-pull-requests-limit: 0
     commit-message:
       prefix: "build"
       include: "scope"

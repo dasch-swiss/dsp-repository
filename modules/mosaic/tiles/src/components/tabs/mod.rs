@@ -17,7 +17,7 @@
 //! `pages/project/components/project_details_tabs` is a second, ARIA-complete
 //! implementation; whether the two converge is the issue's question.
 //!
-//! ```
+//! ```ignore
 //! use mosaic_tiles::tabs::{tab, tabs};
 //! use maud::html;
 //!

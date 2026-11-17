@@ -1,0 +1,26 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+# dpe-api-oai validates its DataCite output against this copy of the schema.
+exports_files(
+    ["testdata/schemas/datacite-4.3-schema.json"],
+    visibility = ["//areas/access/dpe/api-oai:__pkg__"],
+)
+
+rust_library(
+    name = "shared_fair",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "shared_fair",
+    visibility = [
+        "//areas/access/dpe/api-oai:__pkg__",
+        "//areas/access/dpe/server:__pkg__",
+    ],
+    deps = [
+        "//shared/metadata:shared_metadata",
+        "@crates//:serde_json",
+    ],
+)
+
+rust_test(
+    name = "shared_fair_test",
+    crate = ":shared_fair",
+)

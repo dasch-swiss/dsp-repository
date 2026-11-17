@@ -31,7 +31,8 @@ jobs:
   check:
     runs-on: ubuntu-latest
     name: check
-    timeout-minutes: 20
+    # Two builds until Cargo is removed: Cargo's checks, then clippy over the Bazel graph.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
@@ -53,6 +54,22 @@ jobs:
         run: cargo binstall -y maudfmt@0.1.8 cargo-machete@0.9.2
       - name: just check
         run: just check
+      - name: Bazel setup
+        id: bazel
+        uses: ./.github/actions/bazel-setup
+        with:
+          rbe-runner-endpoint: ${{ vars.REMOTEBUILD_RUNNER_ENDPOINT }}
+          rbe-ca-cert: ${{ secrets.REMOTEBUILD_CA_CERT }}
+          rbe-client-cert: ${{ secrets.REMOTEBUILD_CLIENT_CERT }}
+          rbe-client-key: ${{ secrets.REMOTEBUILD_CLIENT_KEY }}
+      - name: just bazel-clippy
+        run: just bazel-clippy ${{ steps.bazel.outputs.flags }}
+      - name: Save Bazel repository cache
+        if: ${{ !cancelled() && steps.bazel.outputs.repo-cache-key != '' && steps.bazel.outputs.repo-cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.cache/bazel-repo
+          key: ${{ steps.bazel.outputs.repo-cache-key }}
 
   rustdoc:
     # run docs generation on nightly rather than stable. This enables features like

@@ -1,0 +1,63 @@
+name: bazel-setup
+description: >
+  What every Bazel job needs: Bazelisk (which reads .bazelversion), just, the Bazel repository cache
+  restored, and the remote cache and executor flags from `bazel-rbe`. The `flags` output is
+  `--config=ci` plus those flags; pass it to a `just bazel-*` recipe. Without the remote-build
+  secrets (a fork pull request, Dependabot) the remote flags are empty and the build runs cold
+  and local.
+
+  The cache is restored here and saved by the calling job: its last step is
+  `actions/cache/save` with path `~/.cache/bazel-repo` and the `repo-cache-key` output as key,
+  run unless the job was cancelled, `repo-cache-key` is empty (the job failed before this
+  action ran) or `repo-cache-hit` is 'true'. A composite action cannot schedule an end-of-job
+  step, and `actions/cache` saves only when the job succeeds, so a job failing after its
+  downloads would throw them away. No expression syntax in this text: the runner evaluates it
+  here too.
+
+inputs:
+  rbe-runner-endpoint:
+    description: RE-API endpoint, `vars.REMOTEBUILD_RUNNER_ENDPOINT`.
+  rbe-ca-cert:
+    description: NativeLink server CA, `secrets.REMOTEBUILD_CA_CERT`.
+  rbe-client-cert:
+    description: mTLS client certificate, `secrets.REMOTEBUILD_CLIENT_CERT`.
+  rbe-client-key:
+    description: mTLS client key, `secrets.REMOTEBUILD_CLIENT_KEY`.
+
+outputs:
+  flags:
+    description: Bazel flags to pass to a `just bazel-*` recipe.
+    value: --config=ci ${{ steps.rbe.outputs.flags }}
+  repo-cache-key:
+    description: Primary key of the repository cache, for the caller's save step.
+    value: ${{ steps.repo-cache.outputs.cache-primary-key }}
+  repo-cache-hit:
+    description: "'true' when the primary key was hit exactly; the caller then skips its save."
+    value: ${{ steps.repo-cache.outputs.cache-hit }}
+
+runs:
+  using: composite
+  steps:
+    # Bazelisk only. setup-bazel's own caches are off by default and stay off: the repository
+    # cache is the one below, and there is no disk cache.
+    - uses: bazel-contrib/setup-bazel@0.19.1
+
+    - uses: extractions/setup-just@v4
+
+    # `common:ci --repository_cache=~/.cache/bazel-repo` in .bazelrc. External archives are fetched
+    # from upstream only when MODULE.bazel.lock changes.
+    - name: Restore Bazel repository cache
+      id: repo-cache
+      uses: actions/cache/restore@v4
+      with:
+        path: ~/.cache/bazel-repo
+        key: bazel-repo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('MODULE.bazel.lock') }}
+        restore-keys: bazel-repo-${{ runner.os }}-${{ runner.arch }}-
+
+    - id: rbe
+      uses: ./.github/actions/bazel-rbe
+      with:
+        runner-endpoint: ${{ inputs.rbe-runner-endpoint }}
+        ca-cert: ${{ inputs.rbe-ca-cert }}
+        client-cert: ${{ inputs.rbe-client-cert }}
+        client-key: ${{ inputs.rbe-client-key }}

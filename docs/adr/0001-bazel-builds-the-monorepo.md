@@ -15,11 +15,8 @@ The ruleset:
   there is no root `Cargo.toml` or `Cargo.lock`, and Bazel does all building. Load-bearing dependency notes (the
   `serde_json` features `preserve_order` and `float_roundtrip`, the `rusqlite` 0.38 pin) sit beside the crate
   specs.
-- A hermetic LLVM CC toolchain, never the host's autodetected C compiler. The production target is Linux and
-  developers build on macOS; an autodetected compiler cannot resolve Apple-only link flags (`-liconv`) inside
-  the sandbox. The hermetic toolchain fetches the Apple SDK on macOS and ships glibc and musl sysroots for
-  Linux, so one configuration links locally and cross-compiles to a real Linux binary. Compiled C is therefore
-  acceptable as a dependency, because it is compiled hermetically.
+- A hermetic LLVM CC toolchain (the `llvm` module), never the host's autodetected C compiler. The production target is Linux and developers build on macOS; an autodetected compiler cannot resolve Apple-only link flags (`-liconv`) inside the sandbox. The toolchain is zero-sysroot: it fetches the Apple SDK on macOS and builds the Linux libc runtimes it links against from source, so one configuration links locally and cross-compiles to a real Linux binary. Compiled C is therefore acceptable as a dependency, because it is compiled hermetically.
+- The shipped Linux binaries are static musl (`//platforms:linux_x86_64_musl`), as under Cargo. `rules_rust` has no libc constraint of its own, so the Rust toolchains for Linux are told apart by the `llvm` module's (`@llvm//constraints/libc`) in `MODULE.bazel`. glibc is the target the CI platform `//platforms:linux_x86_64` builds and tests for.
 - `MODULE.bazel.lock` is committed, and CI runs with `--lockfile_mode=error`, so a dependency change that did not
   update the lock fails.
 - Bazel and Rust versions are pinned in `.bazelversion` and `MODULE.bazel`; rust-analyzer is set up through
@@ -41,8 +38,7 @@ The ruleset:
 ## Consequences
 
 - Every crate is a Bazel target; cross-crate dependencies are visible and reviewable in `BUILD.bazel` files.
-- The `just` recipes, the `bacon.toml` watch lists, the Dockerfiles, the CI workflows and the gate scripts key
-  on Bazel targets, not on the Cargo workspace.
+- The `just` recipes, the `bacon.toml` watch lists, the CI workflows and the gate scripts key on Bazel targets, not on the Cargo workspace. The container images are `rules_oci` targets built from those binaries, not Dockerfiles.
 - Nothing in this repository's build may assume every target is Rust.
 - dsp-cli is the one crate here that publishes to crates.io, so `dsp-cli/Cargo.toml` and a `dsp-cli/Cargo.lock`
   stay as its publishing manifest (ADR-0002).
@@ -51,8 +47,7 @@ The ruleset:
   in CI) stays a local-execution job for the same reason: Bazel's remote execution provides no live network
   stack.
 
-Not yet in code: there is no `MODULE.bazel`, `.bazelversion` or `BUILD.bazel`; the root `Cargo.toml` and
-`Cargo.lock` build the workspace, and no boundary is held by Bazel `visibility` (not scheduled).
+Not yet in code: the root `Cargo.toml` and `Cargo.lock` exist beside the Bazel build, which covers only the `shared-*` crates and `mosaic-tiles`; the other crates, the Tailwind CSS and the images are built by Cargo, `just` and Dockerfiles, and the boundaries of ADR-0002 and ADR-0003 are held by the scripts (DEV-7699).
 
 Enforced by: CI building with Bazel under `--lockfile_mode=error` (static-analysis); `visibility` for the
 boundaries of ADR-0002 and ADR-0003 (structure).

@@ -61,7 +61,6 @@
             rustNightly
 
             # Build dependencies for Rust crates
-            pkgs.cmake      # aws-lc-sys
             pkgs.pkg-config
 
             # Development tools (version-matched in nixpkgs)

@@ -43,7 +43,10 @@ dotenvy = "0.15"
 dirs = "5"
 toml = "0.8"
 # HTTP client for blocking DSP-API calls (auth, data fetch); rustls avoids OpenSSL build dep.
-reqwest = { version = "0.13", default-features = false, features = ["blocking", "json", "rustls", "query"] }
+# `rustls-no-provider`: reqwest's `rustls` would bring `aws-lc-sys`, which needs cmake.
+reqwest = { version = "0.13", default-features = false, features = ["blocking", "json", "rustls-no-provider", "query"] }
+# `ring` as the TLS crypto provider, installed by `client::tls::client_builder`.
+rustls = { workspace = true }
 # Percent-encoding for IRI path segments (e.g. encoding IRIs for /admin/projects/iri/{enc-iri}).
 # Already transitively present via reqwest; listed directly so the usage is intentional.
 percent-encoding = "2"

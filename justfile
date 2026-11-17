@@ -29,9 +29,10 @@ install-requirements: install-e2e-requirements
     # rust-toolchain.toml pins stable, so `rustup show` alone never provisions it.
     rustup toolchain install {{ RUSTFMT_NIGHTLY }} --component rustfmt
     brew install cargo-binstall
-    # Native build deps the Nix devShell provides via flake.nix buildInputs; without them this path
-    # has no cmake for aws-lc-sys. `jq` is what `just fair-check` reads F-UJI's JSON result with.
-    brew install cmake pkg-config jq
+    # Native build deps the Nix devShell provides via flake.nix buildInputs. No cmake: `ring` is the
+    # one TLS crypto provider and builds with the C compiler alone, where `aws-lc-sys` needed cmake.
+    # `jq` is what `just fair-check` reads F-UJI's JSON result with.
+    brew install pkg-config jq
     # commitlint-rs powers the commit-message gate in `just commit-lint`
     cargo binstall -y commitlint-rs@0.2.4
     cargo binstall -y cargo-watch@8.5.3

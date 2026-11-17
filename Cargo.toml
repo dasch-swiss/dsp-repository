@@ -94,8 +94,14 @@ opentelemetry_sdk = { version = "0.31", features = ["rt-tokio", "metrics", "logs
 opentelemetry-otlp = { version = "0.31", features = ["grpc-tonic", "trace", "metrics", "logs"] }
 opentelemetry-appender-tracing = "0.31"
 tracing-opentelemetry = "0.32"
-# Continuous profiling
-pyroscope = { version = "2.0.4", features = ["backend-pprof-rs"] }
+# Continuous profiling. `rustls-no-provider` instead of the default `rustls-tls`, which
+# enables reqwest's `rustls` and with it `aws-lc-sys`; the servers install `ring` themselves.
+pyroscope = { version = "2.0.4", default-features = false, features = ["backend-pprof-rs", "rustls-no-provider"] }
+# `ring` is the one TLS crypto provider: the default features would add `aws_lc_rs`, and
+# `aws-lc-sys` needs cmake and does not build under Bazel. The cost: `ring` offers no hybrid
+# post-quantum key exchange (X25519MLKEM768), which `aws_lc_rs` does. Named directly by the
+# crates that install it as the process default.
+rustls = { version = "0.23", default-features = false, features = ["ring", "std"] }
 url = { version = "2", features = ["serde"] }
 uuid = { version = "1.23", features = ["v4", "v7", "serde"] }
 http = "1.4.1"

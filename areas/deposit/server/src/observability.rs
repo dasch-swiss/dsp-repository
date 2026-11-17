@@ -109,9 +109,21 @@ pub(crate) fn init_otel(
 /// Start Pyroscope profiling if `PYROSCOPE_ENDPOINT` is set.
 pub(crate) fn init_pyroscope(
 ) -> Option<pyroscope::pyroscope::PyroscopeAgent<pyroscope::pyroscope::PyroscopeAgentRunning>> {
+    let endpoint = std::env::var("PYROSCOPE_ENDPOINT").ok()?;
+    let agent = start_pyroscope(&endpoint);
+    tracing::info!(endpoint = %endpoint, "Pyroscope profiling enabled");
+    Some(agent)
+}
+
+fn start_pyroscope(
+    endpoint: &str,
+) -> pyroscope::pyroscope::PyroscopeAgent<pyroscope::pyroscope::PyroscopeAgentRunning> {
     const PROFILING_SAMPLE_RATE: u32 = 100;
 
-    let endpoint = std::env::var("PYROSCOPE_ENDPOINT").ok()?;
+    // The agent's reqwest client is built with `rustls-no-provider` on the agent's own
+    // thread, which panics there, ending profiling without failing the server, when no
+    // provider is installed. An `Err` means one is installed already.
+    let _ = rustls::crypto::ring::default_provider().install_default();
 
     let backend = pyroscope::backend::pprof_backend(
         pyroscope::backend::PprofConfig { sample_rate: PROFILING_SAMPLE_RATE },
@@ -119,7 +131,7 @@ pub(crate) fn init_pyroscope(
     );
 
     let agent = pyroscope::pyroscope::PyroscopeAgentBuilder::new(
-        &endpoint,
+        endpoint,
         TELEMETRY_NAME,
         PROFILING_SAMPLE_RATE,
         "pyroscope-rs", // matches pyroscope crate's PPROFRS_SPY_NAME
@@ -130,6 +142,49 @@ pub(crate) fn init_pyroscope(
     .build()
     .expect("failed to build Pyroscope agent");
 
-    tracing::info!(endpoint = %endpoint, "Pyroscope profiling enabled");
-    Some(agent.start().expect("failed to start Pyroscope agent"))
+    agent.start().expect("failed to start Pyroscope agent")
+}
+
+#[cfg(test)]
+mod tests {
+    use std::io::{Read, Write};
+    use std::net::TcpListener;
+    use std::sync::mpsc;
+    use std::time::Duration;
+
+    /// A missing TLS provider does not fail `start_pyroscope`: it panics on the agent's
+    /// own thread. The profile that `stop` pushes reaching the endpoint shows it did not.
+    #[test]
+    fn the_profiler_pushes_without_a_provider_installed_by_the_caller() {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let (requests, received) = mpsc::channel();
+        std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut head = [0u8; 256];
+            let read = stream.read(&mut head).unwrap();
+            stream
+                .write_all(b"HTTP/1.1 200 OK\r\ncontent-length: 0\r\nconnection: close\r\n\r\n")
+                .unwrap();
+            requests.send(String::from_utf8_lossy(&head[..read]).into_owned()).unwrap();
+        });
+
+        // On a thread of its own: with its client thread dead, `stop` waits forever.
+        let (done, finished) = mpsc::channel();
+        std::thread::spawn(move || {
+            let agent = super::start_pyroscope(&format!("http://{address}")).stop().unwrap();
+            // Joins the agent's timer thread, which ticks on 10 s wall-clock boundaries:
+            // most of this test's run time.
+            agent.shutdown();
+            done.send(()).unwrap();
+        });
+        let request = received
+            .recv_timeout(Duration::from_secs(10))
+            .expect("no profile reached the endpoint");
+        finished
+            .recv_timeout(Duration::from_secs(20))
+            .expect("the agent did not shut down");
+
+        assert!(request.starts_with("POST /push.v1.PusherService/Push "), "{request}");
+    }
 }

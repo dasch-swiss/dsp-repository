@@ -1,0 +1,27 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+
+# The binary that opens the editor's pull request (`areas/deposit/ADR-0001`). It reads the corpus
+# from the repository root it runs in.
+rust_binary(
+    name = "editor_pull_requests",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "editor_pull_requests",
+    deps = [
+        "//areas/deposit/editor/core:editor_core",
+        "//shared/metadata:shared_metadata",
+        "@crates//:reqwest",
+        "@crates//:rustls",
+        "@crates//:serde",
+        "@crates//:serde_json",
+    ],
+)
+
+rust_test(
+    name = "editor_pull_requests_test",
+    crate = ":editor_pull_requests",
+    data = ["//areas/access/dpe/server:corpus"],
+    deps = [
+        "@crates//:chrono",
+        "@crates//:uuid",
+    ],
+)

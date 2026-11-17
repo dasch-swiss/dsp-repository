@@ -1,0 +1,58 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+_SRCS = glob(["src/**/*.rs"])
+
+_COMPILE_DATA = glob(["src/migrations/*.sql"])
+
+_DEPS = [
+    "//areas/deposit/identity/core:identity_core",
+    "@crates//:chrono",
+    "@crates//:deadpool-sqlite",
+    "@crates//:lettre",
+    "@crates//:rsa",
+    "@crates//:rusqlite",
+    "@crates//:thiserror",
+    "@crates//:tracing",
+    "@crates//:uuid",
+]
+
+rust_library(
+    name = "identity_store",
+    srcs = _SRCS,
+    compile_data = _COMPILE_DATA,
+    crate_name = "identity_store",
+    proc_macro_deps = ["@crates//:async-trait"],
+    visibility = [
+        "//areas/deposit/identity/web:__pkg__",
+        "//areas/deposit/server:__pkg__",
+    ],
+    deps = _DEPS + ["//areas/deposit/editor/ports:editor_ports"],
+)
+
+# The `test-support` feature, for other crates' tests only.
+rust_library(
+    name = "identity_store_test_support",
+    testonly = True,
+    srcs = _SRCS,
+    compile_data = _COMPILE_DATA,
+    crate_features = ["test-support"],
+    crate_name = "identity_store",
+    proc_macro_deps = ["@crates//:async-trait"],
+    visibility = [
+        "//areas/deposit/identity/web:__pkg__",
+        "//areas/deposit/server:__pkg__",
+    ],
+    deps = _DEPS + ["//areas/deposit/editor/ports:editor_ports_test_support"],
+)
+
+rust_test(
+    name = "identity_store_test",
+    crate = ":identity_store",
+    deps = [
+        # rsa 0.9 takes rand_core 0.6, which is rand 0.8's, not identity-core's 0.9.
+        "@crates//:rand08",
+        "@crates//:sha2",
+        "@crates//:tempfile",
+        "@crates//:tokio",
+    ],
+)

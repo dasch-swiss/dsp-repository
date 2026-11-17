@@ -1,0 +1,33 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+_SRCS = glob(["src/**/*.rs"])
+
+# What the editor needs from identity; `identity-store` implements it (ADR-0004).
+rust_library(
+    name = "editor_ports",
+    srcs = _SRCS,
+    crate_name = "editor_ports",
+    visibility = [
+        "//areas/deposit/editor/web:__pkg__",
+        "//areas/deposit/identity/store:__pkg__",
+    ],
+)
+
+# The `test-support` feature, for other crates' tests only.
+rust_library(
+    name = "editor_ports_test_support",
+    testonly = True,
+    srcs = _SRCS,
+    crate_features = ["test-support"],
+    crate_name = "editor_ports",
+    visibility = [
+        "//areas/deposit/editor/web:__pkg__",
+        "//areas/deposit/identity/store:__pkg__",
+        "//areas/deposit/server:__pkg__",
+    ],
+)
+
+rust_test(
+    name = "editor_ports_test",
+    crate = ":editor_ports",
+)

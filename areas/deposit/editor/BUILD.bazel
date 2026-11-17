@@ -1,0 +1,20 @@
+# The editor's static files. The CSS recipes write `assets/app.css` and `assets/app.<hash8>.css`
+# here, git-ignored; they stay out, or a stale stylesheet would reach the tests and the image,
+# where the server picks its stylesheet by scanning the directory.
+filegroup(
+    name = "public",
+    srcs = glob(
+        ["public/**"],
+        exclude = [
+            "public/assets/app.css",
+            "public/assets/app.*.css",
+        ],
+    ),
+    visibility = ["//areas/deposit/server:__pkg__"],
+)
+
+# The editor's stylesheet source: a test of the review page reads it at compile time.
+exports_files(
+    ["style/main.css"],
+    visibility = ["//areas/deposit/editor/web:__pkg__"],
+)

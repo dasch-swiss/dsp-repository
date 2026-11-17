@@ -1,0 +1,51 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+_SRCS = glob(["src/**/*.rs"])
+
+_COMPILE_DATA = glob(["src/migrations/*.sql"])
+
+_DEPS = [
+    "//areas/deposit/editor/core:editor_core",
+    "@crates//:chrono",
+    "@crates//:deadpool-sqlite",
+    "@crates//:rusqlite",
+    "@crates//:thiserror",
+    "@crates//:tracing",
+    "@crates//:uuid",
+]
+
+rust_library(
+    name = "editor_store",
+    srcs = _SRCS,
+    compile_data = _COMPILE_DATA,
+    crate_name = "editor_store",
+    proc_macro_deps = ["@crates//:async-trait"],
+    visibility = ["//areas/deposit/server:__pkg__"],
+    deps = _DEPS + ["//areas/deposit/identity/ports:identity_ports"],
+)
+
+# The `test-support` feature, for other crates' tests only.
+rust_library(
+    name = "editor_store_test_support",
+    testonly = True,
+    srcs = _SRCS,
+    compile_data = _COMPILE_DATA,
+    crate_features = ["test-support"],
+    crate_name = "editor_store",
+    proc_macro_deps = ["@crates//:async-trait"],
+    visibility = [
+        "//areas/deposit/editor/web:__pkg__",
+        "//areas/deposit/server:__pkg__",
+    ],
+    deps = _DEPS + ["//areas/deposit/identity/ports:identity_ports_test_support"],
+)
+
+rust_test(
+    name = "editor_store_test",
+    crate = ":editor_store",
+    data = ["//areas/access/dpe/server:corpus"],
+    deps = [
+        "@crates//:sha2",
+        "@crates//:tokio",
+    ],
+)

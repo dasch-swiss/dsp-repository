@@ -1,0 +1,77 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+
+# The Deposit Area's composition root (ADR-0003, `areas/deposit/ADR-0004`): the binary links the two
+# web crates, the two store crates and the shell, and no `core` or `ports` crate. Its tests also
+# take `editor-ports`' fakes, as the Cargo dev-dependency does.
+_DEPS = [
+    "//areas/deposit/shell:deposit_shell",
+    "//shared/rate-limit:shared_rate_limit",
+    "//shared/telemetry:shared_telemetry",
+    "@crates//:axum",
+    "@crates//:axum-tracing-opentelemetry",
+    "@crates//:clap",
+    "@crates//:figment",
+    "@crates//:init-tracing-opentelemetry",
+    "@crates//:matchit",
+    "@crates//:opentelemetry",
+    "@crates//:opentelemetry-appender-tracing",
+    "@crates//:opentelemetry-otlp",
+    "@crates//:opentelemetry_sdk",
+    "@crates//:pyroscope",
+    "@crates//:rustls",
+    "@crates//:serde",
+    "@crates//:thiserror",
+    "@crates//:tokio",
+    "@crates//:tower-http",
+    "@crates//:tower_governor",
+    "@crates//:tracing",
+    "@crates//:tracing-opentelemetry",
+    "@crates//:tracing-subscriber",
+    "@crates//:ureq",
+]
+
+_SRCS = glob(["src/**/*.rs"])
+
+# The tests read the editor's public directory through `CARGO_MANIFEST_DIR`, and the corpus through
+# `editor-web`'s test support.
+_RUSTC_ENV = {"CARGO_MANIFEST_DIR": "areas/deposit/server"}
+
+rust_binary(
+    name = "deposit_server",
+    srcs = _SRCS,
+    crate_name = "deposit_server",
+    rustc_env = _RUSTC_ENV,
+    deps = _DEPS + [
+        "//areas/deposit/editor/store:editor_store",
+        "//areas/deposit/editor/web:editor_web",
+        "//areas/deposit/identity/store:identity_store",
+        "//areas/deposit/identity/web:identity_web",
+    ],
+)
+
+# Not `crate = ":deposit_server"`: the tests take every capability crate's `test-support` variant,
+# and a test inherits its crate's dependencies, so the production builds of the same crates would
+# meet the variants in one compile.
+rust_test(
+    name = "deposit_server_test",
+    srcs = _SRCS,
+    crate_name = "deposit_server",
+    crate_root = "src/main.rs",
+    data = [
+        "//areas/access/dpe/server:corpus",
+        "//areas/deposit/editor:public",
+    ],
+    # One test thread: the configuration tests' `figment::Jail` moves the process into a temporary
+    # directory while it runs, and other tests read files through the relative `CARGO_MANIFEST_DIR`.
+    env = {"RUST_TEST_THREADS": "1"},
+    rustc_env = _RUSTC_ENV,
+    deps = _DEPS + [
+        "//areas/deposit/editor/ports:editor_ports_test_support",
+        "//areas/deposit/editor/store:editor_store_test_support",
+        "//areas/deposit/editor/web:editor_web_test_support",
+        "//areas/deposit/identity/store:identity_store_test_support",
+        "//areas/deposit/identity/web:identity_web_test_support",
+        "@crates//:chrono",
+        "@crates//:tower",
+    ],
+)

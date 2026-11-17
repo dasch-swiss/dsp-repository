@@ -13,6 +13,14 @@ pub const DPE_DATA_DIR: &str = "areas/access/dpe/server/data";
 /// Resolves via the build machine's `CARGO_MANIFEST_DIR`, so it is meaningless
 /// in a deployed image; `EditorConfig` deliberately carries no default for
 /// `EDITOR_DATA_DIR` (see `deposit-server`'s `config.rs`).
+///
+/// The repository root is taken lexically, four levels up, not by joining `..`:
+/// under Bazel the variable is the relative `areas/deposit/editor/core`, and the
+/// runfiles of another crate's test hold no such directory to walk out of.
 pub fn checkout_dpe_data_dir() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../..").join(DPE_DATA_DIR)
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .ancestors()
+        .nth(4)
+        .expect("the crate sits four levels below the repository root");
+    root.join(DPE_DATA_DIR)
 }

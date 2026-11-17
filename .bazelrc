@@ -39,6 +39,9 @@ common:ci --lockfile_mode=error
 # The path the `bazel-setup` action restores and the calling job saves.
 common:ci --repository_cache=~/.cache/bazel-repo
 
+# `STABLE_DEPOSIT_VERSION` for `deposit-shell`'s footer; only stamped builds (`--stamp`) read it.
+build --workspace_status_command=tools/workspace_status.sh
+
 test --test_output=errors
 
 # `insta` finds snapshots from the workspace-relative `file!()` path, against the runfiles root a

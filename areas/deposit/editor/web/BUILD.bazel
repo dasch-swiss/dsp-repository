@@ -1,0 +1,71 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test", "rust_test_suite")
+
+_SRCS = glob(["src/**/*.rs"])
+
+_DEPS = [
+    "//areas/deposit/editor/core:editor_core",
+    "//areas/deposit/shell:deposit_shell",
+    "//modules/mosaic/tiles:mosaic_tiles",
+    "//shared/datastar:shared_datastar",
+    "//shared/metadata:shared_metadata",
+    "//shared/rate-limit:shared_rate_limit",
+    "//shared/telemetry:shared_telemetry",
+    "@crates//:axum",
+    "@crates//:chrono",
+    "@crates//:maud",
+    "@crates//:opentelemetry",
+    "@crates//:serde",
+    "@crates//:serde_json",
+    "@crates//:tower_governor",
+    "@crates//:tracing",
+    "@crates//:tracing-opentelemetry",
+    "@crates//:urlencoding",
+    "@crates//:uuid",
+]
+
+rust_library(
+    name = "editor_web",
+    srcs = _SRCS,
+    crate_name = "editor_web",
+    visibility = ["//areas/deposit/server:__pkg__"],
+    deps = _DEPS + ["//areas/deposit/editor/ports:editor_ports"],
+)
+
+# The `test-support` feature, for other crates' tests only. Its own tests run on it too: they take
+# the store's and the ports' fixtures, and one build of each crate may meet in a compile.
+rust_library(
+    name = "editor_web_test_support",
+    testonly = True,
+    srcs = _SRCS,
+    crate_features = ["test-support"],
+    crate_name = "editor_web",
+    visibility = ["//areas/deposit/server:__pkg__"],
+    deps = _DEPS + ["//areas/deposit/editor/ports:editor_ports_test_support"],
+)
+
+# `crate_features` is not inherited from `crate`.
+rust_test(
+    name = "editor_web_test",
+    crate = ":editor_web_test_support",
+    compile_data = ["//areas/deposit/editor:style/main.css"],
+    crate_features = ["test-support"],
+    data = ["//areas/access/dpe/server:corpus"] + glob(["src/**/snapshots/**"]),
+    deps = [
+        "//areas/deposit/editor/store:editor_store_test_support",
+        "@crates//:insta",
+        "@crates//:tokio",
+        "@crates//:tower",
+        "@crates//:tracing-subscriber",
+    ],
+)
+
+rust_test_suite(
+    name = "editor_web_integration",
+    srcs = glob(["tests/*.rs"]),
+    data = ["//areas/access/dpe/server:corpus"],
+    deps = [
+        ":editor_web",
+        "//areas/deposit/editor/core:editor_core",
+        "@crates//:serde_json",
+    ],
+)

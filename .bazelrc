@@ -41,6 +41,11 @@ common:ci --repository_cache=~/.cache/bazel-repo
 
 test --test_output=errors
 
+# `insta` finds snapshots from the workspace-relative `file!()` path, against the runfiles root a
+# test runs from, and never writes one in a test run: `just snap-accept` does that.
+test --test_env=INSTA_WORKSPACE_ROOT=.
+test --test_env=INSTA_UPDATE=no
+
 # The clippy aspect's flags (`just bazel-clippy`). Set for every build, not in the recipe: a flag
 # that differs between two commands changes the configuration and discards the analysis cache.
 # `-Dwarnings` is explicit because the aspect applies it by default only while no other clippy

@@ -346,7 +346,7 @@ fn test_committed_0803_curation_teaser_reads_four_books_in_german_and_english() 
 #[test]
 fn test_committed_0803_curation_note_column_is_in_the_file_and_not_read() {
     let region = "http://rdfh.ch/0803/0JJDCMvsV_e8ZQ5C-icf3w";
-    let file = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../media/data/0803/curation.csv"));
+    let file = include_str!("../../../../media/data/0803/curation.csv");
 
     let row = file
         .lines()

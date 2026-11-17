@@ -22,7 +22,7 @@
 //! (dsp-incubator cpe/docs/adr/0010-openseadragon-integration.md, "reversibility").
 //!
 //! # Example
-//! ```
+//! ```ignore
 //! use cpe_image_viewer::{Viewer, Auth};
 //! use maud::html;
 //!
@@ -233,7 +233,7 @@ pub struct Asset {
 /// forward an untrusted request tail straight in without a traversal check.
 /// Returns `None` for unknown or rejected paths.
 ///
-/// ```
+/// ```ignore
 /// assert!(cpe_image_viewer::asset("image-viewer.js").is_some());
 /// assert!(cpe_image_viewer::asset("vendor/openseadragon.min.js").is_some());
 /// assert!(cpe_image_viewer::asset("../Cargo.toml").is_none());

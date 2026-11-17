@@ -1,0 +1,10 @@
+# The committed deposited files, read by the tests that build CPE over them.
+filegroup(
+    name = "data",
+    srcs = glob(["data/**"]),
+    visibility = [
+        "//areas/access/cpe/server:__pkg__",
+        "//areas/access/cpe/store-build:__pkg__",
+        "//areas/access/server:__pkg__",
+    ],
+)

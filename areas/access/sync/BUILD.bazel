@@ -1,0 +1,11 @@
+# The committed archive projection, read by sync-store and by the tests that build CPE over it.
+filegroup(
+    name = "data",
+    srcs = glob(["data/**"]),
+    visibility = [
+        "//areas/access/cpe/server:__pkg__",
+        "//areas/access/cpe/store-build:__pkg__",
+        "//areas/access/server:__pkg__",
+        "//areas/access/sync/store:__pkg__",
+    ],
+)

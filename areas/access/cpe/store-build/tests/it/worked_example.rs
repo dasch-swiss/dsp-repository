@@ -4,15 +4,12 @@
 
 use cpe_core::validate::load_remodel;
 
-const CONFIG: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../media/data/0803/config.kdl"));
+const CONFIG: &str = include_str!("../../../../media/data/0803/config.kdl");
 
 /// The first fenced `kdl` block of `docs/src/cpe/config-language.md`'s "`remodel` block" section:
 /// the worked example, which opens with the minimal `site` block that `load_remodel` asks for.
 fn worked_example() -> &'static str {
-    const DOC: &str = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/../../../../docs/src/cpe/config-language.md"
-    ));
+    const DOC: &str = include_str!("../../../../../../docs/src/cpe/config-language.md");
     let section = DOC
         .split_once("\n## `remodel` block\n")
         .expect("the document has the section")

@@ -1,0 +1,28 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+rust_library(
+    name = "dpe_core",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "dpe_core",
+    # The tests read the corpus through `CARGO_MANIFEST_DIR`; relative, it resolves from the
+    # runfiles root.
+    rustc_env = {"CARGO_MANIFEST_DIR": "areas/access/dpe/core"},
+    visibility = [
+        "//areas/access/dpe/api-oai:__pkg__",
+        "//areas/access/dpe/server:__pkg__",
+        "//areas/access/dpe/web:__pkg__",
+    ],
+    deps = [
+        "//shared/metadata:shared_metadata",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:tracing",
+    ],
+)
+
+rust_test(
+    name = "dpe_core_test",
+    crate = ":dpe_core",
+    data = ["//areas/access/dpe/server:corpus"],
+    deps = ["@crates//:tempfile"],
+)

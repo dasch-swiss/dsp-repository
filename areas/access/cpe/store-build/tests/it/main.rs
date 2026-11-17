@@ -37,7 +37,7 @@ const PROJECT: &str = "incunabula";
 
 /// The project's mapping, lowered once from the config it deposited in `media`'s committed data.
 static MAPPING: LazyLock<Remodel> = LazyLock::new(|| {
-    let config = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../media/data/0803/config.kdl"));
+    let config = include_str!("../../../../media/data/0803/config.kdl");
     support::lowered(config)
 });
 
@@ -65,7 +65,7 @@ static SNAPSHOT: LazyLock<ProjectSnapshot> = LazyLock::new(|| {
 
 /// The committed curation file of project 0803, read against [`SNAPSHOT`].
 static CURATION: LazyLock<CuratedValues> = LazyLock::new(|| {
-    let bytes = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../media/data/0803/curation.csv"));
+    let bytes = include_bytes!("../../../../media/data/0803/curation.csv");
     CuratedValues::parse(bytes, &SNAPSHOT)
         .unwrap_or_else(|fault| panic!("the committed curation file is read: {fault}"))
 });

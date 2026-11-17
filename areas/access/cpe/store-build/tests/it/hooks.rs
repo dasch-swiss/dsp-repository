@@ -27,12 +27,7 @@ use crate::support::{
 use crate::{MAPPING as INCUNABULA_MAPPING, PROJECT as INCUNABULA};
 
 /// The mapping of the fixture project `hooked`.
-static HOOKED: LazyLock<Remodel> = LazyLock::new(|| {
-    lowered(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/tests/fixtures/hooked/config.kdl"
-    )))
-});
+static HOOKED: LazyLock<Remodel> = LazyLock::new(|| lowered(include_str!("../fixtures/hooked/config.kdl")));
 
 const SHORTCODE: &str = "0123";
 /// The folder name the tests give their hooks.

@@ -1,0 +1,37 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test", "rust_test_suite")
+
+# The manifest's `[lints.rust] unsafe_code = "forbid"`, for every target of the crate.
+_RUSTC_FLAGS = ["-Funsafe-code"]
+
+rust_library(
+    name = "cpe_image_viewer",
+    srcs = glob(["src/**/*.rs"]),
+    compile_data = glob(["assets/**"]),
+    crate_name = "cpe_image_viewer",
+    rustc_flags = _RUSTC_FLAGS,
+    visibility = [
+        "//areas/access/cpe/components:__pkg__",
+        "//areas/access/cpe/server:__pkg__",
+        "//areas/access/cpe/web:__pkg__",
+    ],
+    deps = ["@crates//:maud"],
+)
+
+rust_test(
+    name = "cpe_image_viewer_test",
+    crate = ":cpe_image_viewer",
+    rustc_flags = _RUSTC_FLAGS,
+)
+
+rust_test_suite(
+    name = "cpe_image_viewer_integration",
+    srcs = glob(["tests/*.rs"]),
+    # `render.rs` lists `assets/` through `CARGO_MANIFEST_DIR` to find a file without a row.
+    data = glob(["assets/**"]),
+    rustc_env = {"CARGO_MANIFEST_DIR": "areas/access/cpe/image-viewer"},
+    rustc_flags = _RUSTC_FLAGS,
+    deps = [
+        ":cpe_image_viewer",
+        "@crates//:maud",
+    ],
+)

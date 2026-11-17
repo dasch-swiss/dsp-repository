@@ -233,6 +233,18 @@ bazel-test *FLAGS:
 bazel-clippy *FLAGS:
     bazel build {{ FLAGS }} --keep_going --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect --output_groups=clippy_checks //...
 
+# Accept the `insta` snapshots of one test target: runs it from the checkout with `INSTA_UPDATE=always`, so `insta` writes the snapshot files (never rename a `.snap.new` by hand); review with `git diff`. Example: `just snap-accept //areas/access/dpe/server:dpe_server_test`.
+[group('bazel')]
+snap-accept target *FLAGS:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    root="$PWD"
+    # `bazel run` starts a test in its runfiles tree, through test-setup.sh, which runs the
+    # `--run_under` words as one command: a `cd … && ` prefix would reach `cd` as arguments. The
+    # wrapper resolves the binary's runfiles-relative path, then runs it from the checkout.
+    INSTA_UPDATE=always INSTA_WORKSPACE_ROOT="$root" bazel run {{ FLAGS }} \
+        --run_under="/bin/bash -c 'b=\$PWD/\$0; cd \"$root\" && exec \"\$b\" \"\$@\"'" {{ target }}
+
 # Re-resolve the crate universe after a `crate.spec` change, and refresh both locks. With a crate name, move only that crate, as for a security bump of a transitive crate. Never `bazel mod tidy`.
 [group('bazel')]
 repin crate="":

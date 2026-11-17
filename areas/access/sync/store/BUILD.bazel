@@ -1,0 +1,60 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test", "rust_test_suite")
+
+# The tests read the committed projection through `CARGO_MANIFEST_DIR`.
+_RUSTC_ENV = {"CARGO_MANIFEST_DIR": "areas/access/sync/store"}
+
+_SRCS = glob(["src/**/*.rs"])
+
+_DEPS = [
+    "//areas/access/cpe/ports:cpe_ports",
+    "@crates//:oxrdf",
+    "@crates//:oxttl",
+    "@crates//:thiserror",
+    "@crates//:tracing",
+]
+
+# sync's adapter of CPE's archive-projection port. Only the composition root links it
+# (ADR-0003, ADR-0008).
+rust_library(
+    name = "sync_store",
+    srcs = _SRCS,
+    crate_name = "sync_store",
+    rustc_env = _RUSTC_ENV,
+    visibility = ["//areas/access/server:__pkg__"],
+    deps = _DEPS,
+)
+
+# The only target another capability sees: CPE's tests build their store over the committed data
+# through it (ADR-0012). A library of its own, not an `alias`: Bazel checks `testonly` on an
+# alias's actual target, so only a `testonly` library keeps it out of every production target.
+rust_library(
+    name = "sync_store_for_tests",
+    testonly = True,
+    srcs = _SRCS,
+    crate_name = "sync_store",
+    rustc_env = _RUSTC_ENV,
+    visibility = [
+        "//areas/access/cpe/server:__pkg__",
+        "//areas/access/cpe/store-build:__pkg__",
+    ],
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "sync_store_test",
+    crate = ":sync_store",
+    data = ["//areas/access/sync:data"],
+    deps = ["@crates//:tempfile"],
+)
+
+rust_test_suite(
+    name = "sync_store_integration",
+    srcs = glob(["tests/*.rs"]),
+    compile_data = ["src/vocab.rs"],
+    data = ["//areas/access/sync:data"],
+    rustc_env = _RUSTC_ENV,
+    deps = [
+        ":sync_store",
+        "//areas/access/cpe/ports:cpe_ports",
+    ],
+)

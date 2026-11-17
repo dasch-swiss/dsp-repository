@@ -1,0 +1,56 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test", "rust_test_suite")
+
+rust_library(
+    name = "dpe_api_oai",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "dpe_api_oai",
+    # The tests read the corpus and their golden files through `CARGO_MANIFEST_DIR`.
+    rustc_env = {"CARGO_MANIFEST_DIR": "areas/access/dpe/api-oai"},
+    visibility = ["//areas/access/dpe/server:__pkg__"],
+    deps = [
+        "//areas/access/dpe/core:dpe_core",
+        "//shared/fair:shared_fair",
+        "//shared/metadata:shared_metadata",
+        "@crates//:axum",
+        "@crates//:base64",
+        "@crates//:chrono",
+        "@crates//:quick-xml",
+        "@crates//:serde",
+        "@crates//:serde_json",
+    ],
+)
+
+rust_test(
+    name = "dpe_api_oai_test",
+    crate = ":dpe_api_oai",
+    compile_data = [
+        "//shared/fair:testdata/schemas/datacite-4.3-schema.json",
+        "//shared/metadata:testdata/0803-records.json",
+    ],
+    data = [
+        "//areas/access/dpe/server:corpus",
+    ] + glob(["src/**/testdata/**"]),
+    # The XML tests shell out to `xmllint`, which the remote worker does not have; CI installs it
+    # on the runner.
+    tags = ["no-remote-exec"],
+    deps = [
+        "@crates//:http-body-util",
+        "@crates//:jsonschema",
+        "@crates//:tempfile",
+        "@crates//:tokio",
+        "@crates//:tower",
+    ],
+)
+
+rust_test_suite(
+    name = "dpe_api_oai_integration",
+    srcs = glob(["tests/*.rs"]),
+    deps = [
+        ":dpe_api_oai",
+        "//areas/access/dpe/core:dpe_core",
+        "@crates//:axum",
+        "@crates//:http-body-util",
+        "@crates//:tokio",
+        "@crates//:tower",
+    ],
+)

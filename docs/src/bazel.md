@@ -22,6 +22,7 @@ While both exist, a change that touches dependencies or crates is made on both s
 | `just repin [crate]` | re-resolves the crate universe and refreshes `Cargo.Bazel.lock` and `MODULE.bazel.lock` |
 | `just audit` | `cargo-audit` and `osv-scanner` over `Cargo.Bazel.lock` |
 | `just rust-project` | writes `rust-project.json` for rust-analyzer |
+| `just snap-accept <target>` | runs one test target from the checkout with `INSTA_UPDATE=always`, so `insta` rewrites the snapshots that changed |
 
 Each `bazel-*` recipe passes extra arguments to Bazel, for example `just bazel-test --test_output=all` or a single package: `bazel test //shared/telemetry/...`.
 
@@ -40,6 +41,15 @@ A first-party crate's `BUILD.bazel` is hand-written: `rust_library`, `rust_test`
 Never run `bazel mod tidy`, also when Bazel's output suggests it: it removes `use_repo` lines the `llvm` extension needs. `MODULE.bazel.lock` and `Cargo.Bazel.lock` are regenerated (`just repin`), never merged by hand; after a rebase conflict, take `main`'s side and repin.
 
 CI runs with `--config=ci`, which sets `--lockfile_mode=error`: a `MODULE.bazel` change without the matching `MODULE.bazel.lock` fails.
+
+## Tests and the files they read
+
+A test runs from its runfiles tree, where every file it declares in `data` is a symbolic link into the checkout. A target whose sources use `env!("CARGO_MANIFEST_DIR")` sets `rustc_env = {"CARGO_MANIFEST_DIR": "<package path>"}`: the relative path resolves from the runfiles root. Two consequences:
+
+- A test that refuses symbolic links, as CPE's project discovery does, reads a `copy_to_directory` of its files with `root_paths = []`, which keeps their repository paths, and is tagged `no-sandbox`, because the local sandbox links each copied file again. `CARGO_MANIFEST_DIR` then points into the copy (`cpe-server`, `cpe-web`, `access-server`).
+- `figment::Jail` moves the whole process into a temporary directory while a config test runs, and a relative path read by a test on another thread fails. A test target whose crate uses `Jail` sets `env = {"RUST_TEST_THREADS": "1"}`.
+
+Snapshots are `data` of their test target. `just snap-accept <target>` accepts changed ones; review them with `git diff`.
 
 ## Remote cache and execution
 

@@ -1,0 +1,17 @@
+# DPE's static files. The CSS recipes write `assets/app.css` and `assets/app.<hash8>.css` here,
+# git-ignored; they stay out, or a stale stylesheet would reach the tests and the image, where the
+# server picks its stylesheet by scanning the directory.
+filegroup(
+    name = "public",
+    srcs = glob(
+        ["public/**"],
+        exclude = [
+            "public/assets/app.css",
+            "public/assets/app.*.css",
+        ],
+    ),
+    visibility = [
+        "//areas/access/dpe/server:__pkg__",
+        "//areas/access/server:__pkg__",
+    ],
+)

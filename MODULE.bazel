@@ -9,6 +9,7 @@ with `bazel mod deps --lockfile_mode=update`, or `just repin` after a `crate.spe
 
 module(name = "dsp_repository")
 
+bazel_dep(name = "bazel_lib", version = "3.2.2")
 bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "rules_cc", version = "0.2.25")
 
@@ -35,6 +36,21 @@ single_version_override(
 llvm = use_extension("@llvm//extensions:llvm.bzl", "llvm")
 llvm.version(llvm_version = "23.1.2")
 use_repo(llvm, "llvm-project")
+
+# The macOS SDK the module fetches holds a minimal set of frameworks; naming any replaces that set,
+# so the first six are the module's defaults. CoreServices: `notify` (the `dev` variants' file
+# watcher) links FSEvents through it; its stub re-exports CFNetwork, which must be there too.
+osx = use_extension("@llvm//extensions:osx.bzl", "osx")
+osx.frameworks(names = [
+    "CoreFoundation",
+    "Foundation",
+    "Kernel",
+    "OSLog",
+    "Security",
+    "SystemConfiguration",
+    "CFNetwork",
+    "CoreServices",
+])
 
 # `exec`: the hosts that build (developers' Macs, the CI runner, the remote worker).
 # `target`: the platforms built for. Linux on aarch64 is not built here.

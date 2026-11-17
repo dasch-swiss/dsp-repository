@@ -1,0 +1,55 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+rust_library(
+    name = "cpe_store_build",
+    srcs = glob(["src/**/*.rs"]),
+    compile_data = ["//areas/access/cpe/store:schema.sql"],
+    crate_name = "cpe_store_build",
+    visibility = ["//areas/access/cpe/server:__pkg__"],
+    deps = [
+        "//areas/access/cpe/core:cpe_core",
+        "//areas/access/cpe/ports:cpe_ports",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:unicode-normalization",
+    ],
+)
+
+rust_test(
+    name = "cpe_store_build_test",
+    crate = ":cpe_store_build",
+    compile_data = [
+        "tests/fixtures/plain/config.kdl",
+        "//areas/access/cpe/core:src/validate.rs",
+    ],
+    deps = [
+        "//areas/access/sync/store:sync_store_for_tests",
+        "@crates//:rusqlite",
+    ],
+)
+
+# `tests/it/` is one test crate of many files, as under Cargo.
+_IT_FILES = [
+    "//areas/access/cpe:projects",
+    "//areas/access/media:data",
+    "//areas/access/sync:data",
+    "//docs:src/cpe/config-language.md",
+] + glob(["tests/fixtures/**"])
+
+rust_test(
+    name = "cpe_store_build_it_test",
+    srcs = glob(["tests/it/*.rs"]),
+    compile_data = _IT_FILES,
+    crate_name = "it",
+    crate_root = "tests/it/main.rs",
+    # `hygiene.rs` reads the crate's own sources.
+    data = _IT_FILES + glob(["src/**/*.rs"]),
+    rustc_env = {"CARGO_MANIFEST_DIR": "areas/access/cpe/store-build"},
+    deps = [
+        ":cpe_store_build",
+        "//areas/access/cpe/core:cpe_core",
+        "//areas/access/cpe/ports:cpe_ports",
+        "//areas/access/sync/store:sync_store_for_tests",
+        "@crates//:rusqlite",
+    ],
+)

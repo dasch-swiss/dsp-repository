@@ -10,6 +10,7 @@ mod builtins;
 pub mod http;
 pub(crate) mod jwt;
 pub mod sparql;
+pub(crate) mod tls;
 
 use std::collections::HashMap;
 

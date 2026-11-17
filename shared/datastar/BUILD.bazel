@@ -1,0 +1,18 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+rust_library(
+    name = "shared_datastar",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "shared_datastar",
+    visibility = [
+        "//areas/access/cpe/components:__pkg__",
+        "//areas/access/dpe/web:__pkg__",
+        "//areas/deposit/editor/web:__pkg__",
+    ],
+)
+
+rust_test(
+    name = "shared_datastar_test",
+    crate = ":shared_datastar",
+    deps = ["@crates//:maud"],
+)

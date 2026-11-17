@@ -3,7 +3,7 @@
 //! Icons come from the `icondata` crate, which tree-shakes unused icons at
 //! compile time. Sizing is a Tailwind class passed in `class` or inherited.
 //!
-//! ```
+//! ```ignore
 //! use mosaic_tiles::icon::{icon, IconSearch};
 //!
 //! let markup = icon(IconSearch, "w-5 h-5 text-neutral-600");

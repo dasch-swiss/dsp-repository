@@ -1,0 +1,121 @@
+Make hermetic-llvm's Linux system-header directories remote-execution-safe.
+
+hermetic-llvm hands the Linux kernel + glibc system headers to compile actions
+through TWO independent paths, and both inject a bare source-directory artifact
+(one opaque directory node) rather than the individual header files:
+
+  Path A -- cc_args(data = [..._directory]) in toolchain/args/linux: feeds the
+  kernel/glibc headers to ordinary "complete" (target-config) compiles.
+
+  Path B -- the kernel_headers / gnu_libc_headers cc_library targets
+  (hdrs = ["include"]), consumed via @llvm-project's libcxx/libcxxabi/libunwind
+  implementation_deps. This is the ONLY header source for the exec-config
+  "stage0" runtime compiles, which receive no kernel-header cc_args at all.
+
+Local sandboxed builds follow the directory symlink fine, but remote execution
+must expand a source directory into each action's Merkle input tree; the
+include/ subtree (e.g. include/linux/) is not enumerated and gets dropped,
+giving "fatal error: 'linux/limits.h' file not found" on the exec-config
+toolchain-bootstrap [for tool] compiles. It is deterministic once the action
+cache is cold; warm action-cache hits skip the compile and mask the gap, so it
+presents as flaky. A Bazel-side input-declaration issue, not a backend bug.
+
+Two coupled changes:
+
+1. directory.bzl gains an opt-in expand_files arg (set for the kernel + glibc
+   header repos) that makes DefaultInfo carry the individual header files (a
+   recursive glob, minus `make headers_install` byproducts) instead of one
+   source-directory artifact, so the Merkle-tree builder enumerates every header.
+   This fixes Path A. The macOS SDK sysroot also uses headers_directory but is
+   left unexpanded -- expanding it would bloat every darwin *local* compile.
+   The toolchain module map needs no change: runtimes/module_map.bzl's
+   _include_path_impl reads src[DirectoryInfo].transitive_files for every
+   DirectoryInfo source and never its DefaultInfo, so a file-list DefaultInfo
+   leaves the generated module map as it was.
+
+2. The kernel_headers / gnu_libc_headers cc_library targets change
+   hdrs = ["include"] (one source-directory artifact) to
+   hdrs = glob(["include/**"]), so every individual header becomes a declared
+   action input for the exec-config stage0 runtime compiles. This fixes Path B --
+   the path the expand_files change above does not reach.
+
+Drop if/when hermetic-llvm ships an equivalent fix upstream
+(https://github.com/hermeticbuild/hermetic-llvm).
+
+diff --git a/directory.bzl b/directory.bzl
+--- a/directory.bzl
++++ b/directory.bzl
+@@ -5,7 +5,13 @@
+ # We want to put a source directory into the DefaultInfo but still propagate
+ # the DirectoryInfo for header inclusion checking and the toolchain's module
+ # map.
+-def headers_directory(name, path, visibility = None):
++#
++# expand_files: when True, DefaultInfo carries the individual header files
++# (a recursive glob) instead of a single source-directory artifact. Remote
++# execution must expand a source directory into the action's Merkle input tree
++# and drops its subtree; enumerating discrete File artifacts makes the input
++# tree complete.
++def headers_directory(name, path, visibility = None, expand_files = False):
+     if path == ".":
+         directory(
+             name = name + "_directory",
+@@ -25,7 +31,13 @@
+ 
+     native.filegroup(
+         name = name + "_source_directory",
+-        srcs = [path],
++        srcs = native.glob(
++            ["**"] if path == "." else [path + "/**"],
++            # Drop `make headers_install` byproducts; they are not headers and
++            # would otherwise enter the action input set as upload-only noise.
++            exclude = ["**/.install", "**/..install.cmd", "**/.*.cmd"],
++            allow_empty = True,
++        ) if expand_files else [path],
+     )
+ 
+     _headers_directory(
+diff --git a/kernel/extension/kernel-headers.BUILD.bazel b/kernel/extension/kernel-headers.BUILD.bazel
+--- a/kernel/extension/kernel-headers.BUILD.bazel
++++ b/kernel/extension/kernel-headers.BUILD.bazel
+@@ -3,7 +3,10 @@
+ 
+ cc_library(
+     name = "kernel_headers",
+-    hdrs = ["include"],
++    hdrs = glob(
++        ["include/**"],
++        exclude = ["**/.install", "**/..install.cmd", "**/.*.cmd"],
++    ),
+     # Any code should always get passed linux UAPI headers as -isystem
+     features = ["system_include_paths"],
+     includes = ["include"],
+@@ -13,5 +16,6 @@
+ headers_directory(
+     name = "kernel_headers_directory",
+     path = "include",
++    expand_files = True,
+     visibility = ["//visibility:public"],
+ )
+diff --git a/runtimes/glibc/extension/glibc-headers.BUILD.bazel b/runtimes/glibc/extension/glibc-headers.BUILD.bazel
+--- a/runtimes/glibc/extension/glibc-headers.BUILD.bazel
++++ b/runtimes/glibc/extension/glibc-headers.BUILD.bazel
+@@ -3,7 +3,10 @@
+ 
+ cc_library(
+     name = "gnu_libc_headers",
+-    hdrs = ["include"],
++    hdrs = glob(
++        ["include/**"],
++        exclude = ["**/.install", "**/..install.cmd", "**/.*.cmd"],
++    ),
+     # user code should always get glibc headers as -isystem
+     # but it seems glibc itself includes as <...>
+     features = ["system_include_paths"],
+@@ -14,5 +17,6 @@
+ headers_directory(
+     name = "glibc_headers_directory",
+     path = "include",
++    expand_files = True,
+     visibility = ["//visibility:public"],
+ )

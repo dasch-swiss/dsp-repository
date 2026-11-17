@@ -16,7 +16,8 @@ jobs:
   required:
     runs-on: ubuntu-latest
     name: test / ubuntu / ${{ matrix.toolchain }}
-    timeout-minutes: 20
+    # Two builds on the stable leg until Cargo is removed: Cargo's tests, then Bazel's.
+    timeout-minutes: 60
     strategy:
       matrix:
         # run on stable and beta to ensure that tests won't break on the next version of the rust
@@ -42,6 +43,25 @@ jobs:
           INSTA_UPDATE: new
       - name: cargo test --doc
         run: cargo test --locked --all-features --doc
+      # Bazel builds with its own pinned toolchain, so one leg is enough.
+      - name: Bazel setup
+        if: matrix.toolchain == 'stable'
+        id: bazel
+        uses: ./.github/actions/bazel-setup
+        with:
+          rbe-runner-endpoint: ${{ vars.REMOTEBUILD_RUNNER_ENDPOINT }}
+          rbe-ca-cert: ${{ secrets.REMOTEBUILD_CA_CERT }}
+          rbe-client-cert: ${{ secrets.REMOTEBUILD_CLIENT_CERT }}
+          rbe-client-key: ${{ secrets.REMOTEBUILD_CLIENT_KEY }}
+      - name: just bazel-test
+        if: matrix.toolchain == 'stable'
+        run: just bazel-test ${{ steps.bazel.outputs.flags }}
+      - name: Save Bazel repository cache
+        if: ${{ !cancelled() && steps.bazel.outputs.repo-cache-key != '' && steps.bazel.outputs.repo-cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.cache/bazel-repo
+          key: ${{ steps.bazel.outputs.repo-cache-key }}
 
   scripts:
     runs-on: ubuntu-latest

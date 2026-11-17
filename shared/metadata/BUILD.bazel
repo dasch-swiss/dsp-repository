@@ -1,0 +1,35 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+# dpe-api-oai's tests build their fixtures from the 0803 records.
+exports_files(
+    ["testdata/0803-records.json"],
+    visibility = ["//areas/access/dpe/api-oai:__pkg__"],
+)
+
+rust_library(
+    name = "shared_metadata",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "shared_metadata",
+    visibility = [
+        "//areas/access/dpe/api-oai:__pkg__",
+        "//areas/access/dpe/core:__pkg__",
+        "//areas/access/dpe/server:__pkg__",
+        "//areas/access/dpe/web:__pkg__",
+        "//areas/deposit/editor/core:__pkg__",
+        "//areas/deposit/editor/pull-requests:__pkg__",
+        "//areas/deposit/editor/web:__pkg__",
+        "//areas/deposit/identity/web:__pkg__",
+        "//shared/fair:__pkg__",
+    ],
+    deps = [
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:tracing",
+    ],
+)
+
+rust_test(
+    name = "shared_metadata_test",
+    compile_data = glob(["testdata/*.json"]),
+    crate = ":shared_metadata",
+)

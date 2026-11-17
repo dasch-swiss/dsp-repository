@@ -33,6 +33,9 @@ install-requirements: install-e2e-requirements
     # one TLS crypto provider and builds with the C compiler alone, where `aws-lc-sys` needed cmake.
     # `jq` is what `just fair-check` reads F-UJI's JSON result with.
     brew install pkg-config jq
+    # Bazelisk provides `bazel` and reads .bazelversion. osv-scanner and cargo-audit are the two
+    # halves of `just audit`.
+    brew install bazelisk osv-scanner
     # commitlint-rs powers the commit-message gate in `just commit-lint`
     cargo binstall -y commitlint-rs@0.2.4
     cargo binstall -y cargo-watch@8.5.3
@@ -44,6 +47,7 @@ install-requirements: install-e2e-requirements
     cargo binstall -y cargo-machete@0.9.2
     cargo binstall -y cargo-nextest@0.9.144
     cargo binstall -y cargo-deny@0.20.2
+    cargo binstall -y cargo-audit@0.22.2
 
 # Install Playwright browsers for E2E tests
 install-e2e-requirements: _check-node
@@ -213,6 +217,65 @@ test-scripts:
         bash "$t" || rc=1
     done
     exit "$rc"
+
+# Build every Bazel target. Until Cargo is removed, a pull request keeps both builds green (docs/src/bazel.md). FLAGS: extra Bazel flags, such as CI's `--config=ci` and remote flags.
+[group('bazel')]
+bazel-build *FLAGS:
+    bazel build {{ FLAGS }} //...
+
+# Run every Bazel test
+[group('bazel')]
+bazel-test *FLAGS:
+    bazel test {{ FLAGS }} //...
+
+# Run clippy over every Bazel target, tests included, with `-Dwarnings` (set in .bazelrc). `--keep_going` reports every failing target in one run.
+[group('bazel')]
+bazel-clippy *FLAGS:
+    bazel build {{ FLAGS }} --keep_going --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect --output_groups=clippy_checks //...
+
+# Re-resolve the crate universe after a `crate.spec` change, and refresh both locks. With a crate name, move only that crate, as for a security bump of a transitive crate. Never `bazel mod tidy`.
+[group('bazel')]
+repin crate="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    # `1` re-resolves new and changed specs and leaves every other locked version where it is.
+    CARGO_BAZEL_REPIN="{{ if crate == "" { "1" } else { crate } }}" bazel fetch @crates//:all
+    # Again without the variable: Bazel records it in MODULE.bazel.lock, and CI's
+    # `--lockfile_mode=error` rejects a lock recorded with it.
+    bazel mod deps --lockfile_mode=update
+
+# Scan the crates Bazel builds for advisories. An ignored advisory is listed here and in osv-scanner.toml, each with its reason.
+[group('bazel')]
+audit:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    ignores=(
+        # rsa Marvin timing side channel, no fixed release. The private-key operation is the DKIM
+        # signature of outgoing mail (identity-store), whose timing no attacker observes;
+        # jsonwebtoken's RSA support is unused (dsp-cli decodes without verifying).
+        --ignore RUSTSEC-2023-0071
+        # crypto-bigint 0.5 timing; the fix needs elliptic-curve 0.14, which jsonwebtoken 10 does not
+        # take. Reached only through jsonwebtoken's p256/p384; dsp-cli uses no ECDSA algorithm.
+        --ignore RUSTSEC-2026-0387
+        # quick-xml 0.37 reader issues, fixed in 0.41, a breaking upgrade of its own. dpe-api-oai
+        # only writes XML with `quick_xml::Writer`; nothing here reads XML with quick-xml.
+        --ignore RUSTSEC-2026-0194
+        --ignore RUSTSEC-2026-0195
+        # ruzstd decompression bomb, fixed in 0.9. Reached through pyroscope's unwinder, which parses
+        # the objects mapped into the server's own process, not outside input.
+        --ignore RUSTSEC-2026-0344
+        # Bundled SQLite before 3.54.0 reading a database with a crafted `-wal` file. Fixed in
+        # libsqlite3-sys 0.39, held back by the rusqlite 0.38 pin (MODULE.bazel). The servers open
+        # only database files they create in their own data directories.
+        --ignore RUSTSEC-2026-0459
+    )
+    cargo audit --file Cargo.Bazel.lock "${ignores[@]}"
+    osv-scanner scan source --lockfile=Cargo.lock:Cargo.Bazel.lock --config=osv-scanner.toml
+
+# Generate rust-project.json for rust-analyzer from the Bazel graph. Re-run after adding or moving a target.
+[group('bazel')]
+rust-project:
+    bazel run @rules_rust//tools/rust_analyzer:gen_rust_project
 
 # Run the commit gate over `<base>..HEAD`: message rules, then the one-commit cap
 commit-lint base="origin/main":

@@ -23,6 +23,7 @@ While both exist, a change that touches dependencies or crates is made on both s
 | `just audit` | `cargo-audit` and `osv-scanner` over `Cargo.Bazel.lock` |
 | `just rust-project` | writes `rust-project.json` for rust-analyzer |
 | `just snap-accept <target>` | runs one test target from the checkout with `INSTA_UPDATE=always`, so `insta` rewrites the snapshots that changed |
+| `just bazel-dsp-cli-test-live` | the `dsp-cli` live tests against a DSP stack, with the `DSP_TEST_*` variables and `DSP_TOKEN` passed through |
 | `just canonicalize-projects` | runs the editor's canonical round-trip test from the checkout with `CANONICALIZE_PROJECT_FILES=1`, so it rewrites the committed project files |
 
 Each `bazel-*` recipe passes extra arguments to Bazel, for example `just bazel-test --test_output=all` or a single package: `bazel test //shared/telemetry/...`.
@@ -51,6 +52,10 @@ A test runs from its runfiles tree, where every file it declares in `data` is a 
 - `figment::Jail` moves the whole process into a temporary directory while a config test runs, and a relative path read by a test on another thread fails. A test target whose crate uses `Jail` sets `env = {"RUST_TEST_THREADS": "1"}`.
 
 Snapshots are `data` of their test target. `just snap-accept <target>` accepts changed ones; review them with `git diff`.
+
+`rust_test_suite` names each test crate `<suite>_<file>_test`, and `insta` names a snapshot after the crate, so integration tests with snapshots are one `rust_test` per file with `crate_name` set to the file stem instead (`dsp-cli`). `rules_rust` does not set `CARGO_BIN_EXE_<name>`: a test that runs a binary of its package sets it with `rustc_env = {"CARGO_BIN_EXE_dsp": "$(rootpath :dsp)"}` and the binary in `data`, and makes the runfiles-relative path absolute before use.
+
+Bazel runs no doctests: `rust_doc_test` cannot link against the hermetic toolchain. A doctest is an `ignore` block, and a unit test carries its assertion.
 
 A crate with the `test-support` feature (the Deposit Area's `ports`, `store` and `web` crates) has a second library, `<name>_test_support`, built with the feature and marked `testonly`, so its fixtures cannot reach a production binary. Inside a test's graph every crate that has such a variant uses it, or two builds of one crate meet in a compile; a crate whose tests take a sibling's fixtures therefore runs them on its own variant (`rust_test(crate = ":editor_web_test_support")`).
 

@@ -189,36 +189,6 @@ fn sidebar(active: &str) -> Markup {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn nav_link_highlights_the_active_route() {
-        let out = nav_link("/badge", "/badge", "Badge").into_string();
-        assert!(
-            out.contains("bg-neutral-100 text-neutral-900"),
-            "active link not highlighted: {out}"
-        );
-        assert!(
-            out.contains(r#"aria-current="page""#),
-            "active link missing aria-current: {out}"
-        );
-    }
-
-    #[test]
-    fn nav_link_renders_inactive_route_without_active_class() {
-        let out = nav_link("/badge", "/button", "Button").into_string();
-        assert!(out.contains("text-neutral-700"), "{out}");
-        assert!(
-            !out.contains("bg-neutral-100 text-neutral-900"),
-            "inactive link wrongly highlighted: {out}"
-        );
-        assert!(!out.contains("aria-current"), "inactive link must not set aria-current: {out}");
-        assert!(out.contains(r#"href="/button""#), "{out}");
-    }
-}
-
 /// The home page: a short description of the Maud + Axum architecture.
 fn home() -> Markup {
     html! {
@@ -275,5 +245,35 @@ fn home() -> Markup {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn nav_link_highlights_the_active_route() {
+        let out = nav_link("/badge", "/badge", "Badge").into_string();
+        assert!(
+            out.contains("bg-neutral-100 text-neutral-900"),
+            "active link not highlighted: {out}"
+        );
+        assert!(
+            out.contains(r#"aria-current="page""#),
+            "active link missing aria-current: {out}"
+        );
+    }
+
+    #[test]
+    fn nav_link_renders_inactive_route_without_active_class() {
+        let out = nav_link("/badge", "/button", "Button").into_string();
+        assert!(out.contains("text-neutral-700"), "{out}");
+        assert!(
+            !out.contains("bg-neutral-100 text-neutral-900"),
+            "inactive link wrongly highlighted: {out}"
+        );
+        assert!(!out.contains("aria-current"), "inactive link must not set aria-current: {out}");
+        assert!(out.contains(r#"href="/button""#), "{out}");
     }
 }

@@ -41,7 +41,7 @@ async fn piping_into_a_closed_reader_exits_zero_with_empty_stderr() {
         .mount(&server)
         .await;
 
-    let mut child = Command::new(env!("CARGO_BIN_EXE_dsp"))
+    let mut child = Command::new(std::path::absolute(env!("CARGO_BIN_EXE_dsp")).unwrap())
         .args([
             "vre",
             "sparql",

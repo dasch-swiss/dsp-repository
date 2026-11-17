@@ -81,8 +81,9 @@ impl Format {
     /// (prose/lines/csv/tsv share human-readable stderr — stderr is non-data
     /// output so the format distinction does not apply there).
     ///
-    /// `Format` is `Copy`, so a caller can do:
-    /// ```
+    /// `Format` is `Copy`, so a caller can do (the unit test
+    /// `one_value_builds_renderer_and_reporter` compiles the same calls):
+    /// ```ignore
     /// # use dsp_cli::render::{Format, ProgressReporter};
     /// # let fmt = Format::Prose;
     /// let mut renderer = fmt.into_renderer();
@@ -93,5 +94,18 @@ impl Format {
             Format::Json => Box::new(JsonProgress::new()),
             Format::Prose | Format::Lines | Format::Csv | Format::Tsv => Box::new(HumanProgress::new()),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Format;
+
+    /// `Format` is `Copy`: one value builds both the renderer and the progress reporter.
+    #[test]
+    fn one_value_builds_renderer_and_reporter() {
+        let fmt = Format::Prose;
+        let _renderer = fmt.into_renderer();
+        let _reporter = fmt.into_progress_reporter();
     }
 }

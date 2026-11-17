@@ -22,6 +22,8 @@
 //! (dsp-incubator cpe/docs/adr/0010-openseadragon-integration.md, "reversibility").
 //!
 //! # Example
+//!
+//! Compiled and rendered by the test `documented_example_renders`.
 //! ```ignore
 //! use cpe_image_viewer::{Viewer, Auth};
 //! use maud::html;

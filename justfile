@@ -874,6 +874,15 @@ dsp-cli-run *args:
 dsp-cli-test-live:
     DSP_LIVE_STRICT=1 cargo nextest run -p dsp-cli --features live --run-ignored only -E 'binary(/^live_/) & !binary(live_update_check)'
 
+# Run the dsp-cli live tests with Bazel: the same targets and variables as `dsp-cli-test-live`. Each variable is passed by name, because Bazel's strict test environment drops what is not named; the targets set `DSP_LIVE_STRICT=1` themselves.
+[group('dsp-cli')]
+bazel-dsp-cli-test-live *FLAGS:
+    bazel test {{ FLAGS }} \
+        --test_env=DSP_TEST_SERVER --test_env=DSP_TEST_USER --test_env=DSP_TEST_PASSWORD \
+        --test_env=DSP_TEST_PROJECT --test_env=DSP_TEST_CLASS_IRI --test_env=DSP_TEST_VOCAB_PROJECT \
+        --test_env=DSP_TEST_NON_ADMIN_TOKEN --test_env=DSP_TEST_ORDER_BY_IRI --test_env=DSP_TOKEN \
+        $(bazel query 'filter("^//dsp-cli:live_[a-z_]+_test$", //dsp-cli:all) except //dsp-cli:live_update_check_test')
+
 # Review pending insta snapshots for dsp-cli.
 [group('dsp-cli')]
 dsp-cli-snap-review:

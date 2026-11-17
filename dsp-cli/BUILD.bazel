@@ -1,0 +1,136 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+
+# The published crate. `version` is `CARGO_PKG_VERSION` for every target, the tests' `User-Agent`
+# assertions included; release-please writes it together with `Cargo.toml`'s.
+_VERSION = "0.3.1"  # x-release-please-version
+
+_EDITION = "2024"
+
+rust_library(
+    name = "dsp_cli",
+    srcs = glob(
+        ["src/**/*.rs"],
+        exclude = ["src/main.rs"],
+    ),
+    # `dsp docs <topic>` embeds the topics with `include_str!`.
+    compile_data = glob(["docs/topics/*.md"]),
+    crate_name = "dsp_cli",
+    crate_root = "src/lib.rs",
+    edition = _EDITION,
+    version = _VERSION,
+    deps = [
+        "@crates//:chrono",
+        "@crates//:clap",
+        "@crates//:dirs",
+        "@crates//:jsonwebtoken",
+        "@crates//:percent-encoding",
+        "@crates//:reqwest",
+        "@crates//:rpassword",
+        "@crates//:rustls",
+        "@crates//:semver",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:toml",
+        "@crates//:tracing",
+        "@crates//:tracing-subscriber",
+    ],
+)
+
+rust_binary(
+    name = "dsp",
+    srcs = ["src/main.rs"],
+    crate_name = "dsp",
+    edition = _EDITION,
+    version = _VERSION,
+    deps = [
+        ":dsp_cli",
+        "@crates//:clap",
+        "@crates//:dotenvy",
+        "@crates//:tracing",
+    ],
+)
+
+rust_test(
+    name = "dsp_cli_test",
+    crate = ":dsp_cli",
+    edition = _EDITION,
+    version = _VERSION,
+    deps = ["@crates//:tempfile"],
+)
+
+# `src/main.rs` carries its own unit tests (the `.env` warning).
+rust_test(
+    name = "dsp_test",
+    crate = ":dsp",
+    edition = _EDITION,
+    version = _VERSION,
+)
+
+# Integration tests: one target per file of `tests/`, as under Cargo. `crate_name` is the file stem
+# because `insta` names a snapshot after its module path. Files that declare `mod common;` or
+# `mod support;` compile those directories; the others ignore them.
+_SHARED_SRCS = glob([
+    "tests/common/**/*.rs",
+    "tests/support/**/*.rs",
+])
+
+_FIXTURES = glob(["tests/fixtures/**"])
+
+_TEST_DEPS = [
+    ":dsp_cli",
+    "@crates//:assert_cmd",
+    "@crates//:chrono",
+    "@crates//:insta",
+    "@crates//:jsonwebtoken",
+    "@crates//:predicates",
+    "@crates//:reqwest",
+    "@crates//:semver",
+    "@crates//:serde",
+    "@crates//:serde_json",
+    "@crates//:tempfile",
+    "@crates//:tokio",
+    "@crates//:wiremock",
+]
+
+# `cli.rs`, `docs.rs` and `stdout_broken_pipe.rs` run the binary through `CARGO_BIN_EXE_dsp`, which
+# Cargo sets for integration tests and `rules_rust` does not.
+_RUSTC_ENV = {"CARGO_BIN_EXE_dsp": "$(rootpath :dsp)"}
+
+# The `live` feature (dsp-cli/ADR-0009, layer 5): the tests against a real DSP stack, run by
+# `just bazel-dsp-cli-test-live`, which passes the `DSP_TEST_*` variables and `DSP_TOKEN` by name.
+# They stay `#[ignore]`d, so they run with `--ignored`; strict mode fails a test whose variable is
+# missing instead of skipping it. `live_update_check` calls crates.io, not a DSP stack: the recipe
+# leaves it out, it runs without strict mode, alone (`bazel test //dsp-cli:live_update_check_test`).
+# `external`: a result depends on the stack, not on the inputs, so it is never cached.
+# `no-remote-cache`: the action environment holds `DSP_TOKEN` and the test passwords.
+_LIVE_TAGS = [
+    "external",
+    "manual",
+    "no-remote-cache",
+    "no-remote-exec",
+    "requires-network",
+]
+
+[
+    rust_test(
+        name = stem + "_test",
+        srcs = ["tests/%s.rs" % stem] + _SHARED_SRCS,
+        args = ["--ignored"] if stem.startswith("live_") else [],
+        compile_data = _FIXTURES,
+        crate_features = ["live"] if stem.startswith("live_") else [],
+        crate_name = stem,
+        crate_root = "tests/%s.rs" % stem,
+        data = [":dsp"] + glob(
+            ["tests/snapshots/%s__*" % stem],
+            allow_empty = True,
+        ),
+        edition = _EDITION,
+        env = {"DSP_LIVE_STRICT": "1"} if stem.startswith("live_") and stem != "live_update_check" else {},
+        rustc_env = _RUSTC_ENV,
+        tags = _LIVE_TAGS if stem.startswith("live_") else [],
+        version = _VERSION,
+        deps = _TEST_DEPS,
+    )
+    for stem in [f[len("tests/"):-len(".rs")] for f in glob(["tests/*.rs"])]
+]

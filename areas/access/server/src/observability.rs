@@ -105,8 +105,18 @@ pub(crate) fn init_otel() -> (Option<SdkLoggerProvider>, init_tracing_openteleme
             registry.with(otel_logs_layer)
         })
         .expect("failed to initialize OpenTelemetry tracing");
+    install_trace_context_propagator();
 
     (logger_provider, otel_guard)
+}
+
+/// Make W3C Trace Context the only format read from inbound requests. `init_subscriber_ext`
+/// installs the propagators `OTEL_PROPAGATORS` names, by default `tracecontext,baggage`, and the
+/// W3C Baggage parser of `opentelemetry_sdk` 0.31 allocates without bound on an oversized
+/// `baggage` header (GHSA-w9wp-h8wv-79jx). Nothing here reads baggage. Runs after the subscriber
+/// init, which would otherwise replace it.
+fn install_trace_context_propagator() {
+    opentelemetry::global::set_text_map_propagator(opentelemetry_sdk::propagation::TraceContextPropagator::new());
 }
 
 /// Start Pyroscope profiling if `PYROSCOPE_ENDPOINT` is set.
@@ -152,6 +162,33 @@ fn start_pyroscope(
 
 #[cfg(test)]
 mod tests {
+    /// The default propagators parse an inbound `baggage` header; after the override only
+    /// `traceparent` is read.
+    #[test]
+    fn inbound_baggage_is_not_parsed() {
+        use std::collections::HashMap;
+
+        use opentelemetry::baggage::BaggageExt;
+        use opentelemetry::trace::TraceContextExt;
+
+        let headers: HashMap<String, String> = HashMap::from([
+            (
+                "traceparent".into(),
+                "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01".into(),
+            ),
+            ("baggage".into(), "user=alice".into()),
+        ]);
+        let extract = || opentelemetry::global::get_text_map_propagator(|propagator| propagator.extract(&headers));
+
+        // What `init_subscriber_ext` installs when `OTEL_PROPAGATORS` is unset.
+        init_tracing_opentelemetry::init_propagator().unwrap();
+        super::install_trace_context_propagator();
+
+        let context = extract();
+        assert_eq!(context.baggage().len(), 0, "baggage was parsed");
+        assert!(context.span().span_context().is_valid(), "traceparent was not read");
+    }
+
     use std::io::{Read, Write};
     use std::net::TcpListener;
     use std::sync::mpsc;

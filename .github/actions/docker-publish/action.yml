@@ -1,41 +1,100 @@
 name: Docker Publish
-description: Build and push a Docker image to Docker Hub
+description: >
+  Build an image with Bazel and push it with its `oci_push` target (`app_image` in
+  tools/image/defs.bzl) under one tag. With the Docker Hub inputs set it logs in to Docker Hub
+  after the build, so no build step runs while the token is on disk; without them the caller logs
+  in to its registry and passes `repository`. The editor's footer version is `DEPOSIT_VERSION`
+  from the calling step's environment (the image build is stamped).
+
+  Remote cache: pull requests write to the cache instance this build reads, so a publish build
+  takes no action result from it (`trust-remote-cache` false, the default) and re-runs every
+  action on the remote executor. Only a pull request's own preview sets it to 'true'.
 
 inputs:
-  context:
-    description: Docker build context path
+  target:
+    description: "The image's `oci_push` target, such as //areas/access/server:image_push."
     required: true
-  dockerfile:
-    description: Path to the Dockerfile
+  tag:
+    description: The tag to push, such as 1.2.3.
     required: true
-  tags:
-    description: "Image tags (e.g., daschswiss/dpe:1.0.0)"
-    required: true
+  repository:
+    description: Where to push, overriding the target's repository (a preview's registry).
+    default: ""
+  trust-remote-cache:
+    description: "'true' to take action results from the remote cache; only for a pull request's own build."
+    default: "false"
   docker-user:
-    description: Docker Hub username
-    required: true
+    description: Docker Hub username; empty when the caller logs in itself.
+    default: ""
   docker-hub-token:
-    description: Docker Hub token
-    required: true
+    description: Docker Hub token.
+    default: ""
+  rbe-runner-endpoint:
+    description: RE-API endpoint, `vars.REMOTEBUILD_RUNNER_ENDPOINT`.
+  rbe-ca-cert:
+    description: NativeLink server CA, `secrets.REMOTEBUILD_CA_CERT`.
+  rbe-client-cert:
+    description: mTLS client certificate, `secrets.REMOTEBUILD_CLIENT_CERT`.
+  rbe-client-key:
+    description: mTLS client key, `secrets.REMOTEBUILD_CLIENT_KEY`.
 
 runs:
   using: composite
   steps:
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+    - id: bazel
+      uses: ./.github/actions/bazel-setup
+      with:
+        rbe-runner-endpoint: ${{ inputs.rbe-runner-endpoint }}
+        rbe-ca-cert: ${{ inputs.rbe-ca-cert }}
+        rbe-client-cert: ${{ inputs.rbe-client-cert }}
+        rbe-client-key: ${{ inputs.rbe-client-key }}
 
+    - id: flags
+      shell: bash
+      env:
+        FLAGS: ${{ steps.bazel.outputs.flags }}
+        TRUST_REMOTE_CACHE: ${{ inputs.trust-remote-cache }}
+      run: |
+        set -euo pipefail
+        [ "$TRUST_REMOTE_CACHE" = true ] || FLAGS="$FLAGS --noremote_accept_cached"
+        echo "flags=$FLAGS" >> "$GITHUB_OUTPUT"
+
+    - name: Build
+      shell: bash
+      env:
+        FLAGS: ${{ steps.flags.outputs.flags }}
+        TARGET: ${{ inputs.target }}
+      # FLAGS is a space-separated flag string (bazel-setup); it is split on purpose.
+      run: |
+        # shellcheck disable=SC2086
+        just bazel-docker-push-build "$TARGET" $FLAGS
+
+    # crane, which `oci_push` runs, reads the credentials this writes to ~/.docker/config.json.
     - name: Login to Docker Hub
+      if: inputs.docker-user != ''
       uses: docker/login-action@v3
       with:
         username: ${{ inputs.docker-user }}
         password: ${{ inputs.docker-hub-token }}
 
-    - name: Build and push
-      uses: docker/build-push-action@v6
+    # The same flags as the build: nothing is built again, only the push runs.
+    - name: Push
+      shell: bash
+      env:
+        FLAGS: ${{ steps.flags.outputs.flags }}
+        TARGET: ${{ inputs.target }}
+        TAG: ${{ inputs.tag }}
+        REPOSITORY: ${{ inputs.repository }}
+      run: |
+        set -euo pipefail
+        push_args=(--tag "$TAG")
+        [ -z "$REPOSITORY" ] || push_args+=(--repository "$REPOSITORY")
+        # shellcheck disable=SC2086
+        just bazel-docker-push "$TARGET" $FLAGS -- "${push_args[@]}"
+
+    - name: Save Bazel repository cache
+      if: ${{ !cancelled() && steps.bazel.outputs.repo-cache-key != '' && steps.bazel.outputs.repo-cache-hit != 'true' }}
+      uses: actions/cache/save@v4
       with:
-        context: ${{ inputs.context }}
-        file: ${{ inputs.dockerfile }}
-        push: true
-        tags: ${{ inputs.tags }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+        path: ~/.cache/bazel-repo
+        key: ${{ steps.bazel.outputs.repo-cache-key }}

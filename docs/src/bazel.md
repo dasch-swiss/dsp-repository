@@ -26,6 +26,7 @@ While both exist, a change that touches dependencies or crates is made on both s
 | `just bazel-dsp-cli-test-live` | the `dsp-cli` live tests against a DSP stack, with the `DSP_TEST_*` variables and `DSP_TOKEN` passed through |
 | `just canonicalize-projects` | runs the editor's canonical round-trip test from the checkout with `CANONICALIZE_PROJECT_FILES=1`, so it rewrites the committed project files |
 | `just bazel-docker-build-dpe`, `-editor`, `-mosaic` | builds an image and loads it into Docker as `local-scan/<name>:latest` |
+| `just bazel-docker-push <target> [flags] -- --tag <tag> [--repository <repository>]` | builds an image and pushes it with its `:image_push` target; CI only (`docker-publish` action) |
 | `just bazel-image-smoke` | loads the three images, starts each, and expects 200 from `/healthz` (the playground: `/`) and exit 0 from the `healthcheck` subcommand |
 | `just bazel-build-fuzz` | the libFuzzer binaries of the DPE fuzz targets, `--config=fuzz` |
 
@@ -74,7 +75,7 @@ The CLI is pinned twice until the `just css*` recipes build through Bazel: in `t
 
 `//areas/access/server:image`, `//areas/deposit/server:image` and `//modules/mosaic/playground:image` are the DPE, editor and Mosaic playground images: a static musl binary, built for `//platforms:linux_x86_64_musl` through a transition, on distroless `static-debian12:nonroot`, pinned by digest in `MODULE.bazel`. Layers are built by `tar.bzl` (`tools/image/defs.bzl`): the binary, the public directory with the stylesheet, and the data directories, each entry owned by root with a fixed modification time. Environment, entrypoint, command, port and working directory are those of the matching `Dockerfile`; `HEALTHCHECK` has no equivalent in an OCI image, and both servers keep their `healthcheck` subcommand.
 
-Each image has `:image_load`, which loads it into Docker as the tag the Scout workflow scans, and `:image_push`, which pushes to Docker Hub with the tags passed after `--` (`bazel run --config=release --stamp //areas/access/server:image_push -- --tag <tag>`). Both are `manual`, so `//...` does not build images. The image recipes add `--config=release`, the profile the published binaries are built with, and `--stamp` for the editor's footer version. Nothing publishes the Bazel images yet: the deploy workflows still build from the `Dockerfile`s.
+Each image has `:image_load`, which loads it into Docker as the tag the Scout workflow scans, and `:image_push`, which pushes to Docker Hub with the tags passed after `--`, or to the repository `--repository` names (`just bazel-docker-push //areas/access/server:image_push -- --tag <tag>`). Both are `manual`, so `//...` does not build images. The image recipes add `--config=release`, the profile the published binaries are built with, and `--stamp` for the editor's footer version. These images are what CI publishes, deploys as previews and scans; the `Dockerfile`s are no longer built by any workflow ([Deployment](./deployment.md#reusable-actions)).
 
 The images are `linux/amd64` only; on an arm64 Mac, Docker runs them emulated.
 
@@ -98,7 +99,7 @@ just bazel-build-fuzz
 
 ## Remote cache and execution
 
-In CI, the `bazel-setup` action adds the remote cache and executor flags for DaSCH's NativeLink endpoint. Without the secrets (a pull request from a fork, Dependabot) the flags are empty and the build runs cold and local. So does every pull request while the endpoint is down. Measured on `ubuntu-latest` with an empty repository cache, while Bazel built the shared crates and `mosaic-tiles` only: `just bazel-clippy` took 3.5 minutes and `just bazel-test` 3 minutes, against `timeout-minutes: 60` on the `check` and `test / ubuntu / stable` jobs. The time grows as more crates move to Bazel.
+In CI, the `bazel-setup` action adds the remote cache and executor flags for DaSCH's NativeLink endpoint. Without the secrets (a pull request from a fork, Dependabot) the flags are empty and the build runs cold and local. So does every pull request while the endpoint is down. Pull requests write to the same cache instance as `main`, and a pull request's workflow holds the client certificate, so it can write any result. A build that publishes an image therefore takes no action result from the cache: the `docker-publish` action adds `--noremote_accept_cached`, Bazel sends `skip_cache_lookup`, and NativeLink neither reads the cache for the action nor joins a run of the same action already in flight, so every action runs again on the executor. The executors themselves are shared: a pull request's actions run on the same workers. Only a pull request's own preview takes cached results. The action also builds before it logs in to Docker Hub, so the build's code never runs beside the token. Measured on `ubuntu-latest` with an empty repository cache, while Bazel built the shared crates and `mosaic-tiles` only: `just bazel-clippy` took 3.5 minutes and `just bazel-test` 3 minutes, against `timeout-minutes: 60` on the `check` and `test / ubuntu / stable` jobs. The time grows as more crates move to Bazel.
 
 ## IDE setup
 

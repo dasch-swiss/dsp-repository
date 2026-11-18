@@ -81,9 +81,9 @@ rust_test(
 #
 # A static musl binary on distroless `static` (`//tools/image:defs.bzl`), built with
 # `--config=release --stamp` (the version in the footer) by `just bazel-docker-build-editor`, which
-# loads it. Configuration as in `Dockerfile`, which stays the reference until the deploy path moves to
-# Bazel and documents `EDITOR_DB_DIR` and the user id; its `HEALTHCHECK` has no equivalent in an
-# OCI image, and `healthcheck` remains a subcommand.
+# loads it, and pushed by the `docker-publish` action. This is the published image; `Dockerfile` is
+# no longer built by CI, and still documents `EDITOR_DB_DIR` and the user id. Its `HEALTHCHECK` has
+# no equivalent in an OCI image, and `healthcheck` remains a subcommand.
 binary_layer(
     name = "image_binary",
     binary = ":deposit_server",

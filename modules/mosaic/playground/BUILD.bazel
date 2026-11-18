@@ -71,8 +71,9 @@ rust_test(
 # ── The playground image, `daschswiss/mosaic-playground` ───────────────────
 #
 # A static musl binary on distroless `static` (`//tools/image:defs.bzl`), the same shape as the DPE
-# and editor images, built with `--config=release` by `just bazel-docker-build-mosaic`. `Dockerfile`, which compiles
-# with Cargo onto distroless `cc`, stays until the deploy path moves to Bazel.
+# and editor images, built with `--config=release` by `just bazel-docker-build-mosaic` and pushed by
+# the `docker-publish` action. This is the published image; `Dockerfile`, which compiles with Cargo
+# onto distroless `cc`, is no longer built by CI.
 binary_layer(
     name = "image_binary",
     binary = ":mosaic_playground",

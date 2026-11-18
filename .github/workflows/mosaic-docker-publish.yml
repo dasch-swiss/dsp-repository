@@ -6,6 +6,18 @@ on:
       - main
     paths:
       - "modules/mosaic/**"
+      # The Bazel build: what it reads besides the sources above.
+      - "MODULE.bazel"
+      - "MODULE.bazel.lock"
+      - "Cargo.Bazel.lock"
+      - ".bazelrc"
+      - ".bazelversion"
+      - "platforms/**"
+      - "bazel/**"
+      - "tools/**"
+      - ".github/actions/docker-publish/**"
+      - ".github/actions/bazel-setup/**"
+      - ".github/actions/bazel-rbe/**"
 
 permissions:
   contents: read
@@ -18,6 +30,8 @@ jobs:
   publish:
     name: Build and publish mosaic-playground
     runs-on: ubuntu-latest
+    # Every action re-runs: a publish build takes nothing from the remote cache.
+    timeout-minutes: 30
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
     steps:
@@ -32,11 +46,14 @@ jobs:
 
       - uses: ./.github/actions/docker-publish
         with:
-          context: .
-          dockerfile: modules/mosaic/playground/Dockerfile
-          tags: daschswiss/mosaic-playground:${{ steps.tag.outputs.tag }}
+          target: //modules/mosaic/playground:image_push
+          tag: ${{ steps.tag.outputs.tag }}
           docker-user: ${{ secrets.DOCKER_USER }}
           docker-hub-token: ${{ secrets.DOCKER_HUB_TOKEN }}
+          rbe-runner-endpoint: ${{ vars.REMOTEBUILD_RUNNER_ENDPOINT }}
+          rbe-ca-cert: ${{ secrets.REMOTEBUILD_CA_CERT }}
+          rbe-client-cert: ${{ secrets.REMOTEBUILD_CLIENT_CERT }}
+          rbe-client-key: ${{ secrets.REMOTEBUILD_CLIENT_KEY }}
 
   trigger-prod-deployment:
     name: Trigger deployment to PROD

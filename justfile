@@ -325,6 +325,16 @@ bazel-docker-build-editor *FLAGS:
 bazel-docker-build-mosaic *FLAGS:
     bazel run {{ FLAGS }} {{ IMAGE_FLAGS }} //modules/mosaic/playground:image_load
 
+# Build an image and push it with its `oci_push` target, such as `//areas/access/server:image_push`. ARGS: Bazel flags, then `--` and the push's own, `--tag <tag>` and `--repository <repository>` (default: the target's). From CI only: the data layers take untracked files (`app_image`).
+[group('bazel')]
+bazel-docker-push TARGET *ARGS:
+    bazel run {{ IMAGE_FLAGS }} {{ TARGET }} {{ ARGS }}
+
+# Build what `bazel-docker-push` runs, without pushing. CI builds first and logs in to the registry afterwards, so the build's code never runs beside the credentials. FLAGS: extra Bazel flags, such as CI's.
+[group('bazel')]
+bazel-docker-push-build TARGET *FLAGS:
+    bazel build {{ IMAGE_FLAGS }} {{ TARGET }} {{ FLAGS }}
+
 # Build and load the three images, start each, and expect 200 from `/healthz` (the playground: `/`) and exit 0 from the server's `healthcheck` subcommand. FLAGS: extra Bazel flags, such as CI's.
 [group('bazel')]
 bazel-image-smoke *FLAGS:
@@ -734,7 +744,7 @@ build-docker-dpe arch="": css-release
     set -euo pipefail
     # Same approach as `build-docker-editor`, which explains it: the image runs a
     # static musl binary, so the compile happens in a `rust:<channel>-bookworm`
-    # container, and the staging below is the one `.github/actions/build-dpe` does.
+    # container. CI publishes the Bazel image instead (`just bazel-docker-build-dpe`).
     arch="{{ arch }}"
     if [ -z "$arch" ]; then
         case "$(uname -m)" in
@@ -863,7 +873,8 @@ build-docker-editor arch="": css-editor-release
     # The image runs a *static musl* binary. A host `cargo build --target
     # *-unknown-linux-musl` needs a musl cross-linker, which macOS does not have —
     # so the compile happens in the same container image CI's runner provides,
-    # installing musl-tools + clang exactly as `.github/actions/build-editor` does.
+    # installing musl-tools + clang. CI publishes the Bazel image instead
+    # (`just bazel-docker-build-editor`).
     arch="{{ arch }}"
     if [ -z "$arch" ]; then
         # Default to the host arch: cross-building amd64 on arm64 works but is

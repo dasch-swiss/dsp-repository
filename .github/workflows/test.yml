@@ -15,37 +15,19 @@ concurrency:
 jobs:
   required:
     runs-on: ubuntu-latest
-    name: test / ubuntu / ${{ matrix.toolchain }}
-    # Two builds on the stable leg until Cargo is removed: Cargo's tests, then Bazel's.
-    timeout-minutes: 60
-    strategy:
-      matrix:
-        # run on stable and beta to ensure that tests won't break on the next version of the rust
-        # toolchain
-        toolchain: [ stable, beta ]
+    name: test / ubuntu / stable
+    # Twice the slowest warm Bazel steps of this job in Phases 2 to 8 (tests and image smoke,
+    # 571 s), plus the steps outside Bazel. A cold build (no remote cache: Dependabot, forks, the
+    # endpoint down) takes longer.
+    timeout-minutes: 21
     steps:
       - uses: actions/checkout@v4
-      - name: Install ${{ matrix.toolchain }}
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ matrix.toolchain }}
-      - uses: Swatinem/rust-cache@v2
-        with:
-          key: ${{ matrix.toolchain }}
-      - uses: taiki-e/install-action@nextest
+      # The OAI tests shell out to xmllint; they are tagged `no-remote-exec` and run on this runner.
       - name: Install xmllint
         run: |
           sudo apt-get update
           sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y libxml2-utils
-      - name: cargo nextest run
-        run: cargo nextest run --locked --all-features --all-targets
-        env:
-          INSTA_UPDATE: new
-      - name: cargo test --doc
-        run: cargo test --locked --all-features --doc
-      # Bazel builds with its own pinned toolchain, so one leg is enough.
       - name: Bazel setup
-        if: matrix.toolchain == 'stable'
         id: bazel
         uses: ./.github/actions/bazel-setup
         with:
@@ -53,13 +35,11 @@ jobs:
           rbe-ca-cert: ${{ secrets.REMOTEBUILD_CA_CERT }}
           rbe-client-cert: ${{ secrets.REMOTEBUILD_CLIENT_CERT }}
           rbe-client-key: ${{ secrets.REMOTEBUILD_CLIENT_KEY }}
-      - name: just bazel-test
-        if: matrix.toolchain == 'stable'
-        run: just bazel-test ${{ steps.bazel.outputs.flags }}
+      - name: just test
+        run: just test ${{ steps.bazel.outputs.flags }}
       # The three images, built from the same commit, started and answering.
-      - name: just bazel-image-smoke
-        if: matrix.toolchain == 'stable'
-        run: just bazel-image-smoke ${{ steps.bazel.outputs.flags }}
+      - name: just image-smoke
+        run: just image-smoke ${{ steps.bazel.outputs.flags }}
       - name: Save Bazel repository cache
         if: ${{ !cancelled() && steps.bazel.outputs.repo-cache-key != '' && steps.bazel.outputs.repo-cache-hit != 'true' }}
         uses: actions/cache/save@v4
@@ -73,38 +53,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      # check-capability-deps.test.sh reads its fixture workspaces with `cargo metadata`.
-      - name: Install stable
-        uses: dtolnay/rust-toolchain@stable
       - name: Install just
         uses: extractions/setup-just@v4
       - name: just test-scripts
         run: just test-scripts
-
-  coverage:
-    runs-on: ubuntu-latest
-    name: test / coverage
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install stable
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: llvm-tools-preview
-      - uses: Swatinem/rust-cache@v2
-        with:
-          key: coverage
-      - uses: taiki-e/install-action@cargo-llvm-cov
-      - name: Install xmllint
-        run: |
-          sudo apt-get update
-          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y libxml2-utils
-      - name: Generate coverage
-        run: cargo llvm-cov --workspace --lcov --output-path lcov.info
-      - name: Upload to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          files: lcov.info
-          fail_ci_if_error: false
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

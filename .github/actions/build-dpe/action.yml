@@ -24,9 +24,9 @@ runs:
         rbe-client-cert: ${{ inputs.rbe-client-cert }}
         rbe-client-key: ${{ inputs.rbe-client-key }}
 
-    - name: just bazel-docker-build-dpe
+    - name: just build-docker-dpe
       shell: bash
-      run: just bazel-docker-build-dpe ${{ steps.bazel.outputs.flags }}
+      run: just build-docker-dpe ${{ steps.bazel.outputs.flags }}
 
     - name: Save Bazel repository cache
       if: ${{ !cancelled() && steps.bazel.outputs.repo-cache-key != '' && steps.bazel.outputs.repo-cache-hit != 'true' }}

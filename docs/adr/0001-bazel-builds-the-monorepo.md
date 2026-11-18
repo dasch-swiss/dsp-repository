@@ -27,10 +27,9 @@ The ruleset:
 - **Bazel (chosen)** — the dependency graph and the visibility boundaries are enforced by the build; one ruleset
   for every DaSCH Rust codebase and for Vitrinli's C++. Cost: crates.io dependencies are declared in
   `MODULE.bazel` instead of `Cargo.toml`, and IDE setup needs the Bazel integration.
-- **Plain Cargo workspace** — zero-friction Rust tooling. Boundaries hold by convention and by scripts over
-  `cargo metadata` and paths (`check-shared-paths.sh`, `check-capability-deps.sh`,
-  `check-composition-root-deps.sh`, `check-cpe-seam.sh`), each written and maintained separately, and nothing
-  beyond Rust is covered.
+- **Plain Cargo workspace** — zero-friction Rust tooling. Boundaries hold by convention and by one script per
+  rule over `cargo metadata` and paths, each written and maintained separately, and nothing beyond Rust is
+  covered.
 - **Bazel with `crate_universe` `from_cargo`** (a root `Cargo.toml` and committed `Cargo.lock` as the dependency
   source of truth) — keeps Cargo tooling working alongside Bazel, but leaves two build descriptions to keep in
   sync and differs from the ruleset Vitrinli uses. Rejected.
@@ -38,7 +37,7 @@ The ruleset:
 ## Consequences
 
 - Every crate is a Bazel target; cross-crate dependencies are visible and reviewable in `BUILD.bazel` files.
-- The `just` recipes, the `bacon.toml` watch lists, the CI workflows and the gate scripts key on Bazel targets, not on the Cargo workspace. The container images are `rules_oci` targets built from those binaries, not Dockerfiles.
+- The `just` recipes, the `bacon.toml` watch lists, the CI workflows and the gate scripts key on Bazel targets, not on the Cargo workspace. The container images are `rules_oci` targets built from those binaries.
 - Nothing in this repository's build may assume every target is Rust.
 - dsp-cli is the one crate here that publishes to crates.io, so `dsp-cli/Cargo.toml` and a `dsp-cli/Cargo.lock`
   stay as its publishing manifest (ADR-0002).
@@ -47,7 +46,7 @@ The ruleset:
   in CI) stays a local-execution job for the same reason: Bazel's remote execution provides no live network
   stack.
 
-Not yet in code: the root `Cargo.toml` and `Cargo.lock` exist beside the Bazel build, which covers only the `shared-*` crates and `mosaic-tiles`; the other crates, the Tailwind CSS and the images are built by Cargo, `just` and Dockerfiles, and the boundaries of ADR-0002 and ADR-0003 are held by the scripts (DEV-7699).
+Not yet in code: the root `Cargo.toml`, `Cargo.lock` and every crate's manifest still exist beside the Bazel build, which no `just` recipe or CI job uses; `dsp-cli/Cargo.toml` is a workspace member, not a standalone manifest with its own `dsp-cli/Cargo.lock` (DEV-7699).
 
 Enforced by: CI building with Bazel under `--lockfile_mode=error` (static-analysis); `visibility` for the
 boundaries of ADR-0002 and ADR-0003 (structure).

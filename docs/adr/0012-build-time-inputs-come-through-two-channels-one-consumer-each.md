@@ -103,9 +103,9 @@ and serves them from memory; `media` does not serve assets at request time (not 
 Not yet in code: CPE's images are served by DSP's IIIF server (`iiif-base` in a project's KDL), not by the
 Access Area's `media` over Vitrinli (not scheduled).
 
-Enforced by: `check-capability-deps.sh`, run by `just check`, for a reader's edge to `media`, as it holds the
-`sync` edge: a crate of another capability names `media-store` as a dev-dependency only (**static-analysis**). The target is Bazel `visibility` per ADR-0001 for "a reader reaches `media` only through
-its bytes port" (**structure**); one test per read model that rebuilds it from empty against a `Fake<Port>` for
+Enforced by: Bazel `visibility` per ADR-0001 for "a reader reaches `media` only through its bytes port", as for
+the `sync` edge: `media-store` grants only the composition root, and another capability sees only its `testonly`
+variant, from its tests (**structure**); one test per read model that rebuilds it from empty against a `Fake<Port>` for
 each of its ports (**static-analysis**; for CPE's port against `sync`,
 `areas/access/cpe/store-build/tests/it/rebuild.rs`). "No port pre-filters", "the presenter filters at request
 time", "no reader grows a trigger of its own" and "an asset is never consumed at build time" stay with

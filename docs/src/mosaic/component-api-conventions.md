@@ -135,7 +135,7 @@ pub trait ComponentBuilder: Sized {
 
 Because a container takes its content as an **argument** (Maud has no child-block
 syntax for functions), a multi-element `html!` block passed *inline* into the call
-is skipped by `maudfmt` and then mangled by `cargo fmt`. Bind it to a Rust `let`
+is skipped by `maudfmt` and then mangled by `rustfmt`. Bind it to a Rust `let`
 first, or extract a `fn -> Markup` helper:
 
 ```rust

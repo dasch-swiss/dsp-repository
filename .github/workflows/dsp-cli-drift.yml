@@ -1,6 +1,6 @@
 # This workflow exercises dsp-cli's live tests against a real DSP stack (Fuseki + knora-api). It
 # runs two ways:
-# - pull_request: `changes` detects whether the PR touches dsp-cli (or this workflow itself); when
+# - pull_request: `changes` detects whether the PR touches dsp-cli (or this workflow, or its stack-test action); when
 #   it does, `pinned` runs the live tests against the same dsp-api/dsp-db versions the rest of CI
 #   pins to. `gate` always reports, succeeding when `changes` passed and `pinned` either passed or
 #   was rightfully skipped, so `dsp-cli-drift / gate` can be a required check without blocking PRs
@@ -48,7 +48,7 @@ jobs:
         run: |
           changed="$(git diff --name-only "$BASE_SHA...$HEAD_SHA")"
           echo "$changed"
-          if printf '%s\n' "$changed" | grep -qE '^dsp-cli/|^\.github/workflows/dsp-cli-drift\.yml$'; then
+          if printf '%s\n' "$changed" | grep -qE '^dsp-cli/|^\.github/workflows/dsp-cli-drift\.yml$|^\.github/actions/dsp-cli-stack-test/'; then
             echo "dsp_cli=true" >> "$GITHUB_OUTPUT"
           else
             echo "dsp_cli=false" >> "$GITHUB_OUTPUT"
@@ -68,6 +68,11 @@ jobs:
         run: echo "epoch=$(date +%s)" >> "$GITHUB_OUTPUT"
 
       - uses: ./.github/actions/dsp-cli-stack-test
+        with:
+          rbe-runner-endpoint: ${{ vars.REMOTEBUILD_RUNNER_ENDPOINT }}
+          rbe-ca-cert: ${{ secrets.REMOTEBUILD_CA_CERT }}
+          rbe-client-cert: ${{ secrets.REMOTEBUILD_CLIENT_CERT }}
+          rbe-client-key: ${{ secrets.REMOTEBUILD_CLIENT_KEY }}
 
       - name: Report wall time
         if: always()
@@ -116,6 +121,10 @@ jobs:
       - uses: ./.github/actions/dsp-cli-stack-test
         with:
           summarize-failures: 'true'
+          rbe-runner-endpoint: ${{ vars.REMOTEBUILD_RUNNER_ENDPOINT }}
+          rbe-ca-cert: ${{ secrets.REMOTEBUILD_CA_CERT }}
+          rbe-client-cert: ${{ secrets.REMOTEBUILD_CLIENT_CERT }}
+          rbe-client-key: ${{ secrets.REMOTEBUILD_CLIENT_KEY }}
 
       - name: Report wall time
         if: always()

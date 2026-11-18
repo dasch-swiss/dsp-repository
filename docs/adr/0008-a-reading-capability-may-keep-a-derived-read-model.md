@@ -93,13 +93,11 @@ reader rebuilds one named project (DEV-7622).
 Not yet in code: neither port serves rights, no read model stores them per row, and no presenter filters on
 them (not scheduled).
 
-Enforced by: the target is Bazel `visibility` per ADR-0001 for "fed by its own ports": a reading capability's
-crates see its own `ports` crate and never `sync`'s store crates or Chischtli, except as a dev-dependency
-(**structure**). Today `check-capability-deps.sh`, run by `just check`: a crate of another capability names
-`sync-store` or `media-store` as a dev-dependency only (its `DEV_ONLY`), a `ports`, `image-viewer` or `api-*` crate
-or a crate of `sync` or `media` not even as one, and no capability's crate names another store crate at all
-(**static-analysis**); the composition root, which constructs the adapters, is `check-composition-root-deps.sh`'s.
-The rule lets through either adapter as a dev-dependency of any other crate of the area, and it reads no source,
+Enforced by: Bazel `visibility` per ADR-0001 for "fed by its own ports" (**structure**): a reading capability's
+crates see its own `ports` crate and never `sync`'s store crates or Chischtli. `sync-store` and `media-store`
+grant only the composition root, which constructs the adapters; another capability sees only their `testonly`
+variants (`sync_store_for_tests`, `media_store_for_tests`), which no production target can depend on, and only
+the test packages they list. The grant reads no source,
 so what a test does with the adapter is review. One test per read model rebuilds it from empty against a
 `Fake<Port>` and asserts what the capability serves is unchanged (**static-analysis**; for CPE, `areas/access/cpe/store-build/tests/it/rebuild.rs`). Review for any
 other reading capability, for "the port speaks archive-shaped facts" and for "never repaired in place".

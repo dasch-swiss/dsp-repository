@@ -11,18 +11,16 @@ Operations documentation for the metadata editor.
 - **Binary**: Static musl-linked `deposit-server`
 
 CI publishes the image Bazel builds, `//areas/deposit/server:image` (see
-[Building with Bazel](../bazel.md#images)); `just bazel-docker-build-editor` builds
-the same amd64 image locally and loads it as `local-scan/editor:latest`.
-`just build-docker-editor` still builds the image from the Dockerfile, compiling the
-static musl binary inside a `rust:<channel>-bookworm` container — a host
-`cargo build --target *-unknown-linux-musl` needs a musl cross-linker, which macOS
-does not have; no workflow builds it. It defaults to the host architecture.
+[Building with Bazel](../bazel.md#images)); `just build-docker-editor` builds
+the same amd64 image locally and loads it as `local-scan/editor:latest`; Bazel's
+hermetic toolchain cross-compiles the musl binary on macOS too. `just run-docker-editor`
+runs it on port 8080 with `EDITOR_ENV=DEV`.
 
 ### Data directory (a deliberate build input)
 
-The published project/person/organization set is **DPE's content**, not the editor's. The image's data layer (`image_data` in `areas/deposit/server/BUILD.bazel`) places `areas/access/dpe/server/data` at `/app/server/data`, where `EDITOR_DATA_DIR` points; `just build-docker-editor` and the Dockerfile do the same for a local image. Git stays the source of truth and the editor reads an image-baked snapshot, so a data change reaches the editor by rebuilding the image, not at runtime.
+The published project/person/organization set is **DPE's content**, not the editor's. The image's data layer (`image_data` in `areas/deposit/server/BUILD.bazel`) places `areas/access/dpe/server/data` at `/app/server/data`, where `EDITOR_DATA_DIR` points; `just build-docker-editor` builds the same image locally. Git stays the source of truth and the editor reads an image-baked snapshot, so a data change reaches the editor by rebuilding the image, not at runtime.
 
-That copy is the seam, and it is explicit on both sides. `EditorConfig` carries **no default** for `data_dir`: the only plausible one is a relative path into DPE's tree, which would let a records reader resolve another module's directory instead of failing on an unconfigured seam. Every environment that reads records names the directory — the image via `ENV EDITOR_DATA_DIR`, local development via `just dev-editor`. Unset is a legitimate state while nothing reads records, and is reported as `<unset>` at startup rather than as an invented path.
+That copy is the seam, and it is explicit on both sides. `EditorConfig` carries **no default** for `data_dir`: the only plausible one is a relative path into DPE's tree, which would let a records reader resolve another module's directory instead of failing on an unconfigured seam. Every environment that reads records names the directory — the image through its `env` (`EDITOR_DATA_DIR`), local development via `just dev-editor`. Unset is a legitimate state while nothing reads records, and is reported as `<unset>` at startup rather than as an invented path.
 
 Moving the directory under `shared/` was considered and rejected: the shared-crate rule in [Repo Structure](../repo_structure.md#shared-crates) is about crates, and this is DPE's owned content consumed through an existing explicit seam. Reopen it only if a third consumer appears.
 
@@ -180,7 +178,7 @@ Setting `EDITOR_DB_DIR` to keep accounts across restarts **turns the on-screen c
 ```bash
 EDITOR_RDU_EMAILS=you@dasch.swiss \
 EDITOR_DATA_DIR=areas/access/dpe/server/data \
-cargo run --bin deposit-server -- serve > editor.log 2>&1 &
+bazel run --run_in_cwd //areas/deposit/server:deposit_server -- serve > editor.log 2>&1 &
 
 # after submitting the address at /login:
 grep -o 'is:\\n\\n *[0-9]\{6\}' editor.log | tail -1 | grep -o '[0-9]\{6\}'

@@ -1,7 +1,8 @@
 load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
-# The published corpus. Outside the Access Area only the editor's tests and the editor image may
-# read it, the one cross-area path ADR-0002 names; no other grant leaves the area.
+# The published corpus. Outside the Access Area only the editor's crates (their tests, and
+# `editor-pull-requests`, which writes it through a pull request) and the editor image may read it,
+# the one cross-area path ADR-0002 names; no other grant leaves the area.
 filegroup(
     name = "corpus",
     srcs = glob(["data/**"]),

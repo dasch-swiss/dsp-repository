@@ -3,10 +3,7 @@
   "packages": {
     ".": {
       "release-type": "simple",
-      "exclude-paths": [".github", "dsp-cli"],
-      "extra-files": [
-        { "type": "toml", "path": "Cargo.toml", "jsonpath": "$.workspace.package.version" }
-      ]
+      "exclude-paths": [".github", "dsp-cli"]
     },
     "dsp-cli": {
       "release-type": "simple",

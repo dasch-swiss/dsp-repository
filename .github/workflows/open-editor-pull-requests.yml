@@ -52,9 +52,18 @@ jobs:
           # no test and no commit-hygiene run — green because nothing ran.
           token: ${{ secrets.GH_TOKEN }}
 
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Bazel setup
+        id: bazel
+        uses: ./.github/actions/bazel-setup
+        with:
+          rbe-runner-endpoint: ${{ vars.REMOTEBUILD_RUNNER_ENDPOINT }}
+          rbe-ca-cert: ${{ secrets.REMOTEBUILD_CA_CERT }}
+          rbe-client-cert: ${{ secrets.REMOTEBUILD_CLIENT_CERT }}
+          rbe-client-key: ${{ secrets.REMOTEBUILD_CLIENT_KEY }}
 
-      - uses: Swatinem/rust-cache@v2
+      # Built before the step that holds the token runs it.
+      - name: Build editor-pull-requests
+        run: bazel build --config=release ${{ steps.bazel.outputs.flags }} //areas/deposit/editor/pull-requests:editor_pull_requests
 
       - name: Identify the pull-request run's commits
         run: |
@@ -66,4 +75,12 @@ jobs:
           EDITOR_BASE_URL: ${{ vars.EDITOR_BASE_URL }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           PULL_REQUESTS_REPOSITORY: ${{ github.repository }}
-        run: cargo run --release -p editor-pull-requests
+        # From the repository root, the checkout it commits to: `--run_in_cwd`, not the runfiles tree.
+        run: bazel run --config=release --run_in_cwd ${{ steps.bazel.outputs.flags }} //areas/deposit/editor/pull-requests:editor_pull_requests
+
+      - name: Save Bazel repository cache
+        if: ${{ !cancelled() && steps.bazel.outputs.repo-cache-key != '' && steps.bazel.outputs.repo-cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.cache/bazel-repo
+          key: ${{ steps.bazel.outputs.repo-cache-key }}

@@ -23,20 +23,21 @@
 
 | Technology | Purpose |
 |-----------|---------|
-| **cargo test / nextest** | Rust test runner |
+| **Bazel** (`rules_rust`) | Builds and runs the Rust tests (`just test`) |
 | **insta** | Snapshot testing for SSR output |
 | **Playwright** | End-to-end browser tests |
 | **axe-core** | Accessibility scanning (WCAG 2.1 AA) |
-| **cargo-fuzz** | Fuzz testing (nightly CI) |
+| **libFuzzer** (`rules_fuzzing`) | Fuzz testing (nightly CI) |
 
 ## Build & Development
 
 | Technology | Purpose |
 |-----------|---------|
-| **Tailwind CSS CLI** | Standalone CLI that builds the stylesheet (`just css` / `just css-release`); no Node or build.rs CSS pipeline |
+| **Bazel** | Builds every crate, the stylesheets, the fuzz binaries and the images (`docs/src/bazel.md`) |
+| **Tailwind CSS CLI** | Standalone CLI, pinned and run by Bazel, that builds the stylesheet (`just css` / `just css-release`); no Node or build.rs CSS pipeline |
 | **just** | Command runner for development workflows |
 | **maudfmt** | Formats the contents of `maud::html!` macros (stock rustfmt does not) |
-| **cargo +nightly fmt** | Code formatter for Rust outside the `html!` macros |
+| **rustfmt** (pinned nightly) | Code formatter for Rust outside the `html!` macros |
 | **Biome** | Linter/formatter for E2E test TypeScript |
 
 ## Documentation & Observability

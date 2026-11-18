@@ -20,8 +20,8 @@ Learnings (the documents `/eng:workflows:compound` writes) live in `docs/learnin
 
 ## Development Workflow
 
-- **Use `just` recipes where one exists** (`just --list` shows every recipe); for a single test, `cargo test -p <crate> <filter>` is fine.
-- **While iterating, `just test-changed`** runs only the tests of the packages changed since `origin/main` and their dependents; `just test` stays the run before pushing.
+- **Use `just` recipes where one exists** (`just --list` shows every recipe); for a single crate or test, `bazel test //<package>/...` or `bazel test //<package>:<target> --test_filter=<name>` is fine. Bazel builds and tests everything (`docs/src/bazel.md`); the Cargo manifests are still in the tree but no recipe or CI job uses them.
+- **While iterating, `bazel test` on the packages you changed**: Bazel reruns only the tests whose inputs changed, so `just test` stays the run before pushing and is cheap when little changed.
 
 Before considering a change done:
 

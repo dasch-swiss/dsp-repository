@@ -20,10 +20,8 @@ the settings of both are in the table below.
   are compiled into the binary.
 
 CI publishes the image Bazel builds, `//areas/access/server:image` (see [Building with Bazel](../bazel.md#images));
-`just bazel-docker-build-dpe` builds the same amd64 image locally and loads it as `local-scan/dpe:latest`.
-`just build-docker-dpe` still builds the image from the Dockerfile, compiling the binary inside a `rust:<channel>-bookworm`
-container as `just build-docker-editor` does (see the [editor's operations guide](../editor/operations.md));
-no workflow builds it. It defaults to the host architecture. `just run-docker-dpe` runs the result on port 8080.
+`just build-docker-dpe` builds the same amd64 image locally and loads it as `local-scan/dpe:latest`, and
+`just run-docker-dpe` runs it on port 8080 (emulated on an arm64 machine).
 
 ## CLI Commands
 

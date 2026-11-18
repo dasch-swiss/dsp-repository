@@ -67,7 +67,7 @@ The release-please config sentence-cases subjects in the changelog, so write the
 `revert`, `style`, and `ci` are **not** valid types — the commit-lint gate rejects them, and release-please hides them if one ever slips onto `main`.
 
 - **CI/build automation** → `chore(ci): ...` (lands in Miscellaneous Chores). A dedicated Continuous Integration changelog section is noise; it belongs under maintenance. Note that `ci` remains a valid *scope*, just not a type.
-- **Formatting-only changes** → fold into the functional commit, or `chore(<scope>): ...`. `cargo fmt` and `maudfmt` are enforced gates, so a standalone formatting commit should be rare.
+- **Formatting-only changes** → fold into the functional commit, or `chore(<scope>): ...`. `rustfmt` and `maudfmt` are enforced gates, so a standalone formatting commit should be rare.
 - **Reverts** → `fix(<scope>): revert ...` or `chore(<scope>): revert ...` depending on whether it corrects released behavior. (release-please's built-in revert auto-negation no longer applies; reverts are rare and handled by hand.)
 
 ### What `fix:` means

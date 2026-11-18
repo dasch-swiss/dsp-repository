@@ -1,9 +1,7 @@
 // Live integration test for `dsp vre sparql query` (plan 035).
 //
-// This entire file is compiled and run ONLY when the `live` feature is active:
-//   cargo test --features live --test 'live*'
-//
-// The `just test-live` recipe runs exactly this command.
+// This entire file is compiled ONLY with the `live` feature, which its `manual` Bazel target
+// `//dsp-cli:live_sparql_query_test` enables; `just dsp-cli-test-live` runs it.
 //
 // dsp-cli/ADR-0009 (testing strategy): live tests are #[ignore]d in the default suite and
 // run strict by the dsp-cli-drift CI job. They require a

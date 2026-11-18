@@ -418,8 +418,8 @@ tag (`BSD-3-Clause`).
 ## Testing
 
 ```bash
-cargo test -p cpe-image-viewer    # integration tests and doc tests
-just test                         # the workspace's tests; runs no doc test
+bazel test //areas/access/cpe/image-viewer/...   # this crate's tests
+just test                                         # every test; Bazel runs no doc test
 ```
 
 The tests pin the Rust contract (attribute rendering, safe URL encoding, asset

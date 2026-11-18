@@ -451,9 +451,8 @@ Notes on the recipe:
   comparable against the rows below if the assessor is the same build. Bumping
   the pin is a reviewed change, made when F-UJI publishes a release and checked
   at least with every change to a landing page — the same discipline as the
-  Tailwind CLI pin in [Security](../security.md). There is no
-  `tailwind-pins-refresh`-style refresh recipe, because `fair-check` never runs
-  in CI.
+  Tailwind CLI pin in [Security](../security.md). There is no refresh recipe,
+  because `fair-check` never runs in CI.
 - **The container can reach the host's port 4000** during the run, through
   `--add-host=host.docker.internal:host-gateway`. That is the point: F-UJI
   fetches the URL it is given. The container is published on `127.0.0.1` only

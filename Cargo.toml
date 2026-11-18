@@ -148,5 +148,5 @@ opt-level = 'z'
 # Keep DWARF line tables so panic backtraces in production show file:line.
 # Cheap (~10-20% binary size, no runtime cost) and required for the panic
 # hook in access-server to produce actionable stacktraces — paired with
-# `RUST_BACKTRACE=1` in areas/access/server/Dockerfile.
+# `RUST_BACKTRACE=1` in the image (`areas/access/server/BUILD.bazel`).
 debug = "line-tables-only"

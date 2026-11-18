@@ -135,9 +135,13 @@ Not yet in code: DPE's terms are in `areas/access/CONTEXT.md`, not in `areas/acc
 scheduled).
 Not yet in code: dsp-cli calls DSP-API only; no area modulith serves it (not scheduled).
 
-Enforced by: `check-shared-paths.sh` for paths from a shared crate into an area (static-analysis);
-`check-capability-deps.sh` for edges from a Deposit-Area or Access-Area crate to anything outside its area (static-analysis);
-`check-composition-root-deps.sh` for an `areas/<area>/server` crate's edges to another area (static-analysis);
-`cargo publish -p dsp-cli --dry-run --locked` in `check.yml` for dsp-cli's dependencies (static-analysis), with Bazel
-`visibility` per area under ADR-0001 as the target (structure); review for state ownership, shared concepts and the archive's
-storage.
+Enforced by: Bazel `visibility` under ADR-0001 for crate edges (structure): every first-party target lists its
+consumers, no grant crosses `areas/access` and `areas/deposit` except the published corpus
+(`//areas/access/dpe/server:corpus`), which the editor's crates, their tests and the editor image read, no
+area target grants a `shared-*` or `mosaic-*` crate, and nothing grants dsp-cli an area or `shared-*` crate; a new
+grant is one line in the provider's BUILD file and is reviewed there; `check-capability-deps.sh`, run by
+`just check`, for no `//visibility:public` in a `BUILD.bazel` under `areas/`, `shared/`, `modules/` or
+`dsp-cli/`, which would undo every grant (static-analysis); `check-shared-paths.sh` for paths from a shared
+crate into an area, which no dependency edge shows (static-analysis); `cargo publish -p dsp-cli --dry-run --locked` in
+`check.yml` for dsp-cli's publishing manifest (static-analysis); review for state ownership, shared concepts and the
+archive's storage.

@@ -1,7 +1,7 @@
 #![no_main]
 
-use shared_telemetry::beacon::BeaconPayload;
 use libfuzzer_sys::fuzz_target;
+use shared_telemetry::beacon::BeaconPayload;
 
 // The beacon endpoint receives untrusted data from the internet via sendBeacon.
 fuzz_target!(|data: &[u8]| {

@@ -9,7 +9,7 @@
 # dsp-incubator cpe/docs/adr/0010-openseadragon-integration.md and this crate's README.
 #
 # A file this script adds under assets/vendor/ needs a row in the `ASSETS` table
-# in src/lib.rs: `cargo test -p cpe-image-viewer` fails for a file that has none.
+# in src/lib.rs: `bazel test //areas/access/cpe/image-viewer/...` fails for a file that has none.
 #
 # Provenance: files come from the official npm package mirrored by jsDelivr.
 # Every downloaded file's SHA-256 is written to assets/vendor/VENDOR.lock so a

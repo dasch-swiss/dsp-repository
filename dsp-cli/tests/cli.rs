@@ -5,8 +5,8 @@
 //! 1. **Help-text snapshot tests**: Capture `--help` output at every level of the command tree to
 //!    detect unintended regressions. For an AI-agent CLI, the `--help` text *is* the contract —
 //!    snapshotting every level catches silent vocabulary drift, flag removal, and changed verb
-//!    lists. Baselines are accepted once with `cargo insta accept` and reviewed like any diff in
-//!    future PRs.
+//!    lists. Baselines are accepted once with `just snap-accept //dsp-cli:cli_test` and reviewed
+//!    like any diff in future PRs.
 //!
 //!    NOTE: `dsp --version` is intentionally NOT snapshotted — every release
 //!    bumps the version string, causing unnecessary review noise without

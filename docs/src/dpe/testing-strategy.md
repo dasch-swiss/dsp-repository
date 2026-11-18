@@ -7,7 +7,7 @@ The DPE follows a 4-layer testing pyramid, adapted from the [Sipi testing strate
 ```
           ╱╲
          ╱  ╲         Layer 4: Fuzz Testing (nightly CI)
-        ╱────╲        cargo-fuzz, corpus persisted
+        ╱────╲        libFuzzer via Bazel, corpus persisted
        ╱      ╲
       ╱  E2E   ╲     Layer 3: E2E Tests (Playwright)
      ╱──────────╲     Tab switching, search, accessibility (axe-core)
@@ -15,22 +15,22 @@ The DPE follows a 4-layer testing pyramid, adapted from the [Sipi testing strate
    ╱  Snapshots   ╲   Layer 2: Snapshot Tests (insta)
   ╱────────────────╲   SSR output, SSE fragments, ARIA attributes
  ╱                  ╲
-╱    Unit Tests      ╲ Layer 1: Unit Tests (cargo test)
+╱    Unit Tests      ╲ Layer 1: Unit Tests (bazel test)
 ╱────────────────────╲ Fragment handlers, OAI protocol, domain logic
 ```
 
 ## Layer 1: Unit Tests
 
 - **Location**: `#[cfg(test)]` modules in each crate
-- **Runner**: `cargo test --workspace`
+- **Runner**: `just test` (`bazel test //...`)
 - **Scope**: Fragment handlers, OAI protocol, domain types, data loading, filtering/pagination
-- **Crate**: dpe-core and shared-metadata tests run independently — `cargo test -p dpe-core`, `cargo test -p shared-metadata`
+- **Crate**: one package's tests run alone, for example `bazel test //areas/access/dpe/core/...` or `bazel test //shared/metadata/...`
 
 ## Layer 2: Snapshot Tests (insta)
 
 - **Dependency**: `insta` with `yaml` and `filters` features
 - **Location**: Adjacent `snapshots/` directories
-- **CI**: Set `INSTA_UPDATE=new` so failures produce `.snap.new` artifacts for review
+- **Updates**: `.bazelrc` sets `INSTA_UPDATE=no`, so a changed snapshot fails its test; `just snap-accept <target>` rewrites it from the checkout and `git diff` is the review
 - **Scope**: SSR output, SSE fragment response bodies, ARIA attributes
 
 ## Layer 3: E2E Tests (Playwright)
@@ -38,13 +38,13 @@ The DPE follows a 4-layer testing pyramid, adapted from the [Sipi testing strate
 - **Location**: `areas/access/dpe/web-e2e-tests/`
 - **Server**: the suite starts `access-server` without `CPE_BASE`, so CPE is not mounted in it and only DPE's pages
   are tested; CPE's pages are covered by its crates' own tests.
-- **Runner**: `npx playwright test`
+- **Runner**: `just test-a11y-dpe`, which builds the release server and stylesheet with Bazel and passes the binary's path in `ACCESS_SERVER_BIN`
 - **Scope**: Tab switching, search autocomplete, scroll preservation, accessibility (axe-core)
 - **Accessibility**: Full-page axe-core scans against WCAG 2.1 AA
 
 ## Layer 4: Fuzz Testing
 
-- **Tool**: cargo-fuzz (nightly Rust)
+- **Tool**: libFuzzer through `rules_fuzzing`, `just build-fuzz` (`--config=fuzz`, stable Rust; see [Building with Bazel](../bazel.md#fuzz-targets))
 - **Schedule**: Nightly CI, 10 minutes per target
 - **Targets**: Tab name validation, SSE response construction, query parameter parsing
 - **Corpus**: Persisted between runs
@@ -54,21 +54,19 @@ The DPE follows a 4-layer testing pyramid, adapted from the [Sipi testing strate
 Target: **≤ 10 minutes** wall-clock per PR.
 
 ```
-Parallel job group 1 (~2 min):
-  maudfmt --check + cargo fmt --check
-  cargo clippy --all-targets -Dwarnings
-  cargo-deny check
+check (one job):
+  gate scripts, just --fmt check, maudfmt and nightly rustfmt checks
+  clippy over every Bazel target, -Dwarnings (just check)
 
-Parallel job group 2 (~5 min):
-  cargo nextest run --workspace
-  cargo build --release (access-server) + just css-release
-  cargo-llvm-cov (coverage → Codecov)
+test / ubuntu / stable (one job):
+  bazel test //... (just test)
+  build, load and start the three images (just image-smoke)
 
-Parallel job group 3 (~5 min):
-  Playwright E2E tests
-  axe-core accessibility scans
-  Lighthouse CI performance budgets
+a11y / dpe, a11y / editor (on path changes):
+  release server and stylesheet built with Bazel, then Playwright with axe-core
 ```
+
+Bazel jobs share the remote cache and executor; see [Building with Bazel](../bazel.md#remote-cache-and-execution).
 
 ## Testing Conventions
 

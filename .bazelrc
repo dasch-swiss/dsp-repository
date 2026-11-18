@@ -34,7 +34,7 @@ build:release --@rules_rust//rust/settings:extra_rustc_flag=-Copt-level=z
 build:release --@rules_rust//rust/settings:extra_rustc_flag=-Cdebuginfo=line-tables-only
 build:release --@rules_rust//rust/settings:extra_rustc_flag=-Cstrip=none
 
-# Fuzzing, for `just bazel-build-fuzz`: the libFuzzer engine for `//areas/access/dpe/server/fuzz`.
+# Fuzzing, for `just build-fuzz`: the libFuzzer engine for `//areas/access/dpe/server/fuzz`.
 # Without this config the targets use `rules_fuzzing`'s `replay` engine and need no runtime.
 # Sipi's block without its openssl/xz UBSan exclusion (no such C libraries here). `-c opt`:
 # execs per second is the budget. Unlike `cargo-fuzz`, no AddressSanitizer on the Rust code (it
@@ -74,7 +74,7 @@ test --test_output=errors
 test --test_env=INSTA_WORKSPACE_ROOT=.
 test --test_env=INSTA_UPDATE=no
 
-# The clippy aspect's flags (`just bazel-clippy`). Set for every build, not in the recipe: a flag
+# The clippy aspect's flags (`just check`). Set for every build, not in the recipe: a flag
 # that differs between two commands changes the configuration and discards the analysis cache.
 # `-Dwarnings` is explicit because the aspect applies it by default only while no other clippy
 # flag is set.

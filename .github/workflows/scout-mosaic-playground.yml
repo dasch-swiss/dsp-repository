@@ -50,8 +50,8 @@ jobs:
           rbe-client-key: ${{ secrets.REMOTEBUILD_CLIENT_KEY }}
 
       # Loads the image as local-scan/mosaic-playground:latest.
-      - name: just bazel-docker-build-mosaic
-        run: just bazel-docker-build-mosaic ${{ steps.bazel.outputs.flags }}
+      - name: just build-docker-mosaic-playground
+        run: just build-docker-mosaic-playground ${{ steps.bazel.outputs.flags }}
 
       - name: Save Bazel repository cache
         if: ${{ !cancelled() && steps.bazel.outputs.repo-cache-key != '' && steps.bazel.outputs.repo-cache-hit != 'true' }}

@@ -29,7 +29,7 @@ inputs:
 
 outputs:
   flags:
-    description: Bazel flag string to pass to a `just bazel-*` recipe. Empty when mTLS material is absent (fork PR → cold build).
+    description: Bazel flag string to pass to a `just` recipe. Empty when mTLS material is absent (fork PR → cold build).
     value: ${{ steps.build.outputs.flags }}
 
 runs:

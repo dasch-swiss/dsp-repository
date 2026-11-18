@@ -335,7 +335,7 @@ fn project_table(caption: &str, rows: &[ProjectSummary<'_>]) -> Markup {
 
 /// One row's link. A named function rather than an in-macro `@let`: `maudfmt`
 /// formats `html!` only at statement position, so the `@let` form is mangled by
-/// `cargo fmt` on every run; see `docs/src/mosaic/component-api-conventions.md`.
+/// `rustfmt` on every run; see `docs/src/mosaic/component-api-conventions.md`.
 fn project_link(row: &ProjectSummary<'_>) -> Markup {
     shortcode_link(row.shortcode)
 }

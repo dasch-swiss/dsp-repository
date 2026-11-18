@@ -1211,7 +1211,7 @@ mod reveal_tests {
 
     #[test]
     fn test_the_published_image_is_excluded_by_its_own_default() {
-        // `areas/deposit/editor/Dockerfile` sets EDITOR_ENV=PROD and leaves
+        // The image (`areas/deposit/server/BUILD.bazel`) sets EDITOR_ENV=PROD and leaves
         // EDITOR_DB_DIR unset. That combination refuses to start without a
         // relay, but the reveal is off regardless of how it is resolved.
         let image = EditorConfig { env: "PROD".to_string(), ..EditorConfig::default() };

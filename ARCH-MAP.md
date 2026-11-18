@@ -1,14 +1,14 @@
 ---
 dune_map: true
 schema_version: 2
-date: 2026-11-11
+date: 2026-11-18
 ---
 
 # Architecture Map
 
 ## Overview
 
-`dsp-repository` is a Rust monorepo (a Cargo workspace today; Bazel per ADR-0001 once the migration lands) of
+`dsp-repository` is a Rust monorepo (built by Bazel, ADR-0001; the Cargo manifests remain until they are removed) of
 server-rendered hypermedia services on Axum + Maud + Datastar, plus the crates they share.
 Two deployables exist, one per area composition root, each on its own origin: `access-server`
 (`areas/access/server`) serves **DPE**, the public read-only Discovery and Presentation
@@ -65,7 +65,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `normalize_page_url`, which names no `dpe-core`/`dpe-web`/`dpe-api-oai`
   type; and the corpus files under `server/data/`, which the editor consumes as an image-baked
   snapshot through `EDITOR_DATA_DIR`. No `dpe-*` crate other than `dpe-server` is depended on by
-  any crate outside this component, and `dpe-server` only by areas/access/server.
+  any crate outside this component, and `dpe-server` only by areas/access/server (**structure**: `visibility`).
+  The corpus is the `//areas/access/dpe/server:corpus` filegroup, granted to DPE's crates, `areas/access/server`,
+  the editor's crates and `areas/deposit/server`: the one target that crosses areas (ADR-0002).
 - **Local-context kit:** `areas/access/dpe/CLAUDE.md`, `areas/access/dpe/server/src/router.rs`,
   `areas/access/dpe/server/src/shell.rs`, `areas/access/dpe/core/src/lib.rs`,
   `areas/access/dpe/core/src/project.rs`, `areas/access/dpe/server/src/fragments.rs`,
@@ -82,27 +84,29 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `access-server`'s `dev` feature turns on); dev: insta (`dpe-server`)
 - **Used by:** areas/access/server (`dpe-server`'s library surface only: `serve.rs::assemble` merges
   `Dpe::router()` and nests CPE's router beside it under `CPE_BASE`; `main.rs` calls
-  `dpe_server::validate`); the fuzz crate `server/fuzz/` inside the component reads `dpe-core`; areas/deposit/editor — data only, never code: the corpus is copied into the editor image
-  (`.github/actions/build-editor/action.yml`, `justfile`) and read by the editor's tests through
+  `dpe_server::validate`; its image `//areas/access/server:image` packs `//areas/access/dpe:public`,
+  `//areas/access/dpe:css` and the corpus); the fuzz targets in `server/fuzz/` inside the component
+  (`cc_fuzz_test` over `testonly` shims) read `dpe-core`; areas/deposit/editor and areas/deposit/server — data
+  only, never code: the corpus filegroup is `data` of the editor crates' tests, `//areas/deposit/server:image`
+  packs it at `/app/server/data` (`EDITOR_DATA_DIR`), and the editor's tests read it through
   `editor_core::checkout_dpe_data_dir()` (`DPE_DATA_DIR`, the one Rust definition of the path); shared/metadata's and shared/fair's
   committed-data tests live here (`core/src/temporal_enrichment_cache.rs`,
   `api-oai/src/metadata/corpus.rs`); `editor-pull-requests` writes the corpus through a pull request
   (see **Durable state** below), still never through a `dpe-*` import
 - **Boundary rules:**
   - Never depends on an `editor-*` crate; the editor never depends on a `dpe-*` crate
-    (**static-analysis** for both sides, `check-capability-deps.sh` fails an edge to another area;
-    **structure** via Bazel visibility after ADR-0001).
+    (**structure** for both sides: no target grants the other area; the corpus filegroup is the one
+    cross-area grant, data only, ADR-0002).
   - areas/access/server depends on `dpe-server` only, never on `dpe-core`, `dpe-web` or
-    `dpe-api-oai` (**static-analysis**: `.github/scripts/check-composition-root-deps.sh`, run by
-    `just check`; ADR-0007).
+    `dpe-api-oai` (**structure**: none of those grants `//areas/access/server`; ADR-0007).
   - DPE's router ends in a `ServeDir` fallback, so another capability's router is nested under its
     base, never merged with DPE's (`access-server`'s `serve.rs::mount_cpe`; **static-analysis** via
     its unit tests).
   - `dpe-api-oai` depends on `dpe-core` and `shared-*` crates only — never on `dpe-web` or
-    another API crate (**static-analysis**: `check-capability-deps.sh`, the `api-*` role).
+    another API crate (**structure**: `dpe_web` grants `dpe-server` alone).
   - `dpe-web` holds views only and uses no web framework: the handlers are `dpe-server`'s
     (**static-analysis**: `check-capability-deps.sh`, a `web` crate beside its capability's
-    `server` crate).
+    `server` crate, read from its `BUILD.bazel`).
   - The editor's path is `ProjectRaw` → draft → `ProjectRaw`, never through `dpe_core::Project`,
     whose `From` impls are lossy on `url` and `clusters` (**review**).
   - Every `<a>` enhanced by Datastar keeps a working `href` (**review**).
@@ -140,7 +144,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   bundled picker options, so a new reference needs that regeneration (**static-analysis** — the editor's drift tests,
   which also run on `editor-pull-requests`' pull requests: one publishing a place or period a depositor typed outside
   the lists stays red until the bundles are regenerated on its branch).
-- **Fingerprint:** `1c96c5cced41`
+- **Fingerprint:** `a102f97e28c3`
 
 ### areas/access/server
 
@@ -160,9 +164,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `SYNC_DATA_DIR` and `MEDIA_DATA_DIR` are read here (an empty data directory variable is unset); `DPE_*` and `CPE_*` by the capabilities' own configurations. The
   Docker image stays `daschswiss/dpe`.
 - **Local-context kit:** `areas/access/server/CLAUDE.md`, `areas/access/server/src/serve.rs`,
-  `areas/access/server/src/observability.rs`, `areas/access/server/src/cli.rs`,
-  `areas/access/dpe/server/src/lib.rs`, `areas/access/cpe/server/src/lib.rs`,
-  `docs/adr/0003-one-modulith-per-area.md`, `.github/scripts/check-composition-root-deps.sh`
+  `areas/access/server/src/observability.rs`, `areas/access/server/BUILD.bazel` (its `deps`, the
+  image's data layer and `env`), `areas/access/dpe/server/src/lib.rs`, `areas/access/cpe/server/src/lib.rs`,
+  `docs/adr/0003-one-modulith-per-area.md`
 - **Depends on:** areas/access/dpe (`dpe-server` only), areas/access/cpe (`cpe-server`, and
   `cpe-ports` for the trait of the adapter it hands over; never `cpe-store`), areas/access/sync
   (`sync-store`, to construct `LiveArchiveProjection`), areas/access/media (`media-store`, to construct
@@ -170,15 +174,17 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   plus its `store` / `ports` crates only to construct `Live<Port>` adapters) and `media`'s `server` crate once
   it has routes;
   third-party:
-  axum, tokio, tower, clap, ureq, tower_governor, the OpenTelemetry stack, pyroscope, tracing-subscriber
-- **Used by:** — (deployment: `areas/access/server/Dockerfile`, `.github/actions/build-dpe/`)
+  axum, tokio, tower, clap, ureq, rustls, tower_governor, the OpenTelemetry stack, pyroscope, tracing-subscriber
+- **Used by:** — (deployment: the image `//areas/access/server:image`, built by `app_image` in
+  `tools/image/defs.bzl`, published by `dpe-docker-publish.yml` and scanned through `.github/actions/build-dpe/`)
 - **Boundary rules:**
-  - The image carries each capability's data (`sync/data`, `cpe/projects`, `media/data`): what `build-dpe` and
-    `just build-docker-dpe` put into the staging directory, what the Dockerfile copies and what its `ENV` lines
-    name have to agree (**review**; see `areas/access/server/CLAUDE.md`).
+  - The image carries each capability's data (`sync/data`, `cpe/projects`, `media/data`): the `image_data`
+    layer in `BUILD.bazel` and the `env` of `app_image` (`SYNC_DATA_DIR`, `CPE_PROJECTS_DIR`,
+    `MEDIA_DATA_DIR`) have to agree (**review**; see `areas/access/server/CLAUDE.md`; `just image-smoke` only
+    checks that the image starts and answers).
   - Depends on each capability's `server` crate only, never a capability's `core`, `web` or
-    `api-*` crate (**static-analysis**: `check-composition-root-deps.sh` in `just check`).
-  - Depends on no crate of another area (ADR-0002; **static-analysis**: `check-composition-root-deps.sh`).
+    `api-*` crate (**structure**: none of those targets lists this package in its `visibility`).
+  - Depends on no crate of another area (ADR-0002; **structure**: no target of `areas/deposit` grants it).
   - Routes declared after the OTel layers are untraced, so the order in `app` is load-bearing
     (**static-analysis**: `serve.rs` tests assert the traceparent split).
   - No adapter or domain logic: wiring only (**review**).
@@ -197,14 +203,15 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     (**static-analysis** for the router: `serve.rs` tests hold an activation open, take the data
     directory away, mount CPE at bases that are routes and at one whose mount panics; **review** for
     `serve` itself, which no test runs).
-  - Depends on `cpe-server` and `cpe-ports` and on no other CPE crate (**static-analysis**:
-    `check-cpe-seam.sh` rule 1 and `check-composition-root-deps.sh`, both in `just check`).
+  - Depends on `cpe-server` and `cpe-ports` and on no other CPE crate (**structure**: only those two CPE
+    targets grant this package). `sync-store` and `media-store` grant it as the composition root; other
+    capabilities see only their `testonly` variants (**structure**).
   - The OTel tracer name and Pyroscope application stay `dpe-server`, the `service.namespace` and
     collector scope `dpe`: DPE's telemetry identity, not this crate's name (**review**). CPE's
     requests are traced under it, each span named by the route CPE reports (**static-analysis**:
     `serve.rs` tests), never by a path that matched no route.
 - **Durable state:** none.
-- **Fingerprint:** `1e688ab55a1f`
+- **Fingerprint:** `d504ed9a7c6b`
 
 ### areas/deposit/editor
 
@@ -304,8 +311,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - No setting name on a depositor's screen, and no entity id except for an entity with no name yet ("Person person-042") or as the tiebreak between two colliding labels ("Ada Lovelace (person, person-042)"); an entity is named through `entity::entity_label` or `entity_labels` with a precedence (depositor views `Proposed`, RDU review `Published`)
     (**static-analysis** — `web/tests/depositor_vocabulary.rs` rejects `person-NNN`, `organization-NNN` and
     `EDITOR_*` in rendered text, beside REQ-2.2's forbidden words; its fixtures name every entity and keep the names distinct, so the two id cases are not rendered there).
-  - Never depends on a `dpe-*` crate (**static-analysis** — `check-capability-deps.sh` fails an edge to another
-    area's crate; **structure** after ADR-0001).
+  - Never depends on a `dpe-*` crate (**structure** — no target grants the other area; the corpus filegroup is the one cross-area grant, data only).
     `core/src/agents.rs` states why it avoids `dpe-core`'s process-wide caches.
   - `EDITOR_DATA_DIR` has no default on purpose: the only plausible one would be a relative path
     into DPE's tree; unset is a configured state (the PR preview runs without a snapshot), so
@@ -333,17 +339,14 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - `editor-store` has no foreign keys: the eight account columns are plain `TEXT`, and a
     deleted account leaves its id behind, which pages render as unknown (**structure**;
     `deposit-server`'s `removed_account.rs` pins the pages: **static-analysis**). Its only
-    identity dependency is `identity-ports` (**static-analysis** — `check-capability-deps.sh`: a `store`
-    crate may depend on another capability's `ports` crate alone).
+    identity dependency is `identity-ports` (**structure** — `identity_ports` grants `editor-store`; no other identity target does).
   - `editor-web` sees identity only through `editor-ports`: `Authenticated` / `Rdu`
     (`handlers/auth.rs`, with its own GET-only sign-in destination over `deposit-shell`'s
     `safe_next` and its own `Cookie`-header scan) over `Authenticator`, the name reads in
-    `review.rs` and `sections.rs` over `UserDirectory`; it depends on no identity crate
-    (**static-analysis** — `check-capability-deps.sh`). Its handler tests sign in through
+    `review.rs` and `sections.rs` over `UserDirectory`; it depends on no identity crate (**structure** — no identity target grants `editor-web`). Its handler tests sign in through
     `FakeAuthenticator` (`web/src/fixtures.rs`); tests that need both capabilities are
     `deposit-server`'s.
-  - `editor-ports` depends on `std` alone: on no workspace crate but `shared-*`
-    (**static-analysis** — `check-capability-deps.sh`), on no third-party crate (**static-analysis** — the same script).
+  - `editor-ports` depends on `std` alone: it has no `deps` (**structure** for first-party crates; **static-analysis** for third-party crates, `check-capability-deps.sh`, the `ports` role), and grants `editor-web` and `identity-store`, its `test-support` variant also `deposit-server`.
   - A finding (format or length) never stops a save: it is computed from the draft at every render and never
     stored; submit refuses one in the viewer's fields, approve in every field, RDU-only included; a
     length finding is exempt where the value equals the published one
@@ -404,7 +407,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `Editor::start`), approve's own transaction, which supersedes the project's earlier record, so a
   project holds at most one, and RDU's discard
   (`POST /approved/{id}/discard`).
-- **Fingerprint:** `48a3bcff8767`
+- **Fingerprint:** `f559729aa084`
 
 ### areas/deposit/shell
 
@@ -440,9 +443,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `pages/depositors.rs` uses `impact_card`)
 - **Boundary rules:**
   - Depends on no capability crate, nor any workspace crate but `mosaic-tiles` and `shared-*`
-    (ADR-0003) (**static-analysis** — `check-capability-deps.sh`). Has no Axum:
-    each caller turns its `Markup` into a response (**static-analysis** — the same script's
-    web-framework list).
+    (ADR-0003) (**structure** — its `visibility` names its three consumers, and no capability target grants it). Has no Axum:
+    each caller turns its `Markup` into a response (**static-analysis** — `check-capability-deps.sh`, the
+    shell's web-framework ban, read from its `BUILD.bazel`).
   - The routes it links are string literals: `/` and `POST /logout` (header), the header menu's
     `/projects`, `/review`, `/approved` and `/depositors`, `/projects` (403), `/login`
     (`login_url`, and the two login screens `safe_next` refuses), plus the assets `/logo.svg`,
@@ -456,9 +459,10 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     unreserved characters alone (**static-analysis** — the nine `sign_in.rs` tests pin both
     together; **review** for new callers, `REVIEW.md`).
   - Its Tailwind classes ship only through `@source '../../shell/**/*.rs'` in the editor's
-    `style/main.css`; moving the crate drops them silently (**review**).
+    `style/main.css` and the `//areas/deposit/shell:tailwind_sources` filegroup the editor's stylesheet target
+  lists; moving the crate drops them silently (**review**).
 - **Durable state:** none.
-- **Fingerprint:** `145f0bc80e67`
+- **Fingerprint:** `c1c3e3037165`
 
 ### areas/deposit/identity
 
@@ -502,30 +506,28 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `areas/deposit/identity/core/src/session.rs`, `areas/deposit/identity/core/src/repository.rs`,
   `areas/deposit/identity/store/src/live.rs`, `areas/deposit/identity/web/src/lib.rs`,
   `areas/deposit/identity/web/src/routes.rs`, `docs/src/editor/authentication.md`
-- **Depends on:** areas/deposit/editor (`identity-store` on `editor-ports` alone, the ports it
-  answers; `identity-ports` on `std` alone), areas/deposit/shell, modules/mosaic,
+- **Depends on:** areas/deposit/editor (`identity-store` on `editor-ports` alone, the ports it answers; `identity-ports` on no crate at all), areas/deposit/shell, modules/mosaic,
   shared/metadata, shared/rate-limit and shared/telemetry (`identity-web`); third-party: async-trait, base64,
   chrono, rand + subtle, thiserror, tracing, uuid; rusqlite (`bundled`) + deadpool-sqlite and
-  lettre + rsa (`identity-store`); axum, maud, tower_governor, tokio, the OpenTelemetry API
+  lettre + rsa (`identity-store`); axum, maud, tower_governor, tokio, serde, the OpenTelemetry API and tracing-opentelemetry
   (`identity-web`)
 - **Used by:** areas/deposit/server (`identity-web`'s facade and re-exports, `identity-store`'s
-  stores and adapters; never `identity-core`), areas/deposit/editor (`editor-store`'s
+  stores and adapters; never `identity-core`, which does not grant it), areas/deposit/editor (`editor-store`'s
   `LiveOpenWork` answers `identity-ports`' `OpenWork` from its tables and the published set, and
   the header's review count through `SubmissionRepository::count_pending`;
   `editor-web` on no identity crate)
 - **Boundary rules:**
-  - `identity-core` has no Axum, Maud or database dependency (**static-analysis** — `check-capability-deps.sh`).
+  - `identity-core` has no Axum, Maud or database dependency (**static-analysis** — `check-capability-deps.sh`, reading its `BUILD.bazel`).
   - Depends on no `editor-*` crate but `editor-ports` (from `identity-store`), and neither
     `editor-core` nor `editor-web` depends on it: capabilities share no core (ADR-0003)
-    (**static-analysis** — `check-capability-deps.sh`).
+    (**structure** — `visibility`: `identity_ports` grants only `editor-store` and `identity-web`, `identity_core` only `identity-store` and `identity-web`).
   - One copy of the session rules: every caller authenticates through `session::current`,
     identity's extractor and login screens directly (`identity-web`'s `handlers/guard.rs`,
     `handlers/login.rs`) and the editor through `LiveAuthenticator`, its only caller on the
     editor's side (**review**).
-  - `identity-ports` depends on `std` alone: on no workspace crate but `shared-*`
-    (**static-analysis** — `check-capability-deps.sh`), on no third-party crate (**static-analysis** — the same script).
+  - `identity-ports` depends on `std` alone: on no crate at all (**structure** for first-party crates, its `BUILD.bazel` has no `deps`; **static-analysis** for third-party crates, `check-capability-deps.sh`, the `ports` role).
   - `identity-web` depends on no `editor-*` crate: the removal confirmation's open work, the
-    unknown-shortcode check and the header's review count come through `identity-ports` (**static-analysis** — `check-capability-deps.sh`). Only its `handlers/`,
+    unknown-shortcode check and the header's review count come through `identity-ports` (**structure** — `editor_ports` grants `identity-store` and `editor-web` alone). Only its `handlers/`,
     route table, `shell.rs`, `lib.rs` and the handler tests' `fixtures.rs` use axum; `pages/` are
     `fn -> Markup` (**static-analysis** — `check-views-no-axum.sh`, which checks every other file of the
     crate's `src/`).
@@ -546,7 +548,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `test_merged_migrations_are_never_edited` pins each merged migration's hash). **Single writer:** `identity-store`, through
   `identity-core`'s repository ports, called by `identity-web`'s handlers, the RDU bootstrap and the hourly
   sweep, and by `session::current`'s idle touch (also through `LiveAuthenticator`).
-- **Fingerprint:** `5809c59f286f`
+- **Fingerprint:** `30a19e154ee1`
 
 ### areas/deposit/server
 
@@ -562,14 +564,15 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `editor_settings`, `build_router`, `build_app`, `require_same_origin`, `normalize_page_url`,
   `TELEMETRY_NAME`, `init_otel`, `init_pyroscope`, `install_tracing_panic_hook`, `not_found`,
   `Cli`, `healthcheck`, `TestState`, `test_app`
-- **Public interface:** the `deposit-server serve | healthcheck` CLI (the image's `ENTRYPOINT`
-  and `HEALTHCHECK`, `areas/deposit/server/Dockerfile`, built by `just build-docker-editor` and
-  `.github/actions/build-editor`); its own routes `/healthz`, `POST /telemetry/collect` and the
-  `ServeDir` fallback over `areas/deposit/editor/public`. No library: nothing depends on it.
+- **Public interface:** the `deposit-server serve | healthcheck` CLI (the image's entrypoint `./deposit-server`
+  with command `serve`; the image is `//areas/deposit/server:image` in its `BUILD.bazel`, built by
+  `just build-docker-editor` and `.github/actions/build-editor`; an OCI image has no `HEALTHCHECK`, so
+  `healthcheck` stays a subcommand); its own routes `/healthz`, `POST /telemetry/collect` and the `ServeDir`
+  fallback over `areas/deposit/editor/public`. No library: nothing depends on it.
 - **Local-context kit:** `areas/deposit/server/CLAUDE.md`, `areas/deposit/server/src/serve.rs`,
   `areas/deposit/server/src/router.rs`, `areas/deposit/server/src/config.rs`,
   `areas/deposit/server/src/csrf.rs`, `areas/deposit/server/src/test_support.rs`,
-  `areas/deposit/server/Cargo.toml`
+  `areas/deposit/server/BUILD.bazel`
 - **Depends on:** areas/deposit/identity (`identity-web`: `Identity`, `IdentitySettings`,
   `SmtpPassword`, `CODE_TTL`, `is_plausible_address`, `route_paths`; `identity-store`:
   `Database`, `Source`, `LiveAuthenticator`, `LiveUserDirectory`), areas/deposit/editor
@@ -577,7 +580,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `route_paths`; `editor-store`: `Database`, `Source`,
   `LiveOpenWork`, built over the editor's store and the published set's data dir; `editor-ports` in
   tests only), areas/deposit/shell (the fallback 404),
-  shared/rate-limit (`RightmostXffKeyExtractor`), shared/telemetry (`collect_route`, `is_valid_traceparent`); third-party: axum, clap, figment,
+  shared/rate-limit (`RightmostXffKeyExtractor`), shared/telemetry (`collect_route`, `is_valid_traceparent`); data (tests and image only): `//areas/access/dpe/server:corpus`, the published set (ADR-0002's one
+  cross-area grant); third-party: axum, clap, figment,
   ureq, tokio, tower-http, tower_governor, the OpenTelemetry stack, pyroscope, matchit
 - **Used by:** nothing in the workspace; the top of the Deposit Area's dependency graph, a
   separate deployable (`daschswiss/metadata-editor`), deployed as ops-deploy's `deposit` stack
@@ -586,11 +590,10 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Boundary rules:**
   - Never depends on a capability's `core` or `api-*` crate, dev-dependencies included; it
     mounts `identity` and `editor` through their `web` crates' facades because neither has a
-    `server` crate (**static-analysis** — `check-composition-root-deps.sh`, the root's one
-    enforcer: `check-capability-deps.sh` skips `areas/<area>/server`). Its tests seed and
+    `server` crate (**structure** — `visibility` in the capability crates' `BUILD.bazel`, the root's one
+    enforcer). Its tests seed and
     read through the stores' plain-value `test-support` helpers instead of `core` types.
-  - Depends on no crate of another area, dev-dependencies included (ADR-0002; **static-analysis** —
-    `check-composition-root-deps.sh`).
+  - Depends on no crate of another area, dev-dependencies included (ADR-0002; **structure** — no target of the other area grants it, `//areas/access/dpe/server:corpus` being the one cross-area grant).
   - The root declares no capability route: `build_router` merges `Editor::router()` and
     `Identity::router()` before the OTel layers, and `build_app` declares `/healthz` and
     `POST /telemetry/collect` after them, so both stay untraced, then wraps everything in the
@@ -613,7 +616,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `EDITOR_DB_DIR` (two named in-memory databases when unset) and hands each store to its
   capability, which is the single writer. It hands `EDITOR_DATA_DIR` (the published set,
   read-only) to `EditorSettings` and to `LiveOpenWork`, which reads it once at construction.
-- **Fingerprint:** `ac04084ebe46`
+- **Fingerprint:** `338b3eef4340`
 
 ### modules/mosaic
 
@@ -635,7 +638,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Public interface:** the `mosaic-tiles` crate (`ComponentBuilder`, `components::*`);
   two CSS files consumers `@import` — `tiles/src/components/theme_provider/tokens.css` and
   `tiles/src/components/components.css` (the barrel); the tiles `.rs` sources as a Tailwind
-  `@source` glob; the playground binary.
+  `@source` glob (`//modules/mosaic/tiles:tailwind_sources`, with `:stylesheets` for the CSS files, both
+  visible to the DPE, editor and playground packages); the playground binary and its image
+  `//modules/mosaic/playground:image` (stylesheet `//modules/mosaic/playground:css`).
 - **Local-context kit:** `docs/src/mosaic/component-api-conventions.md`,
   `modules/mosaic/CLAUDE.md`, `modules/mosaic/tiles/src/builder.rs`,
   `modules/mosaic/tiles/src/components/badge/mod.rs`,
@@ -648,8 +653,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   Tailwind entries (`areas/access/dpe/style/main.css`, `areas/deposit/editor/style/main.css`,
   `modules/mosaic/playground/style/main.css`)
 - **Boundary rules:**
-  - Depends on no `shared-*` or service crate (**structure** — a dependency would be a Cargo
-    cycle for the services and is simply absent). The `combobox` tile takes the caller's Datastar
+  - Depends on no `shared-*` or service crate (**structure** — `mosaic_tiles` lists only `icondata` and `maud` in `deps`, and no `shared-*` or service target grants it). The `combobox` tile takes the caller's Datastar
     search expression as an opaque string, so Mosaic stays free of `shared-datastar` (**structure**).
   - Every `css_class()` returns a complete literal class string so Tailwind's scan sees it;
     stated in six places, enforced by nothing — a violation surfaces as unstyled markup at
@@ -668,7 +672,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     edited (**docs-only** — `modules/mosaic/CLAUDE.md` and the
     `add-mosaic-component` skill).
 - **Durable state:** none. The playground E2E suite is dormant (no recipe, no CI job runs it).
-- **Fingerprint:** `09e93cd1a9d4`
+- **Fingerprint:** `3bd99db6a516`
 
 ### shared/fair
 
@@ -714,7 +718,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   crate never depends on the exposure engine. ADR-0005 names the consumers still to come: DPE's
   record pages, CPE, and the Deposit Area's FAIR assessment.
 - **Boundary rules:**
-  - Depends on no service crate (**structure** — Cargo cycle); holds no path into a service
+  - Depends on no service crate (**structure** — its `deps` hold no service target, and no service target grants it); holds no path into a service
     module (**static-analysis** — `.github/scripts/check-shared-paths.sh`, run by `just check`).
   - No web framework, no Maud, no routes: a writer returns a `String` or a
     `serde_json::Value`, and the consuming service turns that into a response (**review**).
@@ -727,7 +731,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     (`areas/access/dpe/api-oai/src/metadata/corpus.rs`), not here (**review**).
 - **Durable state:** none. Holds no cache and reads no environment; the contributor lookup and
   the two temporal tables arrive in `ResolveContext`.
-- **Fingerprint:** `4aecb81c37a0`
+- **Fingerprint:** `4842a8150cd7`
 
 ### shared/metadata
 
@@ -750,7 +754,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `temporal_coverage::*`, `w3cdtf::*`, `chronontology::*`, `temporal_enrichment::*`,
   `utils::parse_url_value` (the `url` reading rule, not re-exported at the root),
   `project::{CONTRIBUTOR_ROLES, ROLES_NOT_OFFERED, PROJECT_STATUS_VALUES, TYPE_OF_DATA_VALUES}`;
-  the fixture `testdata/0803-records.json`, read by `dpe-api-oai`'s tests by relative path — the
+  the fixture `testdata/0803-records.json`, exported to `dpe-api-oai` alone (`exports_files`) and read by its tests — the
   single copy of the sample (`testdata/0862-records.json` is read by the crate's own tests only).
 - **Local-context kit:** `shared/metadata/src/project.rs`,
   `shared/metadata/src/lib.rs`, `shared/README.md`,
@@ -765,7 +769,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   the DPE fuzz crate.
   Not areas/access/server, no CPE crate and not `sync-store`
 - **Boundary rules:**
-  - Depends on no service crate (**structure** — Cargo cycle); holds no path into a service
+  - Depends on no service crate (**structure** — its `deps` hold no service target, and no service target grants it); holds no path into a service
     module (**static-analysis** — `.github/scripts/check-shared-paths.sh`, run by `just check`).
   - Reads no environment: both lookup tables load from a caller-supplied `data_dir`; the caches
     live in `dpe-core`, and `dpe-server`'s validation, `editor-web` (`startup.rs`) and
@@ -780,7 +784,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     added here, not in a consumer (**review**).
 - **Durable state:** none. Loads `chronontology-periods.json` and
   `temporal-coverage-enrichment.json` from whatever directory it is given.
-- **Fingerprint:** `1c07252fb9e4`
+- **Fingerprint:** `fec06692397e`
 
 ### shared/rate-limit
 
@@ -801,15 +805,14 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   areas/deposit/editor (`editor-web`), areas/deposit/identity (`identity-web`),
   areas/deposit/server (`/telemetry/collect`)
 - **Boundary rules:**
-  - Depends on no service crate; holds no path into one (**structure** + **static-analysis**,
-    as for `shared-metadata`).
+  - Depends on no service crate; holds no path into one (**structure**: its `deps` are third-party only and no service target grants it; **static-analysis**: `check-shared-paths.sh`, as for `shared-metadata`).
   - The key is the rightmost `X-Forwarded-For` entry, never the leftmost (**static-analysis**: the
     crate's tests). Every per-IP limiter keys on this extractor; one keyed on the leftmost entry
     (`SmartIpKeyExtractor`) is bypassable by a forged header (**review**).
   - Correct only while Traefik is the sole hop in front of the service; a second proxy that
     appends to `X-Forwarded-For` shifts the trusted entry (**review**).
 - **Durable state:** none.
-- **Fingerprint:** `7c7b6401130c`
+- **Fingerprint:** `6beffa6d7acc`
 
 ### shared/telemetry
 
@@ -850,7 +853,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `BROWSER_METRICS`) make the crate one-service-per-process by construction. Three fuzz targets
   (`beacon_payload`, `origin_validation`, `traceparent_validation`) exist but `fuzz.yml` runs
   only DPE's two.
-- **Fingerprint:** `bb7edab4dc04`
+- **Fingerprint:** `e4d56062a11a`
 
 ### shared/datastar
 
@@ -883,7 +886,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - `retry: 'never'` is only ever emitted together with `retryMaxCount: 0` (**structure**: one
     method emits both).
 - **Durable state:** none.
-- **Fingerprint:** `58e156618680`
+- **Fingerprint:** `c65b58f65aa0`
 
 ### dsp-cli
 
@@ -897,30 +900,32 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Key entities:** `DspClient`, `HttpDspClient`, `Renderer`, `Diagnostic`, `Config`, `AuthCache`,
   `UpdateCheckCache`
 - **Public interface:** the `dsp` command surface (`auth`; `vre project | data-model |
-  resource-type | resource | vocabulary | sparql`; `docs`); the `dsp-cli` crate published on
-  crates.io. Its lib target `dsp_cli` exists for the crate's own tests, not for other crates.
+  resource-type | resource | vocabulary | sparql`; `docs`); the `dsp-cli` crate published on crates.io (`cargo publish` from its manifest; Bazel builds the binary as
+  `//dsp-cli:dsp`, whose version in `dsp-cli/BUILD.bazel` release-please updates with the manifest's). Its lib target `dsp_cli` exists for the crate's own tests, not for other crates.
   Besides DSP-API, the binary calls one other endpoint: the crates.io sparse index, for the update
   check (dsp-cli/ADR-0015).
-- **Local-context kit:** `dsp-cli/CLAUDE.md`, `dsp-cli/CONTEXT.md`, `dsp-cli/src/cli/mod.rs`,
+- **Local-context kit:** `dsp-cli/CLAUDE.md`, `dsp-cli/CONTEXT.md`, `dsp-cli/BUILD.bazel`, `dsp-cli/src/cli/mod.rs`,
   `dsp-cli/src/client/mod.rs`, `dsp-cli/src/render/mod.rs`, `dsp-cli/src/diagnostic.rs`,
   `dsp-cli/tests/cli.rs` (the binary tests and the corrupt-cache log-leak guard, DEV-7446; their
   mocks are `dsp-cli/tests/support/mod.rs`), `docs/src/dsp-cli/architecture.md` (the crate layout,
   layers and `Renderer` methods; dsp-cli/ADR-0008 records the decision). Next reads:
   `docs/src/dsp-cli/overview.md` (the vision), `docs/src/dsp-cli/testing-strategy.md`
   (dsp-cli/ADR-0009), `dsp-cli/docs/adr/CLAUDE.md` (ADR rules and the qualified citation form)
-- **Depends on:** nothing in the workspace; third-party: clap, reqwest (blocking, rustls), serde,
+- **Depends on:** nothing in the workspace; third-party: clap, reqwest (blocking, rustls), rustls (the ring provider), serde,
   serde_json, toml, tracing, tracing-subscriber, thiserror, chrono, jsonwebtoken, semver, dotenvy,
   dirs, percent-encoding, rpassword; in tests insta, wiremock, tokio (for wiremock only),
   assert_cmd, predicates, tempfile. Not `url` (`src/config/mod.rs` says why)
 - **Used by:** — (top of the dependency graph; a published binary)
 - **Boundary rules:**
-  - No dependency on an area crate (**static-analysis**, `cargo publish -p dsp-cli --dry-run`
-    in `check.yml`; **structure** after ADR-0001).
-  - A `shared-*` dependency only if that crate is itself published to crates.io (same gate).
+  - No dependency on an area crate (**structure**: no area target grants `dsp-cli`; `cargo publish -p dsp-cli
+    --dry-run` in `check.yml` still checks the packaging).
+  - A `shared-*` dependency only if that crate is itself published to crates.io (**structure** today: no
+    `shared-*` target grants `dsp-cli`; the dry run fails on an unpublished one).
   - Integrates with an area over its public HTTP surface only, never by Rust import
     (**review**).
-  - Live tests never run in the default suite (**static-analysis**,
-    `check-live-tests-ignored.sh`, run by `just check`); CI runs them strict against a pinned
+  - Live tests never run in the default suite (**structure**: their targets are `manual`, outside
+    `bazel test //...`; **static-analysis**: `check-live-tests-ignored.sh`, run by `just check`, keeps them
+    `#[ignore]`d); CI runs them strict against a pinned
     stack in `dsp-cli-drift.yml` (dsp-cli/ADR-0009).
   - No DSP-API vocabulary (`ontology`, `class`, `property`, `export`) above `src/client/`
     (dsp-cli/ADR-0001); renderers write data, never logs; no async runtime outside tests
@@ -935,7 +940,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `AuthCache`; `~/.config/dsp-cli/update_check.toml` (the update-check cache, dsp-cli/ADR-0015) —
   single writer, the `update` module. Both are written atomically (a temporary file, then a rename).
   It reads `.env` from the current directory and never writes it.
-- **Fingerprint:** `322d0960bf2f`
+- **Fingerprint:** `a4f7f7637656`
 
 ### areas/archive (Spycherli)
 
@@ -1148,15 +1153,16 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `cpe-web` depends on `cpe-core`, `cpe-store`, `cpe-components` and `cpe-image-viewer`, and on `maud`
   and `thiserror`; its tests read `components/style/` and `public/vendor/datastar.js` with
   `include_str!`. `cpe-server` depends on `cpe-core`, `cpe-ports`, `cpe-store-build`, `cpe-web`, `cpe-components`
-  and `cpe-image-viewer` (on `cpe-store` through `cpe-web` only; **static-analysis**: `check-cpe-seam.sh`'s
-  `CPE_EDGES` lists the crate), and on `axum`, `tower`, `datastar`, `figment`,
+  and `cpe-image-viewer` (on `cpe-store` through `cpe-web` only; **structure**: `cpe_store` grants `cpe-web`
+  alone), and on `axum`, `tower`, `datastar`, `figment`,
   `maud`, `serde`, `futures-util`, `percent-encoding`, `thiserror` and `tracing`; it reads `components/style/` and
-  `public/` with `include_bytes!`; its tests alone depend on `sync-store`, `media-store`, `sha2`, `tempfile` and `tokio`,
-  and on `figment`'s `test` feature.
+  `public/` with `include_bytes!`; its tests alone depend on `sync_store_for_tests`, `media_store_for_tests` (the
+  `testonly` variants of `sync-store` and `media-store`), `sha2`, `tempfile` and `tokio`, and on `figment`'s `test`
+  feature.
   No CPE crate depends on
   modules/mosaic (ADR-0007). The crates still to come: shared/metadata, shared/telemetry (expected); never
   DPE's domain, store or web crates, and never `sync`'s or `media`'s store or Chischtli (ADR-0008, ADR-0012), a
-  dev-dependency on `sync-store` or `media-store` excepted (ADR-0008). The two
+  test-only dependency on `sync_store_for_tests` or `media_store_for_tests` excepted (ADR-0008). The two
   `cpe/ports` edges are CPE's port against areas/access/sync, `ArchiveProjection`, which `sync-store`
   implements, and its bytes port against areas/access/media, `DepositedFiles`, which `media-store` implements.
   Ports between CPE and DPE remain hypothetical, each with its own consumer (ADR-0003): what CPE needs from DPE,
@@ -1165,36 +1171,32 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   in `shared/`; a shape never does
 - **Used by:** areas/access/sync (`sync-store`, the provider, depending on `cpe-ports` to
   implement `ArchiveProjection` as `LiveArchiveProjection`); areas/access/media (`media-store`, the provider,
-  depending on `cpe-ports` to implement `DepositedFiles` as `LiveDepositedFiles`); `cpe-components` is the consumer of `cpe-core` and of `cpe-image-viewer`, and `cpe-web` and `cpe-server` are its consumers; `cpe-store` is a consumer of `cpe-core`, and `cpe-web` is its consumer; `cpe-web` is a consumer of `cpe-core`, `cpe-store`, `cpe-components` and `cpe-image-viewer`, and `cpe-server` is its consumer; `cpe-store-build` is a consumer of `cpe-core` and `cpe-ports`, and `cpe-server` is its consumer; areas/access/server (`cpe-server`, mounted beside DPE, and `cpe-ports` for the traits of the adapters it constructs from `sync-store` and `media-store`; `check-composition-root-deps.sh` forbids `core`/`web`/`api-*`, and `check-cpe-seam.sh` forbids every CPE crate but `cpe-ports` and `cpe-server`, so `cpe-store` too)
+  depending on `cpe-ports` to implement `DepositedFiles` as `LiveDepositedFiles`); `cpe-components` is the consumer of `cpe-core` and of `cpe-image-viewer`, and `cpe-web` and `cpe-server` are its consumers; `cpe-store` is a consumer of `cpe-core`, and `cpe-web` is its consumer; `cpe-web` is a consumer of `cpe-core`, `cpe-store`, `cpe-components` and `cpe-image-viewer`, and `cpe-server` is its consumer; `cpe-store-build` is a consumer of `cpe-core` and `cpe-ports`, and `cpe-server` is its consumer; areas/access/server (`cpe-server`, mounted beside DPE, and `cpe-ports` for the traits of the adapters it constructs from `sync-store` and `media-store`; **structure**: only `cpe_server` and `cpe_ports` grant `//areas/access/server`, so `core`, `web`, `api-*` and `cpe-store` stay out of reach)
 - **Boundary rules:** a capability of the Access Area's modulith (ADR-0003) — its own tables,
   ports as described under Depends on, no shared shape; and the platform-wide style commitment
   in `## Conventions`, a hypermedia server serving the browser directly, no BFF, no SPA.
   That `cpe/ports` reaches only `std` and `shared-*` is **static-analysis** (`check-capability-deps.sh`,
-  the `ports` role), **structure** with Bazel `visibility` (ADR-0003). The dependency seam is
-  **static-analysis** (`.github/scripts/check-cpe-seam.sh`, run by `just check`; ADR-0007): no crate of this repository outside
-  `areas/access/cpe/` depends on a CPE crate other than `cpe-ports` and `cpe-server`; no manifest under `areas/access/cpe/` depends on a Mosaic crate; `cpe-core`
-  depends on no CPE crate (the script's `LEAVES`); and
-  `cpe-store` depends on no CPE crate but `cpe-core`, `cpe-store-build` on none but `cpe-core` and `cpe-ports`,
-  `cpe-server` on every CPE crate but `cpe-store`
-  (rule 4, the script's `CPE_EDGES`; ADR-0007). A rename
-  (`package = "…"`) of a CPE or Mosaic crate in the workspace
-  root is reported where it is declared, whichever crate inherits it. The
-  first and second rules cover a new crate by its
-  `[package]` name, without an edit; a new crate that must stay a leaf has to be added to the script's
-  `LEAVES`, one whose CPE dependencies are to be held to its `CPE_EDGES`, and a crate another capability or
-  the composition root may depend on has to be added to its
-  `PORT_EXCEPTIONS` first. What CPE's crates share with every capability's is **static-analysis** by
-  `check-capability-deps.sh`, by role (ADR-0003, ADR-0007): no CPE crate depends on DPE's crates; a crate of
-  `areas/access/sync/` or `areas/access/media/` is a dev-dependency only (ADR-0008, ADR-0012); `cpe-ports` and
-  `cpe-image-viewer` depend on no CPE crate; `cpe-components` uses no web framework or database crate, and
-  `cpe-web`, which holds no routes, no web framework. **Review**: which CPE crates a crate outside `LEAVES` and
-  `CPE_EDGES` depends on, and `cpe-store`'s own dependency list (no `maud`, no `axum`).
+  the `ports` role, for third-party crates) and **structure** (`visibility`, ADR-0003). The dependency seam
+  is **structure** (ADR-0007): every CPE target is private and lists its consumers in `visibility`, so an
+  edge outside the lists fails analysis. Outside `areas/access/cpe/` only `cpe-ports` (granted to
+  `areas/access/server`, `sync/store` and `media/store`) and `cpe-server` (granted to `areas/access/server`) are
+  reachable; no `modules/mosaic/` target grants a CPE package; no CPE library grants `cpe-core`, so it stays a
+  leaf; `cpe-store` is granted to `cpe-web` alone, `cpe-store-build` and `cpe-web` to `cpe-server` alone,
+  `cpe-ports` inside CPE to `cpe-server` and `cpe-store-build`, `cpe-image-viewer` to `cpe-components`,
+  `cpe-server` and `cpe-web`. A new CPE crate is private until a consumer is added to its `visibility`, and a
+  store that comes to answer a CPE port adds its package to `cpe_ports`' list. `sync-store` and `media-store`
+  reach CPE only as `testonly` variants (ADR-0008, ADR-0012). Files cross the seam the same way, by
+  `exports_files` and `filegroup` grants. The third-party rules every capability shares are **static-analysis**
+  (`check-capability-deps.sh`, by role, read from `BUILD.bazel`; ADR-0003, ADR-0007): `cpe-core` names no web
+  framework, Maud or database crate, `cpe-components` and `cpe-image-viewer` no web framework or database crate,
+  and `cpe-web`, which holds no routes, no web framework. **Review**: `cpe-store`'s own dependency list (no
+  `maud`, no `axum`).
   `cpe-store`'s `ProjectStore` owns a project's connection in a `Mutex`, and no `pub` item hands out the
   connection or a guard, so every lock is taken inside the crate and none can be held across an `.await`
   (**structure** for a caller outside the crate: the field and `ProjectStore::lock` are not `pub`; that neither
   is widened and no `pub` function returns a guard is **review**). Inside the crate a lock is short-scoped
-  and a read never calls a read while it holds one (**review**). Among CPE's `[dependencies]` tables `rusqlite`
-  is named by `cpe-store` alone; `cpe-store-build` names it under `[dev-dependencies]` (**review**), and the
+  and a read never calls a read while it holds one (**review**). Among CPE's library targets `rusqlite`
+  is named by `cpe_store` alone; `cpe-store-build` names it in its test targets only (**review**), and the
   driver's error reaches a caller only inside `cpe-store`'s wrapper, which has no source and names no driver
   type (**static-analysis**: two tests in `store/src/db.rs`, over a failed load and a failed query). Debt: a read runs on the async worker thread that
   serves the request, as in the prototype, and a project's requests wait on one `Mutex`; moving the reads to
@@ -1224,8 +1226,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `panic = "abort"`); no request path is joined
   onto a directory (structural where a request is answered, since `AssetInventory::serve` and
   `static_files::serve` are given strings; **review** in `discovery`, the one module that reads the disk);
-  `sync-store` and `media-store` are dev-dependencies, so the crate's own code cannot name either adapter
-  (**static-analysis**: `check-capability-deps.sh`, its `DEV_ONLY`); that a host feeds a store through `Cpe::activate` and the
+  the crate's own code cannot name either adapter (**structure**: `sync-store` and `media-store` grant
+  `cpe-server` only their `testonly` variants, which a library cannot depend on); that a host feeds a store through `Cpe::activate` and the
   ports, and not through the doc-hidden, legacy `Cpe::from_sql_folders` (a committed `data.sql`, with the
   configuration and narrative read from the folder, kept for the incubator's host and for tests until
   DEV-7498), is **review**; activation reads a project's configuration, narrative and curation through the
@@ -1233,10 +1235,11 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   its shortcode with another folder, and leaves a project whose block reads a curated key and that deposited
   no curation file not ready (**static-analysis**: the tests of its `activation` and `discovery` modules); a request's origin, where none is configured, is taken from `Host` and
   `X-Forwarded-Proto` under the rule the configured origin is held to (**static-analysis**: its tests). `cpe-core` is
-  framework-free: that its manifest names no web framework, Maud or database crate is **static-analysis**
+  framework-free: that its `BUILD.bazel` names no web framework, Maud or database crate is **static-analysis**
   (`check-capability-deps.sh`, the `core` role), and the incubator's `just cpe crate-deps-check` checks it at
-  each pin move. That `cpe-image-viewer` depends on no crate of this repository but `shared-*` and on no web
-  framework or database crate is **static-analysis** (the same script, its `image-viewer` role); that it
+  each pin move. That `cpe-image-viewer` depends on no crate of this repository but `shared-*` is **structure**
+  (no first-party target grants it), on no web framework or database crate **static-analysis** (the same
+  script, its `image-viewer` role); that it
   depends on `maud` alone is **review**. Its vendored OpenSeadragon files
   are checked against `areas/access/cpe/image-viewer/assets/vendor/VENDOR.lock` by hand, not by
   `just verify-checksums` (**review**); a file under its `assets/` without a row in its `ASSETS`
@@ -1273,7 +1276,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   the project's developers (**review**); the process reads it at activation and never writes it. Its
   configuration, narrative and curation are `media`'s (areas/access/media). `cpe-ports`, `cpe-core`,
   `cpe-components`, `cpe-image-viewer` and `cpe-store-build` hold none; `cpe-web`'s `Project` holds a project's store in memory, and `cpe-server` keeps the loaded projects until the next activation replaces them.
-- **Fingerprint:** `c991321aa6ba`
+- **Fingerprint:** `dd624eaef649`
 
 ### areas/access/datei
 
@@ -1323,7 +1326,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 ### areas/access/sync
 
 - **Paths:** `:(glob)areas/access/sync/**` — today `store/` (crate `sync-store`), `data/` (the
-  committed snapshots, the test oracle `0803-arks.txt` and their `PROVENANCE`) and `CONTEXT.md`
+  committed snapshots, the test oracle `0803-arks.txt` and their `PROVENANCE`, the `//areas/access/sync:data`
+  filegroup) and `CONTEXT.md`
 - **Purpose:** The Access Area's `sync` capability: the single writer of the archive projection
   and the single consumer of the archive's projection stream, rebuilding the projection from
   snapshot plus replay (ADR-0003, ADR-0008); the first Access-Area capability without a screen
@@ -1361,10 +1365,10 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   permitted capability-to-capability edge, ADR-0003); chischtli (planned; not in the minimum);
   shared/metadata (expected). Never CPE's or DPE's domain, store or web crates. Third-party:
   `oxttl` (the strict N-Quads parser) and `oxrdf` (its terms), with no triplestore at the
-  minimum; `thiserror`, `tracing`
+  minimum; `thiserror`, `tracing`; `tempfile` in tests only
 - **Used by:** areas/access/cpe (through `cpe-ports`; CPE's store is rebuilt from what `sync`
-  serves, ADR-0008; the tests of `cpe-store-build` and of `cpe-server` build `sync-store`'s adapter over the
-  committed data, as a dev-dependency, ADR-0008); areas/access/server (constructs `LiveArchiveProjection` over `SYNC_DATA_DIR` and hands it to `Cpe::activate`); later
+  serves, ADR-0008; the tests of `cpe-store-build` and of `cpe-server` link `sync_store_for_tests`, a `testonly`
+  library over the same sources, and read the `data` filegroup, ADR-0008); areas/access/server (constructs `LiveArchiveProjection` over `SYNC_DATA_DIR` and hands it to `Cpe::activate`; the only target `sync_store` grants); later
   areas/access/dpe and the SPARQL endpoint, each through its own port
 - **Boundary rules:** single writer of every projection graph and single consumer of the
   projection stream (ADR-0003, ADR-0008: the Access bucket is `media`'s channel, and `sync`
@@ -1373,15 +1377,14 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   operator lever that makes its adapter announce (ADR-0012; not yet in code, DEV-7622); maps its
   data to each consumer's DTOs, archive-shaped, and holds no presentation remodelling (ADR-0007's guardrail);
   it serves no deposited file, a project's curation included (ADR-0012; **review**); readers reach the projection only through the
-  ports it implements, never by opening its store; a reader's tests may build `sync-store`'s adapter, as a
-  dev-dependency, and read through the port it implements (ADR-0008; that it is
-  a dev-dependency only is **static-analysis**, `check-capability-deps.sh`'s `DEV_ONLY`; that the tests read
-  through the port is **review**); `sync-store` depends on `cpe-ports` and on no
-  other CPE or DPE crate (**static-analysis**: `check-capability-deps.sh`, a `store` crate reaches another
-  capability through its `ports` crate only, and `check-cpe-seam.sh` rule 1 for CPE's crates;
-  **structure** via Bazel visibility after ADR-0001;
-  `check-composition-root-deps.sh` does not scan it). A file that breaks a fact the port serves
-  is refused whole, never served in part (**static-analysis**: `sync-store`'s tests), and so is
+  ports it implements, never by opening its store; a reader's tests may build `sync-store`'s adapter,
+  through `sync_store_for_tests` (`testonly`, granted to `cpe-server` and `cpe-store-build` only), and read
+  through the port it implements (ADR-0008; the grant is **structure**, `visibility`; that the tests read
+  through the port is **review**); only the composition root links `sync_store` (**structure**: it grants
+  `//areas/access/server` alone); `sync-store` depends on `cpe-ports` and on no other CPE or DPE crate
+  (**structure**: `cpe_ports` lists `sync/store` in its `visibility`, no other CPE or DPE target does). A file
+  that breaks a fact the port serves is refused whole, never served in part (**static-analysis**:
+  `sync-store`'s tests), and so is
   one whose mapped snapshot fails `cpe_ports::contract::violations`, run on every call; the
   contract's cross-fact rules (inverted date, cycles, sibling positions) live only there, never
   in the mapping (**review**; the crate doc in `lib.rs` says where a check goes). A link to an IRI
@@ -1394,12 +1397,13 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   on every call, and holds nothing in between. The test oracle `0803-arks.txt`, **single writer**
   the extraction `PROVENANCE` gives over the incubator's `data.sql`, never generated from `ark.rs`
   (**review**), is read only by the committed-file tests.
-- **Fingerprint:** `919dcbac10c4`
+- **Fingerprint:** `cba46a0a8b46`
 
 ### areas/access/media
 
 - **Paths:** `:(glob)areas/access/media/**` — today `store/` (crate `media-store`), `data/` (the stand-in
-  directory: one directory per project shortcode, `0803/` so far, and its `PROVENANCE`) and `CONTEXT.md`
+  directory: one directory per project shortcode, `0803/` so far, and its `PROVENANCE`), the package's
+  `BUILD.bazel` (the `data` filegroup) and `CONTEXT.md`
 - **Purpose:** The Access Area's `media` capability (`vitrinli/CONTEXT.md`): serves archive-made
   Service Files, whole or rendered through Vitrinli, and owns the tables that say what is servable
   and where; the Access bucket's only consumer, as `sync` is the projection stream's (ADR-0003). It
@@ -1431,25 +1435,28 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   capability-to-capability edge, ADR-0003); third-party `tracing`; planned: vitrinli, areas/access/datei
   (`datei/ports` only, once it exists), shared/telemetry. Never `sync`'s store, never Chischtli, never a
   sibling's domain or web crate
-- **Used by:** areas/access/cpe (through `DepositedFiles` in `cpe-ports`; `cpe-server`'s tests build
-  `LiveDepositedFiles` over the committed data, as a dev-dependency), areas/access/server (constructs
-  `LiveDepositedFiles` over `MEDIA_DATA_DIR` and hands it to `Cpe::activate`); expected later:
+- **Used by:** areas/access/cpe (through `DepositedFiles` in `cpe-ports`; `cpe-server`'s tests link
+  `media_store_for_tests`, a `testonly` library, and read the committed data through the `//areas/access/media:data`
+  filegroup, which `cpe-store-build` also reads); areas/access/server (links `media_store`, the only target it grants,
+  constructs `LiveDepositedFiles` over `MEDIA_DATA_DIR` and hands it to `Cpe::activate`); expected later:
   areas/access/datei (through `datei/ports`), areas/access/cpe and areas/access/dpe for IIIF and downloads
 - **Boundary rules:** reads only the Access bucket, and until it exists only its own committed data
-  directory; never the sealed store, Preservation Files or Originals; never derives, because the
-  archive already did; implements consumer-declared ports beside its data and never serves a
-  consumer's shape (`vitrinli/CONTEXT.md` → Boundary commitments; **review**, then **structure** via Bazel
-  visibility). `media-store` depends on `cpe-ports` and on no `sync` or other sibling crate
-  (**static-analysis**: `check-capability-deps.sh`, the `store` role), and a reader names it as a
-  dev-dependency only (the same script's `DEV_ONLY`). A caller's shortcode and name reach the file system only after `is_shortcode` and
-  `is_file_name` accept them, and no component below the directory may be a symbolic link
-  (**static-analysis**: `media-store`'s tests). It is the Access bucket's only consumer and never reads the
-  projection stream (ADR-0003); a bytes port serves every file with its rights attached
-  and never pre-filters; change reaches a reader only through its port, which `media` announces, and until
-  the bucket exists `media` owns the operator lever (a file watch or an admin endpoint behind a token) that
-  makes its adapter announce; a reader grows no endpoint of its own (ADR-0012; **review**). Not yet in code:
-  rights on the port, the announcement and the lever; until they land, an edit under `MEDIA_DATA_DIR` needs a
-  restart (DEV-7622).
+  directory; never the sealed store, Preservation Files or Originals; never derives, because the archive
+  already did; implements consumer-declared ports beside its data and never serves a consumer's shape
+  (`vitrinli/CONTEXT.md` → Boundary commitments; **review**). `media-store` depends on `cpe-ports` and on no
+  `sync` or other sibling crate (**structure**: no other sibling target grants it). Only the composition root
+  links `media_store` (**structure**: it grants `//areas/access/server` alone); another capability sees only
+  `media_store_for_tests`, `testonly` and granted to `cpe-server` alone, so a reader names it in its tests
+  only (ADR-0008, ADR-0012). The `data` filegroup is visible to `cpe-server`, `cpe-store-build` and
+  `access-server` only (**structure**). A caller's shortcode and name reach the file system only after
+  `is_shortcode` and `is_file_name` accept them, and no component below the directory may be a symbolic
+  link (**static-analysis**: `media-store`'s tests). It is the Access bucket's only consumer and never reads
+  the projection stream (ADR-0003); a bytes port serves every file with its rights attached and never
+  pre-filters; change reaches a reader only through its port, which `media` announces, and until the bucket
+  exists `media` owns the operator lever (a file watch or an admin endpoint behind a token) that makes its
+  adapter announce; a reader grows no endpoint of its own (ADR-0012; **review**). Not yet in code: rights on
+  the port, the announcement and the lever; until they land, an edit under `MEDIA_DATA_DIR` needs a restart
+  (DEV-7622).
 - **Durable state:** the tables that say what is servable and where, **single writer** `media`
   (target design). Until the Access bucket: the hand-fed stand-in directory `areas/access/media/data/`, laid
   out as the bucket will be (`0803/config.kdl`, `curation.csv`, `narrative/`), text in plain git with its
@@ -1459,40 +1466,39 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   incubator when it re-vendors (**review**). `media-store` reads it on every call and holds nothing in
   between; an edit to the curation file changes the committed-data tests of `cpe-store-build` in the same
   commit (**review**).
-- **Fingerprint:** `c1a1d485164f`
+- **Fingerprint:** `e7f09ea65190`
 
 ## Conventions
 
 - **One-way top-level dependency direction:** `services → shared, mosaic, vitrinli, chischtli`;
   `shared-*`, `mosaic-*`, Vitrinli and Chischtli never import a service; a service never
   imports another service. *Enforcement:*
-  **structure** for the shared half (a service dependency in a shared crate is a Cargo
-  cycle) + **static-analysis** for hardcoded paths (`check-shared-paths.sh`) and for
-  service→service across areas (`check-capability-deps.sh` from a capability or a shell,
-  `check-composition-root-deps.sh` from a root),
-  **structure** via Bazel visibility after ADR-0001.
+  **structure** for crate edges (Bazel `visibility`: no service target grants a `shared-*` or `mosaic-*`
+  crate, and no grant crosses `areas/access` and `areas/deposit` except the corpus `filegroup`
+  `//areas/access/dpe/server:corpus`) + **static-analysis** for hardcoded paths (`check-shared-paths.sh`:
+  a path string is not a dependency edge) and for widening a target to `//visibility:public`
+  (`check-capability-deps.sh`).
 - **Areas are bounded contexts (ADR-0002):** the Deposit, Archive and Access Areas integrate
   over the wire, never by Rust import; each service is the sole reader and writer of its
   durable state; cross-area references are opaque identifiers (shortcode, ARK); share
-  concepts (a `shared-*` crate), never shapes. *Enforcement:* **review**, becoming
-  **structure** with ADR-0001.
+  concepts (a `shared-*` crate), never shapes. *Enforcement:* **structure** for "never by Rust import"
+  (no `visibility` grant crosses areas, except the corpus `filegroup`); **review** for the rest.
 - **One modulith per area (ADR-0003):** one binary per area, composed at `<area>/server` out of
   capabilities that own their tables, collaborate only through consumer-defined `ports` crates
   with `Live<Port>` adapters in the provider's store, reference each other by opaque id, and
   never span a transaction. The Access Area's root is `areas/access/server` (ADR-0003); the Deposit Area's is `areas/deposit/server` (`areas/deposit/ADR-0004`).
-  *Enforcement:* **static-analysis** for the crate edges inside the Deposit and Access Areas (`check-capability-deps.sh`,
-  `just check`: a capability's crates on its own and `shared-*`, a `store` crate also on another
-  capability's `ports`, a `web` or `server` crate also on the shell and `mosaic-tiles`, a `ports` or
-  `image-viewer` crate on `shared-*` alone, an `api-*` crate on its capability's `core` and `shared-*` alone, the shell on
-  `mosaic-tiles` and `shared-*`, `pull-requests`, `components` and `store-build` as `core`, and `sync-store`
-  and `media-store` as dev-dependencies only (ADR-0008); among third-party crates, a `ports` crate on none, a
-  `core` crate on no web framework, Maud or database crate, a `components` or `image-viewer` crate on no web
-  framework or database crate, a `web` crate beside a `server` crate and the shell on no web framework; the
-  root's edges are `check-composition-root-deps.sh`'s; `check-cpe-seam.sh` holds the edges particular to
-  CPE). **review** for the
-  rest, becoming **structure** (Bazel
-  visibility: `ports` public within the area; domain / store / web visible to the capability
-  and the composition root only) with ADR-0001.
+  *Enforcement:* **structure** for the crate edges inside the Deposit and Access Areas: each
+  first-party target is private and lists its consumers in `visibility`, so a capability's crates
+  reach only their own capability and `shared-*`, a `store` crate also another capability's `ports`,
+  a `web` or `server` crate also the shell and `mosaic-tiles`, a `ports` or `image-viewer` crate
+  `shared-*` alone, an `api-*` crate its capability's `core` and `shared-*` alone. A `ports` crate is
+  visible to its named consumers and providers, not area-wide; `sync-store` and `media-store` grant
+  only the composition root, and other capabilities' tests see their `testonly` variants (ADR-0008).
+  **static-analysis** for the third-party bans per role (`check-capability-deps.sh`, `just check`,
+  reading each role's `BUILD.bazel`: a `ports` crate on none, a `core` crate on no web framework,
+  Maud or database crate, a `components` or `image-viewer` crate on no web framework or database
+  crate, a `web` crate beside a `server` crate and the shell on no web framework), since `@crates`
+  targets are public. **review** for the rest.
 - **Shared code lives under `shared/` as `shared-{role}`** the moment a second
   service depends on it; the directory is what CI path filters, `bacon.toml` watch lists and
   directory-scoped `CLAUDE.md` files key on. One crate is there ahead of its second consumer:
@@ -1507,8 +1513,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   crate only when the capability has no `server` crate (the Deposit Area mounts `identity` and
   `editor` through their web facades, `areas/deposit/ADR-0004`; DPE and CPE keep theirs); views are
   `fn(...) -> Markup` in the `web` crate; the domain / contract crate has no framework
-  dependency; the root depends on no crate of another area. *Enforcement:* **static-analysis** for the root's dependencies
-  (`check-composition-root-deps.sh`) and for a Deposit `core` crate's ({G}), **review** for the rest (DPE's views read the corpus
+  dependency; the root depends on no crate of another area. *Enforcement:* **structure** for the root's dependencies
+  (no `core` or `api-*` target grants a composition root, nor a `web` target beside a `server` crate), **static-analysis**
+  for a `core` crate's framework ban (`check-capability-deps.sh`), **review** for the rest (DPE's views read the corpus
   handed to them through `RenderContext` rather than taking every value as an argument — a
   recorded exception).
 - **Hypermedia, server-authoritative (ADR-0004):** server-rendered HTML with Datastar SSE
@@ -1574,14 +1581,17 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 
 Not code components; they span the repo and are staleness-exempt here:
 
-- **Build, toolchain and dev loop:** `Cargo.toml`, `Cargo.lock`, `.cargo/config.toml` (rustflags), `rust-toolchain.toml`,
-  `.rustfmt.toml`, `deny.toml`, `bacon.toml`, `justfile`, `tailwind.pins`, `flake.nix`,
-  `flake.lock`, `.envrc`, `.node-version`, `.gitignore`, `.dockerignore`, `.worktreeinclude`,
-  `.commitlintrc.yml`, `.kodus-readiness.yml`, `.rustfmt-nightly`, `.git-blame-ignore-revs`, `.editorconfig`,
+- **Build, toolchain and dev loop:** `MODULE.bazel`, `MODULE.bazel.lock`, `Cargo.Bazel.lock`, `.bazelrc`,
+  `.bazelversion`, `.bazelignore`, `platforms/**`, `bazel/**`, `tools/**` (the Tailwind rule, `app_image`,
+  version stamping), the root `BUILD.bazel`, `osv-scanner.toml`, `version.txt`; the Cargo manifests kept until they are
+  removed (`Cargo.toml`, `Cargo.lock`, `.cargo/config.toml`, `rust-toolchain.toml`), `.rustfmt.toml`, `.rustfmt-nightly`,
+  `bacon.toml`, `justfile`, `flake.nix`, `flake.lock`, `.envrc`, `.node-version`, `.gitignore`, `.worktreeinclude`,
+  `.commitlintrc.yml`, `.kodus-readiness.yml`, `.git-blame-ignore-revs`, `.editorconfig`,
   `.gitattributes`
 - **CI:** `.github/**` — workflows, composite actions, the gate scripts
   (`check-shared-paths.sh`, `check-datastar-attributes.sh`, `check-commit-count.sh`,
-  `verify-checksums.sh`, `check-adr-refs.sh`, `check-live-tests-ignored.sh`, `check-cpe-seam.sh`, `check-capability-deps.sh`, `check-views-no-axum.sh`),
+  `verify-checksums.sh`, `check-adr-refs.sh`, `check-live-tests-ignored.sh`, `check-capability-deps.sh`, `check-views-no-axum.sh`,
+  `commit-advisory.sh`),
   release-please config
 - **Documentation:** `docs/**` (the mdBook under `docs/src/`, ADRs under `docs/adr/`), an area's decision records under `areas/<area>/docs/adr/` (`areas/deposit/docs/**` today),
   `README.md`, `CLAUDE.md`, `CONVENTIONS.md`, `REVIEW.md`, `CHANGELOG.md`, `LICENSE`,

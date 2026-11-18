@@ -21,7 +21,7 @@ Agent reference card for the **review phase**. Pair with `CONVENTIONS.md`, the w
 
 - [ ] New API crates follow `dpe-api-{name}` pattern (`docs/src/repo_structure.md`)
 - [ ] `dpe-core`, `shared-metadata` and `shared-fair` have no framework dependencies — a `shared-fair` writer returns a `String` or a `serde_json::Value`, never a response type
-- [ ] `shared-metadata` and `shared-fair` take no dependency on a service crate, and no path into a service's data directory. Both fail the build, so this is a spot-check: a service dependency is a Cargo cycle, a hardcoded path is caught by `just check-shared-paths`
+- [ ] `shared-metadata` and `shared-fair` take no dependency on a service crate, and no path into a service's data directory. Both fail the build, so this is a spot-check: a service dependency fails Bazel's `visibility` check, a hardcoded path is caught by `just check-shared-paths`
 
 ### FAIR metadata
 
@@ -68,4 +68,4 @@ Agent reference card for the **review phase**. Pair with `CONVENTIONS.md`, the w
 
 - Snapshot `.snap` file contents
 - Formatting-only diffs
-- `Cargo.lock` changes from dependency updates
+- `Cargo.Bazel.lock` and `MODULE.bazel.lock` changes from dependency updates

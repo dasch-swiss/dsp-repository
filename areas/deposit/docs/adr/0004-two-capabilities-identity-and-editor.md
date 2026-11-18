@@ -60,4 +60,4 @@ Configuration is loaded once at the root, and each capability receives the part 
 
 Not yet in code: no capability beside identity and editor; data modelling and upload are to arrive as capabilities of their own (not scheduled).
 
-Enforced by: the two database files, each opened by one store crate (**structure**); `.github/scripts/check-capability-deps.sh` over `cargo metadata`, run by `just check`, for every edge between the area's crates but the root's (**static-analysis**); `.github/scripts/check-composition-root-deps.sh`, which holds `deposit-server` to no `core` crate (**static-analysis**). The target for the crate edges is Bazel `visibility` (ADR-0001), **structure**.
+Enforced by: the two database files, each opened by one store crate (**structure**); Bazel `visibility` (ADR-0001) for every edge between the area's crates, the root's included: no `core` crate grants `deposit-server` (**structure**); `.github/scripts/check-capability-deps.sh`, run by `just check`, for the third-party bans of each role, read from its `BUILD.bazel` (**static-analysis**).

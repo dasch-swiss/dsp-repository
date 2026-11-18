@@ -1,9 +1,6 @@
-DOCKER_REPO := "daschswiss/dsp-repository"
-CARGO_VERSION := `cargo metadata --format-version=1 --no-deps | jq --raw-output '.packages[].version'`
-COMMIT_HASH := `git log --pretty=format:'%h' -n 1`
-GIT_TAG := `git describe --tags --exact-match 2>/dev/null || true`
-IMAGE_TAG := if GIT_TAG == "" { CARGO_VERSION + "-" + COMMIT_HASH } else { CARGO_VERSION }
-DOCKER_IMAGE := DOCKER_REPO + ":" + IMAGE_TAG
+# The services' version, which release-please updates; the dev recipes report it as `service.version`.
+
+VERSION := trim(read("version.txt"))
 
 # DPE's published data set, which the image recipes below package and the editor recipes read from.
 
@@ -26,7 +23,9 @@ install-requirements: install-e2e-requirements
     #!/usr/bin/env sh
     rustup show
     # Nightly rustfmt: .rustfmt.toml sets nightly-only options and `just fmt` runs the pinned nightly.
-    # rust-toolchain.toml pins stable, so `rustup show` alone never provisions it.
+    # rust-toolchain.toml pins stable, so `rustup show` alone never provisions it. Bazel builds with its
+    # own toolchain (MODULE.bazel); the rustup toolchains serve rustfmt, `cargo binstall` and dsp-cli's
+    # publish.
     rustup toolchain install {{ RUSTFMT_NIGHTLY }} --component rustfmt
     brew install cargo-binstall
     # Native build deps the Nix devShell provides via flake.nix buildInputs. No cmake: `ring` is the
@@ -38,15 +37,11 @@ install-requirements: install-e2e-requirements
     brew install bazelisk osv-scanner
     # commitlint-rs powers the commit-message gate in `just commit-lint`
     cargo binstall -y commitlint-rs@0.2.4
-    cargo binstall -y cargo-watch@8.5.3
     cargo binstall -y mdbook@0.4.52
     cargo binstall -y mdbook-alerts@0.8.0
     cargo binstall -y mdbook-mermaid@0.16.2
     cargo binstall -y bacon@3.23.0
     cargo binstall -y maudfmt@0.1.8
-    cargo binstall -y cargo-machete@0.9.2
-    cargo binstall -y cargo-nextest@0.9.144
-    cargo binstall -y cargo-deny@0.20.2
     cargo binstall -y cargo-audit@0.22.2
 
 # Install Playwright browsers for E2E tests
@@ -65,7 +60,7 @@ _check-node:
     @command -v node >/dev/null 2>&1 || { echo >&2 "error: 'node' not on PATH. just runs recipes in sh, which can't see nvm's lazy shell functions — expose your default node bin on PATH for all shells (eager-load it in your shell rc, or use brew/volta/asdf). See docs/src/fundamentals/onboarding.md."; exit 1; }
 
 # Each modules/*/public/vendor/README.md and areas/*/*/public/vendor/README.md
-# table against the files it describes, plus tailwind.pins for completeness.
+# table against the files it describes.
 
 # Verify the third-party bytes we ship or execute. Run by `just check`. (DEV-7126, DEV-6727)
 verify-checksums:
@@ -78,19 +73,10 @@ verify-checksums:
 check-shared-paths:
     bash .github/scripts/check-shared-paths.sh
 
-# A composition root's Cargo.toml can name a capability's core/api-* crate, or
-# the web crate of a capability that has a server crate, and still compile fine,
-# so only a grep catches the boundary break.
+# `@crates` targets are public, so a role's third-party bans cannot be a
+# `visibility` list; first-party edges are (ADR-0002, ADR-0003, ADR-0007).
 
-# Verify no areas/<area>/server/Cargo.toml depends on a capability's core/api-* crate, on its web crate where it has a server crate, or on another area's crate. Run by `just check`. (DEV-7397, DEV-7527, ADR-0007, ADR-0002)
-check-composition-root-deps:
-    bash .github/scripts/check-composition-root-deps.sh
-
-# A capability crate can name a sibling capability's core, store or web crate
-# and the workspace still compiles, so only a check of the crate graph catches
-# the boundary break.
-
-# Verify every Deposit and Access Area crate depends only on the workspace and third-party crates its role allows. Run by `just check`. (DEV-7375, DEV-7527, ADR-0003)
+# Verify each Deposit and Access Area role's BUILD.bazel uses only the third-party crates its role allows, and that no first-party target is public. Run by `just check`. (DEV-7375, DEV-7527, ADR-0003)
 check-capability-deps:
     bash .github/scripts/check-capability-deps.sh
 
@@ -100,13 +86,6 @@ check-capability-deps:
 # Verify only handlers/, routes.rs, shell.rs, lib.rs and fixtures.rs of editor-web and identity-web use axum. Run by `just check`. (DEV-7527)
 check-views-no-axum:
     bash .github/scripts/check-views-no-axum.sh
-
-# A crate outside CPE can name a CPE crate, and a CPE crate a Mosaic one, and
-# the workspace still compiles, so only a grep catches the boundary break.
-
-# Verify CPE's dependency seam: only its port and its host crate are used from outside, no CPE crate uses Mosaic, its leaf crate uses no CPE crate, the store, its builder and the host crate use only the CPE crates listed for them. Run by `just check`. (DEV-7401, ADR-0007)
-check-cpe-seam:
-    bash .github/scripts/check-cpe-seam.sh
 
 # `data-on-`, `data-attr-`, `data-class-`, `data-style-`: the attribute renders
 # fine and the control is inert, so only a grep or a browser catches it.
@@ -129,8 +108,18 @@ check-adr-refs:
 check-live-tests-ignored:
     bash .github/scripts/check-live-tests-ignored.sh
 
-# Run all fmt and clippy checks
-check: verify-checksums check-shared-paths check-composition-root-deps check-capability-deps check-views-no-axum check-cpe-seam check-datastar-attributes check-adr-refs check-live-tests-ignored
+# The pinned nightly rustfmt: `$RUSTFMT` when set (the Nix shell exports it), else rustup's. A bare `rustfmt` would be the stable one, which ignores .rustfmt.toml's nightly options. It formats files, so the edition is passed: 2024 for dsp-cli, 2021 for the rest of the tree.
+
+[private]
+_rustfmt *ARGS:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    rustfmt="${RUSTFMT:-$(rustup which --toolchain {{ RUSTFMT_NIGHTLY }} rustfmt)}"
+    git ls-files -z '*.rs' ':!dsp-cli/**' | xargs -0 "$rustfmt" --edition 2021 {{ ARGS }}
+    git ls-files -z 'dsp-cli/**.rs' | xargs -0 "$rustfmt" --edition 2024 {{ ARGS }}
+
+# Run every gate script, the format checks and clippy over every Bazel target, tests included, with `-Dwarnings` (set in .bazelrc). FLAGS: extra Bazel flags, such as CI's `--config=ci` and remote flags.
+check *FLAGS: verify-checksums check-shared-paths check-capability-deps check-views-no-axum check-datastar-attributes check-adr-refs check-live-tests-ignored
     #!/usr/bin/env bash
     set -euo pipefail
     just --check --fmt --unstable
@@ -146,34 +135,34 @@ check: verify-checksums check-shared-paths check-composition-root-deps check-cap
         if ! diff -q "$f" "$tmp" >/dev/null; then echo "maudfmt would reformat: $f" >&2; rc=1; fi
     done < <(git ls-files -z '*.rs')
     [ "$rc" -eq 0 ] || { echo "run 'just fmt' to fix Maud formatting" >&2; exit 1; }
-    cargo +{{ RUSTFMT_NIGHTLY }} fmt --check --all
-    cargo clippy --all-features -- -D warnings
-    # Fail on declared-but-unconsumed dependencies (a dep added "for later wiring" that never
-    # got wired survives on the strength of a comment otherwise).
-    cargo machete
+    just _rustfmt --check
+    # `--keep_going` reports every failing target in one run. The dsp-cli live tests are `manual`,
+    # outside `//...`, and named here so they are compiled and linted too.
+    live="$(bazel query 'attr(tags, manual, kind(rust_test, //dsp-cli:all))')"
+    bazel build {{ FLAGS }} --keep_going --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect --output_groups=clippy_checks //... $live
 
 # Format all code: maudfmt for the `html!` Maud macros, then the pinned nightly rustfmt for the rest.
 fmt:
     #!/usr/bin/env bash
     set -euo pipefail
     git ls-files -z '*.rs' | xargs -0 maudfmt --
-    cargo +{{ RUSTFMT_NIGHTLY }} fmt --all
+    just _rustfmt
 
 # Fix justfile formatting. Warning: will change existing file. Please first use check.
 fix:
     just --fmt --unstable
 
-# Run all rust builds
-build:
-    cargo build --all-targets
+# Build every Bazel target. FLAGS: extra Bazel flags, such as CI's `--config=ci` and remote flags.
+build *FLAGS:
+    bazel build {{ FLAGS }} //...
 
-# Run server. CPE is mounted only with a base, so it is set here.
-run:
-    CPE_BASE=/cpe cargo run --bin access-server --release -- serve
+# Run the server from the repository root, a release build with the release stylesheet, as the image runs it. CPE is mounted only with a base, so it is set here.
+run *FLAGS: css-release
+    CPE_BASE=/cpe bazel run --config=release --run_in_cwd {{ FLAGS }} //areas/access/server:access_server -- serve
 
 # Validate all data files in the default data directory
 validate-data:
-    cargo run --bin access-server -- validate areas/access/dpe/server/data
+    bazel run --run_in_cwd //areas/access/server:access_server -- validate {{ DPE_DATA_DIR }}
 
 # Re-download and re-patch the DataCite JSON schema the DataCite JSON writer's output is shape-checked against. The script takes the XSD directory as an argument because a shared crate may not know a module's layout; this justfile may, and passes it. (DEV-7268)
 refresh-datacite-schema:
@@ -192,21 +181,12 @@ fetch-records:
             -d '{"shortcode": "'"$sc"'"}' -o "$out" -w "$out %{http_code}\n" >&2
     done
 
-# .github/scripts/test-changed.sh runs these commands restricted to the
-# changed packages, so a change here needs the same change there.
-
-# Run all tests
-test:
-    cargo test --tests
-    # The dev-only live-reload code is feature-gated, so its tests need the feature enabled.
-    cargo test -p dpe-server -p mosaic-playground --features dpe-server/dev,mosaic-playground/dev --tests
+# Run every Bazel test, then the gate scripts' tests. FLAGS: extra Bazel flags, such as CI's.
+test *FLAGS:
+    bazel test {{ FLAGS }} //...
     just test-scripts
 
-# Run the tests of the packages changed since <base> and their dependents; falls back to `just test` (rules: .github/scripts/test-changed.sh)
-test-changed $base="origin/main":
-    bash .github/scripts/test-changed.sh "$base"
-
-# Run the tests of every .github/scripts/*.sh gate. Needs bash, git, awk, perl, jq and cargo.
+# Run the tests of every .github/scripts/*.sh gate. Needs bash, git, awk, perl and jq.
 test-scripts:
     #!/usr/bin/env bash
     set -uo pipefail
@@ -218,30 +198,15 @@ test-scripts:
     done
     exit "$rc"
 
-# Build every Bazel target. Until Cargo is removed, a pull request keeps both builds green (docs/src/bazel.md). FLAGS: extra Bazel flags, such as CI's `--config=ci` and remote flags.
-[group('bazel')]
-bazel-build *FLAGS:
-    bazel build {{ FLAGS }} //...
-
-# Run every Bazel test
-[group('bazel')]
-bazel-test *FLAGS:
-    bazel test {{ FLAGS }} //...
-
 # Build the libFuzzer binaries of the DPE fuzz targets (`--config=fuzz`) and print their paths. Run one directly with its corpus directory, not through `bazel run`, whose sandbox would discard the corpus it grows (docs/src/bazel.md, *Fuzz targets*). `--remote_download_toplevel` keeps the binaries local under a remote cache.
-[group('bazel')]
-bazel-build-fuzz *FLAGS:
+[group('dpe')]
+build-fuzz *FLAGS:
     #!/usr/bin/env bash
     set -euo pipefail
     targets=$(bazel query --output=label 'attr(name, "_bin$", //areas/access/dpe/server/fuzz:*)')
     bazel build --config=fuzz --remote_download_toplevel {{ FLAGS }} $targets
     # Not `bazel-bin`: it follows whichever configuration was built last.
     bazel cquery --config=fuzz {{ FLAGS }} --output=files "set($targets)"
-
-# Run clippy over every Bazel target, tests included, with `-Dwarnings` (set in .bazelrc). `--keep_going` reports every failing target in one run.
-[group('bazel')]
-bazel-clippy *FLAGS:
-    bazel build {{ FLAGS }} --keep_going --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect --output_groups=clippy_checks //...
 
 # Accept the `insta` snapshots of one test target: runs it from the checkout with `INSTA_UPDATE=always`, so `insta` writes the snapshot files (never rename a `.snap.new` by hand); review with `git diff`. Example: `just snap-accept //areas/access/dpe/server:dpe_server_test`.
 [group('bazel')]
@@ -310,19 +275,19 @@ audit:
 
 IMAGE_FLAGS := "--config=release --stamp"
 
-# Build the DPE image with Bazel and load it into Docker as `local-scan/dpe:latest`. FLAGS: extra Bazel flags, such as CI's.
-[group('bazel')]
-bazel-docker-build-dpe *FLAGS:
+# Build the DPE image and load it into Docker as `local-scan/dpe:latest`. FLAGS: extra Bazel flags, such as CI's.
+[group('dpe')]
+build-docker-dpe *FLAGS:
     bazel run {{ FLAGS }} {{ IMAGE_FLAGS }} //areas/access/server:image_load
 
-# Build the editor image with Bazel and load it into Docker as `local-scan/editor:latest`. FLAGS: extra Bazel flags, such as CI's.
-[group('bazel')]
-bazel-docker-build-editor *FLAGS:
+# Build the editor image and load it into Docker as `local-scan/editor:latest`. FLAGS: extra Bazel flags, such as CI's.
+[group('editor')]
+build-docker-editor *FLAGS:
     bazel run {{ FLAGS }} {{ IMAGE_FLAGS }} //areas/deposit/server:image_load
 
-# Build the Mosaic playground image with Bazel and load it into Docker as `local-scan/mosaic-playground:latest`. FLAGS: extra Bazel flags, such as CI's.
-[group('bazel')]
-bazel-docker-build-mosaic *FLAGS:
+# Build the Mosaic playground image and load it into Docker as `local-scan/mosaic-playground:latest`. FLAGS: extra Bazel flags, such as CI's.
+[group('mosaic')]
+build-docker-mosaic-playground *FLAGS:
     bazel run {{ FLAGS }} {{ IMAGE_FLAGS }} //modules/mosaic/playground:image_load
 
 # Build an image and push it with its `oci_push` target, such as `//areas/access/server:image_push`. ARGS: Bazel flags, then `--` and the push's own, `--tag <tag>` and `--repository <repository>` (default: the target's). From CI only: the data layers take untracked files (`app_image`).
@@ -336,13 +301,12 @@ bazel-docker-push-build TARGET *FLAGS:
     bazel build {{ IMAGE_FLAGS }} {{ TARGET }} {{ FLAGS }}
 
 # Build and load the three images, start each, and expect 200 from `/healthz` (the playground: `/`) and exit 0 from the server's `healthcheck` subcommand. FLAGS: extra Bazel flags, such as CI's.
-[group('bazel')]
-bazel-image-smoke *FLAGS:
+image-smoke *FLAGS:
     #!/usr/bin/env bash
     set -euo pipefail
-    just bazel-docker-build-dpe {{ FLAGS }}
-    just bazel-docker-build-editor {{ FLAGS }}
-    just bazel-docker-build-mosaic {{ FLAGS }}
+    just build-docker-dpe {{ FLAGS }}
+    just build-docker-editor {{ FLAGS }}
+    just build-docker-mosaic-playground {{ FLAGS }}
     containers=()
     trap 'for c in ${containers[@]+"${containers[@]}"}; do docker rm -f "$c" >/dev/null 2>&1 || true; done' EXIT
     # usage: smoke <image> <path> <healthcheck binary, or empty> [docker run arguments]
@@ -422,39 +386,7 @@ commit-lint base="origin/main":
 
 # Clean all build artifacts
 clean:
-    cargo clean
-
-# Build linux/amd64 Docker image locally
-docker-build-amd64:
-    docker buildx build --platform linux/amd64 -t {{ DOCKER_IMAGE }}-amd64 --load .
-
-# Push previously build linux/amd64 image to Docker hub
-docker-push-amd64:
-    docker push {{ DOCKER_IMAGE }}-amd64
-
-# Build linux/arm64 Docker image locally
-docker-build-arm64:
-    docker buildx build --platform linux/arm64 -t {{ DOCKER_IMAGE }}-arm64 --load .
-
-# Push previously build linux/arm64 image to Docker hub
-docker-push-arm64:
-    docker push {{ DOCKER_IMAGE }}-arm64
-
-# Publish Docker manifest combining aarch64 and x86 published images
-docker-publish-manifest:
-    docker manifest create {{ DOCKER_IMAGE }} --amend {{ DOCKER_IMAGE }}-amd64 --amend {{ DOCKER_IMAGE }}-arm64
-    docker manifest annotate --arch amd64 --os linux {{ DOCKER_IMAGE }} {{ DOCKER_IMAGE }}-amd64
-    docker manifest annotate --arch arm64 --os linux {{ DOCKER_IMAGE }} {{ DOCKER_IMAGE }}-arm64
-    docker manifest inspect {{ DOCKER_IMAGE }}
-    docker manifest push {{ DOCKER_IMAGE }}
-
-# Output the BUILD_TAG
-docker-image-tag:
-    @echo {{ IMAGE_TAG }}
-
-# Watch for changes and run tests
-watch:
-    cargo watch -x test
+    bazel clean
 
 [group('docs')]
 docs-install-requirements:
@@ -485,132 +417,82 @@ docs-test:
 # Mosaic targets
 ###################
 
-# Build the playground stylesheet → playground/public/assets/app.css (gitignored). Standalone Tailwind CLI off the canonical tokens.css, same mechanism as `just css`. (DEV-6642)
+# Build the playground stylesheet with Bazel (`//modules/mosaic/playground:css`) and copy it to playground/public/assets/app.css (gitignored), where the dev binary serves it from. (DEV-6642)
 [group('mosaic')]
-css-mosaic:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    bin="$(just -q _tailwind-bin)"
-    "$bin" -i modules/mosaic/playground/style/main.css -o modules/mosaic/playground/public/assets/app.css --minify
+css-mosaic *FLAGS:
+    just _css-copy //modules/mosaic/playground:css modules/mosaic/playground/public/assets dev {{ FLAGS }}
 
-# Dev loop: Tailwind --watch + cargo-watch rebuilding the plain Axum playground binary. (DEV-6642)
+# Dev loop: Tailwind --watch + bacon (kill_then_restart) serving the playground's dev binary. (DEV-6642)
 [group('mosaic')]
 watch-mosaic-playground:
     #!/usr/bin/env bash
     set -euo pipefail
-    bin="$(just -q _tailwind-bin)"
-    "$bin" -i modules/mosaic/playground/style/main.css -o modules/mosaic/playground/public/assets/app.css --watch &
-    tw=$!
-    trap 'kill $tw 2>/dev/null || true' EXIT
-    MOSAIC_PUBLIC_DIR=modules/mosaic/playground/public cargo watch -x 'run -p mosaic-playground --features dev'
+    tw="$(just -q _tailwind-cli)"
+    "$tw" -i modules/mosaic/playground/style/main.css -o modules/mosaic/playground/public/assets/app.css --watch &
+    pid=$!
+    trap 'kill $pid 2>/dev/null || true' EXIT
+    bacon playground
 
-# Build Docker image for mosaic playground
-[group('mosaic')]
-build-docker-mosaic-playground:
-    docker build -f modules/mosaic/playground/Dockerfile -t mosaic-playground .
-
-# Run mosaic playground Docker container on port 8080
+# Run the Mosaic playground image on port 8080 (`just build-docker-mosaic-playground` first)
 [group('mosaic')]
 run-docker-mosaic-playground:
-    docker run --rm -p 8080:8080 mosaic-playground
+    docker run --rm --platform linux/amd64 -p 8080:8080 local-scan/mosaic-playground:latest
 
 ###################
 # DPE targets
 ###################
 
-# Rewrite tailwind.pins for a Tailwind release, from the sha256sums.txt published alongside it. (DEV-6727)
-tailwind-pins-refresh version:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    # That file is read once, here, and never at build time, where an attacker
-    # able to swap a release asset could swap its checksum file too. Pinning buys
-    # a fixed reference point and an audit trail, not authenticity: see
-    # docs/src/security.md.
-    . .github/scripts/verify-checksums.sh
-    ver="{{ version }}"
-    sums="$(curl -fsSL --connect-timeout 10 --max-time 60 \
-        "https://github.com/tailwindlabs/tailwindcss/releases/download/v$ver/sha256sums.txt")"
-    tmp="$(mktemp "${TMPDIR:-/tmp}/tailwind-pins.XXXXXX")"
-    # Keep everything above the version line; rewrite from there down.
-    awk '$1 == "version" { exit } { print }' tailwind.pins >"$tmp"
-    printf 'version %s\n\n' "$ver" >>"$tmp"
-    for asset in $TAILWIND_ASSETS; do
-        pin="$(printf '%s\n' "$sums" | awk -v a="$asset" '$2 == a || $2 == "./" a { print $1; exit }')"
-        [ -n "$pin" ] || { echo "✗ $asset is not listed in v$ver's sha256sums.txt" >&2; exit 1; }
-        printf '%s  %s\n' "$pin" "$asset" >>"$tmp"
-    done
-    mv "$tmp" tailwind.pins
-    TAILWIND_PINS=tailwind.pins verify_tailwind_pins
-    git --no-pager diff -- tailwind.pins
-
-# The version and the SHA-256 of every release asset both come from tailwind.pins,
-# which modules/mosaic/playground/Dockerfile reads too, so neither file can drift
-# onto a version the other has not seen; bump with `just tailwind-pins-refresh
-# <version>`. The binary is verified before it is handed to a caller.
-
-# Resolve the pinned Tailwind v4 standalone CLI (download + cache under target/, gitignored); echoes its path. Bundles plugins incl. typography, so no Node/npm is needed. (DEV-6642, DEV-6727)
+# The Tailwind standalone CLI Bazel pins (`//tools/tailwind`, four `http_file`s with `sha256` in MODULE.bazel), fetched for this machine; echoes its path. The dev recipes' `--watch` runs it, so the watch and the build use one binary. (DEV-6642, DEV-6727)
 [private]
-_tailwind-bin:
+_tailwind-cli:
     #!/usr/bin/env bash
     set -euo pipefail
-    . .github/scripts/verify-checksums.sh
-    ver="$(tailwind_version)"
-    case "$(uname -s)" in Darwin) os=macos ;; Linux) os=linux ;; *) echo "unsupported OS: $(uname -s)" >&2; exit 1 ;; esac
-    case "$(uname -m)" in arm64|aarch64) arch=arm64 ;; x86_64) arch=x64 ;; *) echo "unsupported arch: $(uname -m)" >&2; exit 1 ;; esac
-    asset="tailwindcss-$os-$arch"
-    bin="target/tailwind/tailwindcss-$ver-$os-$arch"
-    want="$(tailwind_pin "$asset")"
-    if [ ! -x "$bin" ]; then
-        mkdir -p target/tailwind
-        url="https://github.com/tailwindlabs/tailwindcss/releases/download/v$ver/$asset"
-        echo "fetching Tailwind standalone CLI: $url" >&2
-        curl -fsSL --connect-timeout 10 --max-time 60 --retry 3 -o "$bin" "$url"
-        chmod +x "$bin"
-    fi
-    # Checked on every resolve, not only after a download: a cache left by an
-    # earlier build, or a truncated one, is precisely what must not be executed.
-    if ! verify_file "$bin" "$want"; then
-        rm -f "$bin"
-        echo "removed the unverified binary. If this Tailwind bump is intentional, run 'just tailwind-pins-refresh $ver'" >&2
-        exit 1
-    fi
-    echo "$bin"
+    bazel build //tools/tailwind
+    echo "$(bazel info output_base 2>/dev/null)/$(bazel cquery --output=files //tools/tailwind 2>/dev/null)"
 
-# Build the unified DPE stylesheet → public/assets/app.css (dev, unhashed). main.css is the single Tailwind entry. (DEV-6642)
-[group('dpe')]
-css:
+# usage: _css-copy <target> <asset dir> dev|release [Bazel flags]. Builds a stylesheet target and copies its file into the asset directory the server reads in the checkout: `dev` writes `app.css`, `release` writes `app.<hash8>.css` and removes the older hashed files and `app.css`. The DPE and editor targets output a directory holding `app.<hash8>.css`, the playground's `app.css`; minified either way, so the dev and release files hold the same bytes.
+[private]
+_css-copy target out mode *FLAGS:
     #!/usr/bin/env bash
     set -euo pipefail
-    bin="$(just -q _tailwind-bin)"
-    "$bin" -i areas/access/dpe/style/main.css -o areas/access/dpe/public/assets/app.css --minify
+    # `.bazelrc` sets `--remote_download_minimal`: under a remote cache the output would stay remote.
+    bazel build --remote_download_toplevel {{ FLAGS }} {{ target }}
+    built="$(bazel info {{ FLAGS }} execution_root 2>/dev/null)/$(bazel cquery {{ FLAGS }} --output=files {{ target }} 2>/dev/null)"
+    if [ -d "$built" ]; then src="$(find "$built" -maxdepth 1 -name 'app*.css' | head -n1)"; else src="$built"; fi
+    [ -f "$src" ] || { echo >&2 "error: no stylesheet in $built"; exit 1; }
+    mkdir -p "{{ out }}"
+    if [ "{{ mode }}" = dev ]; then
+        install -m 0644 "$src" "{{ out }}/app.css"
+        echo "built {{ out }}/app.css"
+        exit 0
+    fi
+    name="$(basename "$src")"
+    # Write the hashed file first, then drop the stale hashed files and the unhashed one. If the
+    # copy fails, the previous hashed stylesheet is still in place.
+    install -m 0644 "$src" "{{ out }}/$name"
+    find "{{ out }}" -maxdepth 1 -name 'app.[0-9a-f]*.css' ! -name "$name" -delete
+    rm -f "{{ out }}/app.css"
+    echo "built {{ out }}/$name"
 
-# Build the release stylesheet with a content-hashed filename (app.<hash>.css). (DEV-6642)
+# Build the DPE stylesheet with Bazel (`//areas/access/dpe:css`) → public/assets/app.css, which a dev build links. main.css is the single Tailwind entry. (DEV-6642)
 [group('dpe')]
-css-release:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    # The server discovers the name by scanning the asset dir at startup, so there
-    # is no build.rs and no tracked-source edit: `git diff --exit-code` stays clean.
-    bin="$(just -q _tailwind-bin)"
-    out=areas/access/dpe/public/assets
-    "$bin" -i areas/access/dpe/style/main.css -o "$out/app.css" --minify
-    if command -v sha256sum >/dev/null 2>&1; then h=$(sha256sum "$out/app.css" | cut -c1-8); else h=$(shasum -a 256 "$out/app.css" | cut -c1-8); fi
-    # Write the hashed file first, then drop the stale hashed files + the unhashed
-    # temp. If the copy fails, the previous hashed CSS is still in place.
-    cp "$out/app.css" "$out/app.$h.css"
-    find "$out" -maxdepth 1 -name 'app.[0-9a-f]*.css' ! -name "app.$h.css" -delete
-    rm -f "$out/app.css"
-    echo "built $out/app.$h.css"
+css *FLAGS:
+    just _css-copy //areas/access/dpe:css areas/access/dpe/public/assets dev {{ FLAGS }}
+
+# Build the release stylesheet → public/assets/app.<hash8>.css, which a release build finds by scanning the directory at startup. (DEV-6642)
+[group('dpe')]
+css-release *FLAGS:
+    just _css-copy //areas/access/dpe:css areas/access/dpe/public/assets release {{ FLAGS }}
 
 # Start the DPE with hot reload: Tailwind --watch + bacon (kill_then_restart) serving access-server.
 [group('dpe')]
 dev:
     #!/usr/bin/env bash
     set -euo pipefail
-    bin="$(just -q _tailwind-bin)"
-    "$bin" -i areas/access/dpe/style/main.css -o areas/access/dpe/public/assets/app.css --watch &
-    tw=$!
-    trap 'kill $tw 2>/dev/null || true' EXIT
+    tw="$(just -q _tailwind-cli)"
+    "$tw" -i areas/access/dpe/style/main.css -o areas/access/dpe/public/assets/app.css --watch &
+    pid=$!
+    trap 'kill $pid 2>/dev/null || true' EXIT
     bacon serve
 
 # Score a landing page's FAIRness with F-UJI. Usage: just fair-check <url> [min_score]. Exits non-zero when the total is below min_score. (DEV-7268)
@@ -625,8 +507,8 @@ fair-check url min_score="0":
     # 2026-09-15 baseline was taken with. Bumping this is a reviewed change,
     # made when F-UJI publishes a release and checked at least with every
     # change to a landing page, as for the Tailwind CLI pin in
-    # docs/src/security.md. There is no `tailwind-pins-refresh`-style recipe
-    # because this never runs in CI.
+    # docs/src/security.md. There is no refresh recipe because this never
+    # runs in CI.
     #
     # Not `:latest` for a second reason: `:latest` is 4.0.0, which does not
     # start in its published image. Verify a new digest starts before pinning
@@ -727,109 +609,64 @@ lgtm-up:
 dev-otel:
     #!/usr/bin/env bash
     set -euo pipefail
-    bin="$(just -q _tailwind-bin)"
-    "$bin" -i areas/access/dpe/style/main.css -o areas/access/dpe/public/assets/app.css --watch &
-    tw=$!
-    trap 'kill $tw 2>/dev/null || true' EXIT
+    tw="$(just -q _tailwind-cli)"
+    "$tw" -i areas/access/dpe/style/main.css -o areas/access/dpe/public/assets/app.css --watch &
+    pid=$!
+    trap 'kill $pid 2>/dev/null || true' EXIT
     OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 \
     OTEL_SERVICE_NAME=dpe \
-    OTEL_RESOURCE_ATTRIBUTES="service.namespace=dpe,service.version={{ CARGO_VERSION }},deployment.environment=dev" \
+    OTEL_RESOURCE_ATTRIBUTES="service.namespace=dpe,service.version={{ VERSION }},deployment.environment=dev" \
     PYROSCOPE_ENDPOINT=http://localhost:4040 \
     bacon serve
 
-# Build the DPE Docker image locally; `arch=x86_64` reproduces the one CI publishes.
-[group('dpe')]
-build-docker-dpe arch="": css-release
-    #!/usr/bin/env bash
-    set -euo pipefail
-    # Same approach as `build-docker-editor`, which explains it: the image runs a
-    # static musl binary, so the compile happens in a `rust:<channel>-bookworm`
-    # container. CI publishes the Bazel image instead (`just bazel-docker-build-dpe`).
-    arch="{{ arch }}"
-    if [ -z "$arch" ]; then
-        case "$(uname -m)" in
-            arm64 | aarch64) arch=aarch64 ;;
-            x86_64) arch=x86_64 ;;
-            *) echo "unsupported host arch $(uname -m) — pass arch=aarch64 or arch=x86_64" >&2; exit 1 ;;
-        esac
-    fi
-    case "$arch" in
-        aarch64) platform=linux/arm64 ;;
-        x86_64) platform=linux/amd64 ;;
-        *) echo "arch must be aarch64 or x86_64, got '$arch'" >&2; exit 1 ;;
-    esac
-    target="$arch-unknown-linux-musl"
-    rust_version="$(sed -n 's/^channel = "\(.*\)"/\1/p' rust-toolchain.toml)"
-    stage=target/dpe-staging
-    docker run --rm --platform "$platform" \
-        -v "$PWD":/work -w /work \
-        -e CARGO_TARGET_DIR=/work/target/container \
-        -e CARGO_HOME=/work/target/container-cargo-home \
-        "rust:$rust_version-bookworm" \
-        bash -eu -c "
-            apt-get update -qq
-            apt-get install -y -qq --no-install-recommends musl-tools clang >/dev/null
-            rustup target add $target
-            cargo build -p access-server --release --target $target
-        "
-    rm -rf "$stage"
-    mkdir -p "$stage/sync" "$stage/cpe" "$stage/media"
-    cp "target/container/$target/release/access-server" "$stage/"
-    cp -r areas/access/dpe/public "$stage/"
-    cp -r {{ DPE_DATA_DIR }} "$stage/"
-    cp -r areas/access/sync/data "$stage/sync/"
-    cp -r areas/access/cpe/projects "$stage/cpe/"
-    cp -r areas/access/media/data "$stage/media/"
-    cp areas/access/server/Dockerfile "$stage/"
-    docker build --platform "$platform" -f "$stage/Dockerfile" -t dpe "$stage"
-
-# Run DPE Docker container on port 8080
+# Run the DPE image on port 8080 (`just build-docker-dpe` first)
 [group('dpe')]
 run-docker-dpe:
-    docker run --rm -p 8080:8080 dpe
+    docker run --rm --platform linux/amd64 -p 8080:8080 local-scan/dpe:latest
 
-# Run accessibility E2E tests for the DPE (requires running server on port 4000)
+# usage: _release-bin <target> [Bazel flags]. Builds a server for this machine with `--config=release`, the profile the images use, and echoes the binary's absolute path. Not `bazel-bin`: it follows whichever configuration was built last.
+[private]
+_release-bin target *FLAGS:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    # `--remote_download_toplevel`: under a remote cache `.bazelrc`'s `--remote_download_minimal`
+    # would leave the binary remote.
+    bazel build --config=release --remote_download_toplevel {{ FLAGS }} {{ target }} >&2
+    echo "$(bazel info --config=release {{ FLAGS }} execution_root 2>/dev/null)/$(bazel cquery --config=release {{ FLAGS }} --output=files {{ target }} 2>/dev/null)"
+
+# Run the DPE accessibility E2E tests against a release build with the release stylesheet; Playwright starts the server on port 4000. FLAGS: extra Bazel flags, such as CI's.
 [group('dpe')]
-test-a11y-dpe: _check-node
+test-a11y-dpe *FLAGS: _check-node
+    #!/usr/bin/env bash
+    set -euo pipefail
+    just css-release {{ FLAGS }}
+    ACCESS_SERVER_BIN="$(just -q _release-bin //areas/access/server:access_server {{ FLAGS }})"
+    export ACCESS_SERVER_BIN
     cd areas/access/dpe/web-e2e-tests && npx playwright test tests/accessibility.spec.ts --project=chromium
 
 ###################
 # Editor targets
 ###################
 
-# Build the unified editor stylesheet → public/assets/app.css (dev, unhashed). main.css is the single Tailwind entry.
+# Build the editor stylesheet with Bazel (`//areas/deposit/editor:css`) → public/assets/app.css, which a dev build links. main.css is the single Tailwind entry.
 [group('editor')]
-css-editor:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    bin="$(just -q _tailwind-bin)"
-    "$bin" -i areas/deposit/editor/style/main.css -o areas/deposit/editor/public/assets/app.css --minify
+css-editor *FLAGS:
+    just _css-copy //areas/deposit/editor:css areas/deposit/editor/public/assets dev {{ FLAGS }}
 
-# Build the release stylesheet with a content-hashed filename (app.<hash>.css); the server discovers it by scanning the asset dir at startup. Mirrors `just css-release`.
+# Build the release stylesheet → public/assets/app.<hash8>.css, which a release build finds by scanning the directory at startup. Mirrors `just css-release`.
 [group('editor')]
-css-editor-release:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    bin="$(just -q _tailwind-bin)"
-    out=areas/deposit/editor/public/assets
-    "$bin" -i areas/deposit/editor/style/main.css -o "$out/app.css" --minify
-    if command -v sha256sum >/dev/null 2>&1; then h=$(sha256sum "$out/app.css" | cut -c1-8); else h=$(shasum -a 256 "$out/app.css" | cut -c1-8); fi
-    # Write the hashed file first, then drop the stale hashed files + the unhashed
-    # temp. If the copy fails, the previous hashed CSS is still in place.
-    cp "$out/app.css" "$out/app.$h.css"
-    find "$out" -maxdepth 1 -name 'app.[0-9a-f]*.css' ! -name "app.$h.css" -delete
-    rm -f "$out/app.css"
-    echo "built $out/app.$h.css"
+css-editor-release *FLAGS:
+    just _css-copy //areas/deposit/editor:css areas/deposit/editor/public/assets release {{ FLAGS }}
 
 # Start the editor with hot reload: Tailwind --watch + bacon (kill_then_restart) serving deposit-server. Binds 127.0.0.1:4100, so `just dev` can run alongside it.
 [group('editor')]
 dev-editor:
     #!/usr/bin/env bash
     set -euo pipefail
-    bin="$(just -q _tailwind-bin)"
-    "$bin" -i areas/deposit/editor/style/main.css -o areas/deposit/editor/public/assets/app.css --watch &
-    tw=$!
-    trap 'kill $tw 2>/dev/null || true' EXIT
+    tw="$(just -q _tailwind-cli)"
+    "$tw" -i areas/deposit/editor/style/main.css -o areas/deposit/editor/public/assets/app.css --watch &
+    pid=$!
+    trap 'kill $pid 2>/dev/null || true' EXIT
     # The editor has no default data directory: the published set is DPE's
     # content, consumed through EDITOR_DATA_DIR. Locally that is DPE's
     # checked-out data; the image bakes a snapshot at /app/server/data.
@@ -841,92 +678,44 @@ dev-editor:
 dev-editor-otel:
     #!/usr/bin/env bash
     set -euo pipefail
-    bin="$(just -q _tailwind-bin)"
-    "$bin" -i areas/deposit/editor/style/main.css -o areas/deposit/editor/public/assets/app.css --watch &
-    tw=$!
-    trap 'kill $tw 2>/dev/null || true' EXIT
+    tw="$(just -q _tailwind-cli)"
+    "$tw" -i areas/deposit/editor/style/main.css -o areas/deposit/editor/public/assets/app.css --watch &
+    pid=$!
+    trap 'kill $pid 2>/dev/null || true' EXIT
     EDITOR_DATA_DIR={{ DPE_DATA_DIR }} \
     OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 \
     OTEL_SERVICE_NAME=editor \
-    OTEL_RESOURCE_ATTRIBUTES="service.namespace=editor,service.version={{ CARGO_VERSION }},deployment.environment=dev" \
+    OTEL_RESOURCE_ATTRIBUTES="service.namespace=editor,service.version={{ VERSION }},deployment.environment=dev" \
     PYROSCOPE_ENDPOINT=http://localhost:4040 \
     bacon serve-editor
 
-# Needs `cargo build -p deposit-server --release` and `just css-editor-release`
-# first; Playwright starts the binary itself.
-
-# Run the editor E2E suite: the JavaScript-enabled and the javaScriptEnabled=false pass.
+# Run the editor E2E suite, the JavaScript-enabled and the javaScriptEnabled=false pass, against a release build with the release stylesheet; Playwright starts the server. FLAGS: extra Bazel flags, such as CI's.
 [group('editor')]
-test-e2e-editor: _check-node
-    cd areas/deposit/editor/web-e2e-tests && npx playwright test
-
-# Run the editor accessibility E2E tests (WCAG 2.1 AA via axe-core). Same build prerequisites as `test-e2e-editor`.
-[group('editor')]
-test-a11y-editor: _check-node
-    cd areas/deposit/editor/web-e2e-tests && npx playwright test tests/accessibility.spec.ts --project=chromium-js
-
-# Build the editor Docker image locally; `arch=x86_64` reproduces the one CI publishes.
-[group('editor')]
-build-docker-editor arch="": css-editor-release
+test-e2e-editor *FLAGS: _check-node
     #!/usr/bin/env bash
     set -euo pipefail
-    # The image runs a *static musl* binary. A host `cargo build --target
-    # *-unknown-linux-musl` needs a musl cross-linker, which macOS does not have —
-    # so the compile happens in the same container image CI's runner provides,
-    # installing musl-tools + clang. CI publishes the Bazel image instead
-    # (`just bazel-docker-build-editor`).
-    arch="{{ arch }}"
-    if [ -z "$arch" ]; then
-        # Default to the host arch: cross-building amd64 on arm64 works but is
-        # emulated, and this release profile (lto, codegen-units=1) is slow enough
-        # already. CI publishes amd64; `arch=x86_64` reproduces it.
-        case "$(uname -m)" in
-            arm64 | aarch64) arch=aarch64 ;;
-            x86_64) arch=x86_64 ;;
-            *) echo "unsupported host arch $(uname -m) — pass arch=aarch64 or arch=x86_64" >&2; exit 1 ;;
-        esac
-    fi
-    case "$arch" in
-        aarch64) platform=linux/arm64 ;;
-        x86_64) platform=linux/amd64 ;;
-        *) echo "arch must be aarch64 or x86_64, got '$arch'" >&2; exit 1 ;;
-    esac
-    target="$arch-unknown-linux-musl"
-    # Track rust-toolchain.toml rather than hardcoding, so a channel bump cannot
-    # leave this recipe building with a different compiler than everything else.
-    rust_version="$(sed -n 's/^channel = "\(.*\)"/\1/p' rust-toolchain.toml)"
-    stage=target/editor-staging
-    # Container artifacts live outside target/{debug,release} so they never mix
-    # with host builds of the same profile.
-    docker run --rm --platform "$platform" \
-        -v "$PWD":/work -w /work \
-        -e CARGO_TARGET_DIR=/work/target/container \
-        -e CARGO_HOME=/work/target/container-cargo-home \
-        "rust:$rust_version-bookworm" \
-        bash -eu -c "
-            apt-get update -qq
-            apt-get install -y -qq --no-install-recommends musl-tools clang >/dev/null
-            rustup target add $target
-            cargo build -p deposit-server --release --target $target
-        "
-    rm -rf "$stage"
-    mkdir -p "$stage"
-    cp "target/container/$target/release/deposit-server" "$stage/"
-    cp -r areas/deposit/editor/public "$stage/"
-    # DPE's published set, copied in deliberately: git stays the source of truth
-    # and the editor reads an image-baked snapshot via EDITOR_DATA_DIR, so a data
-    # change reaches the editor by rebuilding the image, not at runtime.
-    cp -r {{ DPE_DATA_DIR }} "$stage/"
-    cp areas/deposit/server/Dockerfile "$stage/"
-    docker build --platform "$platform" -f "$stage/Dockerfile" -t metadata-editor "$stage"
+    just css-editor-release {{ FLAGS }}
+    DEPOSIT_SERVER_BIN="$(just -q _release-bin //areas/deposit/server:deposit_server {{ FLAGS }})"
+    export DEPOSIT_SERVER_BIN
+    cd areas/deposit/editor/web-e2e-tests && npx playwright test
 
-# Run the editor Docker container on port 8080
+# Run the editor accessibility E2E tests (WCAG 2.1 AA via axe-core), built as for `test-e2e-editor`. FLAGS: extra Bazel flags, such as CI's.
+[group('editor')]
+test-a11y-editor *FLAGS: _check-node
+    #!/usr/bin/env bash
+    set -euo pipefail
+    just css-editor-release {{ FLAGS }}
+    DEPOSIT_SERVER_BIN="$(just -q _release-bin //areas/deposit/server:deposit_server {{ FLAGS }})"
+    export DEPOSIT_SERVER_BIN
+    cd areas/deposit/editor/web-e2e-tests && npx playwright test tests/accessibility.spec.ts --project=chromium-js
+
+# Run the editor image on port 8080 (`just build-docker-editor` first)
 [group('editor')]
 run-docker-editor:
     # DEV overrides the image's PROD default: startup refuses PROD without an
     # SMTP relay, because that combination writes every login code to the log
     # while the service looks healthy. Locally the console transport is the point.
-    docker run --rm -p 8080:8080 -e EDITOR_ENV=DEV metadata-editor
+    docker run --rm --platform linux/amd64 -p 8080:8080 -e EDITOR_ENV=DEV local-scan/editor:latest
 
 # Lint E2E test TypeScript with Biome
 lint-e2e: _check-node
@@ -941,7 +730,7 @@ lint-e2e: _check-node
 # Run the CLI with the given arguments (debug build).
 [group('dsp-cli')]
 dsp-cli-run *args:
-    cargo run -p dsp-cli --bin dsp -- {{ args }}
+    bazel run --run_in_cwd //dsp-cli:dsp -- {{ args }}
 
 # Needs a reachable DSP stack and the environment variables the live tests read
 # (DSP_TEST_SERVER, DSP_TEST_USER, DSP_TEST_PASSWORD, DSP_TEST_PROJECT,
@@ -951,24 +740,14 @@ dsp-cli-run *args:
 # it calls out to crates.io to check for a newer dsp-cli release, not a DSP
 # stack, so it does not belong in a run gated on stack reachability.
 
-# Run the dsp-cli live tests (layer 5, dsp-cli/ADR-0009).
+# Run the dsp-cli live tests (layer 5, dsp-cli/ADR-0009) with Bazel. Each variable is passed by name, because Bazel's strict test environment drops what is not named; the targets set `DSP_LIVE_STRICT=1` themselves. FLAGS: extra Bazel flags, such as CI's.
 [group('dsp-cli')]
-dsp-cli-test-live:
-    DSP_LIVE_STRICT=1 cargo nextest run -p dsp-cli --features live --run-ignored only -E 'binary(/^live_/) & !binary(live_update_check)'
-
-# Run the dsp-cli live tests with Bazel: the same targets and variables as `dsp-cli-test-live`. Each variable is passed by name, because Bazel's strict test environment drops what is not named; the targets set `DSP_LIVE_STRICT=1` themselves.
-[group('dsp-cli')]
-bazel-dsp-cli-test-live *FLAGS:
+dsp-cli-test-live *FLAGS:
     bazel test {{ FLAGS }} \
         --test_env=DSP_TEST_SERVER --test_env=DSP_TEST_USER --test_env=DSP_TEST_PASSWORD \
         --test_env=DSP_TEST_PROJECT --test_env=DSP_TEST_CLASS_IRI --test_env=DSP_TEST_VOCAB_PROJECT \
         --test_env=DSP_TEST_NON_ADMIN_TOKEN --test_env=DSP_TEST_ORDER_BY_IRI --test_env=DSP_TOKEN \
         $(bazel query 'filter("^//dsp-cli:live_[a-z_]+_test$", //dsp-cli:all) except //dsp-cli:live_update_check_test')
-
-# Review pending insta snapshots for dsp-cli.
-[group('dsp-cli')]
-dsp-cli-snap-review:
-    cargo insta review -p dsp-cli
 
 # Verify Docker is on PATH and its daemon answers. just runs recipes in sh, which does NOT see shell-function version managers — only real binaries on PATH.
 [private]

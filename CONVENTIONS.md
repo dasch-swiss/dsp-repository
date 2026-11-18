@@ -4,10 +4,10 @@ Agent reference card for the **work phase**. Pair with `REVIEW.md`, the review-p
 
 ## Stack
 
-- Rust, one Cargo workspace (Bazel is the decided target, ADR-0001). Services are server-rendered hypermedia: Axum for routing, Maud for HTML, Datastar for interactivity over SSE; no client framework, no WASM (ADR-0004).
+- Rust, built and tested with Bazel (ADR-0001, `docs/src/bazel.md`); the Cargo manifests stay until they are removed, and a dependency change still edits both sides. Services are server-rendered hypermedia: Axum for routing, Maud for HTML, Datastar for interactivity over SSE; no client framework, no WASM (ADR-0004).
 - Stores are SQLite through `rusqlite`, pooled with `deadpool-sqlite` in the editor and identity stores.
-- CSS is Tailwind through its standalone CLI (`just css`); Node is needed only for the Playwright E2E suites.
-- Tests: `cargo test`, `insta` snapshots for rendered HTML, Playwright plus axe-core for E2E.
+- CSS is Tailwind through its standalone CLI, pinned and run by Bazel (`just css`); Node is needed only for the Playwright E2E suites.
+- Tests: `bazel test` (`just test`), `insta` snapshots for rendered HTML, Playwright plus axe-core for E2E.
 - Toolchain: `nix develop`, or `just install-requirements`; `just --list` shows every recipe.
 
 ## Code Conventions
@@ -15,7 +15,7 @@ Agent reference card for the **work phase**. Pair with `REVIEW.md`, the review-p
 - **Crate naming and API crate pattern**: See `docs/src/repo_structure.md`
 - **Fragment routes and Datastar attributes**: See `docs/src/dpe/architecture.md`
 - **Formatting**: Rust style in `.rustfmt.toml`. Run `just fmt`: `maudfmt` formats the `html!` Maud macro contents (stock rustfmt does not), then the nightly rustfmt pinned in `.rustfmt-nightly` handles the rest. To bump it: change the date, run `just fmt`, then `nix flake update rust-overlay`; CI, the justfile and `flake.nix` all read that file. `just check` verifies both. Land a whole-tree reformat as its own PR, and once it is on `main` add its SHA there to `.git-blame-ignore-revs`.
-- **No nested `html!` as a function argument**: bind non-trivial inner markup to a Rust `let` (`let body = html! { … }; card(body)`) or extract a `fn … -> Markup` helper — don't pass a multi-element `html! { … }` block directly into a call. `maudfmt` only formats `html!` at Rust statement/`let` position; a block nested as a call argument (or via Maud's in-macro `@let x = html! { … }`) is skipped and then mangled by `cargo fmt`. Trivial one-liners like `html! { (label) }` are fine inline.
+- **No nested `html!` as a function argument**: bind non-trivial inner markup to a Rust `let` (`let body = html! { … }; card(body)`) or extract a `fn … -> Markup` helper — don't pass a multi-element `html! { … }` block directly into a call. `maudfmt` only formats `html!` at Rust statement/`let` position; a block nested as a call argument (or via Maud's in-macro `@let x = html! { … }`) is skipped and then mangled by `rustfmt`. Trivial one-liners like `html! { (label) }` are fine inline.
 - **Linting**: Strict clippy warnings. Run `just check`.
 - **Vendored JS**: third-party browser files go in the owning module's `public/vendor/` (`areas/access/dpe/`, `areas/access/cpe/` or `areas/deposit/editor/`), each with its own `vendor/README.md` (file, package, version, SHA-256) to update when adding or updating. Where two modules vendor the same package, their READMEs say so; update those copies together. `just check` recomputes the digests and fails on drift either way (a changed file, a row without a file, a committed file without a row), so the table has to be correct, not just present. See `docs/src/security.md`.
 
@@ -44,7 +44,7 @@ Agent reference card for the **work phase**. Pair with `REVIEW.md`, the review-p
 
 ## Data Conventions
 
-- Project JSON files are canonical: top-level members in `ProjectRaw`'s declaration order, nested objects in theirs, language keys alphabetical, 4-space indent, trailing newline, no explicit `null`. Enforced byte-for-byte by `editor-core`'s `canonical_round_trip` test; regenerate with `CANONICALIZE_PROJECT_FILES=1 cargo test -p editor-core --test canonical_round_trip` rather than reordering by hand.
+- Project JSON files are canonical: top-level members in `ProjectRaw`'s declaration order, nested objects in theirs, language keys alphabetical, 4-space indent, trailing newline, no explicit `null`. Enforced byte-for-byte by `editor-core`'s `canonical_round_trip` test; regenerate with `just canonicalize-projects` rather than reordering by hand.
 - New project `temporalCoverage` values must resolve to structured dates for OAI-PMH — add each new free-text value to `areas/access/dpe/server/data/temporal-coverage-enrichment.json` (keyed by display text, with a W3CDTF range and `source: "llm"`). See `docs/src/dpe/oai-pmh.md` and the "Adding a Project Metadata File" section of `areas/access/dpe/CLAUDE.md`.
 - A new `spatialCoverage` or `temporalCoverage` reference must be a bundled option: run `python3 scripts/build-coverage-vocabularies.py` (for a new period, `python3 scripts/fetch-chronontology-periods.py` first), or `editor-core`'s drift tests fail.
 
@@ -71,7 +71,7 @@ Before opening a PR, read `git log origin/main` and recent merged PRs. Use them 
 
 ## Before Committing
 
-- `just fmt`, then `just check` (formatting, clippy, and the repo's static checks) and `just test`. While iterating, `just test-changed` runs only the packages changed since `origin/main` and their dependents.
+- `just fmt`, then `just check` (formatting, clippy, and the repo's static checks) and `just test`. While iterating, `bazel test //<package>/...` on the packages you changed.
 - `just validate-data` after any change under `areas/access/dpe/server/data/`.
 - `just commit-lint` before pushing; the `gate` CI job runs the same check.
 

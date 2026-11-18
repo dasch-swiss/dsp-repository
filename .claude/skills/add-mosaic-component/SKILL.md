@@ -206,7 +206,7 @@ fn variants() -> Markup {
 A builder splices into `html!` directly — never call `.build()` inside a
 template. A multi-element `html!` block must not be passed inline as a call
 argument either: bind it to a `let` first, or `maudfmt` skips it and
-`cargo fmt` mangles it.
+`rustfmt` mangles it.
 
 Keep each example wrapped via the shared `example("<name>-<example>", …)` helper
 — the `data-example-key` it emits is the stable anchor the e2e smoke test (and
@@ -242,11 +242,10 @@ In `modules/mosaic/playground/src/app.rs`:
 ## Step 5 — Verify
 
 ```bash
-cargo test -p mosaic-tiles          # tile unit tests
-cargo test -p mosaic-playground     # showcase render tests
+bazel test //modules/mosaic/tiles/... //modules/mosaic/playground/...  # tile unit and showcase render tests
 just css-mosaic                     # rebuild the playground stylesheet
 just watch-mosaic-playground        # eyeball the new page at /<name>
-just check                          # fmt (cargo +nightly fmt) + clippy
+just check                          # pinned nightly rustfmt, maudfmt, clippy
 ```
 
 After CSS changes, grep the built `playground/public/assets/app.css` for your

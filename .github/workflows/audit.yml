@@ -27,7 +27,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      # The justfile reads the workspace version with `cargo metadata` when it loads.
+      # `just audit` runs `cargo audit`, a cargo subcommand.
       - uses: dtolnay/rust-toolchain@stable
       - uses: extractions/setup-just@v4
       - uses: taiki-e/install-action@v2

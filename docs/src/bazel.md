@@ -1,12 +1,12 @@
 # Building with Bazel
 
-Bazel builds and tests the crates that have a `BUILD.bazel` file, beside the Cargo workspace (ADR-0001). Until Cargo is removed, both builds are gated on every pull request: `check` runs `just bazel-clippy` after `just check`, and `test / ubuntu / stable` runs `just bazel-test` after the Cargo tests, then `just bazel-image-smoke`.
+Bazel builds and tests every crate, the stylesheets, the fuzz targets and the images (ADR-0001). Every `just` recipe and every CI job uses it: `check` runs `just check`, which ends with clippy over every target, and `test / ubuntu / stable` runs `just test`, then `just image-smoke`.
 
 The pins are those of Sipi: Bazel in `.bazelversion`, the rulesets and the Rust version in `MODULE.bazel`. The C and C++ toolchain is hermetic (`llvm`, zero-sysroot): it fetches the macOS SDK itself and builds the Linux libc runtimes from source, so no Xcode and no host compiler is used for compiling.
 
-## Every pull request keeps both builds green
+## The Cargo manifests until they are removed
 
-While both exist, a change that touches dependencies or crates is made on both sides:
+The root `Cargo.toml`, `Cargo.lock` and the crates' manifests are still in the tree, as the way back, and no recipe or CI job builds them. They stay a way back only while they still describe the build, so a change that touches dependencies or crates is still made on both sides, and nothing checks that it was:
 
 - A dependency added, removed or changed in a `Cargo.toml` is also changed in the `crate.spec` lines of `MODULE.bazel` and in the `deps` of the crate's `BUILD.bazel`, followed by `just repin`.
 - A crate that has a `BUILD.bazel` file gets new source files without a BUILD edit (`srcs` is a glob), but a new file it reads with `include_str!` or at run time goes into `compile_data` or `data`.
@@ -16,21 +16,27 @@ While both exist, a change that touches dependencies or crates is made on both s
 
 | Recipe | What it runs |
 |---|---|
-| `just bazel-build` | `bazel build //...` |
-| `just bazel-test` | `bazel test //...` |
-| `just bazel-clippy` | clippy over every target, tests included, with `-Dwarnings` |
+| `just build` | `bazel build //...` |
+| `just test` | `bazel test //...`, then the gate scripts' tests |
+| `just check` | the gate scripts, `just`, `maudfmt` and pinned nightly `rustfmt` formatting, and clippy over every target, tests and the `manual` dsp-cli live targets included, with `-Dwarnings` |
+| `just fmt` | `maudfmt`, then the pinned nightly `rustfmt` (`$RUSTFMT`, else rustup's), edition 2024 for dsp-cli and 2021 for the rest |
+| `just run`, `just validate-data`, `just dsp-cli-run` | `bazel run --run_in_cwd`, so the binary runs from the repository root |
+| `just css`, `css-release`, `css-editor`, `css-editor-release`, `css-mosaic` | builds a stylesheet target and copies it into the application's `public/assets/` |
+| `just dev`, `dev-otel`, `dev-editor`, `dev-editor-otel`, `watch-mosaic-playground` | Tailwind `--watch` with the Bazel-pinned CLI, and bacon restarting the server's binary |
 | `just repin [crate]` | re-resolves the crate universe and refreshes `Cargo.Bazel.lock` and `MODULE.bazel.lock` |
 | `just audit` | `cargo-audit` and `osv-scanner` over `Cargo.Bazel.lock` |
 | `just rust-project` | writes `rust-project.json` for rust-analyzer |
 | `just snap-accept <target>` | runs one test target from the checkout with `INSTA_UPDATE=always`, so `insta` rewrites the snapshots that changed |
-| `just bazel-dsp-cli-test-live` | the `dsp-cli` live tests against a DSP stack, with the `DSP_TEST_*` variables and `DSP_TOKEN` passed through |
+| `just dsp-cli-test-live` | the `dsp-cli` live tests against a DSP stack, with the `DSP_TEST_*` variables and `DSP_TOKEN` passed through |
 | `just canonicalize-projects` | runs the editor's canonical round-trip test from the checkout with `CANONICALIZE_PROJECT_FILES=1`, so it rewrites the committed project files |
-| `just bazel-docker-build-dpe`, `-editor`, `-mosaic` | builds an image and loads it into Docker as `local-scan/<name>:latest` |
+| `just build-docker-dpe`, `build-docker-editor`, `build-docker-mosaic-playground` | builds an image and loads it into Docker as `local-scan/<name>:latest`; `just run-docker-*` runs it |
 | `just bazel-docker-push <target> [flags] -- --tag <tag> [--repository <repository>]` | builds an image and pushes it with its `:image_push` target; CI only (`docker-publish` action) |
-| `just bazel-image-smoke` | loads the three images, starts each, and expects 200 from `/healthz` (the playground: `/`) and exit 0 from the `healthcheck` subcommand |
-| `just bazel-build-fuzz` | the libFuzzer binaries of the DPE fuzz targets, `--config=fuzz` |
+| `just image-smoke` | loads the three images, starts each, and expects 200 from `/healthz` (the playground: `/`) and exit 0 from the `healthcheck` subcommand |
+| `just build-fuzz` | the libFuzzer binaries of the DPE fuzz targets, `--config=fuzz` |
+| `just test-a11y-dpe`, `test-e2e-editor`, `test-a11y-editor` | builds the server with `--config=release` for this machine and the release stylesheet, then runs the Playwright suite with the binary's path in `ACCESS_SERVER_BIN` or `DEPOSIT_SERVER_BIN` |
+| `just clean` | `bazel clean` |
 
-Each `bazel-*` recipe passes extra arguments to Bazel, for example `just bazel-test --test_output=all` or a single package: `bazel test //shared/telemetry/...`.
+A recipe that takes `FLAGS` passes them to Bazel, as CI passes `--config=ci` and the remote flags, for example `just test --test_output=errors`. A single package is plain Bazel: `bazel test //shared/telemetry/...`.
 
 `bazel` is the Bazelisk command (`brew install bazelisk`, or the Nix dev shell). A first build fetches the toolchains and compiles the third-party crates, and takes several minutes; later builds are incremental.
 
@@ -69,13 +75,13 @@ Each application's stylesheet is a build action: `//areas/access/dpe:css`, `//ar
 
 The entry files import `tailwindcss` with `source(none)`, so Tailwind reads only the files the target lists, and a class used in a file it does not list is silently missing from the stylesheet. Each scanned crate exports its `.rs` files as `tailwind_sources`, a glob over the whole package, tests included; a nested package exports its own. An `@source` line added to an entry file needs its files added to `srcs` of `:css` in the same edit: the dev loop's Tailwind watches the checkout and still shows the classes, the image does not. The entry files say so at their `@source` lines.
 
-The CLI is pinned twice until the `just css*` recipes build through Bazel: in `tailwind.pins`, which the recipes and the playground's `Dockerfile` read, and in the four `http_file`s in `MODULE.bazel`. A Tailwind bump edits both, with the same version and hashes.
+The CLI is pinned once, by the four `http_file`s in `MODULE.bazel`, one per platform, each with its `sha256`; `//tools/tailwind` picks the one for the machine that runs the action. The dev recipes' `--watch` runs the same binary, so the watch and the build cannot use different versions. A Tailwind bump edits the four URLs and hashes together. With the recipes building through Bazel, a new `@source` line whose files are missing from `:css` shows in the dev loop, which scans the checkout, and not in the release stylesheet or the image.
 
 ## Images
 
-`//areas/access/server:image`, `//areas/deposit/server:image` and `//modules/mosaic/playground:image` are the DPE, editor and Mosaic playground images: a static musl binary, built for `//platforms:linux_x86_64_musl` through a transition, on distroless `static-debian12:nonroot`, pinned by digest in `MODULE.bazel`. Layers are built by `tar.bzl` (`tools/image/defs.bzl`): the binary, the public directory with the stylesheet, and the data directories, each entry owned by root with a fixed modification time. Environment, entrypoint, command, port and working directory are those of the matching `Dockerfile`; `HEALTHCHECK` has no equivalent in an OCI image, and both servers keep their `healthcheck` subcommand.
+`//areas/access/server:image`, `//areas/deposit/server:image` and `//modules/mosaic/playground:image` are the DPE, editor and Mosaic playground images: a static musl binary, built for `//platforms:linux_x86_64_musl` through a transition, on distroless `static-debian12:nonroot`, pinned by digest in `MODULE.bazel`. Layers are built by `tar.bzl` (`tools/image/defs.bzl`): the binary, the public directory with the stylesheet, and the data directories, each entry owned by root with a fixed modification time. Environment, entrypoint, command, port and working directory are set on `app_image` in each BUILD file; an OCI image has no `HEALTHCHECK`, and both servers keep their `healthcheck` subcommand.
 
-Each image has `:image_load`, which loads it into Docker as the tag the Scout workflow scans, and `:image_push`, which pushes to Docker Hub with the tags passed after `--`, or to the repository `--repository` names (`just bazel-docker-push //areas/access/server:image_push -- --tag <tag>`). Both are `manual`, so `//...` does not build images. The image recipes add `--config=release`, the profile the published binaries are built with, and `--stamp` for the editor's footer version. These images are what CI publishes, deploys as previews and scans; the `Dockerfile`s are no longer built by any workflow ([Deployment](./deployment.md#reusable-actions)).
+Each image has `:image_load`, which loads it into Docker as the tag the Scout workflow scans, and `:image_push`, which pushes to Docker Hub with the tags passed after `--`, or to the repository `--repository` names (`just bazel-docker-push //areas/access/server:image_push -- --tag <tag>`). Both are `manual`, so `//...` does not build images. The image recipes add `--config=release`, the profile the published binaries are built with, and `--stamp` for the editor's footer version. These images are what CI publishes, deploys as previews and scans ([Deployment](./deployment.md#reusable-actions)).
 
 The images are `linux/amd64` only; on an arm64 Mac, Docker runs them emulated.
 
@@ -83,15 +89,15 @@ The images are `linux/amd64` only; on an arm64 Mac, Docker runs them emulated.
 
 `//areas/access/dpe/server/fuzz` holds the five DPE fuzz targets as `cc_fuzz_test` (`rules_fuzzing`), after Sipi's: `fuzz_target.cc` is libFuzzer's entry point and calls `dpe_fuzz_entry`, which each target's `rust_static_library` shim in `shims/` defines. Without `--config=fuzz` the engine is `replay`, which needs no libFuzzer runtime, so `bazel test //...` builds and runs the five targets on every platform; with no corpus checked in, that run checks that they build and link. `--config=fuzz` (`.bazelrc`) switches to libFuzzer, builds with `-c opt` and instruments the Rust crates with SanitizerCoverage on stable Rust, with debug assertions and overflow checks on.
 
-`just bazel-build-fuzz` builds `<target>_bin` for each and prints the binaries' paths under `bazel-out/` (not `bazel-bin/`, which follows whichever configuration was built last). Run a binary directly with a corpus directory, not through `bazel run`, whose sandbox discards the corpus the run grows:
+`just build-fuzz` builds `<target>_bin` for each and prints the binaries' paths under `bazel-out/` (not `bazel-bin/`, which follows whichever configuration was built last). Run a binary directly with a corpus directory, not through `bazel run`, whose sandbox discards the corpus the run grows:
 
 ```bash
-just bazel-build-fuzz
+just build-fuzz
 <printed path of tab_validation_bin> areas/access/dpe/server/fuzz/corpus/tab_validation \
   -artifact_prefix=areas/access/dpe/server/fuzz/artifacts/ -max_total_time=60 -max_len=4096
 ```
 
-`-artifact_prefix` keeps a crashing input out of the repository root: libFuzzer writes it as `crash-<sha1>` to that directory, which must exist. `corpus/` and `artifacts/` are git-ignored. The nightly `fuzz.yml` still runs the `cargo-fuzz` targets in `fuzz_targets/`, whose bodies the shims copy: a change to one is made in both until Cargo is removed.
+`-artifact_prefix` keeps a crashing input out of the repository root: libFuzzer writes it as `crash-<sha1>` to that directory, which must exist. `corpus/` and `artifacts/` are git-ignored. The nightly `fuzz.yml` builds the binaries with `just build-fuzz` and runs each with its cached corpus, writing a crash to `artifacts/<target>/`. The `cargo-fuzz` targets in `fuzz_targets/` stay with the Cargo manifests; nothing builds them, and the shims hold the bodies that run.
 
 ## Version stamping
 
@@ -99,11 +105,11 @@ just bazel-build-fuzz
 
 ## Remote cache and execution
 
-In CI, the `bazel-setup` action adds the remote cache and executor flags for DaSCH's NativeLink endpoint. Without the secrets (a pull request from a fork, Dependabot) the flags are empty and the build runs cold and local. So does every pull request while the endpoint is down. Pull requests write to the same cache instance as `main`, and a pull request's workflow holds the client certificate, so it can write any result. A build that publishes an image therefore takes no action result from the cache: the `docker-publish` action adds `--noremote_accept_cached`, Bazel sends `skip_cache_lookup`, and NativeLink neither reads the cache for the action nor joins a run of the same action already in flight, so every action runs again on the executor. The executors themselves are shared: a pull request's actions run on the same workers. Only a pull request's own preview takes cached results. The action also builds before it logs in to Docker Hub, so the build's code never runs beside the token. Measured on `ubuntu-latest` with an empty repository cache, while Bazel built the shared crates and `mosaic-tiles` only: `just bazel-clippy` took 3.5 minutes and `just bazel-test` 3 minutes, against `timeout-minutes: 60` on the `check` and `test / ubuntu / stable` jobs. The time grows as more crates move to Bazel.
+In CI, the `bazel-setup` action adds the remote cache and executor flags for DaSCH's NativeLink endpoint. Without the secrets (a pull request from a fork, Dependabot) the flags are empty and the build runs cold and local. So does every pull request while the endpoint is down. Pull requests write to the same cache instance as `main`, and a pull request's workflow holds the client certificate, so it can write any result. A build that publishes an image therefore takes no action result from the cache: the `docker-publish` action adds `--noremote_accept_cached`, Bazel sends `skip_cache_lookup`, and NativeLink neither reads the cache for the action nor joins a run of the same action already in flight, so every action runs again on the executor. The executors themselves are shared: a pull request's actions run on the same workers. Only a pull request's own preview takes cached results. The action also builds before it logs in to Docker Hub, so the build's code never runs beside the token. The `check` and `test / ubuntu / stable` timeouts are twice the slowest warm run of their Bazel steps; a cold run (a fork, Dependabot, the endpoint down) takes longer.
 
 ## IDE setup
 
-rust-analyzer reads `rust-project.json`, which `just rust-project` generates from the Bazel graph (git-ignored, it holds absolute paths). Re-run it after adding or moving a target. While the Cargo workspace exists, rust-analyzer finds `Cargo.toml` first and uses it unless `rust-analyzer.linkedProjects` points at `rust-project.json`.
+rust-analyzer reads `rust-project.json`, which `just rust-project` generates from the Bazel graph (git-ignored, it holds absolute paths). Re-run it after adding or moving a target. While the Cargo manifests exist, rust-analyzer finds `Cargo.toml` first and uses it unless `rust-analyzer.linkedProjects` points at `rust-project.json`.
 
 ## Personal settings
 

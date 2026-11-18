@@ -18,6 +18,18 @@ on:
       - "areas/access/sync/**"
       - "areas/access/media/**"
       - "shared/**"
+      - "modules/mosaic/tiles/**"
+      # The Bazel build: what it reads besides the sources above.
+      - "MODULE.bazel"
+      - "MODULE.bazel.lock"
+      - "Cargo.Bazel.lock"
+      - ".bazelrc"
+      - ".bazelversion"
+      - "platforms/**"
+      - "bazel/**"
+      - "tools/**"
+      - ".github/actions/bazel-setup/**"
+      - ".github/actions/bazel-rbe/**"
   pull_request:
     paths:
       - "areas/access/dpe/**"
@@ -26,6 +38,18 @@ on:
       - "areas/access/sync/**"
       - "areas/access/media/**"
       - "shared/**"
+      - "modules/mosaic/tiles/**"
+      # The Bazel build: what it reads besides the sources above.
+      - "MODULE.bazel"
+      - "MODULE.bazel.lock"
+      - "Cargo.Bazel.lock"
+      - ".bazelrc"
+      - ".bazelversion"
+      - "platforms/**"
+      - "bazel/**"
+      - "tools/**"
+      - ".github/actions/bazel-setup/**"
+      - ".github/actions/bazel-rbe/**"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -39,13 +63,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install stable Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - uses: Swatinem/rust-cache@v2
-
-      - name: Install just
-        uses: extractions/setup-just@v4
+      - name: Bazel setup
+        id: bazel
+        uses: ./.github/actions/bazel-setup
+        with:
+          rbe-runner-endpoint: ${{ vars.REMOTEBUILD_RUNNER_ENDPOINT }}
+          rbe-ca-cert: ${{ secrets.REMOTEBUILD_CA_CERT }}
+          rbe-client-cert: ${{ secrets.REMOTEBUILD_CLIENT_CERT }}
+          rbe-client-key: ${{ secrets.REMOTEBUILD_CLIENT_KEY }}
 
       - name: Install Node.js
         uses: actions/setup-node@v4
@@ -58,17 +83,10 @@ jobs:
       - name: Install Playwright browsers
         run: cd areas/access/dpe/web-e2e-tests && npx playwright install chromium --with-deps
 
-      - name: Build access-server and stylesheet
-        # `cargo build -p access-server --release` yields target/release/access-server
-        # directly (the [[bin]] name), which the Playwright webServer launches.
-        # `just css-release` builds the content-hashed app.css the release server
-        # discovers from areas/access/dpe/public/assets at startup.
-        run: |
-          cargo build -p access-server --release
-          just css-release
-
       - name: Run accessibility tests
-        run: just test-a11y-dpe
+        # Builds the release server and the release stylesheet with Bazel, then runs the suite;
+        # Playwright starts the server from the path the recipe passes.
+        run: just test-a11y-dpe ${{ steps.bazel.outputs.flags }}
 
       - name: Upload Playwright report
         if: always()
@@ -77,3 +95,10 @@ jobs:
           name: playwright-report-a11y-dpe
           path: areas/access/dpe/web-e2e-tests/playwright-report/
           retention-days: 7
+
+      - name: Save Bazel repository cache
+        if: ${{ !cancelled() && steps.bazel.outputs.repo-cache-key != '' && steps.bazel.outputs.repo-cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.cache/bazel-repo
+          key: ${{ steps.bazel.outputs.repo-cache-key }}

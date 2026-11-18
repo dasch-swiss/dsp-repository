@@ -5,6 +5,18 @@ on:
     types: [opened, synchronize, reopened, closed]
     paths:
       - "modules/mosaic/**"
+      # The Bazel build: what it reads besides the sources above.
+      - "MODULE.bazel"
+      - "MODULE.bazel.lock"
+      - "Cargo.Bazel.lock"
+      - ".bazelrc"
+      - ".bazelversion"
+      - "platforms/**"
+      - "bazel/**"
+      - "tools/**"
+      - ".github/actions/docker-publish/**"
+      - ".github/actions/bazel-setup/**"
+      - ".github/actions/bazel-rbe/**"
   workflow_dispatch:
 
 permissions:
@@ -34,6 +46,7 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
@@ -48,21 +61,23 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
+      # crane, which `oci_push` runs, takes the credential helper this configures.
       - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
+      # Bazel builds the image and pushes it. The pull request's own build, so it may take
+      # results from the remote cache.
       - name: Build and push image
-        uses: docker/build-push-action@v6
+        uses: ./.github/actions/docker-publish
         with:
-          context: .
-          file: modules/mosaic/playground/Dockerfile
-          push: true
-          tags: ${{ secrets.GCP_ARTIFACT_REGISTRY }}/mosaic-playground:${{ env.IMAGE_TAG }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          target: //modules/mosaic/playground:image_push
+          repository: ${{ secrets.GCP_ARTIFACT_REGISTRY }}/mosaic-playground
+          tag: ${{ env.IMAGE_TAG }}
+          trust-remote-cache: "true"
+          rbe-runner-endpoint: ${{ vars.REMOTEBUILD_RUNNER_ENDPOINT }}
+          rbe-ca-cert: ${{ secrets.REMOTEBUILD_CA_CERT }}
+          rbe-client-cert: ${{ secrets.REMOTEBUILD_CLIENT_CERT }}
+          rbe-client-key: ${{ secrets.REMOTEBUILD_CLIENT_KEY }}
 
       - name: Deploy to Cloud Run
         id: deploy

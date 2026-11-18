@@ -98,9 +98,9 @@ To change a vendored file, follow the update process in that directory's own `RE
 
 ### The Tailwind standalone CLI
 
-The CSS build runs a Tailwind v4 standalone binary fetched from GitHub Releases, from two places: `_tailwind-bin` in the `justfile`, which sits behind every `just css*` recipe, the `build-dpe` and `build-editor` actions and the `a11y-dpe` workflow; and `modules/mosaic/playground/Dockerfile`. Unverified, a replaced release asset would run arbitrary code in every developer checkout and every CI job.
+The CSS build runs a Tailwind v4 standalone binary fetched from GitHub Releases, from three places: `_tailwind-bin` in the `justfile`, which sits behind every `just css*` recipe and the `a11y-dpe` workflow; `modules/mosaic/playground/Dockerfile`, which no workflow builds; and the `http_file`s in `MODULE.bazel`, from which Bazel builds the stylesheets of the published images. Unverified, a replaced release asset would run arbitrary code in every developer checkout and every CI job.
 
-`tailwind.pins` records the version and the expected SHA-256 of each release asset. Both download sites verify against it and fail closed. The justfile checks on every resolve rather than only after a download, so a binary cached by an earlier build is verified too; hashing it costs about 0.05s under coreutils and 0.3s under perl `shasum`.
+`tailwind.pins` records the version and the expected SHA-256 of each release asset. The first two verify against it, the `http_file`s carry the same hashes, and all three fail closed. The justfile checks on every resolve rather than only after a download, so a binary cached by an earlier build is verified too; hashing it costs about 0.05s under coreutils and 0.3s under perl `shasum`.
 
 Bump the pinned version with:
 

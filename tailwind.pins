@@ -1,10 +1,11 @@
 # Pinned Tailwind v4 standalone CLI: the single source of truth for the version
 # and for the SHA-256 of every release asset the build may download (DEV-6727).
 #
-# Consumers, both of which fail closed on a mismatch:
-#   - `_tailwind-bin` in the justfile, behind every `just css*` recipe and both
-#     CI build actions
-#   - modules/mosaic/playground/Dockerfile
+# Consumers, all of which fail closed on a mismatch:
+#   - `_tailwind-bin` in the justfile, behind every `just css*` recipe and the
+#     a11y-dpe workflow
+#   - modules/mosaic/playground/Dockerfile, which no workflow builds
+#   - the `http_file`s in MODULE.bazel, which repeat these hashes
 #
 # To bump: `just tailwind-pins-refresh <version>` rewrites this file from the
 # sha256sums.txt published with that release. Review the diff as you would any

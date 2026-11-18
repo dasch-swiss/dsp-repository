@@ -1,45 +1,36 @@
 name: Build DPE
-description: Compile DPE (static musl access-server binary + content-hashed Tailwind app.css) and stage to staging/
+description: >
+  Build the DPE image with Bazel (`//areas/access/server:image`) and load it into Docker as
+  `local-scan/dpe:latest`, the tag the Scout scan reads.
+
+inputs:
+  rbe-runner-endpoint:
+    description: RE-API endpoint, `vars.REMOTEBUILD_RUNNER_ENDPOINT`.
+  rbe-ca-cert:
+    description: NativeLink server CA, `secrets.REMOTEBUILD_CA_CERT`.
+  rbe-client-cert:
+    description: mTLS client certificate, `secrets.REMOTEBUILD_CLIENT_CERT`.
+  rbe-client-key:
+    description: mTLS client key, `secrets.REMOTEBUILD_CLIENT_KEY`.
 
 runs:
   using: composite
   steps:
-    - name: Install Rust
-      uses: dtolnay/rust-toolchain@stable
+    - id: bazel
+      uses: ./.github/actions/bazel-setup
+      with:
+        rbe-runner-endpoint: ${{ inputs.rbe-runner-endpoint }}
+        rbe-ca-cert: ${{ inputs.rbe-ca-cert }}
+        rbe-client-cert: ${{ inputs.rbe-client-cert }}
+        rbe-client-key: ${{ inputs.rbe-client-key }}
 
-    - uses: Swatinem/rust-cache@v2
-
-    - name: Install system dependencies
+    - name: just bazel-docker-build-dpe
       shell: bash
-      run: >-
-        sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 update -y &&
-        sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y --no-install-recommends musl-tools clang
+      run: just bazel-docker-build-dpe ${{ steps.bazel.outputs.flags }}
 
-    - name: Add build target
-      shell: bash
-      run: rustup target add x86_64-unknown-linux-musl
-
-    - name: Install just
-      uses: extractions/setup-just@v4
-
-    - name: Build stylesheet
-      shell: bash
-      # Standalone Tailwind CLI → areas/access/dpe/public/assets/app.<hash>.css.
-      # No Node/npm needed: the CLI bundles the official plugins.
-      run: just css-release
-
-    - name: Build static musl binary
-      shell: bash
-      run: cargo build -p access-server --release --target x86_64-unknown-linux-musl
-
-    - name: Stage artifacts
-      shell: bash
-      run: |
-        mkdir -p staging/sync staging/cpe staging/media
-        cp target/x86_64-unknown-linux-musl/release/access-server staging/
-        cp -r areas/access/dpe/public staging/
-        cp -r areas/access/dpe/server/data staging/
-        cp -r areas/access/sync/data staging/sync/
-        cp -r areas/access/cpe/projects staging/cpe/
-        cp -r areas/access/media/data staging/media/
-        cp areas/access/server/Dockerfile staging/
+    - name: Save Bazel repository cache
+      if: ${{ !cancelled() && steps.bazel.outputs.repo-cache-key != '' && steps.bazel.outputs.repo-cache-hit != 'true' }}
+      uses: actions/cache/save@v4
+      with:
+        path: ~/.cache/bazel-repo
+        key: ${{ steps.bazel.outputs.repo-cache-key }}

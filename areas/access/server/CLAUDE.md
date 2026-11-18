@@ -52,18 +52,21 @@ itself untraced. A test pins it — do not reorder without checking `serve.rs`'s
 
 ## The image: the places that have to agree
 
-`.github/actions/build-dpe/action.yml` fills the `staging/` directory, `Dockerfile` copies from it, and the `ENV`
-lines name where each copy is. Today that is `sync/data` (`SYNC_DATA_DIR`), `cpe/projects` (`CPE_PROJECTS_DIR`)
-and `media/data` (`MEDIA_DATA_DIR`), each under `/app/`. `just build-docker-dpe` stages the same directories
-for a local image, so it is a fourth place. Data for a capability is added in all of them, and in the
-environment table of `docs/src/dpe/operations.md`. Nothing checks that they agree: a path that is in `staging/` but not copied, or an
-`ENV` that names the wrong place, builds, and the container is healthy with CPE answering 503, or an overview
-with no project and its not-found.
+The published image is `:image` in `BUILD.bazel`. `image_data` maps each data directory to its place in the
+image, and the `env` of `app_image` names where each copy is. Today that is `sync/data` (`SYNC_DATA_DIR`),
+`cpe/projects` (`CPE_PROJECTS_DIR`) and `media/data` (`MEDIA_DATA_DIR`), each under `/app/`. Data for a
+capability is added in both, as a filegroup the data's package grants to this one, and in the environment
+table of `docs/src/dpe/operations.md`. Nothing checks that they agree: a directory the layer places where no
+`env` points, or an `env` that names the wrong place, builds, and the container is healthy with CPE answering
+503, or an overview with no project and its not-found. `Dockerfile` and `just build-docker-dpe` still build
+the image the way CI did before Bazel; no workflow builds them, and they are removed with the Cargo build.
 
 A new capability's paths also go into each path filter that should see it (`a11y-dpe.yml`,
 `cloud-run-dpe-pull-request.yml`, `scout-dpe.yml`); `docs/src/deployment.md` says what each runs on. All three
 have `areas/access/cpe/**`, `areas/access/sync/**` and `areas/access/media/**` beside DPE's and this crate's
 paths, so a change to a presentation's files is previewed, scanned and checked for accessibility.
+`bazel query 'deps(//areas/access/server:image_musl)' --output=package` lists every package the image is
+built from.
 
 ## Dependency boundary
 

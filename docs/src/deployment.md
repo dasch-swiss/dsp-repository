@@ -10,7 +10,7 @@ Every push and pull request runs:
 
 - **check.yml** — Formatting (`maudfmt` for `html!` macros + `cargo +nightly fmt`), linting (`clippy`), third-party artifact checksums (see [Security](./security.md)), and a dsp-cli packaging dry run (`cargo publish -p dsp-cli --dry-run`)
 - **test.yml** — Runs the full test suite, and the tests of the `.github/scripts` gates (`just test-scripts`)
-- **scout-dpe.yml** / **scout-mosaic-playground.yml** — Docker image vulnerability scanning (see [Security](./security.md))
+- **scout-dpe.yml** / **scout-editor.yml** / **scout-mosaic-playground.yml** — Docker image vulnerability scanning of the Bazel-built images (see [Security](./security.md))
 - **dsp-cli-drift.yml** — its `changes` job (deciding whether anything under `dsp-cli/**` changed) runs on every PR; see [dsp-cli drift detection](#dsp-cli-drift-detection) below
 
 ### Accessibility Testing
@@ -76,12 +76,15 @@ Common CI steps are extracted into composite actions in `.github/actions/`:
 
 | Action | Purpose |
 |--------|---------|
-| `build-dpe` | Compile the Access Area's binary (static musl `access-server` + content-hashed Tailwind `app.css` via `just css-release`) and stage it with DPE's public files and data, `sync`'s data, `media`'s data and CPE's project folders |
-| `build-editor` | Compile the metadata editor (static musl `deposit-server` binary + content-hashed Tailwind `app.css` via `just css-editor-release`) and stage artifacts |
-| `docker-publish` | Set up Buildx, log in to Docker Hub, build and push an image |
+| `bazel-setup` | Bazelisk, `just`, the Bazel repository cache and the remote cache and executor flags (`bazel-rbe`); see [Building with Bazel](./bazel.md#remote-cache-and-execution) |
+| `build-dpe` | Build the DPE image with Bazel and load it into Docker as `local-scan/dpe:latest`, for the Scout scan |
+| `build-editor` | Build the editor image with Bazel, stamped with the caller's `DEPOSIT_VERSION`, and load it into Docker as `local-scan/editor:latest` |
+| `docker-publish` | Build an image with Bazel and push it with its `:image_push` target under the caller's tag, to Docker Hub or the repository the caller names; takes no result from the remote cache unless the caller is a pull request's own preview |
 | `docker-scout` | Run Docker Scout CVE scan and upload SARIF results |
 | `commit-lint` | Run the commit gate — commitlint-rs (type allowlist and mandatory scope) plus the one-commit-per-PR cap |
 | `dsp-cli-stack-test` | Start the Fuseki/knora-api stack, load fixtures, mint tokens, and run dsp-cli's live tests against it |
+
+Every image is a Bazel target (`//areas/access/server:image`, `//areas/deposit/server:image`, `//modules/mosaic/playground:image`; see [Building with Bazel](./bazel.md#images)): a static musl binary, the public directory with the stylesheet, and the data directories on distroless `static`. The preview, Scout and Mosaic publish workflows also run when the Bazel build changes: `MODULE.bazel`, `MODULE.bazel.lock`, `Cargo.Bazel.lock`, `.bazelrc`, `.bazelversion`, `platforms/`, `bazel/`, `tools/` and the composite actions they use.
 
 ### Mosaic Playground
 
@@ -93,7 +96,7 @@ Defined in `cloud-run-mosaic-pull-request.yml`.
 
 When a pull request modifies files under `modules/mosaic/`, a preview of the Mosaic playground is automatically deployed to Google Cloud Run. The preview URL is posted as a comment on the PR and updated on each push.
 
-- **Trigger:** PRs that touch `modules/mosaic/**` (same-repo only, not forks)
+- **Trigger:** PRs that touch `modules/mosaic/**` or the Bazel build (same-repo only, not forks)
 - **Service:** Ephemeral Cloud Run service per PR
 - **Cleanup:** The Cloud Run service and container image are deleted when the PR is closed or merged
 
@@ -103,7 +106,7 @@ Authentication uses Workload Identity Federation (keyless, OIDC-based).
 
 Defined in `mosaic-docker-publish.yml`.
 
-When changes to `modules/mosaic/` are merged to `main`, the playground image is built, pushed to Docker Hub, and a Jenkins webhook triggers the production deployment.
+When changes to `modules/mosaic/` or the Bazel build are merged to `main`, Bazel builds the playground image and pushes it to Docker Hub, and a Jenkins webhook triggers the production deployment.
 
 ### DPE
 
@@ -111,7 +114,7 @@ When changes to `modules/mosaic/` are merged to `main`, the playground image is 
 
 Defined in `cloud-run-dpe-pull-request.yml`.
 
-When a pull request modifies files under `areas/access/dpe/`, `areas/access/server/`, `areas/access/cpe/`, `areas/access/sync/`, `areas/access/media/`, `shared/` or the `build-dpe` action it builds with, a preview of the DPE is automatically deployed to Google Cloud Run. Works the same way as the Mosaic preview: ephemeral service per PR, cleaned up on close/merge.
+When a pull request modifies files under `areas/access/dpe/`, `areas/access/server/`, `areas/access/cpe/`, `areas/access/sync/`, `areas/access/media/`, `shared/`, `modules/mosaic/tiles/` or the Bazel build, a preview of the DPE is automatically deployed to Google Cloud Run. Works the same way as the Mosaic preview: ephemeral service per PR, cleaned up on close/merge.
 
 The preview is the whole image, so it serves CPE under `/cpe` too, from the data the image carries; a change to a presentation's code or files gets a preview of its own. It runs without CPU throttling, because CPE loads its projects after the port is bound.
 
@@ -120,10 +123,9 @@ The preview is the whole image, so it serves CPE under `/cpe` too, from the data
 Defined in `dpe-docker-publish.yml`.
 
 On every push to `main`:
-1. Builds the content-hashed Tailwind stylesheet (`just css-release`)
-2. Builds a static musl-linked `access-server` binary
-3. Pushes the Docker image to Docker Hub (`daschswiss/dpe:{tag}`)
-4. Triggers a Jenkins webhook for DEV deployment
+1. Builds the image with Bazel (`//areas/access/server:image_push`), taking no result from the remote cache
+2. Pushes it to Docker Hub (`daschswiss/dpe:{tag}`)
+3. Triggers a Jenkins webhook for DEV deployment
 
 #### Release Publishing
 
@@ -137,17 +139,16 @@ When a GitHub Release is published (tag starting with `v`), builds and pushes a 
 
 Defined in `cloud-run-editor-pull-request.yml`.
 
-When a pull request modifies files under `areas/deposit/` or `shared/`, a preview of the metadata editor is deployed to Google Cloud Run. Works the same way as the DPE and Mosaic previews: ephemeral service per PR, cleaned up on close/merge.
+When a pull request modifies files under `areas/deposit/`, `shared/`, `modules/mosaic/tiles/`, DPE's data (`areas/access/dpe/server/data/`, which the image carries) or the Bazel build, a preview of the metadata editor is deployed to Google Cloud Run. Works the same way as the DPE and Mosaic previews: ephemeral service per PR, cleaned up on close/merge.
 
 #### Continuous Deployment (Docker Hub + Jenkins)
 
 Defined in `editor-docker-publish.yml`.
 
 On every push to `main`:
-1. Builds the content-hashed Tailwind stylesheet (`just css-editor-release`)
-2. Builds a static musl-linked `deposit-server` binary
-3. Pushes the Docker image to Docker Hub (`daschswiss/metadata-editor:{tag}`)
-4. Triggers a Jenkins webhook (`Service=deposit`) for STAGE deployment, `deposit.stage.dasch.swiss`
+1. Builds the image with Bazel (`//areas/deposit/server:image_push`), stamped with the tag as the footer version, taking no result from the remote cache
+2. Pushes it to Docker Hub (`daschswiss/metadata-editor:{tag}`)
+3. Triggers a Jenkins webhook (`Service=deposit`) for STAGE deployment, `deposit.stage.dasch.swiss`
 
 The editor deploys as its own `deposit` stack in ops-deploy. That stack has no dev host, so its stage takes the role DEV plays for DPE: it follows `main`.
 

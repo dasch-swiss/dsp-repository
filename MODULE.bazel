@@ -13,6 +13,11 @@ bazel_dep(name = "bazel_lib", version = "3.2.2")
 bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "rules_cc", version = "0.2.25")
 
+# `cc_fuzz_test` for the DPE fuzz targets (`//areas/access/dpe/server/fuzz`). Its default engine
+# replays the corpus without a libFuzzer runtime; `--config=fuzz` switches to libFuzzer. A dev
+# dependency: the fuzz targets are `testonly`, nothing that ships can reach it.
+bazel_dep(name = "rules_fuzzing", version = "0.8.0", dev_dependency = True)
+
 # ── LLVM toolchain: hermetic, LLVM 23.1.2 ─────────────────────────────────
 #
 # hermeticbuild/hermetic-llvm is zero-sysroot: it builds the libc runtimes it links against from
@@ -284,6 +289,7 @@ crate.spec(package = "serde", version = "1", features = ["derive"])
 # `float_roundtrip`: `cpe-store-build` parses the archive's annotation geometry and must write the
 # numbers as they are; without the feature some parse one unit in the last place off.
 crate.spec(package = "serde_json", version = "1", features = ["float_roundtrip", "preserve_order"])
+crate.spec(package = "serde_urlencoded", version = "0.7")
 crate.spec(package = "subtle", version = "2.6")
 crate.spec(package = "thiserror", version = "2.0.12")
 crate.spec(package = "tokio", version = "1", features = ["full"])

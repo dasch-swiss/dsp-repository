@@ -34,6 +34,31 @@ build:release --@rules_rust//rust/settings:extra_rustc_flag=-Copt-level=z
 build:release --@rules_rust//rust/settings:extra_rustc_flag=-Cdebuginfo=line-tables-only
 build:release --@rules_rust//rust/settings:extra_rustc_flag=-Cstrip=none
 
+# Fuzzing, for `just bazel-build-fuzz`: the libFuzzer engine for `//areas/access/dpe/server/fuzz`.
+# Without this config the targets use `rules_fuzzing`'s `replay` engine and need no runtime.
+# Sipi's block without its openssl/xz UBSan exclusion (no such C libraries here). `-c opt`:
+# execs per second is the budget. Unlike `cargo-fuzz`, no AddressSanitizer on the Rust code (it
+# needs nightly `-Zsanitizer`).
+build:fuzz --@rules_fuzzing//fuzzing:cc_engine=@rules_fuzzing//fuzzing/engines:libfuzzer
+build:fuzz --@rules_fuzzing//fuzzing:cc_engine_instrumentation=libfuzzer
+build:fuzz --compilation_mode=opt
+# The toolchain builds the libFuzzer runtime; the clang driver also links the UBSan runtime for
+# `-fsanitize=fuzzer`, which only `config:ubsan` stages.
+build:fuzz --@llvm//config:fuzzer=true
+build:fuzz --@llvm//config:ubsan=true
+# SanitizerCoverage for the Rust crates, stable flags only (no `-Zsanitizer`). Target
+# configuration only: build scripts and proc-macros stay uninstrumented.
+build:fuzz --@rules_rust//rust/settings:extra_rustc_flag=-Cpasses=sancov-module
+build:fuzz --@rules_rust//rust/settings:extra_rustc_flag=-Cllvm-args=-sanitizer-coverage-level=4
+build:fuzz --@rules_rust//rust/settings:extra_rustc_flag=-Cllvm-args=-sanitizer-coverage-inline-8bit-counters
+build:fuzz --@rules_rust//rust/settings:extra_rustc_flag=-Cllvm-args=-sanitizer-coverage-pc-table
+build:fuzz --@rules_rust//rust/settings:extra_rustc_flag=-Cllvm-args=-sanitizer-coverage-trace-compares
+# `-c opt` turns these off; the targets' `assert!`s and overflow panics are what they look for.
+# Not `-Cpanic=abort`, which would break the Rust test targets: a panic out of the shims'
+# `extern "C"` entry aborts anyway.
+build:fuzz --@rules_rust//rust/settings:extra_rustc_flag=-Cdebug-assertions=on
+build:fuzz --@rules_rust//rust/settings:extra_rustc_flag=-Coverflow-checks=on
+
 # CI rejects a MODULE.bazel.lock that does not match MODULE.bazel (`just repin` refreshes it).
 common:ci --lockfile_mode=error
 # The path the `bazel-setup` action restores and the calling job saves.

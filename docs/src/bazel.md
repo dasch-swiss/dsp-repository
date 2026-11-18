@@ -27,6 +27,7 @@ While both exist, a change that touches dependencies or crates is made on both s
 | `just canonicalize-projects` | runs the editor's canonical round-trip test from the checkout with `CANONICALIZE_PROJECT_FILES=1`, so it rewrites the committed project files |
 | `just bazel-docker-build-dpe`, `-editor`, `-mosaic` | builds an image and loads it into Docker as `local-scan/<name>:latest` |
 | `just bazel-image-smoke` | loads the three images, starts each, and expects 200 from `/healthz` (the playground: `/`) and exit 0 from the `healthcheck` subcommand |
+| `just bazel-build-fuzz` | the libFuzzer binaries of the DPE fuzz targets, `--config=fuzz` |
 
 Each `bazel-*` recipe passes extra arguments to Bazel, for example `just bazel-test --test_output=all` or a single package: `bazel test //shared/telemetry/...`.
 
@@ -76,6 +77,20 @@ The CLI is pinned twice until the `just css*` recipes build through Bazel: in `t
 Each image has `:image_load`, which loads it into Docker as the tag the Scout workflow scans, and `:image_push`, which pushes to Docker Hub with the tags passed after `--` (`bazel run --config=release --stamp //areas/access/server:image_push -- --tag <tag>`). Both are `manual`, so `//...` does not build images. The image recipes add `--config=release`, the profile the published binaries are built with, and `--stamp` for the editor's footer version. Nothing publishes the Bazel images yet: the deploy workflows still build from the `Dockerfile`s.
 
 The images are `linux/amd64` only; on an arm64 Mac, Docker runs them emulated.
+
+## Fuzz targets
+
+`//areas/access/dpe/server/fuzz` holds the five DPE fuzz targets as `cc_fuzz_test` (`rules_fuzzing`), after Sipi's: `fuzz_target.cc` is libFuzzer's entry point and calls `dpe_fuzz_entry`, which each target's `rust_static_library` shim in `shims/` defines. Without `--config=fuzz` the engine is `replay`, which needs no libFuzzer runtime, so `bazel test //...` builds and runs the five targets on every platform; with no corpus checked in, that run checks that they build and link. `--config=fuzz` (`.bazelrc`) switches to libFuzzer, builds with `-c opt` and instruments the Rust crates with SanitizerCoverage on stable Rust, with debug assertions and overflow checks on.
+
+`just bazel-build-fuzz` builds `<target>_bin` for each and prints the binaries' paths under `bazel-out/` (not `bazel-bin/`, which follows whichever configuration was built last). Run a binary directly with a corpus directory, not through `bazel run`, whose sandbox discards the corpus the run grows:
+
+```bash
+just bazel-build-fuzz
+<printed path of tab_validation_bin> areas/access/dpe/server/fuzz/corpus/tab_validation \
+  -artifact_prefix=areas/access/dpe/server/fuzz/artifacts/ -max_total_time=60 -max_len=4096
+```
+
+`-artifact_prefix` keeps a crashing input out of the repository root: libFuzzer writes it as `crash-<sha1>` to that directory, which must exist. `corpus/` and `artifacts/` are git-ignored. The nightly `fuzz.yml` still runs the `cargo-fuzz` targets in `fuzz_targets/`, whose bodies the shims copy: a change to one is made in both until Cargo is removed.
 
 ## Version stamping
 

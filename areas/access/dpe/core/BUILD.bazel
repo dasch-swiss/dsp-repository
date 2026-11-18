@@ -10,6 +10,7 @@ rust_library(
     visibility = [
         "//areas/access/dpe/api-oai:__pkg__",
         "//areas/access/dpe/server:__pkg__",
+        "//areas/access/dpe/server/fuzz:__pkg__",
         "//areas/access/dpe/web:__pkg__",
     ],
     deps = [

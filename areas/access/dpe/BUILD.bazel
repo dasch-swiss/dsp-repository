@@ -26,6 +26,7 @@ tailwind_css(
     hashed = True,
     srcs = [
         "//areas/access/dpe/server:tailwind_sources",
+        "//areas/access/dpe/server/fuzz:tailwind_sources",
         "//areas/access/dpe/web:tailwind_sources",
         "//modules/mosaic/tiles:stylesheets",
         "//modules/mosaic/tiles:tailwind_sources",

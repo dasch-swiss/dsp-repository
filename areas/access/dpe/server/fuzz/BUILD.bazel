@@ -1,0 +1,62 @@
+"""libFuzzer targets over DPE's input validation, after Sipi's `src/iiifparser/fuzz`.
+
+`rules_fuzzing` is a C++ rule set, so each target enters Rust through an `extern "C"` shim
+(`shims/<target>.rs`, a `rust_static_library`) called from `fuzz_target.cc`. Shims and fuzz tests
+are `testonly`, and the package grants no visibility: nothing that ships can link them.
+
+Without `--config=fuzz` the engine is `rules_fuzzing`'s `replay` (no libFuzzer runtime), so
+`bazel test //...` builds and links each target on every platform; with no corpus attached, the
+replay runs no input. `--config=fuzz` (`.bazelrc`) switches to libFuzzer and instruments the Rust
+crates; `just bazel-build-fuzz` builds the binaries. The corpus at `corpus/<target>` is git-ignored
+and cached by the workflow.
+"""
+
+load("@rules_fuzzing//fuzzing:cc_defs.bzl", "cc_fuzz_test")
+load("@rules_rust//rust:defs.bzl", "rust_static_library")
+
+_TARGETS = {
+    "beacon_payload": [
+        "//shared/telemetry:shared_telemetry",
+        "@crates//:serde_json",
+    ],
+    "origin_validation": ["//shared/telemetry:shared_telemetry"],
+    "query_params": [
+        "//shared/metadata:shared_metadata",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:serde_urlencoded",
+    ],
+    "tab_validation": [
+        "//areas/access/dpe/core:dpe_core",
+        "//shared/metadata:shared_metadata",
+    ],
+    "traceparent_validation": ["//shared/telemetry:shared_telemetry"],
+}
+
+[
+    rust_static_library(
+        name = name + "_shim",
+        testonly = True,
+        srcs = ["shims/%s.rs" % name],
+        deps = deps,
+    )
+    for name, deps in _TARGETS.items()
+]
+
+[
+    cc_fuzz_test(
+        name = name,
+        testonly = True,
+        srcs = ["fuzz_target.cc"],
+        deps = [":%s_shim" % name],
+    )
+    for name in _TARGETS
+]
+
+# The files the DPE stylesheet scans for class names: `style/main.css`'s `@source` line for
+# `server` reaches this directory.
+filegroup(
+    name = "tailwind_sources",
+    srcs = glob(["**/*.rs"]),
+    visibility = ["//areas/access/dpe:__pkg__"],
+)

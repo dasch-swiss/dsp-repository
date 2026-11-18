@@ -228,6 +228,16 @@ bazel-build *FLAGS:
 bazel-test *FLAGS:
     bazel test {{ FLAGS }} //...
 
+# Build the libFuzzer binaries of the DPE fuzz targets (`--config=fuzz`) and print their paths. Run one directly with its corpus directory, not through `bazel run`, whose sandbox would discard the corpus it grows (docs/src/bazel.md, *Fuzz targets*). `--remote_download_toplevel` keeps the binaries local under a remote cache.
+[group('bazel')]
+bazel-build-fuzz *FLAGS:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    targets=$(bazel query --output=label 'attr(name, "_bin$", //areas/access/dpe/server/fuzz:*)')
+    bazel build --config=fuzz --remote_download_toplevel {{ FLAGS }} $targets
+    # Not `bazel-bin`: it follows whichever configuration was built last.
+    bazel cquery --config=fuzz {{ FLAGS }} --output=files "set($targets)"
+
 # Run clippy over every Bazel target, tests included, with `-Dwarnings` (set in .bazelrc). `--keep_going` reports every failing target in one run.
 [group('bazel')]
 bazel-clippy *FLAGS:

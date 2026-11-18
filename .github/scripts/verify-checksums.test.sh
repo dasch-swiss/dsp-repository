@@ -67,15 +67,7 @@ assert_eq() {
 
 VENDOR_DIR="modules/demo/public/vendor"
 
-# count_assets: how many release assets TAILWIND_ASSETS names.
-count_assets() {
-  local n=0 a
-  for a in $TAILWIND_ASSETS; do n=$((n + 1)); done
-  printf '%s' "$n"
-}
-
 PIN_A="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-PIN_B="bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
 
 # make_vendor_repo: throwaway repo with one vendor directory holding a.js and
 # b.js and a README whose table records their true digests. Tests mutate one
@@ -96,13 +88,6 @@ make_vendor_repo() {
     echo "| \`a.js\` | demo-a | 1.0.0 | \`sha256:$a\` |"
     echo "| \`b.js\` | demo-b | 2.0.0 | \`sha256:$b\` |"
   } >"$dir/$VENDOR_DIR/README.md"
-  # main() checks the pins alongside the vendor tables, so the fixture repo
-  # needs a valid one for the end-to-end cases below.
-  {
-    echo 'version 9.9.9'
-    echo
-    for asset in $TAILWIND_ASSETS; do echo "$PIN_A  $asset"; done
-  } >"$dir/tailwind.pins"
   (
     cd "$dir" || exit 1
     git init -q -b main
@@ -113,21 +98,6 @@ make_vendor_repo() {
   )
   printf '%s' "$dir"
 }
-
-# make_pins <lines...>: throwaway tailwind.pins; echoes its path.
-make_pins() {
-  local file
-  file="$(mktemp "${TMPDIR:-/tmp}/tailwind-pins.XXXXXX")"
-  printf '%s\n' "$@" >"$file"
-  printf '%s' "$file"
-}
-
-# --- Unit: is_sha256 ------------------------------------------------------
-
-assert_ok   "is_sha256: 64 lowercase hex"      is_sha256 "$PIN_A"
-assert_fail "is_sha256: empty"                 is_sha256 ""
-assert_fail "is_sha256: 63 chars"              is_sha256 "${PIN_A%?}"
-assert_fail "is_sha256: uppercase hex"         is_sha256 "$(printf '%s' "$PIN_A" | tr 'a' 'A')"
 
 # --- Unit: verify_file ----------------------------------------------------
 
@@ -249,93 +219,12 @@ test_vendor_git_failure_is_an_error() {
 }
 assert_fail "vendor: a failing git ls-files is an error, not a pass" test_vendor_git_failure_is_an_error
 
-# --- Unit: tailwind_version / tailwind_pin --------------------------------
-
-test_pin_lookup() {
-  local pins got
-  pins="$(make_pins '# comment' 'version 9.9.9' "$PIN_A  tailwindcss-linux-x64" "$PIN_B  tailwindcss-macos-arm64")"
-  got="$(TAILWIND_PINS="$pins" tailwind_pin tailwindcss-macos-arm64)"
-  rm -f "$pins"
-  [ "$got" = "$PIN_B" ]
-}
-test_version_lookup() {
-  local pins got
-  pins="$(make_pins '# comment' 'version 9.9.9' "$PIN_A  tailwindcss-linux-x64")"
-  got="$(TAILWIND_PINS="$pins" tailwind_version)"
-  rm -f "$pins"
-  [ "$got" = "9.9.9" ]
-}
-test_pin_unknown_asset() {
-  local pins rc
-  pins="$(make_pins 'version 9.9.9' "$PIN_A  tailwindcss-linux-x64")"
-  ( TAILWIND_PINS="$pins" tailwind_pin tailwindcss-linux-arm64 ) >/dev/null 2>&1
-  rc=$?; rm -f "$pins"; return $rc
-}
-assert_ok   "tailwind_pin: finds an asset's digest"       test_pin_lookup
-assert_ok   "tailwind_version: reads the version line"    test_version_lookup
-assert_fail "tailwind_pin: unknown asset fails closed"    test_pin_unknown_asset
-
-# --- Integration: verify_tailwind_pins ------------------------------------
-
-# complete_pins <digest-for-last-asset>: a pins file covering every asset in
-# TAILWIND_ASSETS, with the last one's digest overridable to inject a fault.
-complete_pins() {
-  local last="$1" asset args=() n=0 total
-  total="$(count_assets)"
-  args+=('version 9.9.9')
-  for asset in $TAILWIND_ASSETS; do
-    n=$((n + 1))
-    if [ "$n" -eq "$total" ]; then
-      args+=("$last  $asset")
-    else
-      args+=("$PIN_A  $asset")
-    fi
-  done
-  make_pins "${args[@]}"
-}
-
-test_pins_complete() {
-  local pins rc
-  pins="$(complete_pins "$PIN_B")"
-  ( TAILWIND_PINS="$pins" verify_tailwind_pins ) >/dev/null 2>&1
-  rc=$?; rm -f "$pins"; return $rc
-}
-test_pins_missing_one_asset() {
-  local pins rc
-  pins="$(complete_pins "$PIN_B")"
-  sed '$d' "$pins" >"$pins.trimmed" && mv "$pins.trimmed" "$pins"
-  ( TAILWIND_PINS="$pins" verify_tailwind_pins ) >/dev/null 2>&1
-  rc=$?; rm -f "$pins"; return $rc
-}
-test_pins_malformed_digest() {
-  local pins rc
-  pins="$(complete_pins "not-a-digest")"
-  ( TAILWIND_PINS="$pins" verify_tailwind_pins ) >/dev/null 2>&1
-  rc=$?; rm -f "$pins"; return $rc
-}
-test_pins_no_version_line() {
-  local pins rc
-  pins="$(make_pins "$PIN_A  tailwindcss-linux-arm64")"
-  ( TAILWIND_PINS="$pins" verify_tailwind_pins ) >/dev/null 2>&1
-  rc=$?; rm -f "$pins"; return $rc
-}
-assert_ok   "pins: every asset pinned passes"          test_pins_complete
-assert_fail "pins: one asset unpinned fails"           test_pins_missing_one_asset
-assert_fail "pins: a non-digest value fails"           test_pins_malformed_digest
-assert_fail "pins: no version line fails"              test_pins_no_version_line
-assert_fail "pins: absent file fails"                  env TAILWIND_PINS=/nonexistent/tailwind.pins bash -c 'source "'"$SCRIPT_DIR"'/verify-checksums.sh"; verify_tailwind_pins'
-
-# --- The repo's own pins are the ones that ship ---------------------------
-
-assert_eq "repo pins: TAILWIND_ASSETS covers both architectures per OS" \
-  "4" "$(count_assets)"
-
 # --- Integration: main (end to end) ---------------------------------------
 
 test_main_clean() {
   local repo rc
   repo="$(make_vendor_repo)"
-  ( cd "$repo" && TAILWIND_PINS=tailwind.pins main )
+  ( cd "$repo" && main )
   rc=$?; rm -rf "$repo"; return $rc
 }
 # A vendor directory carrying committed files but no README has no integrity
@@ -347,7 +236,7 @@ test_main_vendor_dir_without_readme() {
     cd "$repo" \
       && git rm -q --cached "$VENDOR_DIR/README.md" \
       && rm -f "$VENDOR_DIR/README.md" \
-      && TAILWIND_PINS=tailwind.pins main
+      && main
   )
   rc=$?; rm -rf "$repo"; return $rc
 }
@@ -356,7 +245,7 @@ test_main_vendor_dir_without_readme() {
 test_main_no_vendor_tree() {
   local repo rc
   repo="$(make_vendor_repo)"
-  ( cd "$repo" && rm -rf modules && TAILWIND_PINS=tailwind.pins main )
+  ( cd "$repo" && rm -rf modules && main )
   rc=$?; rm -rf "$repo"; return $rc
 }
 # A vendor directory inside an area is checked like one under modules/. The
@@ -370,7 +259,7 @@ test_main_area_vendor_dir_tampered() {
       && cp -R modules/demo areas/deposit/demo \
       && printf '\n' >>areas/deposit/demo/public/vendor/b.js \
       && git add areas \
-      && TAILWIND_PINS=tailwind.pins main
+      && main
   )
   rc=$?; rm -rf "$repo"; return $rc
 }

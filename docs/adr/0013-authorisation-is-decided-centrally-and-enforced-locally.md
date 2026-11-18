@@ -55,7 +55,7 @@ from and where it is applied. The decision, phrased so a violation is describabl
 Not yet in code: the shared crate and its function, rights on any port, a rights column in any read model,
 the predicate in any query layer, `media`'s check and the Access Area's identity port (not scheduled).
 
-Enforced by: review until the crate exists; then the crate graph (`check-capability-deps.sh`, Bazel
-`visibility` after ADR-0001) for "the decision lives in one `shared-*` crate with no I/O dependency"
-(**structure**); one test per surface that a listing, a facet count and a page agree on a restricted row
+Enforced by: review until the crate exists; then the crate graph, Bazel `visibility` per ADR-0001, for "the
+decision lives in one `shared-*` crate" (**structure**), and its BUILD file's `deps` for "with no I/O
+dependency" (**review**); one test per surface that a listing, a facet count and a page agree on a restricted row
 (**static-analysis**); "no capability decides a right itself" stays with review.

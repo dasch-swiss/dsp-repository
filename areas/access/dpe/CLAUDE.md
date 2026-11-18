@@ -37,7 +37,7 @@ Fragment handlers live in `server/src/fragments.rs`. Each renders a Maud view to
 
 ## Running Tests
 
-Snapshot tests use **insta**: a failing snapshot writes a `.snap.new` file — review with `cargo insta review`, accept with `cargo insta accept`. Playwright E2E: `cd areas/access/dpe/web-e2e-tests && npx playwright test`.
+Rust: `bazel test //areas/access/dpe/...`. Snapshot tests use **insta**: a changed snapshot fails its test; `just snap-accept <test target>` (for example `//areas/access/dpe/server:dpe_server_test`) rewrites it from the checkout, and `git diff` is the review. Playwright: `just test-a11y-dpe` builds the release server and stylesheet and runs the accessibility spec; the Playwright config reads the server's path from `ACCESS_SERVER_BIN`, which the recipe sets.
 
 ## When Making Changes
 
@@ -47,7 +47,7 @@ Project descriptive metadata lives as JSON under `areas/access/dpe/server/data/`
 
 1. Add `<shortcode>_<slug>.json` under `projects/` (and any new `persons/person-NNN.json` / `organizations/organization-NNN.json`); pick new person/org ids by scanning existing internal `"id"` values, and reuse existing organizations rather than duplicating them.
 2. **Every `temporalCoverage` value must resolve to a structured date for OAI-PMH.** Free-text values (e.g. `{"en": "11th-15th centuries"}`) resolve against `areas/access/dpe/server/data/temporal-coverage-enrichment.json`, keyed by the display text. Add a row with a W3CDTF range and `"source": "llm"` (e.g. `"11th-15th centuries": {"date": "1001/1500", "original_name": "11th-15th centuries", "source": "llm"}`); if the value is not a time period, use `"date": null, "source": "unresolved"`. Both `just validate-data` (`access-server validate`, over `dpe-server`'s `validate`) and the `every_committed_temporal_coverage_resolves` test enforce this, over the same `shared_metadata::temporal_coverage` resolution logic — so the two can't disagree. See `docs/src/dpe/oai-pmh.md` → *Temporal coverage*.
-3. **Key order is canonical.** Top-level members must be in `ProjectRaw`'s field declaration order, nested objects in theirs, language keys alphabetical, 4-space indent, trailing newline, no explicit `null`. `editor-core`'s `canonical_round_trip` test asserts this byte-for-byte over every committed project file, so a hand-ordered file fails it rather than `just validate-data`. Don't reorder by hand: run `CANONICALIZE_PROJECT_FILES=1 cargo test -p editor-core --test canonical_round_trip`, which rewrites the files with what the editor's writer produces. Adding or removing a project file also trips `the_corpus_is_the_whole_published_set` in that test: record the new size in `areas/access/dpe/server/data/corpus-manifest.json` in the same commit. That file is the one place the corpus's size is written down — every other count in the tree is measured from the directory — and it covers `persons/` and `organizations/` too.
+3. **Key order is canonical.** Top-level members must be in `ProjectRaw`'s field declaration order, nested objects in theirs, language keys alphabetical, 4-space indent, trailing newline, no explicit `null`. `editor-core`'s `canonical_round_trip` test asserts this byte-for-byte over every committed project file, so a hand-ordered file fails it rather than `just validate-data`. Don't reorder by hand: run `just canonicalize-projects`, which rewrites the files with what the editor's writer produces. Adding or removing a project file also trips `the_corpus_is_the_whole_published_set` in that test: record the new size in `areas/access/dpe/server/data/corpus-manifest.json` in the same commit. That file is the one place the corpus's size is written down — every other count in the tree is measured from the directory — and it covers `persons/` and `organizations/` too.
 4. **A new `spatialCoverage` or `temporalCoverage` reference must be a bundled editor option.** Run `python3 scripts/build-coverage-vocabularies.py` (for a new period, `python3 scripts/fetch-chronontology-periods.py` first), or `editor-core`'s drift tests fail.
 5. Run `just validate-data` (cross-references, temporal-coverage resolution) and `just test`.
 
@@ -100,7 +100,7 @@ Don't pass a non-trivial `html!` block directly into a component call
 (`let body = html! { … }; card(body)`) or extract a `fn … -> Markup`
 helper. `maudfmt` only formats `html!` at Rust statement/`let` position; a block
 nested as a call argument — or via Maud's in-macro `@let x = html! { … }` — is
-skipped by `maudfmt` and then mangled by `cargo fmt` (flat indentation,
+skipped by `maudfmt` and then mangled by `rustfmt` (flat indentation,
 `class = "…"` with stray spaces). Trivial one-liners like `html! { (label) }`
 passed inline are fine.
 
@@ -133,7 +133,7 @@ DPE uses OpenTelemetry for distributed tracing, metrics, and structured logging.
 ## Best Practices for AI Agents
 
 1. **Use `mosaic-tiles` components** where appropriate for consistent UI
-2. **Format with `just fmt`** — runs `maudfmt` (formats `maud::html!` macro contents; stock rustfmt does not) then `cargo +nightly fmt`. Run at the end of your work
+2. **Format with `just fmt`** — runs `maudfmt` (formats `maud::html!` macro contents; stock rustfmt does not) then the pinned nightly `rustfmt`. Run at the end of your work
 
 ## Note on the Mosaic Playground
 

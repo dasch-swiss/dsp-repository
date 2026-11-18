@@ -80,10 +80,11 @@ rust_test(
 # ── The editor image, `daschswiss/metadata-editor` ─────────────────────────
 #
 # A static musl binary on distroless `static` (`//tools/image:defs.bzl`), built with
-# `--config=release --stamp` (the version in the footer) by `just bazel-docker-build-editor`, which
-# loads it, and pushed by the `docker-publish` action. This is the published image; `Dockerfile` is
-# no longer built by CI, and still documents `EDITOR_DB_DIR` and the user id. Its `HEALTHCHECK` has
-# no equivalent in an OCI image, and `healthcheck` remains a subcommand.
+# `--config=release --stamp` (the version in the footer) by `just build-docker-editor`, which
+# loads it, and pushed by the `docker-publish` action. An OCI image has no `HEALTHCHECK`, and
+# `healthcheck` remains a subcommand. The base runs as uid 65532 (distroless `nonroot`), so the
+# directory `EDITOR_DB_DIR` points at must be writable by 65532: chowned to 65534 it fails with
+# `unable to open database file`, which reads like a wrong mount path.
 binary_layer(
     name = "image_binary",
     binary = ":deposit_server",
@@ -119,7 +120,10 @@ app_image(
     scan_tag = "local-scan/editor:latest",
     cmd = ["serve"],
     entrypoint = ["./deposit-server"],
-    # `EDITOR_DB_DIR` stays unset: an in-memory database, for the previews (`Dockerfile`).
+    # `EDITOR_DB_DIR` stays unset: an in-memory database. The Cloud Run previews run this image with
+    # no volume and publicly reachable, so a default path would let a preview accumulate login codes,
+    # sessions and drafts; production sets it through the deployment
+    # (docs/src/editor/operations.md#database).
     env = {
         "RUST_LOG": "info",
         # The panic hook's backtrace, with the line tables `--config=release` keeps.

@@ -1,14 +1,17 @@
 # bacon config for the dev loops. `serve` is the area binary, DPE and CPE (`just dev` / `just dev-otel`);
-# `serve-editor` is the metadata editor (`just dev-editor` / `just dev-editor-otel`).
+# `serve-editor` is the metadata editor (`just dev-editor` / `just dev-editor-otel`); `playground` is the
+# Mosaic playground (`just watch-mosaic-playground`). Each builds with Bazel and runs the binary from
+# the repository root (`--run_in_cwd`), not from its runfiles tree; `bazel run` then replaces itself
+# with the binary, so bacon's SIGINT reaches the server.
 
 default_job = "serve"
 
 [jobs.check]
-command = ["cargo", "check", "--all-targets", "--color", "always"]
+command = ["bazel", "build", "//..."]
 need_stdout = false
 
 [jobs.serve]
-command = ["cargo", "run", "--bin", "access-server", "--features", "dev", "--", "serve"]
+command = ["bazel", "run", "--run_in_cwd", "//areas/access/server:access_server_dev", "--", "serve"]
 need_stdout = true
 background = false
 on_change_strategy = "kill_then_restart"
@@ -24,13 +27,13 @@ watch = [
   "areas/access/sync",
   "areas/access/media",
   "shared",
-  "modules/mosaic/tiles/src",
+  "modules/mosaic/tiles",
 ]
 # CPE is mounted only with a base.
 env = { CPE_BASE = "/cpe" }
 
 [jobs.serve-editor]
-command = ["cargo", "run", "--bin", "deposit-server", "--", "serve"]
+command = ["bazel", "run", "--run_in_cwd", "//areas/deposit/server:deposit_server", "--", "serve"]
 need_stdout = true
 background = false
 on_change_strategy = "kill_then_restart"
@@ -38,4 +41,13 @@ on_change_strategy = "kill_then_restart"
 kill = ["kill", "-s", "INT"]
 # Also watch the composition root, identity's crates, the area shell, the tiles crate and
 # the `shared-*` crates, so changes in any of them rebuild — none lives under `areas/deposit/editor`.
-watch = ["areas/deposit/editor", "areas/deposit/server", "areas/deposit/identity", "areas/deposit/shell", "shared", "modules/mosaic/tiles/src"]
+watch = ["areas/deposit/editor", "areas/deposit/server", "areas/deposit/identity", "areas/deposit/shell", "shared", "modules/mosaic/tiles"]
+
+[jobs.playground]
+command = ["bazel", "run", "--run_in_cwd", "//modules/mosaic/playground:mosaic_playground_dev"]
+need_stdout = true
+background = false
+on_change_strategy = "kill_then_restart"
+kill = ["kill", "-s", "INT"]
+watch = ["modules/mosaic"]
+env = { MOSAIC_PUBLIC_DIR = "modules/mosaic/playground/public" }

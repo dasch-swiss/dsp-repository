@@ -7,7 +7,7 @@
 //! stripping null members loses nothing.
 //!
 //! ```text
-//! CANONICALIZE_PROJECT_FILES=1 cargo test -p editor-core --test canonical_round_trip
+//! just canonicalize-projects
 //! ```
 //!
 //! rewrites each file with what the writer produces instead of asserting. Commit
@@ -95,7 +95,7 @@ fn every_committed_project_file_round_trips_byte_identically() {
     assert!(
         differing.is_empty(),
         "{} of {} project files do not round-trip. Review the change, then regenerate with \
-         `{REGENERATE}=1 cargo test -p editor-core --test canonical_round_trip`:\n\n{}",
+         `just canonicalize-projects` (it sets `{REGENERATE}=1`):\n\n{}",
         differing.len(),
         files.len(),
         differing.join("\n\n")

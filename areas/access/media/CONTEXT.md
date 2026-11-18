@@ -62,9 +62,9 @@ _Avoid_: public user, guest (a request's viewer; a bytes port has no request).
 - **Read the Access bucket.** The adapter that replaces `LiveDepositedFiles` there resolves a name without
   following a symbolic link (`openat2`, `cap-std`) rather than checking first.
 
-`media-store` depends on `cpe-ports` alone of this repository's crates. `check-capability-deps.sh` checks both
-sides: a reader names `media-store` as a dev-dependency only (its `DEV_ONLY`), and `media-store`, a `store`
-crate, depends on no `sync` crate and on no sibling's crate but its `ports` crate.
+`media-store` depends on `cpe-ports` alone of this repository's crates. Bazel `visibility` holds both sides:
+`media_store` is granted to the composition root alone and a reader's tests use `media_store_for_tests`, which
+is `testonly`; and no `sync` or sibling target but `cpe_ports` grants `media-store`.
 
 A new consumer of `media`, DaTEI for one, declares its own bytes port in its own ports crate, and `media-store`
 implements it beside `LiveDepositedFiles`. `is_shortcode` and `is_file_name` are CPE's rules until a second

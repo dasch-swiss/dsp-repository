@@ -3,7 +3,7 @@
 # Every #[test] in dsp-cli/tests/live_*.rs must carry an #[ignore] attribute:
 # these tests need a live DSP stack, and without #[ignore] they
 # run — and pass vacuously via their own early-return skip — under a plain
-# `cargo nextest run --all-features`. That "passes" for the wrong reason, so
+# test run that includes them. That "passes" for the wrong reason, so
 # only a scan of the attribute list per test catches a test that lost its
 # #[ignore].
 #

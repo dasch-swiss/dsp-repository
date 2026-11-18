@@ -8,7 +8,7 @@
 2. **Action-level tests**: a `MockDspClient` and a capturing renderer, per the `DspClient` seam of dsp-cli/ADR-0008. The bulk of the suite: fast, deterministic, easy to write.
 3. **Snapshot tests**: the `insta` crate. One snapshot per (noun, verb, format) cell with meaningful output. They capture prose, json, csv, tsv and lines exactly and are the default way to verify output shape.
 4. **Wiremock client tests**: small and focused on HTTP and serialization correctness: request shape, header propagation, response deserialization, retry and error paths.
-5. **Live tests**: behind the `live` cargo feature, against a DSP stack chosen through environment variables.
+5. **Live tests**: behind the `live` feature, against a DSP stack chosen through environment variables.
 
 Layers 1 to 4 are pure-local and run on every PR. Layer 5 runs in the drift job.
 
@@ -33,7 +33,7 @@ tests) and `tests/common/mod.rs` (`require_env` and `optional_env`, for live tes
 
 ### Prose snapshot testing via `insta`
 
-Prose is the default output format. Without snapshots it degrades silently: a stray newline, a typo in a template or a misformatted footer passes everything except a human's eye. `insta` makes the diff-and-review loop fast (`cargo insta review`). The cost is that every PR that changes user-facing output accepts the snapshot diff, which is the intended friction.
+Prose is the default output format. Without snapshots it degrades silently: a stray newline, a typo in a template or a misformatted footer passes everything except a human's eye. `insta` makes the diff-and-review loop fast (`just snap-accept <target>`, then `git diff`). The cost is that every PR that changes user-facing output accepts the snapshot diff, which is the intended friction.
 
 A command with no `Renderer` and no output format has no (noun, verb, format) snapshot cells: `dsp docs`, `dsp auth token` and `dsp vre sparql query`. The `--help` snapshots are not exempt, because help text is dsp-cli's contract regardless of a command's output shape. Byte-exactness of a relayed SPARQL response body is asserted directly in `tests/sparql_query_http.rs` and the action-layer tests, not snapshotted: the body is store-authored and store-versioned, so it is not dsp-cli's contract to pin.
 
@@ -46,7 +46,7 @@ Hand-written fixtures alone drift silently from real API shapes; recorded fixtur
 
 ### Live tests: ignored by default, strict against a pinned stack in CI
 
-- Every live test is `#[ignore]`d, so a plain `cargo test` or `cargo nextest run` never makes a live call. `.github/scripts/check-live-tests-ignored.sh` enforces this and is run by `just check`.
+- Every live test is `#[ignore]`d, so a test run without `--ignored` never makes a live call. `.github/scripts/check-live-tests-ignored.sh` enforces this and is run by `just check`.
 - A developer can run them against any DSP environment (for example `dev`) by setting the environment variables each live-test file documents.
 - The drift-detection CI job (`.github/workflows/dsp-cli-drift.yml`) runs the live suite strict (`DSP_LIVE_STRICT=1`) against a pinned, containerized DSP stack (`dsp-cli/ci/stack/`: plain `db` and `api` services, no sipi, no ingest). The pin lives in `dsp-cli/ci/stack/stack.env` and is this repository's own choice, not a dsp-api release signal.
 - The same stack is stood up locally by `just dsp-cli-stack-up`, `just dsp-cli-stack-fixtures` and `just dsp-cli-stack-down`.

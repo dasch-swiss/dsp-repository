@@ -27,11 +27,11 @@ The `/add-mosaic-component` skill walks through this. In short:
 
 - There is no `build.rs` CSS pipeline. Each component's CSS is self-contained (`@apply` on the design tokens, no DaisyUI) and lives next to its source.
 - The consuming app's Tailwind entry `@import`s `tokens.css` + the `components/components.css` barrel (which pulls in every component stylesheet), then runs a single standalone Tailwind invocation.
-- Playground stylesheet: `just css-mosaic` → `playground/public/assets/app.css` (gitignored). Dev loop: `just watch-mosaic-playground` (Tailwind `--watch` + `cargo watch` + browser live-reload via the `dev` feature).
+- Playground stylesheet: `just css-mosaic` builds `//modules/mosaic/playground:css` and copies it to `playground/public/assets/app.css` (gitignored). Dev loop: `just watch-mosaic-playground` (Tailwind `--watch` + bacon restarting `mosaic_playground_dev` + browser live-reload via the `dev` feature).
 
 ## Testing and Verification
 
-`cargo test -p mosaic-tiles` for tile unit tests; `just check` and `just test` for the whole repo.
+`bazel test //modules/mosaic/tiles/...` for tile unit tests; `just check` and `just test` for the whole repo.
 
 ## Design Tokens
 
@@ -51,6 +51,6 @@ The `/add-mosaic-component` skill walks through this. In short:
 
 ## Formatting
 
-Run `just fmt` at the end of your work. It runs `maudfmt` (which formats the contents of `maud::html!` macros — stock rustfmt does not) followed by `cargo +nightly fmt` for the surrounding Rust. `just check` verifies both.
+Run `just fmt` at the end of your work. It runs `maudfmt` (which formats the contents of `maud::html!` macros — stock rustfmt does not) followed by the pinned nightly `rustfmt` for the surrounding Rust. `just check` verifies both.
 
-Because tiles take content as `impl Render`, don't pass a non-trivial `html!` block directly as an argument (`card(html! { … })`) — `maudfmt` skips nested-as-argument blocks and `cargo fmt` then mangles them. Bind the inner markup to a Rust `let` (`let body = html! { … }; card(body)`) or extract a `fn … -> Markup` helper. Trivial one-liners like `html! { (label) }` are fine inline.
+Because tiles take content as `impl Render`, don't pass a non-trivial `html!` block directly as an argument (`card(html! { … })`) — `maudfmt` skips nested-as-argument blocks and `rustfmt` then mangles them. Bind the inner markup to a Rust `let` (`let body = html! { … }; card(body)`) or extract a `fn … -> Markup` helper. Trivial one-liners like `html! { (label) }` are fine inline.

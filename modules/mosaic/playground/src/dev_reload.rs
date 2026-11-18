@@ -1,6 +1,6 @@
 //! Dev-only browser live-reload (`dev` feature) — same shape as
 //! `dpe-server/src/dev_reload.rs`: the layer reloads the browser after a
-//! server restart (cargo-watch), and the asset watcher covers CSS-only
+//! server restart (bacon), and the asset watcher covers CSS-only
 //! rebuilds (Tailwind `--watch` rewrites `app.css` without a restart).
 //!
 //! Datastar-safe by the layer's default response predicate: injects only into

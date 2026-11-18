@@ -16,13 +16,14 @@ containerized stack (see [Drift detection in CI](#drift-detection-in-ci) below).
    non-obvious constraints for why.
 3. **Snapshot tests** — via the `insta` crate, in `tests/`. One snapshot per (noun, verb, format)
    cell with meaningful output. Captures prose / json / csv / tsv / lines exactly. The default way
-   to verify output shape; run `just dsp-cli-snap-review` (`cargo insta review`) to accept or
-   reject a diff.
+   to verify output shape; a changed snapshot fails its test, `just snap-accept //dsp-cli:<file
+   stem>_test` rewrites it from the checkout, and `git diff` is where a diff is accepted or
+   rejected.
 4. **Wiremock client tests** — small, focused on HTTP/serialization correctness: request shape,
    header propagation, response deserialization, retry/error paths. Fixtures are hybrid:
    hand-written for the "what we care about" happy paths, recorded from real DSP-API responses for
    regression cases where dsp-cli's view was wrong.
-5. **Live tests** — `tests/live_*.rs`, behind the `live` cargo feature; not in the default suite.
+5. **Live tests** — `tests/live_*.rs`, built with the `live` feature as `manual` Bazel targets; not in the default suite.
    Hit a DSP environment: a developer-selected one locally (via env vars), or the drift job's pinned
    stack in CI. Smoke-check end-to-end integration before significant changes.
 
@@ -30,14 +31,14 @@ containerized stack (see [Drift detection in CI](#drift-detection-in-ci) below).
 
 ## Live tests are always `#[ignore]`d
 
-Every `#[test]` in `dsp-cli/tests/live_*.rs` also carries `#[ignore]`, so a plain
-`cargo test`/`cargo nextest run` never attempts a live call — the tests need a reachable DSP stack,
+Every `#[test]` in `dsp-cli/tests/live_*.rs` also carries `#[ignore]`, so a test run that builds
+them without `--ignored` never attempts a live call — the tests need a reachable DSP stack,
 and without `#[ignore]` they would otherwise run and pass vacuously via their own early-return skip
 under CI. `.github/scripts/check-live-tests-ignored.sh`, run by `just check`, enforces this: it
 scans every `dsp-cli/tests/live_*.rs` file and fails if any `#[test]` lacks a matching `#[ignore]`.
-Run live tests explicitly with `just dsp-cli-test-live`, which passes `--features live` and
-`--ignored` (or the equivalent) so the ignored tests actually execute.
-`just bazel-dsp-cli-test-live` runs the same tests built by Bazel.
+Run live tests explicitly with `just dsp-cli-test-live`: their Bazel targets build with the `live`
+feature and pass `--ignored`, so the ignored tests actually execute, and the recipe passes the
+`DSP_TEST_*` variables and `DSP_TOKEN` through by name.
 
 ## Live-test environment variables
 

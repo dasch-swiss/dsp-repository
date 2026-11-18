@@ -1,36 +1,5 @@
 version: 2
 updates:
-  - package-ecosystem: "cargo"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    # Paused while Cargo and Bazel coexist: a Cargo.lock bump leaves Bazel's crate universe stale
-    # until someone runs `just repin`. Security updates still open pull requests; see
-    # docs/src/bazel.md for how to finish one.
-    open-pull-requests-limit: 0
-    commit-message:
-      prefix: "build"
-      include: "scope"
-    groups:
-       backend-dependencies:
-          applies-to: version-updates
-          patterns:
-            - "*"
-    ignore:
-      # These are peer deps of Cargo and should not be automatically bumped
-      - dependency-name: "semver"
-      - dependency-name: "crates-io"
-      # Ignore major updates for all dependencies
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
-  - package-ecosystem: "docker"
-    # Dockerfiles live under the module directories, not the repo root
-    directories:
-      - "/areas/access/server"
-      - "/areas/deposit/server"
-      - "/modules/mosaic/playground"
-    schedule:
-      interval: "weekly"
   - package-ecosystem: "npm"
     # The Playwright e2e suites are the only Node footprint in the repo
     directories:

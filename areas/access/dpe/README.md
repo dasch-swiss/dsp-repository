@@ -15,16 +15,16 @@ dpe/
 └── style/            # Tailwind v4 entry (main.css)
 ```
 
-The binary, `access-server`, and its Dockerfile live outside this directory, at `areas/access/server/`
+The binary, `access-server`, and its image live outside this directory, at `areas/access/server/`
 (the Access Area's composition root; see its `CLAUDE.md`).
 
 ## Prerequisites
 
-- Rust toolchain (managed via `rustup`)
+- [Bazelisk](https://github.com/bazelbuild/bazelisk), as `bazel`: it builds the server, the stylesheet and the image (`docs/src/bazel.md`)
 - [just](https://github.com/casey/just) command runner
-- [bacon](https://dystroy.org/bacon/) for the dev loop (`cargo install bacon`)
+- [bacon](https://dystroy.org/bacon/) for the dev loop
 
-The Tailwind CLI is fetched automatically by the `just css*` recipes; CSS needs no Node or pnpm.
+`just install-requirements` or `nix develop` provides them. Bazel fetches the pinned Tailwind CLI; CSS needs no Node or pnpm.
 
 ## Running the Development Server
 
@@ -37,13 +37,12 @@ Runs Tailwind in `--watch` mode alongside `bacon serve`, which rebuilds and rest
 ## Building for Production
 
 ```bash
-cargo build --release --bin access-server   # static binary
-just css-release                            # content-hashed app.<hash>.css into public/assets/
+just build-docker-dpe   # the published image, loaded into Docker as local-scan/dpe:latest
+just run                # a release build with the release stylesheet, run from the repository root
+just css-release        # content-hashed app.<hash>.css into public/assets/
 ```
 
-Output:
-- Server binary: `target/release/access-server`
-- Compiled stylesheet: `areas/access/dpe/public/assets/app.<hash>.css`
+The image is what is deployed (`docs/src/dpe/operations.md`).
 
 ## Testing
 
@@ -58,10 +57,11 @@ just test
 E2E tests use [Playwright](https://playwright.dev) and live in `web-e2e-tests/`.
 
 ```bash
-cd areas/access/dpe/web-e2e-tests
-npm install
-npx playwright test
+just install-e2e-requirements   # once
+just test-a11y-dpe              # builds the release server and stylesheet, runs the accessibility spec
 ```
+
+The Playwright config reads the server's path from `ACCESS_SERVER_BIN`, which the recipe sets.
 
 A web-based test report is available via `npx playwright show-report` from the `web-e2e-tests/` directory.
 
@@ -70,13 +70,13 @@ A web-based test report is available via `npx playwright show-report` from the `
 ### Building the Docker Image
 
 ```bash
-docker build -t dpe .
+just build-docker-dpe
 ```
 
 ### Running with Docker
 
 ```bash
-docker run -p 8080:8080 dpe
+just run-docker-dpe
 ```
 
 The application will be available at `http://localhost:8080`.
@@ -87,10 +87,4 @@ See `docs/src/dpe/operations.md` for the full list of environment variables, CLI
 
 ## Remote Deployment Without Toolchain
 
-After building the binary and stylesheet (see [Building for Production](#building-for-production)), copy:
-
-1. The server binary from `target/release/access-server`
-2. The `public/` directory from `areas/access/dpe/public/` (static assets + the content-hashed `app.<hash>.css`)
-3. The data directory from `areas/access/dpe/server/data/`
-
-Set the environment variables documented in `docs/src/dpe/operations.md` (notably `DPE_PUBLIC_DIR` and `DPE_DATA_DIR`) and run the binary.
+Deploy the image (`just build-docker-dpe`, or the tag CI publishes): it holds the binary, the `public/` directory with the content-hashed stylesheet and the data directories, and sets the environment variables `docs/src/dpe/operations.md` lists.

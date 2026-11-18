@@ -31,7 +31,7 @@ Badge, Breadcrumb, Button, Card, Copy Button, Icon, Link, Loading, Tabs
 
 ```bash
 just watch-mosaic-playground    # Run playground with hot reload (watches tiles changes)
-just fmt                        # Format all code: maudfmt for html! macros, then cargo +nightly fmt
+just fmt                        # Format all code: maudfmt for html! macros, then the pinned nightly rustfmt
 ```
 
 See each crate's README for further details.

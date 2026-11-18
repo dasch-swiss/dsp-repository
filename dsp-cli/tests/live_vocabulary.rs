@@ -1,9 +1,7 @@
 // Live integration test for `dsp vre vocabulary list` / `describe` (plan 034).
 //
-// This entire file is compiled and run ONLY when the `live` feature is active:
-//   cargo test --features live --test 'live*'
-//
-// The `just dsp-cli-test-live` recipe runs exactly this command.
+// This entire file is compiled ONLY with the `live` feature, which its `manual` Bazel target
+// `//dsp-cli:live_vocabulary_test` enables; `just dsp-cli-test-live` runs it.
 //
 // dsp-cli/ADR-0009 (testing strategy): live tests are **not** in the default
 // suite. They require environment variables pointing at a reachable DSP stack,

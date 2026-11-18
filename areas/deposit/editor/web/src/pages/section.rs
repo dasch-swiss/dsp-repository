@@ -1271,7 +1271,7 @@ fn proposal_findings_elsewhere(view: &SectionView<'_>) -> Markup {
 
 /// The list inside [`proposal_findings_elsewhere`]'s alert. Its own function per
 /// the repo's rule on nested `html!` (`areas/access/dpe/CLAUDE.md`): `maudfmt` skips a
-/// block passed as a call argument and `cargo fmt` then flattens it, with `just
+/// block passed as a call argument and `rustfmt` then flattens it, with `just
 /// check` green because it only verifies `maudfmt` is a no-op.
 fn proposal_findings_list(view: &SectionView<'_>) -> Markup {
     let labels = entity_labels(

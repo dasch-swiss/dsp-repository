@@ -49,7 +49,7 @@ Every route that changes state is `POST`. The `Sec-Fetch-Site` CSRF control must
 
 ## Running Tests
 
-- Rust: `cargo test -p deposit-shell -p identity-core -p identity-ports -p identity-store -p identity-web -p editor-core -p editor-ports -p editor-store -p editor-web -p deposit-server`
+- Rust: `bazel test //areas/deposit/...`
 - E2E, accessibility and the no-JavaScript pass: `just test-e2e-editor` / `just test-a11y-editor` (suite in `areas/deposit/editor/web-e2e-tests/`)
 
 The E2E suite runs **twice**, once with JavaScript on and once with `javaScriptEnabled: false`. Neither pass subsumes the other: the no-JS pass catches a control with no submit button behind it, and the JS pass catches a control that Datastar has made inert.
@@ -109,4 +109,4 @@ Shares `shared-telemetry` with DPE. `POST /telemetry/collect` is untraced and ra
 ## Best Practices for AI Agents
 
 1. **Use `mosaic-tiles` components** where appropriate, and add the semantic method to the tile rather than patching ARIA at the call site
-2. **Format with `just fmt`** — `maudfmt` then `cargo +nightly fmt`. Run at the end of your work
+2. **Format with `just fmt`** — `maudfmt` then the pinned nightly `rustfmt`. Run at the end of your work

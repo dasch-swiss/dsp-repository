@@ -1,12 +1,11 @@
 # This workflow runs whenever a PR is opened or updated, or a commit is pushed to main. It runs
 # several checks:
-# - fmt: checks that the code is formatted according to rustfmt
-# - clippy: checks that the code does not contain any clippy warnings
-# - checksums: verifies vendored JS against its vendor/README.md tables, and that
-#   tailwind.pins is complete (part of `just check`; see docs/src/security.md)
-# - doc: checks that the code can be documented without errors
-# - hack: check combinations of feature flags
+# - check: `just check`, the gate scripts (vendored-JS checksums among them, see
+#   docs/src/security.md), the justfile, maudfmt and pinned nightly rustfmt formatting, and
+#   clippy over every Bazel target
 # - publish-dry-run: verifies dsp-cli's crates.io packaging with `cargo publish --dry-run`
+# - biome: lints the E2E suites' TypeScript
+# - docs: builds the mdBook
 
 name: check
 
@@ -31,29 +30,28 @@ jobs:
   check:
     runs-on: ubuntu-latest
     name: check
-    # Two builds until Cargo is removed: Cargo's checks, then clippy over the Bazel graph.
-    timeout-minutes: 60
+    # Twice the slowest warm Bazel step of this job in Phases 2 to 8 (clippy, 141 s), plus the
+    # steps outside Bazel. A cold build (no remote cache: Dependabot, forks, the endpoint down)
+    # takes longer.
+    timeout-minutes: 6
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
-      # Pinned, not `@nightly`: a new nightly that re-wraps comments turns every open PR red.
+      # Pinned, not `@nightly`: a new nightly that re-wraps comments turns every open PR red. Only
+      # rustfmt: Bazel compiles and lints with its own toolchain.
       - name: Read pinned nightly
         id: nightly
         run: echo "toolchain=$(cat .rustfmt-nightly)" >> "$GITHUB_OUTPUT"
-      - name: Install nightly
+      - name: Install nightly rustfmt
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ steps.nightly.outputs.toolchain }}
-          components: rustfmt, clippy
-      - name: Install just
-        uses: extractions/setup-just@v4
+          components: rustfmt
       - name: Install cargo-binstall
         uses: cargo-bins/cargo-binstall@main
-      - name: Install maudfmt and cargo-machete
-        run: cargo binstall -y maudfmt@0.1.8 cargo-machete@0.9.2
-      - name: just check
-        run: just check
+      - name: Install maudfmt
+        run: cargo binstall -y maudfmt@0.1.8
       - name: Bazel setup
         id: bazel
         uses: ./.github/actions/bazel-setup
@@ -62,51 +60,14 @@ jobs:
           rbe-ca-cert: ${{ secrets.REMOTEBUILD_CA_CERT }}
           rbe-client-cert: ${{ secrets.REMOTEBUILD_CLIENT_CERT }}
           rbe-client-key: ${{ secrets.REMOTEBUILD_CLIENT_KEY }}
-      - name: just bazel-clippy
-        run: just bazel-clippy ${{ steps.bazel.outputs.flags }}
+      - name: just check
+        run: just check ${{ steps.bazel.outputs.flags }}
       - name: Save Bazel repository cache
         if: ${{ !cancelled() && steps.bazel.outputs.repo-cache-key != '' && steps.bazel.outputs.repo-cache-hit != 'true' }}
         uses: actions/cache/save@v4
         with:
           path: ~/.cache/bazel-repo
           key: ${{ steps.bazel.outputs.repo-cache-key }}
-
-  rustdoc:
-    # run docs generation on nightly rather than stable. This enables features like
-    # https://doc.rust-lang.org/beta/unstable-book/language-features/doc-cfg.html which allows an
-    # API be documented as only available in some specific platforms.
-    runs-on: ubuntu-latest
-    name: check / rustdoc / nightly
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-      - name: Install nightly
-        uses: dtolnay/rust-toolchain@nightly
-      - name: cargo doc
-        run: cargo doc --no-deps --all-features
-        env:
-          RUSTDOCFLAGS: --cfg docsrs
-
-  hack:
-    # cargo-hack checks combinations of feature flags to ensure that features are all additive
-    # which is required for feature unification
-    runs-on: ubuntu-latest
-    name: check / hack / ubuntu / stable / features
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-      - name: Install stable
-        uses: dtolnay/rust-toolchain@stable
-      - name: cargo install cargo-hack
-        uses: taiki-e/install-action@cargo-hack
-      # intentionally no target specifier; see https://github.com/jonhoo/rust-ci-conf/pull/4
-      # --feature-powerset runs for every combination of features
-      - name: cargo hack
-        run: cargo hack --feature-powerset --exclude-no-default-features check
 
   publish-dry-run:
     runs-on: ubuntu-latest

@@ -93,7 +93,7 @@ jobs:
             stop at "the syntax is valid" or "the library supports this": find the
             preconditions the specification attaches to the form you built, and for each one
             name the input that would violate it or state why none can. Confirm against the
-            versions this repo builds with (`Cargo.lock`) or the specification itself via web
+            versions this repo builds with (`Cargo.Bazel.lock`, `MODULE.bazel.lock`) or the specification itself via web
             search. If you cannot complete that check, say so explicitly and grade the line
             Suspected — do not declare it correct.
 

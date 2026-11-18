@@ -8,8 +8,8 @@ All CI/CD workflows are defined as GitHub Actions in `.github/workflows/`.
 
 Every push and pull request runs:
 
-- **check.yml** — Formatting (`maudfmt` for `html!` macros + `cargo +nightly fmt`), linting (`clippy`), third-party artifact checksums (see [Security](./security.md)), and a dsp-cli packaging dry run (`cargo publish -p dsp-cli --dry-run`)
-- **test.yml** — Runs the full test suite, and the tests of the `.github/scripts` gates (`just test-scripts`)
+- **check.yml** — `just check` with Bazel: the gate scripts, vendored-JS checksums among them (see [Security](./security.md)), formatting (`maudfmt` for `html!` macros and the pinned nightly `rustfmt`), clippy over every Bazel target; a dsp-cli packaging dry run (`cargo publish -p dsp-cli --dry-run`); the E2E suites' Biome lint; the mdBook build
+- **test.yml** — `just test` (every Bazel test) and `just image-smoke` (the three images built, started and answering), and the tests of the `.github/scripts` gates (`just test-scripts`)
 - **scout-dpe.yml** / **scout-editor.yml** / **scout-mosaic-playground.yml** — Docker image vulnerability scanning of the Bazel-built images (see [Security](./security.md))
 - **dsp-cli-drift.yml** — its `changes` job (deciding whether anything under `dsp-cli/**` changed) runs on every PR; see [dsp-cli drift detection](#dsp-cli-drift-detection) below
 
@@ -17,13 +17,13 @@ Every push and pull request runs:
 
 Defined in `a11y-dpe.yml`.
 
-Runs on PRs and pushes to `main` that touch `areas/access/dpe/**`, `areas/access/server/**`, `areas/access/cpe/**`, `areas/access/sync/**`, `areas/access/media/**` or `shared/**` — everything compiled into the binary the suite starts. The suite tests DPE's pages. Builds the DPE, then runs Playwright accessibility tests with axe-core against WCAG 2.1 AA.
+Runs on PRs and pushes to `main` that touch `areas/access/dpe/**`, `areas/access/server/**`, `areas/access/cpe/**`, `areas/access/sync/**`, `areas/access/media/**`, `shared/**` or `modules/mosaic/tiles/**` (everything compiled into the binary the suite starts), or the Bazel build's own files. The suite tests DPE's pages. `just test-a11y-dpe` builds the release server and stylesheet with Bazel, then runs Playwright accessibility tests with axe-core against WCAG 2.1 AA. `a11y-editor.yml` does the same for the editor, with its whole suite (`just test-e2e-editor`).
 
 ### Fuzz Testing
 
 Defined in `fuzz.yml`.
 
-Runs nightly at 02:00 UTC (and on manual dispatch). Fuzzes `tab_validation` and `query_params` targets for 10 minutes each using `cargo-fuzz` on nightly Rust. Corpus is cached between runs. On crash, the job uploads the crash input as a `fuzz-crashes-{target}` artifact (90-day retention) and fails; GitHub Issues are disabled on this repository, so no issue is filed automatically — a person files a Linear issue from the artifact. This is the same signal model the drift job's nightly `latest` run uses (see below).
+Runs nightly at 02:00 UTC (and on manual dispatch). Builds the libFuzzer binaries with Bazel (`just build-fuzz`) and fuzzes the `tab_validation` and `query_params` targets for 10 minutes each. Corpus is cached between runs. On crash, the job uploads the crash input as a `fuzz-crashes-{target}` artifact (90-day retention) and fails; GitHub Issues are disabled on this repository, so no issue is filed automatically — a person files a Linear issue from the artifact. This is the same signal model the drift job's nightly `latest` run uses (see below).
 
 ### dsp-cli Drift Detection
 
@@ -166,7 +166,7 @@ On every push to `main`, [Release Please](https://github.com/googleapis/release-
 
 Which prefix produces which changelog section and version bump is defined in [Git Conventions](./git-conventions.md#commit-message-schema) — that page is the human source for the type vocabulary, and this config is the machine source.
 
-Configuration lives in [`.github/release-please/config.json`](https://github.com/dasch-swiss/dsp-repository/blob/main/.github/release-please/config.json) and [`.github/release-please/manifest.json`](https://github.com/dasch-swiss/dsp-repository/blob/main/.github/release-please/manifest.json).
+Configuration lives in [`.github/release-please/config.json`](https://github.com/dasch-swiss/dsp-repository/blob/main/.github/release-please/config.json) and [`.github/release-please/manifest.json`](https://github.com/dasch-swiss/dsp-repository/blob/main/.github/release-please/manifest.json). The root package is of release type `simple`, which writes its version to `version.txt` at the repository root; the dev recipes read it as the services' `service.version`.
 
 #### dsp-cli
 

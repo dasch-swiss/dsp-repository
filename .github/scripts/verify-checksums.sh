@@ -1,24 +1,13 @@
 #!/usr/bin/env bash
 #
-# Integrity gate for the third-party bytes this repo ships to browsers or
-# executes during a build. Two artifact kinds, one file so there is one place
-# to look:
-#
-#   Vendored JS (DEV-7126) lives in modules/*/public/vendor/ and areas/*/*/public/vendor/. Each directory's
-#   README.md opens with "Do not edit these files directly" and records a
-#   SHA-256 per file. Nothing recomputed those hashes, so the table attested
-#   files it could not vouch for: a mistyped 64-character digest is exactly the
-#   value diff review skims past. verify_vendor_readme recomputes them.
-#
-#   The Tailwind standalone CLI (DEV-6727) is downloaded at build time and
-#   executed by every `just css*` recipe, both CI build actions and the mosaic
-#   image build. tailwind.pins records the expected SHA-256 per release asset.
-#
-# Run directly (`just verify-checksums`) this checks everything checkable
-# without a network: the vendor tables, and that tailwind.pins is complete and
-# well-formed. The pinned binaries are verified where they are downloaded:
-# `_tailwind-bin` in the justfile and modules/mosaic/playground/Dockerfile both
-# source this file for verify_file and tailwind_pin, and fail closed.
+# Integrity gate for the vendored JavaScript this repo ships to browsers
+# (DEV-7126). It lives in modules/*/public/vendor/ and areas/*/*/public/vendor/.
+# Each directory's README.md opens with "Do not edit these files directly" and
+# records a SHA-256 per file. Nothing recomputed those hashes, so the table
+# attested files it could not vouch for: a mistyped 64-character digest is
+# exactly the value diff review skims past. verify_vendor_readme recomputes
+# them. The Tailwind CLI the stylesheets are built with is pinned by `sha256`
+# in MODULE.bazel, where Bazel verifies the download.
 #
 # Parsing is awk, not `grep -E`: the negated-bracket patterns this needs are
 # mis-evaluated by at least one drop-in grep replacement, and a table row that
@@ -29,22 +18,6 @@
 #
 # The file is safe to `source`: it defines functions and only runs `main` when
 # executed directly.
-
-: "${TAILWIND_PINS:=tailwind.pins}"
-
-# Every release asset the download sites can resolve to, across the os/arch
-# pairs they support. A version bump that refreshes only the developer's own
-# architecture leaves a hole here, and verify_tailwind_pins reports it at
-# `just check` rather than halfway through a build on another one.
-: "${TAILWIND_ASSETS:=tailwindcss-linux-arm64 tailwindcss-linux-x64 tailwindcss-macos-arm64 tailwindcss-macos-x64}"
-
-# is_sha256 <string>: true for a 64-character lowercase hex digest.
-is_sha256() {
-  case "$1" in
-    "" | *[!0-9a-f]*) return 1 ;;
-  esac
-  [ "${#1}" -eq 64 ]
-}
 
 # sha256_of <file>: the bare digest. coreutils on Linux, perl shasum on macOS;
 # both print "<digest>  <path>".
@@ -169,47 +142,6 @@ verify_vendor_readme() {
   return "$rc"
 }
 
-# tailwind_version: the version recorded in tailwind.pins.
-tailwind_version() {
-  awk '$1 == "version" { print $2; found = 1; exit } END { exit !found }' "$TAILWIND_PINS"
-}
-
-# tailwind_pin <release-asset-name>: the pinned digest for one release asset.
-tailwind_pin() {
-  awk -v want="$1" '$2 == want { print $1; found = 1; exit } END { exit !found }' "$TAILWIND_PINS" || {
-    echo "✗ no pin for '$1' in $TAILWIND_PINS. Run 'just tailwind-pins-refresh'" >&2
-    return 1
-  }
-}
-
-# verify_tailwind_pins: tailwind.pins is present, versioned, and pins every
-# asset the build can ask for. It cannot verify the binaries themselves; those
-# are ~100 MB downloads, verified at the point of download instead.
-verify_tailwind_pins() {
-  local ver asset pin rc=0
-
-  if [ ! -f "$TAILWIND_PINS" ]; then
-    echo "✗ missing $TAILWIND_PINS" >&2
-    return 1
-  fi
-  if ! ver="$(tailwind_version)" || [ -z "$ver" ]; then
-    echo "✗ $TAILWIND_PINS: no 'version <x.y.z>' line" >&2
-    return 1
-  fi
-  for asset in $TAILWIND_ASSETS; do
-    pin="$(tailwind_pin "$asset")" || { rc=1; continue; }
-    if ! is_sha256 "$pin"; then
-      echo "✗ $TAILWIND_PINS: pin for $asset is not a 64-character lowercase hex digest: $pin" >&2
-      rc=1
-    fi
-  done
-
-  if [ "$rc" -eq 0 ]; then
-    echo "✓ $TAILWIND_PINS (Tailwind $ver)"
-  fi
-  return "$rc"
-}
-
 main() {
   local dir tracked found=0 rc=0
 
@@ -236,7 +168,6 @@ main() {
     rc=1
   fi
 
-  verify_tailwind_pins || rc=1
 
   [ "$rc" -eq 0 ] || echo "✗ checksum verification failed (see above)" >&2
   return "$rc"

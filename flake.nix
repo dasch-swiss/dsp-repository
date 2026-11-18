@@ -27,21 +27,6 @@
           extensions = [ "rustfmt" ];
         };
 
-        # Wrapper that makes the justfile's `cargo +<toolchain> fmt` work without rustup, where
-        # `+toolchain` is a rustup-only feature.
-        # This shim strips `+toolchain` args and delegates to the real cargo,
-        # while RUSTFMT env var ensures nightly rustfmt is used for formatting.
-        cargoWrapper = pkgs.writeShellScriptBin "cargo" ''
-          args=()
-          for arg in "$@"; do
-            case "$arg" in
-              +*) ;; # strip +toolchain args (e.g., +nightly)
-              *)  args+=("$arg") ;;
-            esac
-          done
-          exec "${rustStable}/bin/cargo" "''${args[@]}"
-        '';
-
         # macOS: unified Apple SDK provides all frameworks (Security, CoreFoundation, etc.)
         darwinDeps = pkgs.lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
           pkgs.apple-sdk
@@ -51,12 +36,12 @@
       in {
         devShells.default = pkgs.mkShell {
           # Use nightly rustfmt — .rustfmt.toml requires nightly features
-          # (group_imports, imports_granularity). cargo fmt respects this env var.
+          # (group_imports, imports_granularity). `just fmt` and `just check` run this binary.
           RUSTFMT = "${rustNightly}/bin/rustfmt";
 
           buildInputs = [
-            # Rust: wrapper first on PATH so it shadows the raw cargo binary
-            cargoWrapper
+            # Rust: Bazel builds with its own toolchain (MODULE.bazel). Stable serves `cargo binstall`
+            # and dsp-cli's publish; nightly serves rustfmt.
             rustStable
             rustNightly
 
@@ -66,9 +51,6 @@
             # Development tools (version-matched in nixpkgs)
             pkgs.just
             pkgs.nodejs_24    # for the Playwright e2e suites (npx)
-            pkgs.cargo-watch  # 8.5.3 — matches justfile pin
-            pkgs.cargo-nextest  # 0.9.132 in this nixpkgs pin; install-requirements pins 0.9.144 via binstall
-            pkgs.cargo-deny  # 0.19.0 in this nixpkgs pin; install-requirements pins 0.20.2 via binstall
             pkgs.cargo-binstall
             pkgs.jq           # `just fair-check` reads F-UJI's JSON result with it
 
@@ -103,7 +85,6 @@
             # Maud dev tooling (DEV-6642)
             _ensure_tool bacon           bacon             3.23.0   # dev loop: kill_then_restart server
             _ensure_tool maudfmt         maudfmt           0.1.8    # Maud template formatting
-            _ensure_tool cargo-machete   cargo-machete     0.9.2    # unused-dependency check (just check)
             _ensure_tool commitlint      commitlint-rs     0.2.4    # commit-message gate (just commit-lint)
 
             unset -f _ensure_tool

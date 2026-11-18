@@ -25,9 +25,9 @@ runs:
         rbe-client-cert: ${{ inputs.rbe-client-cert }}
         rbe-client-key: ${{ inputs.rbe-client-key }}
 
-    - name: just bazel-docker-build-editor
+    - name: just build-docker-editor
       shell: bash
-      run: just bazel-docker-build-editor ${{ steps.bazel.outputs.flags }}
+      run: just build-docker-editor ${{ steps.bazel.outputs.flags }}
 
     - name: Save Bazel repository cache
       if: ${{ !cancelled() && steps.bazel.outputs.repo-cache-key != '' && steps.bazel.outputs.repo-cache-hit != 'true' }}

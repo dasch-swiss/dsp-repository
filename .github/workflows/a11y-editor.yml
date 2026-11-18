@@ -15,11 +15,37 @@ on:
       - "areas/deposit/**"
       - "shared/**"
       - "modules/mosaic/**"
+      # The published data set the server reads (EDITOR_DATA_DIR).
+      - "areas/access/dpe/server/data/**"
+      # The Bazel build: what it reads besides the sources above.
+      - "MODULE.bazel"
+      - "MODULE.bazel.lock"
+      - "Cargo.Bazel.lock"
+      - ".bazelrc"
+      - ".bazelversion"
+      - "platforms/**"
+      - "bazel/**"
+      - "tools/**"
+      - ".github/actions/bazel-setup/**"
+      - ".github/actions/bazel-rbe/**"
   pull_request:
     paths:
       - "areas/deposit/**"
       - "shared/**"
       - "modules/mosaic/**"
+      # The published data set the server reads (EDITOR_DATA_DIR).
+      - "areas/access/dpe/server/data/**"
+      # The Bazel build: what it reads besides the sources above.
+      - "MODULE.bazel"
+      - "MODULE.bazel.lock"
+      - "Cargo.Bazel.lock"
+      - ".bazelrc"
+      - ".bazelversion"
+      - "platforms/**"
+      - "bazel/**"
+      - "tools/**"
+      - ".github/actions/bazel-setup/**"
+      - ".github/actions/bazel-rbe/**"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -32,13 +58,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install stable Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - uses: Swatinem/rust-cache@v2
-
-      - name: Install just
-        uses: extractions/setup-just@v4
+      - name: Bazel setup
+        id: bazel
+        uses: ./.github/actions/bazel-setup
+        with:
+          rbe-runner-endpoint: ${{ vars.REMOTEBUILD_RUNNER_ENDPOINT }}
+          rbe-ca-cert: ${{ secrets.REMOTEBUILD_CA_CERT }}
+          rbe-client-cert: ${{ secrets.REMOTEBUILD_CLIENT_CERT }}
+          rbe-client-key: ${{ secrets.REMOTEBUILD_CLIENT_KEY }}
 
       - name: Install Node.js
         uses: actions/setup-node@v4
@@ -51,23 +78,14 @@ jobs:
       - name: Install Playwright browsers
         run: cd areas/deposit/editor/web-e2e-tests && npx playwright install chromium --with-deps
 
-      - name: Build deposit-server and stylesheet
-        # `cargo build -p deposit-server --release` yields target/release/deposit-server
-        # directly (the [[bin]] name), which the Playwright webServer launches.
-        # `just css-editor-release` builds the content-hashed app.css the release
-        # server discovers from areas/deposit/editor/public/assets at startup — without
-        # it every Tailwind-dependent assertion fails for an unrelated reason.
-        run: |
-          cargo build -p deposit-server --release
-          just css-editor-release
-
       - name: Run E2E, accessibility and no-JavaScript tests
         # The whole suite rather than the accessibility spec alone: it runs in
         # two projects, `chromium-js` and `chromium-nojs`, and neither subsumes
         # the other. The no-JS pass catches a control with no submit button
         # behind it; the JS pass catches a control Datastar has made inert.
-        # Running only the a11y spec would leave both uncovered in CI.
-        run: just test-e2e-editor
+        # Running only the a11y spec would leave both uncovered in CI. The recipe builds the
+        # release server and the release stylesheet with Bazel first.
+        run: just test-e2e-editor ${{ steps.bazel.outputs.flags }}
 
       - name: Upload Playwright report
         if: always()
@@ -76,3 +94,10 @@ jobs:
           name: playwright-report-a11y-editor
           path: areas/deposit/editor/web-e2e-tests/playwright-report/
           retention-days: 7
+
+      - name: Save Bazel repository cache
+        if: ${{ !cancelled() && steps.bazel.outputs.repo-cache-key != '' && steps.bazel.outputs.repo-cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.cache/bazel-repo
+          key: ${{ steps.bazel.outputs.repo-cache-key }}

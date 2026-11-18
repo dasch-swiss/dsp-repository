@@ -1,7 +1,7 @@
 #![no_main]
 
-use shared_telemetry::origin::is_allowed_origin;
 use libfuzzer_sys::fuzz_target;
+use shared_telemetry::origin::is_allowed_origin;
 
 // Only properly-structured dasch.swiss subdomains and localhost may be accepted.
 fuzz_target!(|data: &[u8]| {
@@ -15,10 +15,7 @@ fuzz_target!(|data: &[u8]| {
         let is_exact = input == "dasch.swiss";
         let is_subdomain = input.ends_with(".dasch.swiss") && input.len() > 12;
         let is_localhost = input == "localhost";
-        assert!(
-            is_exact || is_subdomain || is_localhost,
-            "accepted unexpected origin: {input}"
-        );
+        assert!(is_exact || is_subdomain || is_localhost, "accepted unexpected origin: {input}");
 
         if !is_exact && !is_localhost {
             let prefix_end = input.len() - "dasch.swiss".len();

@@ -6,7 +6,7 @@ defaults:
     test: just test
     lint: just check
     gate: just check && just test
-    test_targeted: just test-changed
+    test_targeted: just test
 
 overrides:
   # Per-application guidance: one override per directory with its own CLAUDE.md.
@@ -16,7 +16,7 @@ overrides:
     conventions: [areas/access/server/CLAUDE.md]
   - when: "areas/access/server/src/observability.rs"
     reviewers: [eng:review:observability-reviewer]
-  - when: "areas/access/server/Dockerfile"
+  - when: "areas/access/server/BUILD.bazel"
     reviewers: [eng:review:devops-reviewer]
   - when: "areas/deposit/editor/**"
     conventions: [areas/deposit/editor/CLAUDE.md]
@@ -26,7 +26,7 @@ overrides:
     reviewers: [eng:review:security-reviewer]
   - when: "areas/deposit/server/src/observability.rs"
     reviewers: [eng:review:observability-reviewer]
-  - when: "areas/deposit/server/Dockerfile"
+  - when: "areas/deposit/server/BUILD.bazel"
     reviewers: [eng:review:devops-reviewer]
   - when: "areas/deposit/identity/**"
     conventions: [areas/deposit/identity/CLAUDE.md]

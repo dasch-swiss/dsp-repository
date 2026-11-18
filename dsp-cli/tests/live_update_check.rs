@@ -1,12 +1,10 @@
 // Live integration test for the update check's crates.io sparse-index fetch
 // (`dsp_cli::update::fetch_latest`).
 //
-// This entire file is compiled and run ONLY when the `live` feature is active:
-//   cargo test --features live --test 'live*'
-// or specifically:
-//   cargo test --features live --test live_update_check
-//
-// The `just test-live` recipe runs the former.
+// This entire file is compiled ONLY with the `live` feature, which its `manual` Bazel target
+// enables. It calls crates.io, not a DSP stack, so `just dsp-cli-test-live` leaves it out.
+// Run it alone:
+//   bazel test //dsp-cli:live_update_check_test
 //
 // dsp-cli/ADR-0009 (testing strategy): live tests are layer 5 and #[ignore]d in the
 // default suite. Unlike its siblings, this one is not run by the dsp-cli-drift CI job
@@ -29,7 +27,7 @@
 /// `dsp-cli` has been published to crates.io since 0.1.0 (see CHANGELOG.md),
 /// so a real fetch must return at least that version.
 #[test]
-#[ignore = "hits crates.io; excluded from just dsp-cli-test-live, run with cargo nextest run -p dsp-cli --features live --run-ignored only --test live_update_check"]
+#[ignore = "hits crates.io; excluded from just dsp-cli-test-live, run with bazel test //dsp-cli:live_update_check_test"]
 fn live_fetch_latest_returns_a_published_stable_version() {
     eprintln!("live test: calling fetch_latest against the real crates.io sparse index");
 

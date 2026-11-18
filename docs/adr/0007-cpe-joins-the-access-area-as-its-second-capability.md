@@ -117,18 +117,20 @@ repository. The decision, phrased so a violation is describable in code:
   Mosaic stays a root peer because the Deposit and Access Areas both use it. The stylesheets are plain files in
   `cpe-components`' `style/` directory; the crate neither embeds nor serves them, and `cpe-server` serves them,
   with the files of `areas/access/cpe/public/`, from a compiled-in table.
-- **The seam is one-directional and mechanical.** `.github/scripts/check-cpe-seam.sh` checks, over the tracked
-  `Cargo.toml` files:
+- **The seam is one-directional and mechanical.** It is the `visibility` of CPE's Bazel targets: each lists
+  the packages that may depend on it, and an edge outside the lists fails analysis.
   1. No crate outside `areas/access/cpe/` depends on a CPE crate except `cpe-ports`, which `sync-store` and
-     `media-store` implement, and `cpe-server`, which the composition root mounts (`PORT_EXCEPTIONS`).
-  2. No manifest under `areas/access/cpe/` depends on a Mosaic crate (any crate of `modules/mosaic/`).
-  3. `cpe-core` depends on no CPE crate (`LEAVES`); a new crate that must stay a leaf is added there.
-  4. `cpe-store` depends on no CPE crate but `cpe-core`, `cpe-store-build` on none but `cpe-core` and
-     `cpe-ports`, and `cpe-server` on every CPE crate but `cpe-store`, which it reaches through `cpe-web`
-     (`CPE_EDGES`).
+     `media-store` implement, and `cpe-server`, which the composition root mounts: no other CPE target
+     grants a package outside the capability.
+  2. No CPE crate depends on a Mosaic crate: no `modules/mosaic/` target grants a CPE package.
+  3. `cpe-core` depends on no CPE crate: no CPE library grants `areas/access/cpe/core`.
+  4. `cpe-store` depends on no CPE crate but `cpe-core`, `cpe-store-build` on none but `cpe-core`
+     and `cpe-ports`, and `cpe-server` on every CPE crate but `cpe-store`, which it reaches through `cpe-web`:
+     the grants of each CPE target name exactly these consumers.
 
-  The edges CPE's crates have by their roles (ADR-0003 and the roles above), the `sync` and `media` crates
-  as dev-dependencies only among them (ADR-0008, ADR-0012), are `check-capability-deps.sh`'s.
+  The edges CPE's crates have by their roles (ADR-0003 and the roles above) are held the same way; the `sync`
+  and `media` stores are visible to CPE only as `testonly` variants, so only CPE's tests reach them (ADR-0008,
+  ADR-0012). The third-party bans of the `components` and `image-viewer` roles are `check-capability-deps.sh`'s.
 - **The image viewer is `cpe-image-viewer`, at `areas/access/cpe/image-viewer`**: a copy of the incubator's
   `shared/dasch-image-viewer`, reduced to the one engine CPE uses (OpenSeadragon in a shadow root). It is not
   in `shared/`, because it has one consumer, and it is not part of the component library; a consumer outside
@@ -312,10 +314,9 @@ Not yet in code: `dsp-incubator/cpe` keeps its own engine (`engine/`, `store/`, 
 and vendors only `cpe-components`, `cpe-core`, `cpe-image-viewer`, `cpe-ports` and `sync-store`, not
 `shared-datastar`, which `cpe-components` depends on (DEV-7408).
 
-Enforced by: **static-analysis** — `check-cpe-seam.sh`, `check-capability-deps.sh` and
-`check-composition-root-deps.sh`, run by `just check`, for the seam, CPE's crates by their roles and the
-composition root's dependencies, with Bazel `visibility` per ADR-0001 as
-the target (**structure**); `cpe-server`'s tests for the facade (`no_pub_item_names_another_cpe_crate`), for
+Enforced by: Bazel `visibility` per ADR-0001 for the seam, CPE's crates by their roles and the composition
+root's dependencies (**structure**); `check-capability-deps.sh`, run by `just check`, for the third-party bans
+of CPE's roles and for no target being public (**static-analysis**); `cpe-server`'s tests for the facade (`no_pub_item_names_another_cpe_crate`), for
 the 503 and 404 behaviour (its `activation` module, over `FakeArchiveProjection`), for Incunabula's store text
 (length and SHA-256, below its header and whole, in its `activation` module), for the `SHORTCODE` rules (its
 `activation` and `discovery` modules), for the overview (`router.rs`, `lib.rs`, `activation.rs`) and for the URLs a crawl

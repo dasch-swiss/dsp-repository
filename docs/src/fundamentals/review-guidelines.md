@@ -46,11 +46,11 @@ Review checklist for the DSP Repository. Organized by priority.
 - Contract types belong in `shared-metadata` and DPE's view model in `dpe-core`, not in web or API crates
 - API crate exposes a handler function (e.g., `pub async fn oai_handler(...)`) for composition in dpe-server
 - View functions return `maud::Markup` via the `html!` macro
-- No non-trivial `html!` block passed directly as a function argument — bind it to a Rust `let` or extract a `fn -> Markup` helper (nested-as-argument `html!` is skipped by `maudfmt` and mangled by `cargo fmt`; trivial one-liners like `html! { (label) }` are fine)
+- No non-trivial `html!` block passed directly as a function argument — bind it to a Rust `let` or extract a `fn -> Markup` helper (nested-as-argument `html!` is skipped by `maudfmt` and mangled by `rustfmt`; trivial one-liners like `html! { (label) }` are fine)
 - Test files follow naming convention: `{feature}_tests.rs` for Rust, `{feature}.spec.ts` for Playwright
 
 ## Skip
 
 - Snapshot `.snap` file contents — verify accepted, don't review formatting
-- Formatting-only changes (`maudfmt` and `cargo +nightly fmt` diffs)
+- Formatting-only changes (`maudfmt` and pinned nightly `rustfmt` diffs)
 - `Cargo.lock` changes from dependency updates

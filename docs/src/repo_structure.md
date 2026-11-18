@@ -16,7 +16,7 @@ modules/
 areas/
 ├── access/                    # Access Area
 │   ├── server/                # Composition root: CLI, observability, route mounting (crate: access-server)
-│   │   └── Dockerfile         # Production container image
+│   │   └── BUILD.bazel        # The binary and the production image (`:image`)
 │   ├── cpe/                   # Configurable Presentation Environment (its component library, domain crate, image viewer, ports, store, store builder, page assembly and host crate so far)
 │   │   ├── components/        # CPE's component library (crate: cpe-components)
 │   │   │   ├── src/           # The components, the chrome message catalogue, the per-project components
@@ -48,7 +48,7 @@ areas/
 ├── archive/                   # Archive Area (vocabulary only so far)
 └── deposit/                   # Deposit Area
     ├── docs/adr/              # The area's decision records, cited areas/deposit/ADR-NNNN (ADR-0006)
-    ├── server/                # Composition root: CLI, configuration, observability, route mounting, and the production Dockerfile (crate: deposit-server)
+    ├── server/                # Composition root: CLI, configuration, observability, route mounting, and the production image in its BUILD.bazel (crate: deposit-server)
     ├── shell/                 # The area's document shell, sign-in link and error pages (crate: deposit-shell)
     ├── identity/              # Identity: accounts, sessions, sign-in by login code
     │   ├── core/              # Identity's domain types, rules and repository traits (crate: identity-core)
@@ -125,7 +125,7 @@ The directory is the ownership signal, and four things read it:
 - **CI path filters.** The path-filtered workflows key on a module glob — `areas/access/dpe/**`, `areas/access/server/**`, `areas/access/cpe/**`, `areas/access/sync/**` and `areas/access/media/**` for DPE's preview, Scout and a11y jobs, `areas/deposit/**` for the editor's. A shared crate left under one service's module is invisible to every other service's jobs: no preview deployed, no image scanned. (`check`, `test` and `gate` carry no path filters, so compilation and tests are never the gap — which is what makes this easy to miss.)
 - **Dev-loop watch lists.** `bacon.toml`'s `serve` and `serve-editor` jobs each watch their own module directory (the editor's also watches `areas/deposit/identity` and `areas/deposit/shell`). A shared crate outside `shared/` stops triggering a rebuild for whichever service does not own it, with no error — you keep testing a stale binary.
 - **Directory-scoped agent instructions.** `areas/access/dpe/CLAUDE.md` governs everything under `areas/access/dpe/`, so a shared crate parked there takes its rules from one service's file. Repo-wide files are not directory-scoped, but they do accumulate crate-specific lines — `REVIEW.md` names module paths such as `dpe-server`'s `page_url.rs` — and those need to name the real location.
-- **The dependency direction.** `shared-*` crates depend on no service crate. Anything that needs to know about one service's routes, data or configuration does not belong in one — pass it in as a parameter instead. Both halves fail the build: a service dependency is a Cargo cycle, and a hardcoded path into another module is caught by `just check-shared-paths` (`.github/scripts/check-shared-paths.sh`).
+- **The dependency direction.** `shared-*` crates depend on no service crate. Anything that needs to know about one service's routes, data or configuration does not belong in one — pass it in as a parameter instead. Both halves fail the build: a service dependency fails Bazel's `visibility` check, as no service target grants a shared crate, and a hardcoded path into another module is caught by `just check-shared-paths` (`.github/scripts/check-shared-paths.sh`).
 
 `mosaic-*` predates the convention and stays as it is: it is already a peer of the services rather than a child of one, which is the property that matters.
 

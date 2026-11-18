@@ -98,7 +98,7 @@ _TEST_DEPS = [
 _RUSTC_ENV = {"CARGO_BIN_EXE_dsp": "$(rootpath :dsp)"}
 
 # The `live` feature (dsp-cli/ADR-0009, layer 5): the tests against a real DSP stack, run by
-# `just bazel-dsp-cli-test-live`, which passes the `DSP_TEST_*` variables and `DSP_TOKEN` by name.
+# `just dsp-cli-test-live`, which passes the `DSP_TEST_*` variables and `DSP_TOKEN` by name.
 # They stay `#[ignore]`d, so they run with `--ignored`; strict mode fails a test whose variable is
 # missing instead of skipping it. `live_update_check` calls crates.io, not a DSP stack: the recipe
 # leaves it out, it runs without strict mode, alone (`bazel test //dsp-cli:live_update_check_test`).

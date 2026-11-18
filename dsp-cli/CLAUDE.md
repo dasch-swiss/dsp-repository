@@ -18,10 +18,9 @@ All recipes go through `just`, run from the repository root. `just check` and `j
 dsp-cli like every other crate (dsp-cli/ADR-0009 layers 1-4); these are the crate's own:
 
 ```bash
-just dsp-cli-run <args>       # cargo run --bin dsp -- <args>
+just dsp-cli-run <args>       # bazel run //dsp-cli:dsp -- <args>, from the repository root
 just dsp-cli-test-live        # live tests (dsp-cli/ADR-0009 layer 5; needs DSP_TEST_SERVER etc.)
-just bazel-dsp-cli-test-live  # the same live tests, built and run by Bazel
-just dsp-cli-snap-review      # cargo insta review
+just snap-accept //dsp-cli:cli_test  # rewrite one target's changed snapshots; review with git diff
 just dsp-cli-stack-up         # start the pinned Fuseki + knora-api stack and load fixtures
 just dsp-cli-stack-fixtures   # reload fixtures into an already-running stack
 just dsp-cli-stack-down       # tear the stack down, volumes included
@@ -30,8 +29,9 @@ just dsp-cli-stack-down       # tear the stack down, volumes included
 The stack recipes need Docker; they wrap `dsp-cli/ci/stack/`, which the `dsp-cli-drift` workflow
 uses to run the live tests in CI.
 
-Single-test recipe: `cargo test -p dsp-cli <substring>` from the repository root. Live tests
-require `--features live` and are `#[ignore]`d — see
+Single test: `bazel test //dsp-cli:<file stem>_test --test_filter=<substring>` from the repository
+root (`bazel test //dsp-cli/...` for the crate). Live tests are `manual` targets built with the `live`
+feature and `#[ignore]`d; `just dsp-cli-test-live` runs them — see
 [Testing Strategy](../docs/src/dsp-cli/testing-strategy.md).
 
 ## Architecture (1 paragraph)
@@ -178,6 +178,7 @@ These are easy to miss and load-bearing. Reviewers should call them out.
   rewritten in the same PR (`../docs/adr/CLAUDE.md`).
 - A new domain noun or verb that isn't in `CONTEXT.md` is a red flag. Pause, define it, add it,
   then continue.
-- Output shape changed? Run `just dsp-cli-snap-review` and accept the diff in the PR.
+- Output shape changed? Run `just snap-accept //dsp-cli:<file stem>_test`, review the snapshots with
+  `git diff`, and keep the diff in the PR.
 - Errors must carry a stable `kind` and a helpful message. Stringly-typed errors are not
   acceptable.

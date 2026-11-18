@@ -2,7 +2,7 @@ name: bazel-setup
 description: >
   What every Bazel job needs: Bazelisk (which reads .bazelversion), just, the Bazel repository cache
   restored, and the remote cache and executor flags from `bazel-rbe`. The `flags` output is
-  `--config=ci` plus those flags; pass it to a `just bazel-*` recipe. Without the remote-build
+  `--config=ci` plus those flags; pass it to a `just` recipe that takes Bazel flags. Without the remote-build
   secrets (a fork pull request, Dependabot) the remote flags are empty and the build runs cold
   and local.
 
@@ -26,7 +26,7 @@ inputs:
 
 outputs:
   flags:
-    description: Bazel flags to pass to a `just bazel-*` recipe.
+    description: Bazel flags to pass to a `just` recipe.
     value: --config=ci ${{ steps.rbe.outputs.flags }}
   repo-cache-key:
     description: Primary key of the repository cache, for the caller's save step.

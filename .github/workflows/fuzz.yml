@@ -22,14 +22,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Rust nightly
-        uses: dtolnay/rust-toolchain@nightly
+      - name: Bazel setup
+        id: bazel
+        uses: ./.github/actions/bazel-setup
+        with:
+          rbe-runner-endpoint: ${{ vars.REMOTEBUILD_RUNNER_ENDPOINT }}
+          rbe-ca-cert: ${{ secrets.REMOTEBUILD_CA_CERT }}
+          rbe-client-cert: ${{ secrets.REMOTEBUILD_CLIENT_CERT }}
+          rbe-client-key: ${{ secrets.REMOTEBUILD_CLIENT_KEY }}
 
-      - name: Install cargo-binstall
-        uses: cargo-bins/cargo-binstall@main
-
-      - name: Install cargo-fuzz
-        run: cargo binstall cargo-fuzz -y
+      - name: Build the fuzz binaries
+        id: build
+        # The recipe prints each binary's path under bazel-out/; `bazel-bin` follows whichever
+        # configuration was built last, so it is not used.
+        run: |
+          bin="$(just build-fuzz ${{ steps.bazel.outputs.flags }} | grep '/${{ matrix.target }}_bin$')"
+          echo "bin=$bin" >> "$GITHUB_OUTPUT"
 
       - name: Restore corpus cache
         uses: actions/cache@v4
@@ -40,10 +48,14 @@ jobs:
             fuzz-corpus-${{ matrix.target }}-
 
       - name: Run fuzzer (10 min budget)
-        working-directory: areas/access/dpe/server
+        # libFuzzer creates neither directory. A crash lands in artifacts/<target>/, the path the
+        # upload below reads.
         run: |
-          cargo +nightly fuzz run ${{ matrix.target }} \
-            --target x86_64-unknown-linux-gnu -- \
+          corpus=areas/access/dpe/server/fuzz/corpus/${{ matrix.target }}
+          artifacts=areas/access/dpe/server/fuzz/artifacts/${{ matrix.target }}
+          mkdir -p "$corpus" "$artifacts"
+          "${{ steps.build.outputs.bin }}" "$corpus" \
+            -artifact_prefix="$artifacts/" \
             -max_total_time=600 \
             -max_len=4096
         id: fuzz
@@ -64,3 +76,9 @@ jobs:
           path: areas/access/dpe/server/fuzz/artifacts/${{ matrix.target }}
           retention-days: 90
 
+      - name: Save Bazel repository cache
+        if: ${{ !cancelled() && steps.bazel.outputs.repo-cache-key != '' && steps.bazel.outputs.repo-cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.cache/bazel-repo
+          key: ${{ steps.bazel.outputs.repo-cache-key }}

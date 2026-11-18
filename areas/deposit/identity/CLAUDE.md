@@ -4,7 +4,7 @@ Guidance for the Deposit Area's identity capability; the editor's is in `areas/d
 
 ## Where identity lives
 
-`identity-core` (`core/`) holds identity's domain: `User`, `Role`, `Session` and `LoginCode`, the repository traits and their `IdentityRepositories` bundle, the login rules (`AuthConfig`, `locked_out`, `CODE_TTL`, `SEND_WINDOW`), the session rules (`begin`, `current`, `end`), the cookie names and the `Cookie`-header scan, code and token generation, and the `Mailer` trait. It has no Axum, Maud or database dependency, and it depends on no `editor-*` crate; `editor-core` does not depend on it either (ADR-0003: capabilities share no core). `.github/scripts/check-capability-deps.sh` (`just check`) checks all three.
+`identity-core` (`core/`) holds identity's domain: `User`, `Role`, `Session` and `LoginCode`, the repository traits and their `IdentityRepositories` bundle, the login rules (`AuthConfig`, `locked_out`, `CODE_TTL`, `SEND_WINDOW`), the session rules (`begin`, `current`, `end`), the cookie names and the `Cookie`-header scan, code and token generation, and the `Mailer` trait. It has no Axum, Maud or database dependency, and it depends on no `editor-*` crate; `editor-core` does not depend on it either (ADR-0003: capabilities share no core). The two `editor-*` edges are Bazel `visibility` (neither core crate grants the other); the dependency bans are `.github/scripts/check-capability-deps.sh`'s (`just check`).
 
 A new account, session, login-code or mail type goes in `identity-core`, never in `editor-core`. When an editor crate needs a fact about an account (a display name, a role), it gets it through `editor-ports` (`Actor`, `UserDirectory`) as a plain value — an id, a `&str` — so the editor crates never name an `identity_core` type.
 

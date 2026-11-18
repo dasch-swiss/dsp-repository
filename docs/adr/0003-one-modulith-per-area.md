@@ -68,8 +68,9 @@ Within a capability, the crates are `{capability}-{role}`. The general roles:
   `core` and on `shared-*` crates alone.
 
 A capability may add a role. The role is named, with its allowed edges, in the record that governs the
-capability or its area, and `check-capability-deps.sh` learns it in the same change: `pull-requests` in
-`areas/deposit/ADR-0004`; `components`, `image-viewer` and `store-build` in ADR-0007.
+capability or its area, and its BUILD file's consumer lists and any third-party ban in
+`check-capability-deps.sh` follow in the same change: `pull-requests` in `areas/deposit/ADR-0004`;
+`components`, `image-viewer` and `store-build` in ADR-0007.
 
 An area may hold one **shell** crate, `areas/<area>/shell`: a view library (`fn -> Markup`: the document,
 header, footer, error pages) that depends on `mosaic-tiles` and `shared-*` only, never on a capability crate.
@@ -175,8 +176,12 @@ a second copy of the projection (ADR-0008).
   Accepted.
 - A capability's vocabulary goes into its own `CONTEXT.md` once it has terms of its own, placed by the rule in
   ADR-0002 and indexed from the root `CONTEXT.md`.
-- Bazel `visibility` (ADR-0001) makes a capability's `ports` crate public within its area and its other crates
-  visible only to the capability itself and to `areas/<area>/server`.
+- Bazel `visibility` (ADR-0001) holds the edges: every target lists its consumers by package. A capability's
+  `ports` crate is visible to the crates of its own capability that consume it and to each provider's `store`
+  that implements it, by name, not area-wide; its other crates are visible to the crates of the capability
+  that use them. The composition root `areas/<area>/server` is granted a capability's facade (`server`, or
+  `web` where there is no `server`), its `store` and its `ports`, never its `core`, `api-*` or a `web` beside a
+  `server`. A legal new edge is one line in the provider's BUILD file, and that line is where it is reviewed.
 
 Not yet in code: the data-model creator, data creation, `profile`, the SPARQL endpoint, the admin view and
 Spycherli have no crate (not scheduled).
@@ -188,8 +193,9 @@ rebuilt from snapshot plus replay (not scheduled).
 Not yet in code: DPE reads its own data directory (`areas/access/dpe/server/data`) through `dpe-core`, not
 through a port against `sync` (not scheduled).
 
-Enforced by: `check-capability-deps.sh`, run by `just check`, for the crate edges inside the areas it lists
-(static-analysis); `check-composition-root-deps.sh` for the composition roots' edges, so each rule has one
-enforcer (static-analysis); `check-cpe-seam.sh` for the edges particular to CPE (static-analysis), with Bazel `visibility`
-under ADR-0001 as the target (structure), also for "one consumer per channel"; review for data sovereignty, the facade, the no-middleware rule (a middleware is one
-`.layer()` line) and the engine rules.
+Enforced by: Bazel `visibility` under ADR-0001 for the crate edges inside an area, the role edges, a
+provider's `store` on a consumer's `ports`, the composition root's edges and "one consumer per channel"
+(structure): a forbidden edge fails analysis; `check-capability-deps.sh`, run by `just check`, for the
+third-party bans per role, which `visibility` cannot express because `@crates` targets are public, and for no
+`//visibility:public` in a `BUILD.bazel` under `areas/`, `shared/`, `modules/` or `dsp-cli/` (static-analysis); review for data sovereignty, the facade, the
+no-middleware rule (a middleware is one `.layer()` line) and the engine rules.

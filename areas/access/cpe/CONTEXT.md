@@ -311,22 +311,17 @@ under `_assets/` until `media` serves assets at request time; then they leave th
 
 ## The dependency seam
 
-`just check` runs `.github/scripts/check-cpe-seam.sh` over every tracked `Cargo.toml` (ADR-0007). No crate
-outside `areas/access/cpe/` depends on a CPE crate other than `cpe-ports`, which `sync-store` and
-`media-store` implement, and `cpe-server`, which `access-server` mounts; no manifest under
-`areas/access/cpe/` depends on a Mosaic crate;
-`cpe-core` depends on no CPE crate; and `cpe-store` depends on no CPE crate but `cpe-core`, `cpe-store-build` on none
-but `cpe-core` and `cpe-ports`, `cpe-server` on every CPE crate but `cpe-store` (the script's `CPE_EDGES`;
-ADR-0007). A
-rename (`package = "…"`) of a CPE or Mosaic crate in the workspace root is reported where it is
-declared, whichever crate inherits it. The
-first and second rules cover a new crate without an edit. A new crate that must stay a leaf has to be
-added to the script's `LEAVES`, and one whose CPE dependencies are to be held to its `CPE_EDGES`; one that a
-crate outside the capability may depend on has to be added to its exception list.
+The seam is the `visibility` of CPE's Bazel targets (ADR-0007): each lists the packages that may depend on it, and
+an edge outside the lists fails analysis. No crate outside `areas/access/cpe/` depends on a CPE crate other than
+`cpe-ports`, which `sync-store` and `media-store` implement, and `cpe-server`, which `access-server` mounts; no
+Mosaic target grants a CPE package; no CPE library grants `cpe-core`; and `cpe-store` depends on no CPE crate but
+`cpe-core`, `cpe-store-build` on none but `cpe-core` and `cpe-ports`, `cpe-server` on every CPE crate but
+`cpe-store`. A new crate starts visible to nobody: each edge to it is one line in its BUILD file, reviewed there.
 
-The edges CPE's crates have by their roles, the `sync` and `media` crates as dev-dependencies only among them,
-are `check-capability-deps.sh`'s (ADR-0003, ADR-0007). Review: which CPE crates a crate outside `LEAVES` and
-`CPE_EDGES` depends on, and `cpe-store`'s own dependency list (no `maud`, no `axum`).
+The `sync` and `media` stores reach CPE only as their `testonly` variants, `sync_store_for_tests` and
+`media_store_for_tests`, which only a test target can depend on (ADR-0008). The third-party bans by role are
+`check-capability-deps.sh`'s (ADR-0003, ADR-0007). Review: `cpe-store`'s own dependency list (no `maud`, no
+`axum`).
 
 ## What the port serves
 

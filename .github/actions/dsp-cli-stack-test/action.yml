@@ -9,6 +9,14 @@ inputs:
       off; the nightly `latest` job turns it on.
     required: false
     default: 'false'
+  rbe-runner-endpoint:
+    description: RE-API endpoint, `vars.REMOTEBUILD_RUNNER_ENDPOINT`.
+  rbe-ca-cert:
+    description: NativeLink server CA, `secrets.REMOTEBUILD_CA_CERT`.
+  rbe-client-cert:
+    description: mTLS client certificate, `secrets.REMOTEBUILD_CLIENT_CERT`.
+  rbe-client-key:
+    description: mTLS client key, `secrets.REMOTEBUILD_CLIENT_KEY`.
 
 runs:
   using: composite
@@ -34,16 +42,13 @@ runs:
       # stdout carries the JWTs; $GITHUB_ENV is how they reach later steps, so drop the echo.
       run: bash dsp-cli/ci/stack/token.sh > /dev/null
 
-    - name: Install just
-      uses: extractions/setup-just@v4
-
-    - name: Install stable
-      uses: dtolnay/rust-toolchain@stable
-
-    - uses: Swatinem/rust-cache@v2
-
-    - name: Install cargo-nextest
-      uses: taiki-e/install-action@nextest
+    - id: bazel
+      uses: ./.github/actions/bazel-setup
+      with:
+        rbe-runner-endpoint: ${{ inputs.rbe-runner-endpoint }}
+        rbe-ca-cert: ${{ inputs.rbe-ca-cert }}
+        rbe-client-cert: ${{ inputs.rbe-client-cert }}
+        rbe-client-key: ${{ inputs.rbe-client-key }}
 
     - name: Run dsp-cli live tests
       id: test
@@ -55,7 +60,18 @@ runs:
         DSP_TEST_VOCAB_PROJECT: "0001"
       # Always tee to test-output.log: the pinned job doesn't need it, but the
       # summarize step below (shared by both jobs, gated by an input) does.
-      run: just dsp-cli-test-live 2>&1 | tee test-output.log
+      # `--test_output=errors` prints each failing target's test log into it. pipefail: the
+      # step fails with Bazel, not with tee.
+      run: |
+        set -o pipefail
+        just dsp-cli-test-live ${{ steps.bazel.outputs.flags }} --test_output=errors 2>&1 | tee test-output.log
+
+    - name: Save Bazel repository cache
+      if: ${{ !cancelled() && steps.bazel.outputs.repo-cache-key != '' && steps.bazel.outputs.repo-cache-hit != 'true' }}
+      uses: actions/cache/save@v4
+      with:
+        path: ~/.cache/bazel-repo
+        key: ${{ steps.bazel.outputs.repo-cache-key }}
 
     - name: Dump api logs
       if: failure()
@@ -81,7 +97,9 @@ runs:
           echo
           echo "**Failing tests:**"
           echo '```'
-          grep -E '^\s*FAIL' test-output.log || echo "(no FAIL lines found in nextest output)"
+          # Bazel's summary names each failing target; its test log, printed above it by
+          # `--test_output=errors`, names each failing test (libtest's `test <name> ... FAILED`).
+          grep -E ' FAILED in |^test .* \.\.\. FAILED$' test-output.log || echo "(no FAILED lines found in the Bazel output)"
           echo '```'
           echo
           echo "**knora-api image:** $(docker image inspect --format '{{index .RepoDigests 0}}' "daschswiss/knora-api:${api_tag}" 2>/dev/null || echo unknown)"

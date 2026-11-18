@@ -7,7 +7,7 @@ are `testonly`, and the package grants no visibility: nothing that ships can lin
 Without `--config=fuzz` the engine is `rules_fuzzing`'s `replay` (no libFuzzer runtime), so
 `bazel test //...` builds and links each target on every platform; with no corpus attached, the
 replay runs no input. `--config=fuzz` (`.bazelrc`) switches to libFuzzer and instruments the Rust
-crates; `just bazel-build-fuzz` builds the binaries. The corpus at `corpus/<target>` is git-ignored
+crates; `just build-fuzz` builds the binaries. The corpus at `corpus/<target>` is git-ignored
 and cached by the workflow.
 """
 

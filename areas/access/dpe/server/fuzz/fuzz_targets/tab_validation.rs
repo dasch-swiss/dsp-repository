@@ -1,8 +1,8 @@
 #![no_main]
 
 use dpe_core::project::VALID_TABS;
-use shared_metadata::project::is_valid_shortcode;
 use libfuzzer_sys::fuzz_target;
+use shared_metadata::project::is_valid_shortcode;
 
 fuzz_target!(|data: &[u8]| {
     let Ok(input) = std::str::from_utf8(data) else {

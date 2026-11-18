@@ -82,9 +82,9 @@ rust_test(
 # ── The DPE image, `daschswiss/dpe` ────────────────────────────────────────
 #
 # A static musl binary on distroless `static` (`//tools/image:defs.bzl`), built with
-# `--config=release` by `just bazel-docker-build-dpe`, which loads it, and pushed by the
-# `docker-publish` action. This is the published image; `Dockerfile` is no longer built by CI. Its
-# `HEALTHCHECK` has no equivalent in an OCI image, and `healthcheck` remains a subcommand.
+# `--config=release` by `just build-docker-dpe`, which loads it, and pushed by the
+# `docker-publish` action. An OCI image has no `HEALTHCHECK`, and `healthcheck` remains a
+# subcommand.
 binary_layer(
     name = "image_binary",
     binary = ":access_server",

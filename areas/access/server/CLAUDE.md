@@ -58,8 +58,8 @@ image, and the `env` of `app_image` names where each copy is. Today that is `syn
 capability is added in both, as a filegroup the data's package grants to this one, and in the environment
 table of `docs/src/dpe/operations.md`. Nothing checks that they agree: a directory the layer places where no
 `env` points, or an `env` that names the wrong place, builds, and the container is healthy with CPE answering
-503, or an overview with no project and its not-found. `Dockerfile` and `just build-docker-dpe` still build
-the image the way CI did before Bazel; no workflow builds them, and they are removed with the Cargo build.
+503, or an overview with no project and its not-found. `just image-smoke` starts the image and expects
+`/healthz` to answer, which a misplaced data directory still passes.
 
 A new capability's paths also go into each path filter that should see it (`a11y-dpe.yml`,
 `cloud-run-dpe-pull-request.yml`, `scout-dpe.yml`); `docs/src/deployment.md` says what each runs on. All three
@@ -70,14 +70,15 @@ built from.
 
 ## Dependency boundary
 
-`Cargo.toml` depends on `dpe-server`, `cpe-server`, `cpe-ports`, `sync-store`, `media-store`,
+`BUILD.bazel` depends on `dpe-server`, `cpe-server`, `cpe-ports`, `sync-store`, `media-store`,
 `shared-rate-limit`, `shared-telemetry` and infra crates only — never on a capability's `core`, `web` or `api-*` crate, and never on
 `cpe-store`. This crate imports only `dpe-server`'s public surface (`DpeConfig`, `Dpe`, `validate`,
 `normalize_page_url`), `cpe-server`'s (`CpeConfig`, `Cpe`,
 `MatchedRoute`), the ports' traits from `cpe-ports`, `sync-store`'s `LiveArchiveProjection` and
 `media-store`'s `LiveDepositedFiles`;
 reaching past them into a capability's internals defeats the boundary the capability crate exists
-to hold. `.github/scripts/check-composition-root-deps.sh` and `check-cpe-seam.sh` enforce this in CI.
+to hold. Bazel `visibility` enforces this: no `core`, `web` or `api-*` target and not `cpe-store` grants this
+package, so such an edge fails analysis (ADR-0003, ADR-0007).
 
 ## Telemetry identity is DPE's, not this crate's
 

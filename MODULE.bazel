@@ -346,8 +346,8 @@ use_repo(crate, "crates")
 # ── Stylesheets ───────────────────────────────────────────────────────────
 #
 # The Tailwind v4 standalone CLI, one binary per exec platform; `//tools/tailwind` picks one. The
-# version and hashes are `tailwind.pins`'s, which the `just css*` recipes read: a Tailwind bump
-# edits both until the recipes build through Bazel.
+# only pin of the version: the stylesheet targets and the dev recipes' `--watch` both run it. A
+# Tailwind bump edits the four URLs and hashes together.
 http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
 
 http_file(
@@ -386,7 +386,7 @@ bazel_dep(name = "tar.bzl", version = "0.10.4")
 
 oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
 
-# The base the Dockerfiles name, pinned by the digest `nonroot` resolved to on 2026-11-17 (the
+# The base the images run on, pinned by the digest `nonroot` resolved to on 2026-11-17 (the
 # index; `platforms` picks the manifest). distroless no longer updates `-debian12` tags: the move
 # to `-debian13` is a change of its own. Single architecture, as the published images are.
 oci.pull(

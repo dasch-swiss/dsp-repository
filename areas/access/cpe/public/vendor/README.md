@@ -20,5 +20,5 @@ DPE vendors the same package in `areas/access/dpe/public/vendor/datastar.js`. Ea
 2. Replace the file in this directory
 3. Update the version and SHA-256 in the table above: `shasum -a 256 <file>`
 4. Confirm the table matches the files: `just verify-checksums` (also run by `just check`)
-5. Run `cargo test -p cpe-web -p cpe-server`: the page assembly's tests read this file, and the host embeds it
+5. Run `bazel test //areas/access/cpe/web/... //areas/access/cpe/server/...`: the page assembly's tests read this file, and the host embeds it
    and compares the bytes it serves with it

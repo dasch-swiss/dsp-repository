@@ -78,12 +78,12 @@ ADR-0007 why the hook is in this crate and not in the project's folder.
 
 ## Tests
 
-`cargo test -p cpe-store-build`. The unit tests use hand-built stores. `tests/it/` is one integration test binary:
+`bazel test //areas/access/cpe/store-build/...`. The unit tests use hand-built stores. `tests/it/` is one integration test binary:
 
 - the tests over the committed 0803 data (`committed_0803.rs`: its census, and the build's independence of the
   snapshot's order; `curation_0803.rs`, the census of the curation file; and the statics of `main.rs`). They read
   `areas/access/sync/data` through `sync-store`'s `LiveArchiveProjection`, which is why `sync-store` is a
-  dev-dependency of this crate and never a dependency (ADR-0008; `check-capability-deps.sh`'s `DEV_ONLY`), and Incunabula's
+  dependency of this crate's tests only, as `sync_store_for_tests`, which is `testonly` (ADR-0008), and Incunabula's
   `config.kdl` and `curation.csv` from `areas/access/media/data/0803/` with `include_str!` and `include_bytes!`;
 - the refusal cases (`refusals.rs`) and the row shapes over hand-built snapshots (`books.rs`, `pages.rs`,
   `strips.rs`, `annotations.rs`);

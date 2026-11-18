@@ -5,13 +5,13 @@
 Two supported paths:
 
 - **Nix** (recommended): `nix develop` (or direnv via `.envrc`). The flake provides the full toolchain, including Node.
-- **Without Nix**: `just install-requirements` (rustup + `cargo binstall` + the e2e Node dependencies).
+- **Without Nix**: `just install-requirements` (Bazelisk, rustup for the pinned nightly `rustfmt`, `cargo binstall` for the tools, and the e2e Node dependencies).
 
 **Node must be on `PATH` for all shells (non-Nix path).** `just` runs recipes in `sh`, which does not load shell-function-based version managers. A *lazy* nvm setup (where `node`/`npm` are shell functions) therefore leaves them invisible to `just`, and recipes such as `lint-e2e`, `test-a11y-dpe`, and the Playwright e2e tests fail with `env: node: No such file`. To fix, expose your default Node bin on `PATH` at shell startup — eager-load it in your shell rc, or use a PATH-shim manager such as volta or asdf.
 
 Only Playwright genuinely requires Node; the Tailwind CSS build is Node-free (standalone CLI). CI provisions Node explicitly, so this affects local non-Nix development only.
 
-**macOS: run `just clean` once in an older checkout.** `.cargo/config.toml` stops cargo leaving stale `.o` files in `target/debug/deps`, which slow the first launch of each new test binary, but does not remove the ones already there. Its comment names the rustflags settings it overrides and is overridden by. The setting drops file:line from backtrace frames and lldb; to debug with them, build with `RUSTFLAGS="-C split-debuginfo=unpacked"`.
+**An older checkout's `target/` directory** holds Cargo's build output, which no recipe uses any more: Bazel builds everything, into its own output base. Delete `target/` to reclaim the space; `just clean` runs `bazel clean`.
 
 ## Rust
 

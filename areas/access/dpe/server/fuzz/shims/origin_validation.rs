@@ -15,10 +15,7 @@ fn fuzz(data: &[u8]) {
         let is_exact = input == "dasch.swiss";
         let is_subdomain = input.ends_with(".dasch.swiss") && input.len() > 12;
         let is_localhost = input == "localhost";
-        assert!(
-            is_exact || is_subdomain || is_localhost,
-            "accepted unexpected origin: {input}"
-        );
+        assert!(is_exact || is_subdomain || is_localhost, "accepted unexpected origin: {input}");
 
         if !is_exact && !is_localhost {
             let prefix_end = input.len() - "dasch.swiss".len();

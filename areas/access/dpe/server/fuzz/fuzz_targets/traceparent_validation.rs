@@ -1,7 +1,7 @@
 #![no_main]
 
-use shared_telemetry::traceparent::is_valid_traceparent;
 use libfuzzer_sys::fuzz_target;
+use shared_telemetry::traceparent::is_valid_traceparent;
 
 // Accepted values must conform to the W3C Trace Context format.
 fuzz_target!(|data: &[u8]| {

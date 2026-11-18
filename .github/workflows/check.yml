@@ -3,7 +3,8 @@
 # - check: `just check`, the gate scripts (vendored-JS checksums among them, see
 #   docs/src/security.md), the justfile, maudfmt and pinned nightly rustfmt formatting, and
 #   clippy over every Bazel target
-# - publish-dry-run: verifies dsp-cli's crates.io packaging with `cargo publish --dry-run`
+# - publish-dry-run: verifies dsp-cli's crates.io packaging with `cargo publish --dry-run` and runs
+#   its tests against its own manifest, the one crate Cargo still builds
 # - biome: lints the E2E suites' TypeScript
 # - docs: builds the mdBook
 
@@ -80,7 +81,11 @@ jobs:
       - name: Install stable
         uses: dtolnay/rust-toolchain@stable
       - name: cargo publish --dry-run
-        run: cargo publish -p dsp-cli --dry-run --locked
+        run: cargo publish --dry-run --locked --manifest-path dsp-cli/Cargo.toml
+      # The dependency list exists twice, in `MODULE.bazel` and here. A feature missing from the
+      # manifest (`serde_json`'s `preserve_order`) still compiles; the snapshot tests notice.
+      - name: cargo test
+        run: cargo test --locked --manifest-path dsp-cli/Cargo.toml
 
   lint-e2e:
     runs-on: ubuntu-latest

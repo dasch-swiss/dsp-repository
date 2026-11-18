@@ -4,7 +4,7 @@
 translates DSP-API's RDF/JSON-LD surface into researcher vocabulary — **data-model**,
 **resource-type**, **field**, **value** — instead of DSP-API's own `ontology` / `class` /
 `property` / `Value` subclass terms. It is a root peer of the areas: a single crate, depending on
-no workspace crate, that reaches DSP-API purely over HTTP.
+no other crate in the repository, that reaches DSP-API purely over HTTP.
 
 ## Layers
 
@@ -59,7 +59,9 @@ See [Testing Strategy](./testing-strategy.md) for the full layer breakdown.
 
 ```
 dsp-cli/
-├── Cargo.toml
+├── BUILD.bazel                # the Bazel targets: library, binary, tests
+├── Cargo.toml                 # the crates.io manifest (cargo publish, cargo test)
+├── Cargo.lock
 ├── src/
 │   ├── main.rs               # binary entry: parse → dispatch
 │   ├── lib.rs                # library re-exports and command dispatch
@@ -82,7 +84,7 @@ dsp-cli/
 The cross-layer dependency rule: **client and render are sibling layers; neither may import the
 other; both may import util.**
 
-Single crate keeps build and test cycles simple. The library/binary split lets `cargo test`
+Single crate keeps build and test cycles simple. The library/binary split lets the tests
 exercise everything except the very thin `main.rs`. The directory shape mirrors the noun-group
 hierarchy in dsp-cli/ADR-0002, so navigating "where does `dsp vre data-model describe` live" is
 mechanical: `src/actions/vre/data_model.rs`.

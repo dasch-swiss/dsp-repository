@@ -100,7 +100,7 @@ impl Source {
     ///
     /// The name has to differ per test: shared-cache in-memory databases are
     /// scoped to the process, so two tests using one name would share a database
-    /// across parallel `cargo test` threads.
+    /// across parallel test threads.
     #[cfg(any(test, feature = "test-support"))]
     pub fn memory_for_test(label: &str) -> Self {
         use std::sync::atomic::{AtomicU64, Ordering};

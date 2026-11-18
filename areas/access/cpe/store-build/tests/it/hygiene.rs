@@ -1,5 +1,5 @@
 //! The library reads nothing but the snapshot it is given: no adapter, no file, no environment,
-//! no clock. Cargo holds only part of this: the adapter's crate is a dev-dependency, which a
+//! no clock. Bazel holds only part of this: the adapter's crate is a `testonly` target, which a
 //! test module of the library could still name, and the standard library is always there. A
 //! search of the sources for the strings of [`BINARY_ONLY`] holds it, as far as a search can.
 

@@ -13,7 +13,7 @@ shared/
 
 Shared crates depend on no service crate. Anything that needs to know about one service's routes, data or configuration takes it as a parameter instead of reaching for it.
 
-Both halves of that rule are enforced, not just reviewed. A `dpe-*` or `editor-*` dependency in a shared crate's `Cargo.toml` is a Cargo cycle and fails to build. A hardcoded *path* into a service module compiles fine, so `just check` greps for one: see `.github/scripts/check-shared-paths.sh`, which fails on a `../`- or `modules/`-rooted path into any module under `modules/` appearing in a shared crate's `src/`. Prose cross-references are untouched: the crate names (`dpe-core`, `dpe_core::…`) carry no slash.
+Both halves of that rule are enforced, not just reviewed. A `dpe-*` or `editor-*` dependency in a shared crate's `BUILD.bazel` is a dependency cycle and fails to build. A hardcoded *path* into a service module compiles fine, so `just check` greps for one: see `.github/scripts/check-shared-paths.sh`, which fails on a `../`- or `modules/`-rooted path into any module under `modules/` appearing in a shared crate's `src/`. Prose cross-references are untouched: the crate names (`dpe-core`, `dpe_core::…`) carry no slash.
 
 ## `shared-metadata` (metadata/)
 
@@ -48,7 +48,7 @@ Maud HTML-escapes the value when it is spliced in (`&` becomes `&amp;`, which th
 
 Used by `dpe-web`, `editor-web` and `cpe-components`.
 
-Dependencies: none (`maud` as a dev-dependency, for the tests).
+Dependencies: none (`maud` in the test target only).
 
 ## `shared-fair` (fair/)
 

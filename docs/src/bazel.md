@@ -4,13 +4,14 @@ Bazel builds and tests every crate, the stylesheets, the fuzz targets and the im
 
 The pins are those of Sipi: Bazel in `.bazelversion`, the rulesets and the Rust version in `MODULE.bazel`. The C and C++ toolchain is hermetic (`llvm`, zero-sysroot): it fetches the macOS SDK itself and builds the Linux libc runtimes from source, so no Xcode and no host compiler is used for compiling.
 
-## The Cargo manifests until they are removed
+## dsp-cli's Cargo manifest
 
-The root `Cargo.toml`, `Cargo.lock` and the crates' manifests are still in the tree, as the way back, and no recipe or CI job builds them. They stay a way back only while they still describe the build, so a change that touches dependencies or crates is still made on both sides, and nothing checks that it was:
+`dsp-cli` publishes to crates.io, so `dsp-cli/Cargo.toml` and `dsp-cli/Cargo.lock` stay: a standalone manifest, the only one in the tree. Bazel does not read them. Its dependency list therefore exists twice, and a change to it is made on both sides:
 
-- A dependency added, removed or changed in a `Cargo.toml` is also changed in the `crate.spec` lines of `MODULE.bazel` and in the `deps` of the crate's `BUILD.bazel`, followed by `just repin`.
-- A crate that has a `BUILD.bazel` file gets new source files without a BUILD edit (`srcs` is a glob), but a new file it reads with `include_str!` or at run time goes into `compile_data` or `data`.
-- A Dependabot security update bumps `Cargo.lock` alone. Add the matching `just repin <crate>` to its branch, or close it and make the bump by hand.
+- A dependency of `dsp-cli` added, removed or changed in `dsp-cli/Cargo.toml` is also changed in `MODULE.bazel` and in `dsp-cli/BUILD.bazel`, followed by `just repin`. To keep the published crate on the versions Bazel tests, move it in the crate's lock too: `cargo update -p <crate> --manifest-path dsp-cli/Cargo.toml`.
+- A Dependabot security update bumps `dsp-cli/Cargo.lock` alone. Add the matching `just repin <crate>` to its branch, or close it and make the bump by hand.
+
+CI's `check / publish-dry-run / stable` runs `cargo publish --dry-run --locked` and `cargo test --locked` against that manifest: a feature missing from it, such as `serde_json`'s `preserve_order`, still compiles, and only the tests notice. Version drift between the two locks within semver ranges is not checked.
 
 ## Commands
 
@@ -24,7 +25,7 @@ The root `Cargo.toml`, `Cargo.lock` and the crates' manifests are still in the t
 | `just css`, `css-release`, `css-editor`, `css-editor-release`, `css-mosaic` | builds a stylesheet target and copies it into the application's `public/assets/` |
 | `just dev`, `dev-otel`, `dev-editor`, `dev-editor-otel`, `watch-mosaic-playground` | Tailwind `--watch` with the Bazel-pinned CLI, and bacon restarting the server's binary |
 | `just repin [crate]` | re-resolves the crate universe and refreshes `Cargo.Bazel.lock` and `MODULE.bazel.lock` |
-| `just audit` | `cargo-audit` and `osv-scanner` over `Cargo.Bazel.lock` |
+| `just audit` | `cargo-audit` and `osv-scanner` over `Cargo.Bazel.lock` and `dsp-cli/Cargo.lock` |
 | `just rust-project` | writes `rust-project.json` for rust-analyzer |
 | `just snap-accept <target>` | runs one test target from the checkout with `INSTA_UPDATE=always`, so `insta` rewrites the snapshots that changed |
 | `just dsp-cli-test-live` | the `dsp-cli` live tests against a DSP stack, with the `DSP_TEST_*` variables and `DSP_TOKEN` passed through |
@@ -44,9 +45,11 @@ A recipe that takes `FLAGS` passes them to Bazel, as CI passes `--config=ci` and
 
 Third-party crates are declared once, in `MODULE.bazel`, as `crate.spec` lines with the union of the features every first-party crate needs. Targets name them as `@crates//:<name>`. To add one:
 
-1. Add the `crate.spec` (and the dependency in the crate's `Cargo.toml`, while Cargo exists).
+1. Add the `crate.spec` (for `dsp-cli`, also the dependency in `dsp-cli/Cargo.toml`).
 2. Run `just repin`. It resolves the new spec and leaves every other locked version where it is. `just repin <crate>` moves one crate, which is how a transitive crate gets a security bump.
 3. Add `@crates//:<name>` to the `deps` of the targets that use it.
+
+New source files need no BUILD edit (`srcs` is a glob), but a new file a crate reads with `include_str!` or at run time goes into `compile_data` or `data`.
 
 A first-party crate's `BUILD.bazel` is hand-written: `rust_library`, `rust_test` and, for integration tests, `rust_test_suite`, with `crate_name` always Cargo's name. A target is visible only to the packages listed in its `visibility`; a new dependency edge between first-party crates is one line there, in the provider's BUILD file. No first-party target is public.
 
@@ -67,7 +70,9 @@ Snapshots are `data` of their test target. `just snap-accept <target>` accepts c
 
 Bazel runs no doctests: `rust_doc_test` cannot link against the hermetic toolchain. A doctest is an `ignore` block, and a unit test carries its assertion.
 
-A crate with the `test-support` feature (the Deposit Area's `ports`, `store` and `web` crates) has a second library, `<name>_test_support`, built with the feature and marked `testonly`, so its fixtures cannot reach a production binary. Inside a test's graph every crate that has such a variant uses it, or two builds of one crate meet in a compile; a crate whose tests take a sibling's fixtures therefore runs them on its own variant (`rust_test(crate = ":editor_web_test_support")`).
+A test whose result depends on something outside its inputs, as the `dsp-cli` live tests depend on the running DSP stack, is tagged `external`, so Bazel never reuses its result, and `no-remote-cache` when its environment holds a secret.
+
+A crate with the `test-support` feature (the Deposit Area's `ports`, `store` and `web` crates) has a second library, `<name>_test_support`, built with the feature and marked `testonly`, so its fixtures cannot reach a production binary. It is a library, not an `alias` marked `testonly`: Bazel checks the flag on the target an alias resolves to, so production targets could still depend on the alias. Inside a test's graph every crate that has such a variant uses it, or two builds of one crate meet in a compile; a crate whose tests take a sibling's fixtures therefore runs them on its own variant (`rust_test(crate = ":editor_web_test_support")`).
 
 ## Stylesheets
 
@@ -97,7 +102,7 @@ just build-fuzz
   -artifact_prefix=areas/access/dpe/server/fuzz/artifacts/ -max_total_time=60 -max_len=4096
 ```
 
-`-artifact_prefix` keeps a crashing input out of the repository root: libFuzzer writes it as `crash-<sha1>` to that directory, which must exist. `corpus/` and `artifacts/` are git-ignored. The nightly `fuzz.yml` builds the binaries with `just build-fuzz` and runs each with its cached corpus, writing a crash to `artifacts/<target>/`. The `cargo-fuzz` targets in `fuzz_targets/` stay with the Cargo manifests; nothing builds them, and the shims hold the bodies that run.
+`-artifact_prefix` keeps a crashing input out of the repository root: libFuzzer writes it as `crash-<sha1>` to that directory, which must exist. `corpus/` and `artifacts/` are git-ignored. The nightly `fuzz.yml` builds the binaries with `just build-fuzz` and runs each with its cached corpus, writing a crash to `artifacts/<target>/`.
 
 ## Version stamping
 
@@ -109,7 +114,7 @@ In CI, the `bazel-setup` action adds the remote cache and executor flags for DaS
 
 ## IDE setup
 
-rust-analyzer reads `rust-project.json`, which `just rust-project` generates from the Bazel graph (git-ignored, it holds absolute paths). Re-run it after adding or moving a target. While the Cargo manifests exist, rust-analyzer finds `Cargo.toml` first and uses it unless `rust-analyzer.linkedProjects` points at `rust-project.json`.
+rust-analyzer reads `rust-project.json`, which `just rust-project` generates from the Bazel graph (git-ignored, it holds absolute paths). Re-run it after adding or moving a target. Under `dsp-cli/`, rust-analyzer finds `dsp-cli/Cargo.toml` first and uses it unless `rust-analyzer.linkedProjects` points at `rust-project.json`.
 
 ## Personal settings
 

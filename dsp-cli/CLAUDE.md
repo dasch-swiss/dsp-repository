@@ -8,7 +8,7 @@ dsp-cli-specific guidance; project-wide guidance is in the top-level `CLAUDE.md`
 abstracts DSP-API's verbose RDF/JSON-LD surface behind the vocabulary a researcher actually uses —
 **data-model**, **resource-type**, **field**, **value** — instead of DSP-API's own `ontology` /
 `class` / `property` / `Value` subclass terms. The binary is named `dsp`; the crate is `dsp-cli`. It
-is a root peer of the areas: it depends on no workspace crate and reaches DSP-API purely over HTTP.
+is a root peer of the areas: it depends on no other crate in the repository and reaches DSP-API purely over HTTP.
 v1 covers the VRE only, and is read-only (no write operations). See
 [Overview](../docs/src/dsp-cli/overview.md) for the purpose and design principles.
 

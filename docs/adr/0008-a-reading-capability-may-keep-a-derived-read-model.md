@@ -45,9 +45,9 @@ code:
   what it has, exactly as the projection does while the archive is unavailable (`areas/archive/CONTEXT.md`,
   `chischtli/CONTEXT.md`).
 - **A reading capability's tests may build `sync`'s adapter.** A crate of a reading capability may name
-  `sync`'s store crate as a dev-dependency, and only as one; the same holds for `media`'s, the adapter of its
-  bytes port (ADR-0012). Cargo gives a dev-dependency to test builds alone,
-  so a library or binary as built for use is still fed by its ports only. Such a test constructs
+  `sync`'s store crate as a dependency of `testonly` targets, and only as one; the same holds for `media`'s,
+  the adapter of its bytes port (ADR-0012). Bazel refuses a `testonly` target as a dependency of any other
+  target, so a library or binary as built for use is still fed by its ports only. Such a test constructs
   `LiveArchiveProjection` over the committed snapshot and hands the builder what the port serves; it never opens
   `sync`'s data itself. The tests of `cpe-store-build` and `cpe-server` build Incunabula's store this way.
 

@@ -46,7 +46,5 @@ The ruleset:
   in CI) stays a local-execution job for the same reason: Bazel's remote execution provides no live network
   stack.
 
-Not yet in code: the root `Cargo.toml`, `Cargo.lock` and every crate's manifest still exist beside the Bazel build, which no `just` recipe or CI job uses; `dsp-cli/Cargo.toml` is a workspace member, not a standalone manifest with its own `dsp-cli/Cargo.lock` (DEV-7699).
-
 Enforced by: CI building with Bazel under `--lockfile_mode=error` (static-analysis); `visibility` for the
 boundaries of ADR-0002 and ADR-0003 (structure).

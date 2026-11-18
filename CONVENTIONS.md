@@ -4,7 +4,7 @@ Agent reference card for the **work phase**. Pair with `REVIEW.md`, the review-p
 
 ## Stack
 
-- Rust, built and tested with Bazel (ADR-0001, `docs/src/bazel.md`); the Cargo manifests stay until they are removed, and a dependency change still edits both sides. Services are server-rendered hypermedia: Axum for routing, Maud for HTML, Datastar for interactivity over SSE; no client framework, no WASM (ADR-0004).
+- Rust, built and tested with Bazel (ADR-0001, `docs/src/bazel.md`). `dsp-cli/Cargo.toml` is the one Cargo manifest, kept for crates.io: a `dsp-cli` dependency change edits it and `MODULE.bazel` both. Services are server-rendered hypermedia: Axum for routing, Maud for HTML, Datastar for interactivity over SSE; no client framework, no WASM (ADR-0004).
 - Stores are SQLite through `rusqlite`, pooled with `deadpool-sqlite` in the editor and identity stores.
 - CSS is Tailwind through its standalone CLI, pinned and run by Bazel (`just css`); Node is needed only for the Playwright E2E suites.
 - Tests: `bazel test` (`just test`), `insta` snapshots for rendered HTML, Playwright plus axe-core for E2E.

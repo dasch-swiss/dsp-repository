@@ -1,5 +1,5 @@
-//! `tab_validation` (body from `fuzz_targets/tab_validation.rs`). A panic aborts the process,
-//! which libFuzzer reports as a crash.
+//! The `tab_validation` fuzz target. A panic aborts the process, which libFuzzer reports as a
+//! crash.
 
 use std::hint::black_box;
 

@@ -217,7 +217,7 @@ Two SQLite databases: `identity.sqlite` holds users, sessions, one-time codes an
 
 ### In-memory is the default, deliberately
 
-`EDITOR_DB_DIR` has **no default**, and unset means two named in-memory databases, `identity` and `editor`, rather than some path the editor invented. That is preview safety, not a convenience: the Cloud Run PR preview has no mounted volume, runs `--max-instances=1`, and is publicly reachable, so a publicly reachable preview must not be able to accumulate login codes, sessions or drafts. It also means `just dev-editor` and `cargo test` need no volume.
+`EDITOR_DB_DIR` has **no default**, and unset means two named in-memory databases, `identity` and `editor`, rather than some path the editor invented. That is preview safety, not a convenience: the Cloud Run PR preview has no mounted volume, runs `--max-instances=1`, and is publicly reachable, so a publicly reachable preview must not be able to accumulate login codes, sessions or drafts. It also means `just dev-editor` and `just test` need no volume.
 
 The Docker image deliberately does **not** set `EDITOR_DB_DIR`, for the same reason — the previews run that image. Production sets it through the deployment.
 

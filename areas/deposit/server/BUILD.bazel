@@ -3,7 +3,7 @@ load("//tools/image:defs.bzl", "MUSL", "app_image", "binary_layer", "files_layer
 
 # The Deposit Area's composition root (ADR-0003, `areas/deposit/ADR-0004`): the binary links the two
 # web crates, the two store crates and the shell, and no `core` or `ports` crate. Its tests also
-# take `editor-ports`' fakes, as the Cargo dev-dependency does.
+# take `editor-ports`' fakes, through its `testonly` variant.
 _DEPS = [
     "//areas/deposit/shell:deposit_shell",
     "//shared/rate-limit:shared_rate_limit",

@@ -1,5 +1,5 @@
-//! `origin_validation` (body from `fuzz_targets/origin_validation.rs`). A panic aborts the
-//! process, which libFuzzer reports as a crash.
+//! The `origin_validation` fuzz target. A panic aborts the process, which libFuzzer reports as a
+//! crash.
 
 use shared_telemetry::origin::is_allowed_origin;
 

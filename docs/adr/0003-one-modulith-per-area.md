@@ -40,7 +40,7 @@ The contract inside an area:
   crate. Never on another capability's domain, store or web crate. A port declared by a `shared-*` crate stays
   in that crate; a capability implementing it depends on the shared crate, which is always allowed. The one
   exception is ADR-0008's: a crate of a reading capability may name `sync-store`, or `media-store` for its bytes
-  port (ADR-0012), as a dev-dependency, and only as one.
+  port (ADR-0012), as a dependency of `testonly` targets, and only as one.
 - **References are opaque ids.** A capability stores only the foreign identifier (a shortcode, an entity id) — a
   foreign key by convention, not a database constraint across capabilities — and fetches names, labels and
   details through the port, never by reading the other capability's tables.
@@ -82,7 +82,7 @@ into the consumers at startup, and holds no adapter logic. It depends on each ca
 `server` crate where the capability has one (DPE, CPE), its `web` crate where it has none (`identity`,
 `editor`) — and on a capability's `store` and `ports` crates only to construct and inject adapters. It never
 depends on a `core` or `api-*` crate, nor on the `web` crate of a capability that has a `server` crate;
-dev-dependencies are held to the same rule. The entry crate exposes one facade that owns the capability's
+the dependencies of its `testonly` targets are held to the same rule. The entry crate exposes one facade that owns the capability's
 configuration, startup and router (`Dpe`, `Cpe`, `Identity`, `Editor`), so the root names no domain type.
 
 **Shared engines are libraries behind capabilities, never capabilities of their own.** Two exist (ADR-0002), and

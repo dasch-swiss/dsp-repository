@@ -8,7 +8,7 @@ All CI/CD workflows are defined as GitHub Actions in `.github/workflows/`.
 
 Every push and pull request runs:
 
-- **check.yml** — `just check` with Bazel: the gate scripts, vendored-JS checksums among them (see [Security](./security.md)), formatting (`maudfmt` for `html!` macros and the pinned nightly `rustfmt`), clippy over every Bazel target; a dsp-cli packaging dry run (`cargo publish -p dsp-cli --dry-run`); the E2E suites' Biome lint; the mdBook build
+- **check.yml** — `just check` with Bazel: the gate scripts, vendored-JS checksums among them (see [Security](./security.md)), formatting (`maudfmt` for `html!` macros and the pinned nightly `rustfmt`), clippy over every Bazel target; a dsp-cli packaging dry run and test run against its own manifest (`cargo publish --dry-run`, `cargo test`); the E2E suites' Biome lint; the mdBook build
 - **test.yml** — `just test` (every Bazel test) and `just image-smoke` (the three images built, started and answering), and the tests of the `.github/scripts` gates (`just test-scripts`)
 - **scout-dpe.yml** / **scout-editor.yml** / **scout-mosaic-playground.yml** — Docker image vulnerability scanning of the Bazel-built images (see [Security](./security.md))
 - **dsp-cli-drift.yml** — its `changes` job (deciding whether anything under `dsp-cli/**` changed) runs on every PR; see [dsp-cli drift detection](#dsp-cli-drift-detection) below
@@ -170,11 +170,11 @@ Configuration lives in [`.github/release-please/config.json`](https://github.com
 
 #### dsp-cli
 
-`dsp-cli` is a second release-please package, configured alongside the root `"."` package in the same `config.json`. Top-level `separate-pull-requests: true` keeps the two release PRs apart, so merging a workspace release never ships `dsp-cli`, and merging the `dsp-cli` release never ships the workspace.
+`dsp-cli` is a second release-please package, configured alongside the root `"."` package in the same `config.json`. Top-level `separate-pull-requests: true` keeps the two release PRs apart, so merging a root release never ships `dsp-cli`, and merging the `dsp-cli` release never ships the root package.
 
 Tag format differs by package: `dsp-cli` releases are tagged `dsp-cli-v<version>` (the package sets `include-component-in-tag: true`), while the root keeps the plain `v<version>` tag. The `dsp-cli` release branch is named `release-please--branches--main--components--dsp-cli`.
 
-**Release attribution is by path, not by commit scope.** release-please assigns a commit to a package when any file it touches sits under that package's path; the root `"."` package receives every commit unless its `exclude-paths` excludes it, and a commit is excluded from a package only when *all* of its files fall under an excluded path. The root's `exclude-paths` is `[".github", "dsp-cli"]`. The consequence — accepted and documented, not worked around — is the **double-bump rule**: a `dsp-cli` commit that also touches a root file (for example, a `Cargo.lock` dependency bump) lands in both packages' release PRs. Both packages are pre-1.0 and release often, so a double bump is cheap. See [Git Conventions](./git-conventions.md#scopes) for keeping `dsp-cli` commits scoped to `dsp-cli/**` where possible.
+**Release attribution is by path, not by commit scope.** release-please assigns a commit to a package when any file it touches sits under that package's path; the root `"."` package receives every commit unless its `exclude-paths` excludes it, and a commit is excluded from a package only when *all* of its files fall under an excluded path. The root's `exclude-paths` is `[".github", "dsp-cli"]`. The consequence — accepted and documented, not worked around — is the **double-bump rule**: a `dsp-cli` commit that also touches a root file (for example, a `MODULE.bazel` dependency bump) lands in both packages' release PRs. Both packages are pre-1.0 and release often, so a double bump is cheap. See [Git Conventions](./git-conventions.md#scopes) for keeping `dsp-cli` commits scoped to `dsp-cli/**` where possible.
 
 A `Release-As: <version>` commit footer forces a deliberate version choice for a package, overriding the version release-please would otherwise compute. The first `dsp-cli` release from its new workspace home carries `Release-As: 0.3.0`: with `bump-minor-pre-major`, a `feat` alone would only produce `0.2.2`, which would not signal the move.
 

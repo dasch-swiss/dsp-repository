@@ -1,5 +1,5 @@
-//! `traceparent_validation` (body from `fuzz_targets/traceparent_validation.rs`). A panic aborts
-//! the process, which libFuzzer reports as a crash.
+//! The `traceparent_validation` fuzz target. A panic aborts the process, which libFuzzer reports as
+//! a crash.
 
 use shared_telemetry::traceparent::is_valid_traceparent;
 

@@ -2,7 +2,7 @@
 #
 # A shared crate must not hardcode a path into a service module; see
 # shared/README.md for the rule. Only this half needs a check: a service
-# dependency is a Cargo cycle, but a hardcoded path compiles cleanly.
+# dependency is a dependency cycle, but a hardcoded path compiles cleanly.
 #
 # The ../, modules/ or areas/ prefix is load-bearing. It matches a path but not a
 # "/dpe/projects" route, a docs/src/dpe/... path or `dpe-core` prose, all of

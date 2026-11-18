@@ -26,12 +26,12 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
 
       - name: cargo publish --dry-run
-        run: cargo publish -p dsp-cli --dry-run --locked
+        run: cargo publish --dry-run --locked --manifest-path dsp-cli/Cargo.toml
 
       - uses: rust-lang/crates-io-auth-action@v1
         id: auth
 
       - name: cargo publish
-        run: cargo publish -p dsp-cli --locked
+        run: cargo publish --locked --manifest-path dsp-cli/Cargo.toml
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}

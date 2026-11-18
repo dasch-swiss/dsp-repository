@@ -1,5 +1,5 @@
-//! `query_params` (body from `fuzz_targets/query_params.rs`). A panic aborts the process,
-//! which libFuzzer reports as a crash.
+//! The `query_params` fuzz target. A panic aborts the process, which libFuzzer reports as a
+//! crash.
 
 use std::hint::black_box;
 

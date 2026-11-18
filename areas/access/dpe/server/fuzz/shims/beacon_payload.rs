@@ -1,5 +1,5 @@
-//! `beacon_payload` (body from `fuzz_targets/beacon_payload.rs`). A panic aborts the process,
-//! which libFuzzer reports as a crash.
+//! The `beacon_payload` fuzz target. A panic aborts the process, which libFuzzer reports as a
+//! crash.
 
 use std::hint::black_box;
 

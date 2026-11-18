@@ -1,4 +1,4 @@
-//! Behind the `test-support` feature, which only dev-dependencies enable, so the release build
+//! Behind the `test-support` feature, which only `testonly` targets enable, so the release build
 //! does not compile it.
 //!
 //! The committed corpora, not fixtures: every project page renders from them, and a fixture of

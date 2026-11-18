@@ -173,7 +173,7 @@ ADR-0012).
 _Avoid_: script, plugin (a hook is compiled in and typed), registry entry in the project's folder.
 
 The crate depends on `cpe-core` and `cpe-ports`, and not on `cpe-store`: it includes `store/schema.sql` as text. Its tests over Incunabula read the committed
-0803 snapshot through `sync-store`'s adapter, which is a dev-dependency and never a dependency (ADR-0008),
+0803 snapshot through `sync-store`'s adapter, which only its `testonly` targets depend on (ADR-0008),
 and Incunabula's `config.kdl` and `curation.csv` from `media`'s stand-in directory as files. The rule table
 of what the builder does to each value is in its `README.md`.
 

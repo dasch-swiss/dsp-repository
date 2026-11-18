@@ -1,4 +1,4 @@
-# Advisories `just audit` ignores in OSV-Scanner's scan of Cargo.Bazel.lock. Each entry carries the
+# Advisories `just audit` ignores in OSV-Scanner's scan of Cargo.Bazel.lock and dsp-cli/Cargo.lock. Each entry carries the
 # reason it does not apply here and is revisited when that changes. A vulnerability cargo-audit
 # also fails on is passed to `cargo audit --ignore` in the `audit` recipe, with the same reason;
 # the unmaintained crates below are warnings there, and RustSec does not list the GHSA one.

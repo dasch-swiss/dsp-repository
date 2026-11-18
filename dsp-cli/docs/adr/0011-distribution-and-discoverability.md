@@ -16,7 +16,7 @@ A `dasch-swiss` GitHub team is an owner of the crate on crates.io, so publishing
 
 ## Versioning and publishing
 
-`dsp-cli` has its own version line. Its `version` in `dsp-cli/Cargo.toml` is a literal that release-please writes, not `version.workspace = true`, and the workspace version does not apply to it. It is a separate release-please package, with a separate release PR and tags of the form `dsp-cli-v<version>`. Publishing to crates.io runs on a published GitHub release whose tag has that prefix (`.github/workflows/publish-dsp-cli.yml`). The mechanics are in `docs/src/deployment.md`.
+`dsp-cli` has its own version line. Its `version` in `dsp-cli/Cargo.toml`, a standalone manifest with its own `dsp-cli/Cargo.lock`, is a literal that release-please writes together with `_VERSION` in `dsp-cli/BUILD.bazel`; the root's `version.txt` does not apply to it. It is a separate release-please package, with a separate release PR and tags of the form `dsp-cli-v<version>`. Publishing to crates.io runs on a published GitHub release whose tag has that prefix (`.github/workflows/publish-dsp-cli.yml`). The mechanics are in `docs/src/deployment.md`.
 
 The published crate packages an allowlist (`include` in `Cargo.toml`): the sources, `docs/topics/*.md` (compiled in with `include_str!`, dsp-cli/ADR-0010), the README, the licence and the changelog.
 
@@ -34,4 +34,4 @@ The agent-facing Claude Code skill is not shipped from this repository. Its home
 
 Enforced by: the binary name `dsp`, by the integration tests that run it through `CARGO_BIN_EXE_dsp` (e.g. `dsp-cli/tests/cli.rs`,
 `dsp-cli/tests/docs.rs`); the separate release-please package and the tag-prefix guard on the publish workflow (**static-analysis**);
-`cargo publish -p dsp-cli --dry-run` in the publish workflow; the rest by **review**.
+`cargo publish --dry-run --locked --manifest-path dsp-cli/Cargo.toml` in the publish workflow; the rest by **review**.

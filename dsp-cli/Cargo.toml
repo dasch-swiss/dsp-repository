@@ -32,13 +32,15 @@ live = []
 
 [dependencies]
 clap = { version = "4", features = ["derive", "env"] }
-thiserror = { workspace = true }
-tracing = { workspace = true }
-tracing-subscriber = { workspace = true, features = ["fmt"] }
-serde = { workspace = true }
+thiserror = "2.0.12"
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.22", features = ["env-filter", "fmt"] }
+serde = { version = "1", features = ["derive"] }
 # preserve_order keeps JSON object keys in insertion order, so the `_meta`-first
 # envelope is a deterministic contract rather than a BTreeMap alpha-sort accident.
-serde_json = { workspace = true }
+# `float_roundtrip`: Bazel's crate universe has it on for every crate (cpe-store-build needs it),
+# so the published crate keeps it to match what the tests ran against.
+serde_json = { version = "1", features = ["preserve_order", "float_roundtrip"] }
 dotenvy = "0.15"
 dirs = "5"
 toml = "0.8"
@@ -46,15 +48,13 @@ toml = "0.8"
 # `rustls-no-provider`: reqwest's `rustls` would bring `aws-lc-sys`, which needs cmake.
 reqwest = { version = "0.13", default-features = false, features = ["blocking", "json", "rustls-no-provider", "query"] }
 # `ring` as the TLS crypto provider, installed by `client::tls::client_builder`.
-rustls = { workspace = true }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std"] }
 # Percent-encoding for IRI path segments (e.g. encoding IRIs for /admin/projects/iri/{enc-iri}).
 # Already transitively present via reqwest; listed directly so the usage is intentional.
 percent-encoding = "2"
 # Prompts for passwords without echoing; falls back to stdin pipe when not a TTY.
 rpassword = "7"
 # Timestamps for token acquired_at / expires_at in the auth cache; serde+clock features for serialisation and Utc::now().
-# Kept crate-local rather than workspace-inherited: the root workspace.dependencies entry
-# leaves default-features on, and default-features cannot be overridden alongside workspace = true.
 chrono = { version = "0.4", default-features = false, features = ["serde", "clock"] }
 # JWT decoding to extract the exp claim from login response tokens (signature validation disabled — token is freshly issued by the server we just authenticated to).
 # v10 no longer bundles a crypto backend: exactly one of `rust_crypto`/`aws_lc_rs` must be chosen. `rust_crypto` is pure Rust (no C toolchain — consistent with the rustls choice above). The production path (`insecure_decode`) never touches it; the tests' `encode` helper does.
@@ -63,7 +63,7 @@ jsonwebtoken = { version = "10", features = ["rust_crypto"] }
 semver = "1"
 
 [dev-dependencies]
-insta = { workspace = true }
+insta = { version = "1.47", features = ["yaml", "filters"] }
 wiremock = "0.6"
 tempfile = "3"
 assert_cmd = "2"
@@ -71,8 +71,7 @@ predicates = "3"
 # Async runtime required by wiremock's MockServer; reqwest::blocking is safe inside #[tokio::test] (spawns its own OS thread).
 tokio = { version = "1", default-features = false, features = ["rt", "macros"] }
 
-# Cargo ignores a member's [profile.*] table inside a workspace and prints a warning saying so;
-# this section still governs `cargo install dsp-cli` from crates.io, where this manifest is the root.
+# Governs `cargo install dsp-cli` from crates.io; Bazel does not read this manifest.
 [profile.release]
 lto = "thin"
 strip = "symbols"

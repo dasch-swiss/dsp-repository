@@ -14,7 +14,7 @@ pub(crate) fn resolve_css_href(public_dir: &std::path::Path) -> String {
 /// Scan `assets_dir` for a content-hashed `app.<hash>.css` and return its
 /// `/assets/…` href if one is present. Kept separate from [`resolve_css_href`]
 /// (which gates on `debug_assertions`) so the discovery logic is unit-testable
-/// under `cargo test`.
+/// in a test build.
 fn discover_hashed_css(assets_dir: &std::path::Path) -> Option<String> {
     let entries = std::fs::read_dir(assets_dir).ok()?;
     for entry in entries.flatten() {

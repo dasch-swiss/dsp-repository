@@ -268,8 +268,10 @@ audit:
         # only database files they create in their own data directories.
         --ignore RUSTSEC-2026-0459
     )
+    # `Cargo.Bazel.lock` is what Bazel builds; `dsp-cli/Cargo.lock` is what `cargo install dsp-cli` gets.
     cargo audit --file Cargo.Bazel.lock "${ignores[@]}"
-    osv-scanner scan source --lockfile=Cargo.lock:Cargo.Bazel.lock --config=osv-scanner.toml
+    cargo audit --file dsp-cli/Cargo.lock "${ignores[@]}"
+    osv-scanner scan source --lockfile=Cargo.lock:Cargo.Bazel.lock --lockfile=Cargo.lock:dsp-cli/Cargo.lock --config=osv-scanner.toml
 
 # The images' build flags: a release build, stamped (the editor's footer version). The targets select the musl platform themselves (`//tools/image:defs.bzl`).
 

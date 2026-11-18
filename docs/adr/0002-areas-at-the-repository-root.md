@@ -79,8 +79,8 @@ Between areas, the rules are:
 
 dsp-cli stands outside the area arrow on both sides. No area depends on `dsp-cli`, and `dsp-cli` depends on no
 area crate. It may depend on a `shared-*` crate only if that crate is itself published to crates.io, because
-`cargo publish` rejects a path dependency on an unpublished crate. Every `shared-*` crate is `publish = false`,
-so none is reachable from dsp-cli; a concept that an area and dsp-cli both need is shared by publishing the
+`cargo publish` rejects a path dependency on an unpublished crate. No `shared-*` crate is published, so none
+is reachable from dsp-cli; a concept that an area and dsp-cli both need is shared by publishing the
 crate, or by vendoring the concept, never by a path dependency.
 
 ## Considered Options
@@ -142,6 +142,6 @@ area target grants a `shared-*` or `mosaic-*` crate, and nothing grants dsp-cli 
 grant is one line in the provider's BUILD file and is reviewed there; `check-capability-deps.sh`, run by
 `just check`, for no `//visibility:public` in a `BUILD.bazel` under `areas/`, `shared/`, `modules/` or
 `dsp-cli/`, which would undo every grant (static-analysis); `check-shared-paths.sh` for paths from a shared
-crate into an area, which no dependency edge shows (static-analysis); `cargo publish -p dsp-cli --dry-run --locked` in
+crate into an area, which no dependency edge shows (static-analysis); `cargo publish --dry-run --locked --manifest-path dsp-cli/Cargo.toml` in
 `check.yml` for dsp-cli's publishing manifest (static-analysis); review for state ownership, shared concepts and the
 archive's storage.

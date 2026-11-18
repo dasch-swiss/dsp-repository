@@ -343,7 +343,7 @@ mod tests {
         // 0862 has a cover on disk, so the wired-up handler must resolve it. This is the
         // only test that renders a full project page through the router, so without the
         // assertion the whole corpus public-dir → cover_image_url → <img> path is exercised
-        // nowhere in `cargo test` and a broken lookup would look like a passing suite.
+        // nowhere in the test suite and a broken lookup would look like a passing suite.
         assert!(
             body.contains(r#"src="/assets/images/0862.webp""#),
             "0862's cover should resolve: {body}"

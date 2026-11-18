@@ -8,7 +8,7 @@ date: 2026-11-18
 
 ## Overview
 
-`dsp-repository` is a Rust monorepo (built by Bazel, ADR-0001; the Cargo manifests remain until they are removed) of
+`dsp-repository` is a Rust monorepo (built by Bazel, ADR-0001; `dsp-cli/Cargo.toml` is the one Cargo manifest, kept for crates.io) of
 server-rendered hypermedia services on Axum + Maud + Datastar, plus the crates they share.
 Two deployables exist, one per area composition root, each on its own origin: `access-server`
 (`areas/access/server`) serves **DPE**, the public read-only Discovery and Presentation
@@ -144,7 +144,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   bundled picker options, so a new reference needs that regeneration (**static-analysis** — the editor's drift tests,
   which also run on `editor-pull-requests`' pull requests: one publishing a place or period a depositor typed outside
   the lists stays red until the bundles are regenerated on its branch).
-- **Fingerprint:** `a102f97e28c3`
+- **Fingerprint:** `5e4a0bb163e4`
 
 ### areas/access/server
 
@@ -211,7 +211,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     requests are traced under it, each span named by the route CPE reports (**static-analysis**:
     `serve.rs` tests), never by a path that matched no route.
 - **Durable state:** none.
-- **Fingerprint:** `d504ed9a7c6b`
+- **Fingerprint:** `3ed3718180be`
 
 ### areas/deposit/editor
 
@@ -407,7 +407,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `Editor::start`), approve's own transaction, which supersedes the project's earlier record, so a
   project holds at most one, and RDU's discard
   (`POST /approved/{id}/discard`).
-- **Fingerprint:** `f559729aa084`
+- **Fingerprint:** `90378795d2c6`
 
 ### areas/deposit/shell
 
@@ -462,7 +462,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     `style/main.css` and the `//areas/deposit/shell:tailwind_sources` filegroup the editor's stylesheet target
   lists; moving the crate drops them silently (**review**).
 - **Durable state:** none.
-- **Fingerprint:** `c1c3e3037165`
+- **Fingerprint:** `20ab9e29ebd9`
 
 ### areas/deposit/identity
 
@@ -548,7 +548,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `test_merged_migrations_are_never_edited` pins each merged migration's hash). **Single writer:** `identity-store`, through
   `identity-core`'s repository ports, called by `identity-web`'s handlers, the RDU bootstrap and the hourly
   sweep, and by `session::current`'s idle touch (also through `LiveAuthenticator`).
-- **Fingerprint:** `30a19e154ee1`
+- **Fingerprint:** `2cdba1a36962`
 
 ### areas/deposit/server
 
@@ -588,12 +588,12 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   (`Service=deposit`) by `editor-docker-publish.yml` (main → stage) and
   `editor-release-publish.yml` (release → prod)
 - **Boundary rules:**
-  - Never depends on a capability's `core` or `api-*` crate, dev-dependencies included; it
+  - Never depends on a capability's `core` or `api-*` crate, its `testonly` targets included; it
     mounts `identity` and `editor` through their `web` crates' facades because neither has a
     `server` crate (**structure** — `visibility` in the capability crates' `BUILD.bazel`, the root's one
     enforcer). Its tests seed and
     read through the stores' plain-value `test-support` helpers instead of `core` types.
-  - Depends on no crate of another area, dev-dependencies included (ADR-0002; **structure** — no target of the other area grants it, `//areas/access/dpe/server:corpus` being the one cross-area grant).
+  - Depends on no crate of another area, its `testonly` targets included (ADR-0002; **structure** — no target of the other area grants it, `//areas/access/dpe/server:corpus` being the one cross-area grant).
   - The root declares no capability route: `build_router` merges `Editor::router()` and
     `Identity::router()` before the OTel layers, and `build_app` declares `/healthz` and
     `POST /telemetry/collect` after them, so both stay untraced, then wraps everything in the
@@ -616,7 +616,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `EDITOR_DB_DIR` (two named in-memory databases when unset) and hands each store to its
   capability, which is the single writer. It hands `EDITOR_DATA_DIR` (the published set,
   read-only) to `EditorSettings` and to `LiveOpenWork`, which reads it once at construction.
-- **Fingerprint:** `338b3eef4340`
+- **Fingerprint:** `93017a79c497`
 
 ### modules/mosaic
 
@@ -672,7 +672,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     edited (**docs-only** — `modules/mosaic/CLAUDE.md` and the
     `add-mosaic-component` skill).
 - **Durable state:** none. The playground E2E suite is dormant (no recipe, no CI job runs it).
-- **Fingerprint:** `3bd99db6a516`
+- **Fingerprint:** `ad3512a51caf`
 
 ### shared/fair
 
@@ -731,7 +731,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     (`areas/access/dpe/api-oai/src/metadata/corpus.rs`), not here (**review**).
 - **Durable state:** none. Holds no cache and reads no environment; the contributor lookup and
   the two temporal tables arrive in `ResolveContext`.
-- **Fingerprint:** `4842a8150cd7`
+- **Fingerprint:** `9091fa2cfb6b`
 
 ### shared/metadata
 
@@ -766,7 +766,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   which the editor's canonical writer requires), tracing
 - **Used by:** areas/access/dpe (all four crates), areas/deposit/editor (`editor-core`, `editor-web`, `editor-pull-requests`),
   areas/deposit/identity (`identity-web`), shared/fair,
-  the DPE fuzz crate.
+  the DPE fuzz targets (`//areas/access/dpe/server/fuzz`).
   Not areas/access/server, no CPE crate and not `sync-store`
 - **Boundary rules:**
   - Depends on no service crate (**structure** — its `deps` hold no service target, and no service target grants it); holds no path into a service
@@ -784,7 +784,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     added here, not in a consumer (**review**).
 - **Durable state:** none. Loads `chronontology-periods.json` and
   `temporal-coverage-enrichment.json` from whatever directory it is given.
-- **Fingerprint:** `fec06692397e`
+- **Fingerprint:** `14d825167a9e`
 
 ### shared/rate-limit
 
@@ -812,7 +812,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - Correct only while Traefik is the sole hop in front of the service; a second proxy that
     appends to `X-Forwarded-For` shifts the trusted entry (**review**).
 - **Durable state:** none.
-- **Fingerprint:** `6beffa6d7acc`
+- **Fingerprint:** `d32b8f246482`
 
 ### shared/telemetry
 
@@ -830,13 +830,13 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Local-context kit:** `shared/telemetry/src/beacon.rs`,
   `shared/telemetry/src/collector.rs`, `areas/access/dpe/public/telemetry.js`,
   `areas/deposit/editor/public/telemetry.js`, `docs/src/dpe/observability.md`,
-  `shared/README.md`, `areas/access/dpe/server/fuzz/fuzz_targets/beacon_payload.rs`
+  `shared/README.md`, `areas/access/dpe/server/fuzz/shims/beacon_payload.rs`
 - **Depends on:** nothing in the workspace; third-party: serde, serde_json; axum, opentelemetry,
   tracing, url (collector only). No `tower_governor` — the rate limiter is each server's own.
 - **Used by:** areas/access/server (`collect_route("dpe", dpe_server::normalize_page_url)`), areas/access/dpe (`dpe-server`'s `traceparent.rs`),
   areas/deposit/server (`collect_route("editor", …)`), areas/deposit/editor (`editor-web`'s copy of `traceparent.rs`), both servers' `traceparent.rs`,
   areas/deposit/identity (`identity-web`'s copy of `traceparent.rs`),
-  the DPE fuzz crate
+  the DPE fuzz targets (`//areas/access/dpe/server/fuzz`)
 - **Boundary rules:**
   - Depends on no service crate; holds no path into one (**structure** + **static-analysis**,
     as for `shared-metadata`).
@@ -853,7 +853,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `BROWSER_METRICS`) make the crate one-service-per-process by construction. Three fuzz targets
   (`beacon_payload`, `origin_validation`, `traceparent_validation`) exist but `fuzz.yml` runs
   only DPE's two.
-- **Fingerprint:** `e4d56062a11a`
+- **Fingerprint:** `ce246fbe0117`
 
 ### shared/datastar
 
@@ -886,7 +886,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - `retry: 'never'` is only ever emitted together with `retryMaxCount: 0` (**structure**: one
     method emits both).
 - **Durable state:** none.
-- **Fingerprint:** `c65b58f65aa0`
+- **Fingerprint:** `0d9eb9bb5f43`
 
 ### dsp-cli
 
@@ -900,7 +900,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Key entities:** `DspClient`, `HttpDspClient`, `Renderer`, `Diagnostic`, `Config`, `AuthCache`,
   `UpdateCheckCache`
 - **Public interface:** the `dsp` command surface (`auth`; `vre project | data-model |
-  resource-type | resource | vocabulary | sparql`; `docs`); the `dsp-cli` crate published on crates.io (`cargo publish` from its manifest; Bazel builds the binary as
+  resource-type | resource | vocabulary | sparql`; `docs`); the `dsp-cli` crate published on crates.io (`cargo publish` from its standalone `dsp-cli/Cargo.toml` and `dsp-cli/Cargo.lock`; Bazel builds the binary as
   `//dsp-cli:dsp`, whose version in `dsp-cli/BUILD.bazel` release-please updates with the manifest's). Its lib target `dsp_cli` exists for the crate's own tests, not for other crates.
   Besides DSP-API, the binary calls one other endpoint: the crates.io sparse index, for the update
   check (dsp-cli/ADR-0015).
@@ -917,8 +917,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   assert_cmd, predicates, tempfile. Not `url` (`src/config/mod.rs` says why)
 - **Used by:** — (top of the dependency graph; a published binary)
 - **Boundary rules:**
-  - No dependency on an area crate (**structure**: no area target grants `dsp-cli`; `cargo publish -p dsp-cli
-    --dry-run` in `check.yml` still checks the packaging).
+  - No dependency on an area crate (**structure**: no area target grants `dsp-cli`; `cargo publish --dry-run
+    --manifest-path dsp-cli/Cargo.toml` and `cargo test` against it in `check.yml` still check the packaging).
   - A `shared-*` dependency only if that crate is itself published to crates.io (**structure** today: no
     `shared-*` target grants `dsp-cli`; the dry run fails on an unpublished one).
   - Integrates with an area over its public HTTP surface only, never by Rust import
@@ -940,7 +940,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `AuthCache`; `~/.config/dsp-cli/update_check.toml` (the update-check cache, dsp-cli/ADR-0015) —
   single writer, the `update` module. Both are written atomically (a temporary file, then a rename).
   It reads `.env` from the current directory and never writes it.
-- **Fingerprint:** `a4f7f7637656`
+- **Fingerprint:** `1943ee3d23f6`
 
 ### areas/archive (Spycherli)
 
@@ -1276,7 +1276,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   the project's developers (**review**); the process reads it at activation and never writes it. Its
   configuration, narrative and curation are `media`'s (areas/access/media). `cpe-ports`, `cpe-core`,
   `cpe-components`, `cpe-image-viewer` and `cpe-store-build` hold none; `cpe-web`'s `Project` holds a project's store in memory, and `cpe-server` keeps the loaded projects until the next activation replaces them.
-- **Fingerprint:** `dd624eaef649`
+- **Fingerprint:** `51315f81fc50`
 
 ### areas/access/datei
 
@@ -1397,7 +1397,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   on every call, and holds nothing in between. The test oracle `0803-arks.txt`, **single writer**
   the extraction `PROVENANCE` gives over the incubator's `data.sql`, never generated from `ark.rs`
   (**review**), is read only by the committed-file tests.
-- **Fingerprint:** `cba46a0a8b46`
+- **Fingerprint:** `f3c5a6c89453`
 
 ### areas/access/media
 
@@ -1466,7 +1466,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   incubator when it re-vendors (**review**). `media-store` reads it on every call and holds nothing in
   between; an edit to the curation file changes the committed-data tests of `cpe-store-build` in the same
   commit (**review**).
-- **Fingerprint:** `e7f09ea65190`
+- **Fingerprint:** `02d68646f68e`
 
 ## Conventions
 
@@ -1583,8 +1583,8 @@ Not code components; they span the repo and are staleness-exempt here:
 
 - **Build, toolchain and dev loop:** `MODULE.bazel`, `MODULE.bazel.lock`, `Cargo.Bazel.lock`, `.bazelrc`,
   `.bazelversion`, `.bazelignore`, `platforms/**`, `bazel/**`, `tools/**` (the Tailwind rule, `app_image`,
-  version stamping), the root `BUILD.bazel`, `osv-scanner.toml`, `version.txt`; the Cargo manifests kept until they are
-  removed (`Cargo.toml`, `Cargo.lock`, `.cargo/config.toml`, `rust-toolchain.toml`), `.rustfmt.toml`, `.rustfmt-nightly`,
+  version stamping), the root `BUILD.bazel`, `osv-scanner.toml`, `version.txt`; `rust-toolchain.toml` (rustup's toolchain for
+  `dsp-cli`'s Cargo build and the `cargo binstall` tools), `.rustfmt.toml`, `.rustfmt-nightly`,
   `bacon.toml`, `justfile`, `flake.nix`, `flake.lock`, `.envrc`, `.node-version`, `.gitignore`, `.worktreeinclude`,
   `.commitlintrc.yml`, `.kodus-readiness.yml`, `.git-blame-ignore-revs`, `.editorconfig`,
   `.gitattributes`

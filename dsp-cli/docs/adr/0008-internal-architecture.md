@@ -14,7 +14,7 @@ The crate layout, the layer diagram and the `Renderer` method list are in [Archi
 5. Config resolution (`src/config/`): flag → env var → `.env` → cached token ([dsp-cli/ADR-0007](0007-auth-and-environments.md)).
 
 The directory shape under `src/` mirrors the layers and the noun-group hierarchy of dsp-cli/ADR-0002, so "where does `dsp vre data-model describe` live" is mechanical:
-`src/actions/vre/data_model.rs`. The library/binary split lets `cargo test` exercise everything except the very thin `main.rs`.
+`src/actions/vre/data_model.rs`. The library/binary split lets the tests exercise everything except the very thin `main.rs`.
 
 The action layer is the keystone. Every action function has the uniform shape
 

@@ -18,7 +18,7 @@ Review checklist for the DSP Repository. Organized by priority.
 **Architecture**
 - New API crates follow the `dpe-api-{name}` pattern with `shared-metadata` and `dpe-core` as only domain dependencies (see [Project Structure](../repo_structure.md))
 - `dpe-core` and `shared-metadata` have no framework dependencies (no axum, no maud)
-- `shared-metadata` takes no dependency on a service crate, and no path into a service's data directory. Both halves fail the build, so this is a spot-check rather than a hand-verification: a service dependency is a Cargo cycle, and a hardcoded path is caught by `just check-shared-paths` (`.github/scripts/check-shared-paths.sh`)
+- `shared-metadata` takes no dependency on a service crate, and no path into a service's data directory. Both halves fail the build, so this is a spot-check rather than a hand-verification: a service dependency is a dependency cycle, and a hardcoded path is caught by `just check-shared-paths` (`.github/scripts/check-shared-paths.sh`)
 - Validate command covers all data file types (DPE)
 - E2E test directory naming: `web-e2e-tests/` for DPE, `playground-e2e-tests/` for Mosaic
 
@@ -36,7 +36,7 @@ Review checklist for the DSP Repository. Organized by priority.
 - Each commit builds and passes tests
 
 **Security**
-- No secrets in config files, Cargo.toml, or git
+- No secrets in config files, `BUILD.bazel`, `MODULE.bazel`, or git
 - Path parameters validated before filesystem access
 
 ## Style
@@ -53,4 +53,4 @@ Review checklist for the DSP Repository. Organized by priority.
 
 - Snapshot `.snap` file contents — verify accepted, don't review formatting
 - Formatting-only changes (`maudfmt` and pinned nightly `rustfmt` diffs)
-- `Cargo.lock` changes from dependency updates
+- `Cargo.Bazel.lock` and `MODULE.bazel.lock` changes from dependency updates

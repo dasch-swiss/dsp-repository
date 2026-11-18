@@ -4,7 +4,7 @@ How the editor stores its working state: two SQLite databases, one per capabilit
 
 Two SQLite databases, `identity.sqlite` and `editor.sqlite`, `rusqlite` with the `bundled` feature: the amalgamation is compiled by `cc` into the binary, which is what keeps the static musl image self-contained. `identity-core` and `editor-core` own the records and one repository trait per aggregate; `identity-store` implements identity's four against `identity.sqlite` and `editor-store` the editor's five against `editor.sqlite`, so handlers depend on the ports and not on the driver. Each store crate has its own copy of the pool module, its own migration module and its own baseline, and neither depends on the other.
 
-`rusqlite` is pinned to **0.38, not 0.40**, because `deadpool-sqlite` 0.13 (the latest) requires `rusqlite ^0.38` and the two cannot coexist: `libsqlite3-sys` 0.36 and 0.38 both declare `links = "sqlite3"`, so cargo refuses to link both. Bump the pair together once `deadpool-sqlite` tracks 0.40.
+`rusqlite` is pinned to **0.38, not 0.40**, because `deadpool-sqlite` 0.13 (the latest) requires `rusqlite ^0.38` and the two cannot coexist: `libsqlite3-sys` 0.36 and 0.38 both declare `links = "sqlite3"`, so Cargo and Bazel's crate universe refuse to link both. Bump the pair together once `deadpool-sqlite` tracks 0.40.
 
 ## Two pools, and what that buys
 
@@ -35,7 +35,7 @@ The editor's schema has no foreign keys, because it cannot reference a table in 
 
 ## In-memory variant
 
-Selected by leaving `EDITOR_DB_DIR` unset, which is the default, and it gives two named databases, `identity` and `editor` (see [Operations](./operations.md#database) for why that is also the preview-safety default). Each is a **named shared-cache URI** (`file:<name>?mode=memory&cache=shared`), never bare `:memory:`: every `:memory:` database is distinct and visible only to the connection that opened it, so each pooled connection would get its own empty copy, and with a writer/reader split readers could never see anything the writer wrote. The symptom is `no such table` that comes and goes with pool timing and test order, which reads exactly like a migration bug. Tests use a distinct name per store each, because a shared-cache in-memory database is scoped to the process and parallel `cargo test` threads share one.
+Selected by leaving `EDITOR_DB_DIR` unset, which is the default, and it gives two named databases, `identity` and `editor` (see [Operations](./operations.md#database) for why that is also the preview-safety default). Each is a **named shared-cache URI** (`file:<name>?mode=memory&cache=shared`), never bare `:memory:`: every `:memory:` database is distinct and visible only to the connection that opened it, so each pooled connection would get its own empty copy, and with a writer/reader split readers could never see anything the writer wrote. The symptom is `no such table` that comes and goes with pool timing and test order, which reads exactly like a migration bug. Tests use a distinct name per store each, because a shared-cache in-memory database is scoped to the process and parallel test threads share one.
 
 ## The draft's storage key folds case
 

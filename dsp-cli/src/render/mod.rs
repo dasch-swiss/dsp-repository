@@ -152,21 +152,19 @@ pub enum ResourceListPagination {
 
 /// The data a renderer needs to render a `resource list` result.
 ///
-/// `items` is the post-filter list; `total` is the pre-filter count (capture
-/// BEFORE applying `--filter`, mirroring `project list`); `filter` is the
-/// applied substring (if any). `resource_type` carries the resolved class name
-/// for the prose header. `pagination` carries the D5 mode struct (single page
-/// vs. all pages).
+/// `items` is the fetched page (or pages); with `--filter` they are label-search
+/// matches. Unlike the other list views it has no pre-filter total: the label
+/// search does not report one. `filter` is the normalised `--filter` term (if any). `resource_type`
+/// carries the resolved class name for the prose header. `pagination` carries the D5 mode struct
+/// (single page vs. all pages).
 ///
 /// `Clone` is required because the test `RecordingRenderer` stores the view in
 /// an `Option<ResourceListView>`.
 #[derive(Debug, Clone)]
 pub struct ResourceListView {
-    /// Post-filter, sorted resource summaries.
+    /// Resource summaries, in the order the server returned them.
     pub items: Vec<ResourceSummary>,
-    /// Pre-filter total count. Feeds the "(m of total matching "…")" prose line.
-    pub total: usize,
-    /// The `--filter` substring the user supplied, if any.
+    /// The normalised `--filter` term, if any.
     pub filter: Option<String>,
     /// Local name of the resource type, for the prose header.
     pub resource_type: String,
@@ -314,8 +312,8 @@ pub trait Renderer {
 
     /// Render a `dsp vre resource list` result (possibly empty).
     ///
-    /// `view` carries the items (post-filter), the pre-filter total, the filter
-    /// string, the resource type name, and the pagination state. `meta` carries
+    /// `view` carries the items (label-search matches with `--filter`), the
+    /// `--filter` term, the resource type name, and the pagination state. `meta` carries
     /// auth/server disclosure (dsp-cli/ADR-0007) including the always-present
     /// `filter_warning` for instance-side commands (D3).
     fn resources(&mut self, view: &ResourceListView, meta: &MetaContext) -> Result<(), Diagnostic>;

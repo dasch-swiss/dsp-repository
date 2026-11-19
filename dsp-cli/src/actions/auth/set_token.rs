@@ -280,6 +280,18 @@ mod tests {
             unimplemented!("list_resources not used in set-token tests")
         }
 
+        fn search_resources_by_label(
+            &self,
+            _server: &str,
+            _project_iri: &str,
+            _resource_type_iri: &str,
+            _term: &str,
+            _page: u32,
+            _token: Option<&str>,
+        ) -> Result<crate::model::ResourcePage, Diagnostic> {
+            unimplemented!("search_resources_by_label not used in set-token tests")
+        }
+
         fn describe_resource(
             &self,
             _server: &str,

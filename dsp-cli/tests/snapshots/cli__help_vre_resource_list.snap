@@ -40,10 +40,10 @@ Options:
           Fetch all pages until the server reports no more results. Cannot be combined with `--page`
 
       --filter <FILTER>
-          Filter resources by case-insensitive substring over the label
+          Search the labels of all resources of the type on the server (at least 3 characters; matches whole words, see below). `--page` / `--all` page through the matches
 
       --order-by <ORDER_BY>
-          Field name (e.g. `title`) or full field IRI to sort by (ascending). A bare field name is resolved to the resource-type's field IRI; a full IRI (contains `://`) is passed to the server verbatim. Targets project-defined fields; ascending order only
+          Field name (e.g. `title`) or full field IRI to sort by (ascending). A bare field name is resolved to the resource-type's field IRI; a full IRI (contains `://`) is passed to the server verbatim. Targets project-defined fields; ascending order only. Cannot be combined with `--filter`
 
       --format <FORMAT>
           Output format (default: prose)
@@ -80,3 +80,5 @@ Columns (--columns): label, iri, ark_url, creation_date, last_modified, resource
 Scan behaviour: a bare --resource-type name (no ://) scans all project data-models; use --data-model or a full IRI to skip the scan. See also: `dsp docs concepts`
 
 --order-by: field name (e.g. title) or full field IRI; sorts ascending; targets project-defined fields (full IRI passed verbatim; bare name resolved to its field IRI)
+
+--filter: DSP-API's label search, run over all resources of the type. It matches words, not substrings: every word of the term must equal a word of the label, the last one may be its beginning, case and diacritics are ignored. `0101a` finds `0101a_001`, `a_001` does not. Punctuation stays part of a word, so `smith alice` does not find `Smith, Alice` (`smith, alice` does). Matches include resource-types that inherit from the given one, and come in server order. See also: `dsp docs workflows`

@@ -127,6 +127,8 @@ pub struct MockDspClient {
     pub data_model_structure_result: Option<Result<DataModelStructure, Diagnostic>>,
     /// Canned response returned by [`DspClient::list_resources`].
     pub list_resources_result: Option<Result<ResourcePage, Diagnostic>>,
+    /// Canned response returned by [`DspClient::search_resources_by_label`].
+    pub search_resources_by_label_result: Option<Result<ResourcePage, Diagnostic>>,
     /// Canned response returned by [`DspClient::describe_resource`].
     pub describe_resource_result: Option<Result<ResourceDetail, Diagnostic>>,
     /// Canned response returned by [`DspClient::list_vocabularies`].
@@ -161,6 +163,7 @@ impl MockDspClient {
             describe_resource_type_token: RefCell::new(None),
             data_model_structure_result: None,
             list_resources_result: None,
+            search_resources_by_label_result: None,
             describe_resource_result: None,
             list_vocabularies_result: None,
             describe_vocabulary_result: None,
@@ -282,6 +285,12 @@ impl MockDspClient {
     /// Set the result returned by [`DspClient::list_resources`].
     pub fn with_list_resources(mut self, result: Result<ResourcePage, Diagnostic>) -> Self {
         self.list_resources_result = Some(result);
+        self
+    }
+
+    /// Set the result returned by [`DspClient::search_resources_by_label`].
+    pub fn with_search_resources_by_label(mut self, result: Result<ResourcePage, Diagnostic>) -> Self {
+        self.search_resources_by_label_result = Some(result);
         self
     }
 
@@ -469,6 +478,20 @@ impl DspClient for MockDspClient {
     ) -> Result<ResourcePage, Diagnostic> {
         self.list_resources_result.clone().expect(
             "MockDspClient::list_resources_result was not configured; use MockDspClient::with_list_resources(...)",
+        )
+    }
+
+    fn search_resources_by_label(
+        &self,
+        _server: &str,
+        _project_iri: &str,
+        _resource_type_iri: &str,
+        _term: &str,
+        _page: u32,
+        _token: Option<&str>,
+    ) -> Result<ResourcePage, Diagnostic> {
+        self.search_resources_by_label_result.clone().expect(
+            "MockDspClient::search_resources_by_label_result was not configured; use MockDspClient::with_search_resources_by_label(...)",
         )
     }
 

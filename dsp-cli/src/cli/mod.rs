@@ -42,7 +42,12 @@ const AFTER_HELP_RESOURCE_LIST: &str = "Columns (--columns): label, iri, ark_url
      Scan behaviour: a bare --resource-type name (no ://) scans all project data-models; \
      use --data-model or a full IRI to skip the scan. See also: `dsp docs concepts`\n\n\
      --order-by: field name (e.g. title) or full field IRI; sorts ascending; \
-     targets project-defined fields (full IRI passed verbatim; bare name resolved to its field IRI)";
+     targets project-defined fields (full IRI passed verbatim; bare name resolved to its field IRI)\n\n\
+     --filter: DSP-API's label search, run over all resources of the type. It matches words, not substrings: \
+     every word of the term must equal a word of the label, the last one may be its beginning, case and diacritics \
+     are ignored. `0101a` finds `0101a_001`, `a_001` does not. Punctuation stays part of a word, so `smith alice` \
+     does not find `Smith, Alice` (`smith, alice` does). Matches include resource-types that inherit from the given \
+     one, and come in server order. See also: `dsp docs workflows`";
 
 const AFTER_HELP_RESOURCE_DESCRIBE: &str = "Columns (--columns): label, iri, resource_type, ark_url, creation_date, last_modified, attached_project, owner, visibility, your_access\n\
      Columns (--columns) with --values: label, iri, field, field_label, value_type, value, comment\n\
@@ -931,7 +936,9 @@ pub struct ResourceListArgs {
     #[arg(long)]
     pub all: bool,
 
-    /// Filter resources by case-insensitive substring over the label.
+    /// Search the labels of all resources of the type on the server (at least
+    /// 3 characters; matches whole words, see below). `--page` / `--all` page
+    /// through the matches.
     #[arg(long)]
     pub filter: Option<String>,
 
@@ -939,7 +946,8 @@ pub struct ResourceListArgs {
     /// A bare field name is resolved to the resource-type's field IRI;
     /// a full IRI (contains `://`) is passed to the server verbatim.
     /// Targets project-defined fields; ascending order only.
-    #[arg(long = "order-by")]
+    /// Cannot be combined with `--filter`.
+    #[arg(long = "order-by", conflicts_with = "filter")]
     pub order_by: Option<String>,
 
     #[command(flatten)]

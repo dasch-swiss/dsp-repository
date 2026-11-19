@@ -2,7 +2,7 @@
 source: tests/resource_list_snapshots.rs
 expression: out
 ---
-resources of type page on api.dasch.swiss (1 of 3 matching "folio 2"):
+resources of type page on api.dasch.swiss with a label matching "folio 2" (1):
 
   Folio 2r  http://rdfh.ch/0803/res-folio-2r
 

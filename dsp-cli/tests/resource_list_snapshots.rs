@@ -3,9 +3,9 @@
 //! Fixture philosophy:
 //! - **Main fixture** (3 resources, incunabula project, Page type): exercises the Option matrix
 //!   (ark_url Some/None, creation_date Some/None). Shared by prose, json, lines, csv, tsv cells.
-//! - **Empty fixture**: zero items, total 0. Prose and json only.
-//! - **Filter fixture**: `filter: Some("folio")` with `total > items.len()` so prose shows "(m of
-//!   total matching …)". Prose only.
+//! - **Empty fixture**: zero items. Prose and json only.
+//! - **Filter fixture**: `filter: Some("folio 2")` with the one matching item, so prose shows the
+//!   "with a label matching …" header. Prose only.
 //! - **`--all` json**: `AllPages { pages_fetched: 2 }` — locks the asymmetric `_meta` shape
 //!   (`pages_fetched` + `may_have_more_results: false`, no `page`).
 //! - **Disclosure variants**: anonymous ("`filter_warning` = Some(anonymous wording)") vs.
@@ -130,38 +130,31 @@ fn main_view() -> ResourceListView {
             "page",
         ),
     ];
-    let total = items.len();
     ResourceListView {
         items,
-        total,
         filter: None,
         resource_type: RESOURCE_TYPE.to_string(),
         pagination: ResourceListPagination::SinglePage { page: 0, may_have_more: false },
     }
 }
 
-/// Empty fixture — zero items, total 0.
+/// Empty fixture — zero items.
 fn empty_view() -> ResourceListView {
     ResourceListView {
         items: vec![],
-        total: 0,
         filter: None,
         resource_type: RESOURCE_TYPE.to_string(),
         pagination: ResourceListPagination::SinglePage { page: 0, may_have_more: false },
     }
 }
 
-/// Filter fixture — 1 of 3 items survives the filter ("folio 2" matches only
-/// `Folio 2r`). Total stays at 3.
+/// Filter fixture — the one item the label search for "folio 2" returns
+/// (`Folio 2r`).
 fn filter_view() -> ResourceListView {
-    let all = main_view().items;
-    let total = 3;
     let filter = "folio 2";
-    let needle = filter.to_lowercase();
-    let items: Vec<ResourceSummary> = all.into_iter().filter(|r| r.label.to_lowercase().contains(&needle)).collect();
+    let items: Vec<ResourceSummary> = main_view().items.into_iter().filter(|r| r.label == "Folio 2r").collect();
     ResourceListView {
         items,
-        total,
         filter: Some(filter.to_string()),
         resource_type: RESOURCE_TYPE.to_string(),
         pagination: ResourceListPagination::SinglePage { page: 0, may_have_more: false },
@@ -170,13 +163,11 @@ fn filter_view() -> ResourceListView {
 
 /// `--all` view — main fixture items with `AllPages { pages_fetched: 2 }`.
 /// Used to lock the asymmetric `_meta` shape: `pages_fetched` + `may_have_more_results: false`,
-/// no `page` key. The items and total are identical to `main_view()`.
+/// no `page` key. The items are identical to `main_view()`.
 fn all_pages_view() -> ResourceListView {
     let items = main_view().items;
-    let total = items.len();
     ResourceListView {
         items,
-        total,
         filter: None,
         resource_type: RESOURCE_TYPE.to_string(),
         pagination: ResourceListPagination::AllPages { pages_fetched: 2 },
@@ -372,9 +363,8 @@ fn resource_list_json_empty() {
 
 // ── filter fixture × prose ────────────────────────────────────────────────────
 
-/// Prose render with an active filter. The main fixture has 3 items; filtering by
-/// "folio 2" yields 1 match (`Folio 2r`). Total stays at 3.
-/// Locks the `(1 of 3 matching "folio 2")` count line.
+/// Prose render with an active filter: one match (`Folio 2r`) for "folio 2".
+/// Locks the `with a label matching "folio 2" (1)` header line.
 #[test]
 fn resource_list_prose_filter() {
     let (buf, w) = shared_buf();
@@ -386,7 +376,6 @@ fn resource_list_prose_filter() {
         out.contains("matching \"folio 2\""),
         "prose filter must contain 'matching \"folio 2\"'; got:\n{out}"
     );
-    assert!(out.contains("of 3"), "prose filter must show 'of 3' total; got:\n{out}");
     assert!(
         out.contains(ANON_FILTER_WARNING),
         "prose filter must contain D3 filter_warning; got:\n{out}"

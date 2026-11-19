@@ -108,7 +108,9 @@ trait Renderer {
 
 List methods take an owned per-noun view struct (e.g. `ProjectListView`) carrying the post-filter
 items, the pre-filter total, and the filter string, rather than a bare slice — this lets prose
-render a "(m of n matching …)" count line without the action layer duplicating that logic. The
+render a "(m of n matching …)" count line without the action layer duplicating that logic.
+`ResourceListView` is the exception: `resource list --filter` runs DSP-API's label search
+(`DspClient::search_resources_by_label`), which reports no total. The
 `_meta` argument (`MetaContext`: server label, auth state, and the optional notes `filter_warning`,
 `count_caveat` and `count_cost`) threads through
 every renderer call; this is the implementation site of dsp-cli/ADR-0007's auth-state disclosure

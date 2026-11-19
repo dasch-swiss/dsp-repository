@@ -13,6 +13,8 @@
 //   DSP_TEST_PROJECT  — project shortcode (e.g. "0803" for incunabula)
 //   DSP_TEST_CLASS_IRI — full class IRI to list resources for
 //                       (e.g. "http://api.dasch.swiss/ontology/0803/incunabula/v2#page")
+//   DSP_TEST_LABEL_SEARCH_PROJECT, DSP_TEST_LABEL_SEARCH_CLASS_IRI — project and class IRI for
+//                       the label-search test; the class needs instances
 //
 // Token supply (optional):
 //   DSP_TOKEN         — bearer token; if set, exercises the authenticated path.
@@ -406,5 +408,70 @@ fn live_resource_list_order_by_acceptance() {
         page.resources.len(),
         order_by_iri,
         page.may_have_more_results
+    );
+}
+
+/// Live round trip for `resource list --filter`: a label taken from page 0 of
+/// the listing, searched by label, finds that same resource.
+///
+/// Reads its own pair, `DSP_TEST_LABEL_SEARCH_PROJECT` and
+/// `DSP_TEST_LABEL_SEARCH_CLASS_IRI`, because it needs a resource-type with
+/// instances. The full label is the term, so every word matches a whole word of
+/// itself.
+#[test]
+#[ignore = "needs a DSP stack; run with just dsp-cli-test-live"]
+fn live_resource_search_by_label_finds_listed_resource() {
+    let Some(server_raw) = require_env("DSP_TEST_SERVER") else {
+        return;
+    };
+    let Some(project) = require_env("DSP_TEST_LABEL_SEARCH_PROJECT") else {
+        return;
+    };
+    let Some(class_iri) = require_env("DSP_TEST_LABEL_SEARCH_CLASS_IRI") else {
+        return;
+    };
+    let cfg = Config::resolve(Some(server_raw.trim()), false)
+        .expect("DSP_TEST_SERVER must be a valid server URL or shortcut");
+    let token: Option<String> = optional_env("DSP_TOKEN");
+    let client = HttpDspClient::new().expect("failed to build HTTP client");
+    let proj = client.resolve_project(&cfg.server, &project).expect("resolve_project failed");
+
+    let page = client
+        .list_resources(&cfg.server, &proj.iri, &class_iri, None, 0, token.as_deref())
+        .expect("list_resources failed");
+    // A plain label (letters, digits, single spaces; at least three characters), so
+    // the outcome does not hinge on how the server treats punctuation.
+    let Some(target) = page.resources.iter().find(|r| {
+        r.label.chars().count() >= 3
+            && r.label.chars().all(|c| c.is_ascii_alphanumeric() || c == ' ')
+            && !r.label.contains("  ")
+            && r.label.trim() == r.label
+    }) else {
+        panic!(
+            "no resource on page 0 of {class_iri} has a label usable as a search term; \
+             point DSP_TEST_LABEL_SEARCH_CLASS_IRI at a resource-type with instances"
+        );
+    };
+    eprintln!("live test: searching by label {:?} (expecting {})", target.label, target.iri);
+
+    let mut found = false;
+    let mut search_page = 0u32;
+    loop {
+        let result = client
+            .search_resources_by_label(&cfg.server, &proj.iri, &class_iri, &target.label, search_page, token.as_deref())
+            .expect("search_resources_by_label failed");
+        found |= result.resources.iter().any(|r| r.iri == target.iri);
+        if found || !result.may_have_more_results || search_page >= 20 {
+            break;
+        }
+        search_page += 1;
+    }
+    assert!(
+        found,
+        "label search for {:?} did not return {} (searched {} page(s)); \
+         if every label search on this stack comes back empty, check the triplestore's label index",
+        target.label,
+        target.iri,
+        search_page + 1
     );
 }

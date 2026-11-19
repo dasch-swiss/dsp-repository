@@ -43,6 +43,24 @@ Add `--count` at steps 3–4 to also fetch instance counts per resource-type (on
 extra HTTP call) — counts are non-deleted but not permission-filtered, so a
 disclosure note is always shown alongside them.
 
+## Find a resource by its label
+
+`resource list --filter` asks the server's label search, so it finds matches
+among all resources of the type, not only the first page:
+
+```
+dsp vre resource list -s prod -p h-steiner --resource-type ContactSheet --filter 0101a_001
+#    → note the resource IRI, then `dsp vre resource describe --resource <IRI>`
+```
+
+The search matches words, not substrings. The label is split at spaces, and
+punctuation stays part of a word. Every word of `--filter` must equal a word
+of the label, and the last one may be its beginning, so `0101a` finds
+`0101a_001` but `a_001` does not. Case and diacritics are ignored, and the
+term needs at least three characters. Matches include resource-types that
+inherit from the given one. `--page` and `--all` page through the matches;
+`--order-by` cannot be combined with `--filter`.
+
 ## See how a data-model hangs together
 
 When you care about the *relationships* between resource-types rather than one

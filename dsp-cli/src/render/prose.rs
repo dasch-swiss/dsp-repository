@@ -620,8 +620,8 @@ impl Renderer for ProseRenderer {
             )?,
             Some(f) => writeln!(
                 self.out,
-                "resources of type {} on {} ({n} of {} matching \"{f}\"):",
-                view.resource_type, meta.server_label, view.total,
+                "resources of type {} on {} with a label matching \"{f}\" ({n}):",
+                view.resource_type, meta.server_label,
             )?,
         }
 
@@ -2249,7 +2249,6 @@ mod tests {
                 last_modified: None,
                 resource_type: "Page".into(),
             }],
-            total: 1,
             filter: None,
             resource_type: "Page".into(),
             pagination: ResourceListPagination::SinglePage { page: 0, may_have_more: false },

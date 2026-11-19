@@ -1,7 +1,7 @@
 ---
 dune_map: true
 schema_version: 2
-date: 2026-11-18
+date: 2026-11-19
 ---
 
 # Architecture Map
@@ -948,7 +948,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `AuthCache`; `~/.config/dsp-cli/update_check.toml` (the update-check cache, dsp-cli/ADR-0015) —
   single writer, the `update` module. Both are written atomically (a temporary file, then a rename).
   It reads `.env` from the current directory and never writes it.
-- **Fingerprint:** `1943ee3d23f6`
+- **Fingerprint:** `8239d8786847`
 
 ### areas/archive (Spycherli)
 

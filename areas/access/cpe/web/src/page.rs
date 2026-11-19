@@ -662,7 +662,7 @@ pub fn render_site_index(
             span class="count" { (index_count_text(projects.len(), lang)) }
         }
         @if projects.is_empty() {
-            p class="resource-list__empty" { (ChromeMsg::SiteIndexNoProjects.text(lang)) }
+            p class="resource-list__empty index-empty" { (ChromeMsg::SiteIndexNoProjects.text(lang)) }
         } @else {
             ul class="project-list" {
                 @for project in projects {

@@ -488,6 +488,12 @@ html[data-align="justify"] .editorial__sections > p {
   padding: 0 var(--gutter) var(--space-3);
   display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-4);
 }
+/* The overview's empty state sits in the head's box, so its text lines up with the heading. */
+.index-empty {
+  max-width: min(var(--shell-max), calc(3 * 25rem + 2 * var(--space-7) + 2 * var(--gutter)));
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
 .index-list-head h2 { font-size: var(--size-5); font-weight: var(--weight-medium); white-space: nowrap; }
 .index-list-head .count { font-family: var(--font-meta); font-size: var(--size-2); color: var(--ink-faint); }
 

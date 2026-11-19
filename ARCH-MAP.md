@@ -246,9 +246,10 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   Depositors edit their projects section by section; RDU creates a project the published set
   does not carry yet, and reviews field by field; approve
   writes an approved record, which the pull-request run publishes as a pull request. The Deposit
-  Area is two capabilities, `identity` and `editor`, under the composition root `deposit-server`
-  (`areas/deposit/server`, below; `areas/deposit/ADR-0004`), with identity's four crates in
-  `areas/deposit/identity` and the area shell in `areas/deposit/shell`.
+  Area is three capabilities, `identity`, `editor` and the VRE bridge, under the composition root
+  `deposit-server` (`areas/deposit/server`, below; `areas/deposit/ADR-0004`), with identity's four crates in
+  `areas/deposit/identity` and the area shell in `areas/deposit/shell`. Not yet in code: the VRE bridge
+  (`areas/deposit/vre-bridge/`, `areas/deposit/ADR-0005`) has no crate (P-DEV-301).
 - **Key entities:** `ProjectDraft`, `ProjectState`, `SubmissionState`, `ReviewState`,
   `FieldReview`, `Decision`, `ProposalDecision`, `EntityProposal`, `Transition`, `PublishedProjects`, `Agents`,
   `EditorRepositories` (behind `EditorState.editor`), `ReviewRoundRepository`, `RecordClassification`, `classify_record`,
@@ -1298,7 +1299,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   an edition project wants a custom one. Its store is a derived read model (ADR-0008), rebuilt from
   empty at project activation from the files its port serves, the project's deposited TOML
   configuration among them. For now it stores no rights and filters on none, a deviation from ADR-0008,
-  ADR-0012 and ADR-0013 that ADR-0009 records and ends when the port carries the VRE's permissions. First
+  ADR-0012 and ADR-0013 that ADR-0009 records and ends when `media`'s port serves the rights the VRE bridge records. First
   projects: eHKKA (083C), then MSSL (086A). It is mounted at `DATEI_BASE` (`/datei`), a project's pages
   under `/datei/<shortcode>`, and keeps its own CSS (ADR-0009).
 - **Key entities:** (design vocabulary, `areas/access/datei/CONTEXT.md`) Presenter, Rebuild, Read
@@ -1326,8 +1327,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   consumer-defined port, no shared shape, and the platform-wide style commitment in `## Conventions`.
   The read model is fed by the port only, the configuration included: nothing under `areas/access/datei/`
   is a configuration, an Edition file, ODD, CSS, driving file or table of contents (ADR-0012). The
-  presenter never writes the read model; it filters on no rights until the port carries the VRE's
-  permissions (ADR-0009's deviation from ADR-0012 and ADR-0013; **review**). A project fails alone (ADR-0007). The incubator renders elements as `<tei-{name}>` and calls its build the Rebuild (**docs-only** until code exists; then
+  presenter never writes the read model; it filters on no rights until `media`'s port serves the
+  rights the VRE bridge records (ADR-0009's deviation from ADR-0012 and ADR-0013; **review**). A project fails alone (ADR-0007). The incubator renders elements as `<tei-{name}>` and calls its build the Rebuild (**docs-only** until code exists; then
   **static-analysis** for one rebuild-from-empty test against a `Fake<Port>`, and **structure** via
   Bazel visibility after ADR-0001).
 - **Durable state:** one read model per project (SQLite), single writer the Rebuild, disposable and
@@ -1345,7 +1346,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   (ADR-0007). It exists at its minimum (DEV-7399): `sync-store` serves the committed snapshot of
   one known project (0803, Incunabula) behind CPE's port, with no Chischtli, replay or bus;
   `access-server` constructs it over `SYNC_DATA_DIR` and hands it to CPE's activation. The committed
-  snapshot is the hand-fed stand-in for the projection stream (ADR-0012). It serves no curation: a project's
+  snapshot is today's hand-fed stand-in for the projection stream; the target stand-in is the VRE bridge's
+  interim snapshots (ADR-0012, `areas/deposit/ADR-0005`). It serves no curation: a project's
   curation is a deposited file, which `media` serves (ADR-0012). Annotations (Regions, LinkObjs) are served as resources
   with their geometry and color verbatim. Each resource's data ARK is derived from its IRI with
   dsp-api's algorithm (`ark.rs`), not read from the file, until DAO carries it; the incubator's
@@ -1376,7 +1378,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   permitted capability-to-capability edge, ADR-0003); chischtli (planned; not in the minimum);
   shared/metadata (expected). Never CPE's or DPE's domain, store or web crates. Third-party:
   `oxttl` (the strict N-Quads parser) and `oxrdf` (its terms), with no triplestore at the
-  minimum; `thiserror`, `tracing`; `tempfile` in tests only
+  minimum; `thiserror`, `tracing`; `tempfile` in tests only; planned: shared/stand-in (the layout and the
+  Ready token's types) and shared/names (ADR-0002; not yet in code, P-DEV-301)
 - **Used by:** areas/access/cpe (through `cpe-ports`; CPE's store is rebuilt from what `sync`
   serves, ADR-0008; the tests of `cpe-store-build` and of `cpe-server` link `sync_store_for_tests`, a `testonly`
   library over the same sources, and read the `data` filegroup, ADR-0008); areas/access/server (constructs `LiveArchiveProjection` over `SYNC_DATA_DIR` and hands it to `Cpe::activate`; the only target `sync_store` grants); later
@@ -1385,7 +1388,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   projection stream (ADR-0003, ADR-0008: the Access bucket is `media`'s channel, and `sync`
   never reads it); serves every resource with its rights attached and never pre-filters for a consumer (ADR-0012, ADR-0013;
   **review**; not yet in code, the port carries no rights); announces a project's new sequence through the port, and until the stream exists owns the
-  operator lever that makes its adapter announce (ADR-0012; not yet in code, DEV-7622); maps its
+  Ready-token poll that makes its adapter announce (ADR-0012; not yet in code, DEV-7622); maps its
   data to each consumer's DTOs, archive-shaped, and holds no presentation remodelling (ADR-0007's guardrail);
   it serves no deposited file, a project's curation included (ADR-0012; **review**); readers reach the projection only through the
   ports it implements, never by opening its store; a reader's tests may build `sync-store`'s adapter,
@@ -1407,7 +1410,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   the commit `PROVENANCE` pins and committed unedited (**review**); `sync-store` only reads them,
   on every call, and holds nothing in between. The test oracle `0803-arks.txt`, **single writer**
   the extraction `PROVENANCE` gives over the incubator's `data.sql`, never generated from `ark.rs`
-  (**review**), is read only by the committed-file tests.
+  (**review**), is read only by the committed-file tests. Target: one directory per project in the
+  `sync` subtree of the stand-in directory, with its Ready token, **single writer** the VRE bridge
+  (`areas/deposit/ADR-0005`); the committed snapshot becomes a test fixture (not yet in code, P-DEV-301).
 - **Fingerprint:** `f3c5a6c89453`
 
 ### areas/access/media
@@ -1444,7 +1449,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   from), `CONTEXT.md` (the file vocabulary under Shared), `areas/access/server/src/serve.rs`
 - **Depends on:** areas/access/cpe (`cpe-ports` only, to implement `DepositedFiles`: the one permitted
   capability-to-capability edge, ADR-0003); third-party `tracing`; planned: vitrinli, areas/access/datei
-  (`datei/ports` only, once it exists), shared/telemetry. Never `sync`'s store, never Chischtli, never a
+  (`datei/ports` only, once it exists), shared/telemetry, shared/stand-in and shared/names (ADR-0002;
+  P-DEV-301). Never `sync`'s store, never Chischtli, never a
   sibling's domain or web crate
 - **Used by:** areas/access/cpe (through `DepositedFiles` in `cpe-ports`; `cpe-server`'s tests link
   `media_store_for_tests`, a `testonly` library, and read the committed data through the `//areas/access/media:data`
@@ -1463,11 +1469,12 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `is_shortcode` and `is_file_name` accept them, and no component below the directory may be a symbolic
   link (**static-analysis**: `media-store`'s tests). It is the Access bucket's only consumer and never reads
   the projection stream (ADR-0003); a bytes port serves every file with its rights attached and never
-  pre-filters (DaTEI's serves none for now, ADR-0009); change reaches a reader only through its port, which `media` announces, and until the bucket
-  exists `media` owns the operator lever (a file watch or an admin endpoint behind a token) that makes its
-  adapter announce; a reader grows no endpoint of its own (ADR-0012; **review**). Not yet in code: rights on
-  the port, the announcement and the lever; until they land, an edit under `MEDIA_DATA_DIR` needs a restart
-  (DEV-7622).
+  pre-filters (DaTEI's serves none for now, ADR-0009); change reaches a reader only through its port, which
+  `media` announces, and until the bucket exists `media` owns the Ready-token poll (a poll of each project's
+  Ready token in its subtree, triggered by the VRE bridge) that makes its adapter announce; a reader grows no
+  endpoint of its own (ADR-0012; **review**). Not yet in code: the announcement and the Ready-token poll;
+  until they land, an edit under `MEDIA_DATA_DIR` needs a restart (DEV-7938). Not yet in code: rights on the
+  port (not scheduled).
 - **Durable state:** the tables that say what is servable and where, **single writer** `media`
   (target design). Until the Access bucket: the hand-fed stand-in directory `areas/access/media/data/`, laid
   out as the bucket will be (`0803/config.kdl`, `curation.csv`, `narrative/`), text in plain git with its
@@ -1478,7 +1485,10 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   the curation file is the only copy of Incunabula's curation; a change is made here and reaches the
   incubator when it re-vendors (**review**). `media-store` reads it on every call and holds nothing in
   between; an edit to the curation file changes the committed-data tests of `cpe-store-build` in the same
-  commit (**review**).
+  commit (**review**). Target: one directory per project in the `media` subtree of the stand-in directory,
+  with its Ready token, **single writer** the VRE bridge; the bridge's shipped inputs are the one
+  authoritative copy of a project's curation, narrative and configuration, and the committed directory
+  becomes a test fixture pinned to them (`areas/deposit/ADR-0005`; not yet in code, P-DEV-301).
 - **Fingerprint:** `02d68646f68e`
 
 ## Conventions
@@ -1494,8 +1504,12 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Areas are bounded contexts (ADR-0002):** the Deposit, Archive and Access Areas integrate
   over the wire, never by Rust import; each service is the sole reader and writer of its
   durable state; cross-area references are opaque identifiers (shortcode, ARK); share
-  concepts (a `shared-*` crate), never shapes. *Enforcement:* **structure** for "never by Rust import"
-  (no `visibility` grant crosses areas, except the corpus `filegroup`); **review** for the rest.
+  concepts (a `shared-*` crate), never shapes. Until the archive exists, two paths cross the areas: the
+  editor's pull requests against `areas/access/dpe/server/data`, and the stand-in directory the VRE bridge
+  writes and `access-server` reads by mount, its one writer the bridge (with the `just check` pin of the 0803
+  `media` fixture). *Enforcement:* **structure** for "never by Rust import" (no `visibility` grant crosses
+  areas, except the corpus `filegroup`) and for the stand-in directory's single writer (the writing code only
+  in `vre-bridge-*`); the read-only mount is deployment-level; **review** for the rest.
 - **One modulith per area (ADR-0003):** one binary per area, composed at `<area>/server` out of
   capabilities that own their tables, collaborate only through consumer-defined `ports` crates
   with `Live<Port>` adapters in the provider's store, reference each other by opaque id, and

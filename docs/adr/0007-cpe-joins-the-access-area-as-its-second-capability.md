@@ -32,14 +32,20 @@ repository. The decision, phrased so a violation is describable in code:
   instance. `cpe-ports` declares what CPE needs from the projection; `sync-store`, beside the data of the
   Access Area's single writer of the projection, implements it, and `FakeArchiveProjection` is the second
   adapter, in CPE's tests. The store is disposable and is rebuilt from what its ports serve; nothing else
-  writes it. `sync` is at its minimum: the committed projection under `SYNC_DATA_DIR`, read from disk, behind
-  the port that Chischtli's projection stream and its replay are to stand behind.
+  writes it. `sync` is at its minimum: the interim snapshots the VRE bridge writes under `SYNC_DATA_DIR`
+  (`areas/deposit/ADR-0005`), one directory per project with its generations and the Ready token that names
+  the current one, read from disk, behind the port
+  that Chischtli's projection stream and its replay are to stand behind.
 - **The port speaks archive-shaped facts as the archive records them** (classes, typed values, links, files,
-  ordered membership), never CPE's presentation model. The facts follow the interim format that `dao-lift`
-  (`dsp-incubator cpe/tools/dao-lift`) produces from a VRE dump, one N-Quads file per project: DAO wherever
-  DAO has decided, with each deviation and its reason listed in `dao-lift`'s `FORMAT.md`. That file stays in
-  the incubator, so the format is visibly neither DAO nor a commitment of this repository, and
-  `areas/access/sync/data/PROVENANCE` pins the `dao-lift` commit whose `FORMAT.md` the committed file follows.
+  ordered membership), never CPE's presentation model. The facts follow the interim format that `dao-lift`,
+  inside the VRE bridge, produces from a VRE dump, one N-Quads file per project: DAO wherever DAO has decided,
+  with each deviation and its reason listed in the interim format's `FORMAT.md`, which lives beside `dao-lift`
+  in the bridge. The format is visibly neither DAO nor a lasting commitment of this repository: it lives in a
+  capability declared temporary, keeps the name "interim format", and its specification lives with its only
+  producer, so the two cannot drift apart. Each project's Ready token names the format version its snapshot
+  follows; `sync-store` reads the current version and the one before, and treats a project whose version it
+  does not read as unavailable. A format bump therefore releases `access-server` first, then `deposit-server`.
+  `sync`'s port serves each project's provenance, from its Ready token, with the project's facts.
   Values are named by their source property, the project property they were recorded under, which is also
   what a project's KDL names. `sync-store` refuses the whole snapshot (`Unavailable`) when the file breaks a
   fact the port serves, and omits only what `FORMAT.md` lets a reader omit and the port does not carry, so CPE
@@ -87,9 +93,10 @@ repository. The decision, phrased so a violation is describable in code:
 - **A project is discovered by its folder's `SHORTCODE`.** Activation refuses a project whose KDL declares
   another shortcode, and one whose shortcode another folder declares too.
 - **The bytes port is built at the minimum ADR-0012 allows.** It serves every file the stand-in holds and
-  refuses none for want of a right; the stand-in holds public files only, and CPE serves every request as the
-  anonymous consumer. Activation runs once per start, so a file edited under `MEDIA_DATA_DIR` reaches CPE only
-  when the Access binary restarts.
+  refuses none for want of a right; the stand-in holds public files only, which the VRE bridge's public guard
+  ensures (`areas/deposit/ADR-0005`), and CPE serves every request as the anonymous consumer. Activation runs for
+  every project at start and again for the one project `sync` or `media` announces when the bridge has replaced it
+  (ADR-0012); a project whose Ready token was removed is no longer presented; the Access binary is never restarted to refresh data.
 - **The project id names a project in CPE**: its URL segment and the key its hook and components are
   registered by. It is neither the project's shortname nor its Shortcode (`incunabula`, not `0803`).
 - **Incunabula is the first project; the incubator's others move in one at a time**, each by the incubator
@@ -161,10 +168,10 @@ repository. The decision, phrased so a violation is describable in code:
   while it is the answer, every path under the base is answered by it. Whether a project's assets keep a path
   under its prefix once `media` serves them is not decided.
 - **The base is the overview of the projects CPE serves.** `/cpe` and `/cpe/` are the same page, and neither
-  redirects to the other. It has one teaser per loaded project that is not hidden
-  (a Hidden project, `areas/access/CONTEXT.md`, is left out), with its title, description, eyebrow, cover
-  image and credit from the project's `site {}` node, each a link to `<base>/<project id>/`, in CPE's bare chrome;
-  with no project loaded it says so and answers 200, and a project that did not activate is not on it.
+  redirects to the other. It has one teaser per loaded project that is not hidden (a Hidden project,
+  `areas/access/CONTEXT.md`, is left out), with its title, description, eyebrow, cover image and credit from
+  the project's `site {}` node, each a link to `<base>/<project id>/`, in CPE's bare chrome; with no project
+  loaded it says so and answers 200, and a project that did not activate is not on it.
   `cpe-web` renders it (`page::render_site_index`) and `cpe-server` routes it. A path under the base that names
   no project is CPE's not-found, which links to the overview.
 - **A link in a project's content that starts with one `/` gets the base in front.** Narrative Markdown and
@@ -188,10 +195,10 @@ repository. The decision, phrased so a violation is describable in code:
   answering, and CPE answers what no route does under it. A router that cannot be
   built with CPE at its base is built without it, with an error that names `CPE_BASE`. A CPE request is traced
   by the binary's layers, under its telemetry identity, in a span named by the route CPE reports
-  (`cpe_server::MatchedRoute`), never by a path. The image carries `sync`'s data, `media`'s stand-in directory
-  and the project folders and sets `SYNC_DATA_DIR`, `MEDIA_DATA_DIR`, `CPE_PROJECTS_DIR` and `CPE_BASE=/cpe`,
-  so an image without a deployment's settings
-  serves CPE; `CPE_PUBLIC_ORIGIN` is the deployment's, and without it CPE takes the origin from each request.
+  (`cpe_server::MatchedRoute`), never by a path. The image carries the project folders only, and sets
+  `CPE_PROJECTS_DIR` and `CPE_BASE=/cpe`; `SYNC_DATA_DIR` and `MEDIA_DATA_DIR` name the subtrees of the mounted
+  stand-in directory (ADR-0002, ADR-0012). `CPE_PUBLIC_ORIGIN` is the deployment's, and without it CPE takes the
+  origin from each request.
   The operating details are in `docs/src/cpe/operations.md` and `ARCH-MAP.md`.
 
 **Persistent identifiers**
@@ -226,7 +233,9 @@ normaliser per process, so it changes when they do).
   the project does, and a project moves in only from an empty diff. A change to a CPE crate is a PR here,
   followed by a pin move in the incubator that vendors the crate back with an empty `just vendor-diff`, also
   while the incubator's own work on that crate is busy. CPE's crates stay copyable: what they depend on inside
-  this repository is a small, known closure.
+  this repository is a small, known closure, `shared-names` (ADR-0002) among it, since `cpe-ports` takes
+  `is_shortcode` and `is_file_name` from it, and `shared-stand-in` through `sync-store`, which reads the Ready
+  tokens.
 - **No second engine is maintained.** The vendored copy takes the place of the prototype's own engine in the
   incubator.
 
@@ -290,8 +299,14 @@ normaliser per process, so it changes when they do).
   cpe/store-build/tests/it/fresh.rs`) fails until then.
 - `sync` is the first Access-Area capability without a screen.
 
-Not yet in code: `sync` serves the committed projection from disk, not Chischtli's projection stream or its
-replay (not scheduled).
+Not yet in code: `sync` serves an on-disk snapshot, not Chischtli's projection stream or its replay (not
+scheduled).
+Not yet in code: `sync` reads one committed file, `areas/access/sync/data/0803.nq`, known by the constant
+`KNOWN` and pinned by `data/PROVENANCE` to an incubator commit of `dao-lift`, not per-project directories known
+by Ready token with the format version in the token (P-DEV-301).
+Not yet in code: `dao-lift` and `FORMAT.md` are in the incubator, not in the VRE bridge (P-DEV-301).
+Not yet in code: the image carries `sync`'s data and `media`'s stand-in directory and sets `SYNC_DATA_DIR` and
+`MEDIA_DATA_DIR` to them, rather than naming mounted subtrees (DEV-7514).
 Not yet in code: the projection follows `dao-lift`'s interim format, not published DAO; value order and text
 language are raised upstream, the other deviations are not scheduled (DEV-7445).
 Not yet in code: a project's `assets/` are in its folder of `CPE_PROJECTS_DIR`, read at activation and
@@ -301,8 +316,9 @@ Access Area's `media` over Vitrinli (not scheduled).
 Not yet in code: the bytes port and the port against `sync` serve no rights, and CPE's store and presenter
 neither store nor filter on them; the target is each file and resource with its rights attached and CPE
 deciding at request time (ADR-0012, ADR-0013; not scheduled).
-Not yet in code: neither port announces change, and CPE does not rebuild the one project a port names; the
-target is `media` and `sync` owning the trigger (ADR-0012, DEV-7622).
+Not yet in code: `sync` announces no project whose Ready token changed, and CPE does not rebuild the one
+project a port names (ADR-0012, DEV-7622).
+Not yet in code: `media` announces no project whose Ready token changed (ADR-0012, DEV-7938).
 Not yet in code: CPE serves Incunabula alone; the incubator's `alice-in-daschland` and `hdm` have not moved in
 (not scheduled).
 Not yet in code: `access-server validate` checks DPE's data only and fails on no CPE project, and the page of an
@@ -314,6 +330,10 @@ scheduled).
 Not yet in code: `dsp-incubator/cpe` keeps its own engine (`engine/`, `store/`, `store-build/`, `web/`, `bin/`)
 and vendors only `cpe-components`, `cpe-core`, `cpe-image-viewer`, `cpe-ports` and `sync-store`, not
 `shared-datastar`, which `cpe-components` depends on (DEV-7408).
+Not yet in code: `shared-names` does not exist and the name rules are in `cpe-ports` (P-DEV-301).
+Not yet in code: `sync-store` reads one format version and its port serves no provenance (P-DEV-301).
+Not yet in code: no test of `access-server`'s image holds that it carries no data subtree of `sync` or `media`
+(DEV-7514).
 
 Enforced by: Bazel `visibility` per ADR-0001 for the seam, CPE's crates by their roles and the composition
 root's dependencies (**structure**); `check-capability-deps.sh`, run by `just check`, for the third-party bans
@@ -333,5 +353,4 @@ block. **Review** — the port speaking archive-shaped facts; a URL being built 
 how the overview looks and what the pages' scripts do in a browser, checked by hand on a preview; a change to
 how ARKs resolve or to what CPE emits as `cite-as`; a project moving in only from an empty diff against the
 incubator's copy; the incubator's regeneration of its `data.sql`; that a project's `assets/` are the one
-input consumed at activation; that the image carries `sync`'s data, `media`'s stand-in directory and the
-project folders and sets the variables that name them, which no job checks.
+input consumed at activation; that `access-server`'s image carries no data subtree of `sync` or `media`.

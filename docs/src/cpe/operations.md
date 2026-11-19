@@ -15,8 +15,8 @@ to CPE.
   written to disk, and a restart leaves nothing behind.
 - **Refresh**: for now, a restart. A file edited under `MEDIA_DATA_DIR` or `SYNC_DATA_DIR` reaches CPE only
   when `access-server` restarts, since activation runs once. Not yet in code: the ports announce change, `sync`
-  and `media` each with an operator lever that makes its adapter announce, and CPE rebuilds the one project
-  named, with no endpoint of its own (ADR-0012, DEV-7622).
+  (DEV-7622) and `media` (DEV-7938) each with a Ready-token poll that makes its adapter announce, and CPE
+  rebuilds the one project named, with no endpoint of its own (ADR-0012).
 - **Static files**: CPE's stylesheets, scripts and logos are compiled into the binary and served at
   `/cpe/<project id>/_static/…`, and at `/cpe/_static/…` for the overview and CPE's not-found page; a
   project's own files at `/cpe/<project id>/_assets/…`.

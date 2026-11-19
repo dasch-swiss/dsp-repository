@@ -1586,5 +1586,5 @@ Not code components; they span the repo and are staleness-exempt here:
 - **Documentation:** `docs/**` (the mdBook under `docs/src/`, ADRs under `docs/adr/`), an area's decision records under `areas/<area>/docs/adr/` (`areas/deposit/docs/**` today),
   `README.md`, `CLAUDE.md`, `CONVENTIONS.md`, `REVIEW.md`, `CHANGELOG.md`, `LICENSE`,
   `CONTEXT.md`, `ARCH-MAP.md`, `shared/README.md`
-- **Agent configuration:** `.claude/**` (settings, the `add-mosaic-component` skill), `eng.yaml`
+- **Agent configuration:** `.claude/**` (settings, the `add-mosaic-component` skill, the comment rule in `rules/comments.md`), `eng.yaml`
 - **Data tooling:** `scripts/**` — the Python scripts that write DPE's lookup tables and the editor's bundled vocabularies (`core/data/*.json`)

@@ -258,25 +258,26 @@ write. Mocks are local to each action file rather than shared — see <code>dsp-
 non-obvious constraints for why.</li>
 <li><strong>Snapshot tests</strong> — via the <code>insta</code> crate, in <code>tests/</code>. One snapshot per (noun, verb, format)
 cell with meaningful output. Captures prose / json / csv / tsv / lines exactly. The default way
-to verify output shape; run <code>just dsp-cli-snap-review</code> (<code>cargo insta review</code>) to accept or
-reject a diff.</li>
+to verify output shape; a changed snapshot fails its test, <code>just snap-accept //dsp-cli:&lt;file stem&gt;_test</code> rewrites it from the checkout, and <code>git diff</code> is where a diff is accepted or
+rejected.</li>
 <li><strong>Wiremock client tests</strong> — small, focused on HTTP/serialization correctness: request shape,
 header propagation, response deserialization, retry/error paths. Fixtures are hybrid:
 hand-written for the "what we care about" happy paths, recorded from real DSP-API responses for
 regression cases where dsp-cli's view was wrong.</li>
-<li><strong>Live tests</strong> — <code>tests/live_*.rs</code>, behind the <code>live</code> cargo feature; not in the default suite.
+<li><strong>Live tests</strong> — <code>tests/live_*.rs</code>, built with the <code>live</code> feature as <code>manual</code> Bazel targets; not in the default suite.
 Hit a DSP environment: a developer-selected one locally (via env vars), or the drift job's pinned
 stack in CI. Smoke-check end-to-end integration before significant changes.</li>
 </ol>
 <p><code>just test</code> runs layers 1-4 (the cheap suite CI runs). <code>just dsp-cli-test-live</code> runs layer 5.</p>
 <h2 id="live-tests-are-always-ignored"><a class="header" href="#live-tests-are-always-ignored">Live tests are always <code>#[ignore]</code>d</a></h2>
-<p>Every <code>#[test]</code> in <code>dsp-cli/tests/live_*.rs</code> also carries <code>#[ignore]</code>, so a plain
-<code>cargo test</code>/<code>cargo nextest run</code> never attempts a live call — the tests need a reachable DSP stack,
+<p>Every <code>#[test]</code> in <code>dsp-cli/tests/live_*.rs</code> also carries <code>#[ignore]</code>, so a test run that builds
+them without <code>--ignored</code> never attempts a live call — the tests need a reachable DSP stack,
 and without <code>#[ignore]</code> they would otherwise run and pass vacuously via their own early-return skip
 under CI. <code>.github/scripts/check-live-tests-ignored.sh</code>, run by <code>just check</code>, enforces this: it
 scans every <code>dsp-cli/tests/live_*.rs</code> file and fails if any <code>#[test]</code> lacks a matching <code>#[ignore]</code>.
-Run live tests explicitly with <code>just dsp-cli-test-live</code>, which passes <code>--features live</code> and
-<code>--ignored</code> (or the equivalent) so the ignored tests actually execute.</p>
+Run live tests explicitly with <code>just dsp-cli-test-live</code>: their Bazel targets build with the <code>live</code>
+feature and pass <code>--ignored</code>, so the ignored tests actually execute, and the recipe passes the
+<code>DSP_TEST_*</code> variables and <code>DSP_TOKEN</code> through by name.</p>
 <h2 id="live-test-environment-variables"><a class="header" href="#live-test-environment-variables">Live-test environment variables</a></h2>
 <p>Live tests skip automatically when a required variable is unset — they never fail for missing
 config, only report why they were skipped. Each live-test file documents its own required

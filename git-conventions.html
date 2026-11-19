@@ -302,7 +302,7 @@ both bump the minor, and the version would carry no signal about breakage.</p>
 <p><code>revert</code>, <code>style</code>, and <code>ci</code> are <strong>not</strong> valid types — the commit-lint gate rejects them, and release-please hides them if one ever slips onto <code>main</code>.</p>
 <ul>
 <li><strong>CI/build automation</strong> → <code>chore(ci): ...</code> (lands in Miscellaneous Chores). A dedicated Continuous Integration changelog section is noise; it belongs under maintenance. Note that <code>ci</code> remains a valid <em>scope</em>, just not a type.</li>
-<li><strong>Formatting-only changes</strong> → fold into the functional commit, or <code>chore(&lt;scope&gt;): ...</code>. <code>cargo fmt</code> and <code>maudfmt</code> are enforced gates, so a standalone formatting commit should be rare.</li>
+<li><strong>Formatting-only changes</strong> → fold into the functional commit, or <code>chore(&lt;scope&gt;): ...</code>. <code>rustfmt</code> and <code>maudfmt</code> are enforced gates, so a standalone formatting commit should be rare.</li>
 <li><strong>Reverts</strong> → <code>fix(&lt;scope&gt;): revert ...</code> or <code>chore(&lt;scope&gt;): revert ...</code> depending on whether it corrects released behavior. (release-please's built-in revert auto-negation no longer applies; reverts are rare and handled by hand.)</li>
 </ul>
 <h3 id="what-fix-means"><a class="header" href="#what-fix-means">What <code>fix:</code> means</a></h3>
@@ -330,7 +330,7 @@ both bump the minor, and the version would carry no signal about breakage.</p>
 <li><strong>Concern over location.</strong> Scope by the responsibility a change serves, not the enclosing directory. Documentation <em>about</em> a crate takes that crate's scope (<code>docs(dpe-api-oai): ...</code>); only repo-level docs take <code>docs</code>.</li>
 <li>A test <em>about</em> a specific concern takes that concern's scope (<code>test(dpe-core): ...</code>) — the <code>test</code> type already says it is a test.</li>
 <li><strong>No catch-all.</strong> There is no <code>repo</code>/<code>all</code> scope. If none of the enumerated scopes genuinely fits, ask the maintainer before inventing one.</li>
-<li><strong>Keep <code>dsp-cli</code> commits under <code>dsp-cli/**</code> where possible.</strong> release-please attributes a commit to a package by which paths it touches, not by its commit scope — a <code>dsp-cli</code>-scoped commit that also edits a root file (e.g. <code>Cargo.lock</code>) lands in the root release too. See <a href="./deployment.html#dsp-cli">Release Please</a> for the double-bump rule this causes.</li>
+<li><strong>Keep <code>dsp-cli</code> commits under <code>dsp-cli/**</code> where possible.</strong> release-please attributes a commit to a package by which paths it touches, not by its commit scope — a <code>dsp-cli</code>-scoped commit that also edits a root file (e.g. <code>MODULE.bazel</code>) lands in the root release too. See <a href="./deployment.html#dsp-cli">Release Please</a> for the double-bump rule this causes.</li>
 </ul>
 <p>The gate enforces only that a scope is <em>present</em> — it does not restrict which one, so adding a crate needs no config change. The list above is the advisory vocabulary; keep to it.</p>
 <h2 id="enforcement"><a class="header" href="#enforcement">Enforcement</a></h2>

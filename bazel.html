@@ -1,0 +1,380 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Building with Bazel - DSP-Repository Developer Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "searchindex.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">DSP-Repository Developer Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
+<h1 id="building-with-bazel"><a class="header" href="#building-with-bazel">Building with Bazel</a></h1>
+<p>Bazel builds and tests every crate, the stylesheets, the fuzz targets and the images (ADR-0001). Every <code>just</code> recipe and every CI job uses it: <code>check</code> runs <code>just check</code>, which ends with clippy over every target, and <code>test / ubuntu / stable</code> runs <code>just test</code>, then <code>just image-smoke</code>.</p>
+<p>The pins are those of Sipi: Bazel in <code>.bazelversion</code>, the rulesets and the Rust version in <code>MODULE.bazel</code>. The C and C++ toolchain is hermetic (<code>llvm</code>, zero-sysroot): it fetches the macOS SDK itself and builds the Linux libc runtimes from source, so no Xcode and no host compiler is used for compiling.</p>
+<h2 id="dsp-clis-cargo-manifest"><a class="header" href="#dsp-clis-cargo-manifest">dsp-cli's Cargo manifest</a></h2>
+<p><code>dsp-cli</code> publishes to crates.io, so <code>dsp-cli/Cargo.toml</code> and <code>dsp-cli/Cargo.lock</code> stay: a standalone manifest, the only one in the tree. Bazel does not read them. Its dependency list therefore exists twice, and a change to it is made on both sides:</p>
+<ul>
+<li>A dependency of <code>dsp-cli</code> added, removed or changed in <code>dsp-cli/Cargo.toml</code> is also changed in <code>MODULE.bazel</code> and in <code>dsp-cli/BUILD.bazel</code>, followed by <code>just repin</code>. To keep the published crate on the versions Bazel tests, move it in the crate's lock too: <code>cargo update -p &lt;crate&gt; --manifest-path dsp-cli/Cargo.toml</code>.</li>
+<li>A Dependabot security update bumps <code>dsp-cli/Cargo.lock</code> alone. Add the matching <code>just repin &lt;crate&gt;</code> to its branch, or close it and make the bump by hand.</li>
+</ul>
+<p>CI's <code>check / publish-dry-run / stable</code> runs <code>cargo publish --dry-run --locked</code> and <code>cargo test --locked</code> against that manifest: a feature missing from it, such as <code>serde_json</code>'s <code>preserve_order</code>, still compiles, and only the tests notice. Version drift between the two locks within semver ranges is not checked.</p>
+<h2 id="commands"><a class="header" href="#commands">Commands</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Recipe</th><th>What it runs</th></tr></thead><tbody>
+<tr><td><code>just build</code></td><td><code>bazel build //...</code></td></tr>
+<tr><td><code>just test</code></td><td><code>bazel test //...</code>, then the gate scripts' tests</td></tr>
+<tr><td><code>just check</code></td><td>the gate scripts, <code>just</code>, <code>maudfmt</code> and pinned nightly <code>rustfmt</code> formatting, and clippy over every target, tests and the <code>manual</code> dsp-cli live targets included, with <code>-Dwarnings</code></td></tr>
+<tr><td><code>just fmt</code></td><td><code>maudfmt</code>, then the pinned nightly <code>rustfmt</code> (<code>$RUSTFMT</code>, else rustup's), edition 2024 for dsp-cli and 2021 for the rest</td></tr>
+<tr><td><code>just run</code>, <code>just validate-data</code>, <code>just dsp-cli-run</code></td><td><code>bazel run --run_in_cwd</code>, so the binary runs from the repository root</td></tr>
+<tr><td><code>just css</code>, <code>css-release</code>, <code>css-editor</code>, <code>css-editor-release</code>, <code>css-mosaic</code></td><td>builds a stylesheet target and copies it into the application's <code>public/assets/</code></td></tr>
+<tr><td><code>just dev</code>, <code>dev-otel</code>, <code>dev-editor</code>, <code>dev-editor-otel</code>, <code>watch-mosaic-playground</code></td><td>Tailwind <code>--watch</code> with the Bazel-pinned CLI, and bacon restarting the server's binary</td></tr>
+<tr><td><code>just repin [crate]</code></td><td>re-resolves the crate universe and refreshes <code>Cargo.Bazel.lock</code> and <code>MODULE.bazel.lock</code></td></tr>
+<tr><td><code>just audit</code></td><td><code>cargo-audit</code> and <code>osv-scanner</code> over <code>Cargo.Bazel.lock</code> and <code>dsp-cli/Cargo.lock</code></td></tr>
+<tr><td><code>just rust-project</code></td><td>writes <code>rust-project.json</code> for rust-analyzer</td></tr>
+<tr><td><code>just snap-accept &lt;target&gt;</code></td><td>runs one test target from the checkout with <code>INSTA_UPDATE=always</code>, so <code>insta</code> rewrites the snapshots that changed</td></tr>
+<tr><td><code>just dsp-cli-test-live</code></td><td>the <code>dsp-cli</code> live tests against a DSP stack, with the <code>DSP_TEST_*</code> variables and <code>DSP_TOKEN</code> passed through</td></tr>
+<tr><td><code>just canonicalize-projects</code></td><td>runs the editor's canonical round-trip test from the checkout with <code>CANONICALIZE_PROJECT_FILES=1</code>, so it rewrites the committed project files</td></tr>
+<tr><td><code>just build-docker-dpe</code>, <code>build-docker-editor</code>, <code>build-docker-mosaic-playground</code></td><td>builds an image and loads it into Docker as <code>local-scan/&lt;name&gt;:latest</code>; <code>just run-docker-*</code> runs it</td></tr>
+<tr><td><code>just bazel-docker-push &lt;target&gt; [flags] -- --tag &lt;tag&gt; [--repository &lt;repository&gt;]</code></td><td>builds an image and pushes it with its <code>:image_push</code> target; CI only (<code>docker-publish</code> action)</td></tr>
+<tr><td><code>just image-smoke</code></td><td>loads the three images, starts each, and expects 200 from <code>/healthz</code> (the playground: <code>/</code>) and exit 0 from the <code>healthcheck</code> subcommand</td></tr>
+<tr><td><code>just build-fuzz</code></td><td>the libFuzzer binaries of the DPE fuzz targets, <code>--config=fuzz</code></td></tr>
+<tr><td><code>just test-a11y-dpe</code>, <code>test-e2e-editor</code>, <code>test-a11y-editor</code></td><td>builds the server with <code>--config=release</code> for this machine and the release stylesheet, then runs the Playwright suite with the binary's path in <code>ACCESS_SERVER_BIN</code> or <code>DEPOSIT_SERVER_BIN</code></td></tr>
+<tr><td><code>just clean</code></td><td><code>bazel clean</code></td></tr>
+</tbody></table>
+</div>
+<p>A recipe that takes <code>FLAGS</code> passes them to Bazel, as CI passes <code>--config=ci</code> and the remote flags, for example <code>just test --test_output=errors</code>. A single package is plain Bazel: <code>bazel test //shared/telemetry/...</code>.</p>
+<p><code>bazel</code> is the Bazelisk command (<code>brew install bazelisk</code>, or the Nix dev shell). A first build fetches the toolchains and compiles the third-party crates, and takes several minutes; later builds are incremental.</p>
+<h2 id="adding-a-crate-or-a-dependency"><a class="header" href="#adding-a-crate-or-a-dependency">Adding a crate or a dependency</a></h2>
+<p>Third-party crates are declared once, in <code>MODULE.bazel</code>, as <code>crate.spec</code> lines with the union of the features every first-party crate needs. Targets name them as <code>@crates//:&lt;name&gt;</code>. To add one:</p>
+<ol>
+<li>Add the <code>crate.spec</code> (for <code>dsp-cli</code>, also the dependency in <code>dsp-cli/Cargo.toml</code>).</li>
+<li>Run <code>just repin</code>. It resolves the new spec and leaves every other locked version where it is. <code>just repin &lt;crate&gt;</code> moves one crate, which is how a transitive crate gets a security bump.</li>
+<li>Add <code>@crates//:&lt;name&gt;</code> to the <code>deps</code> of the targets that use it.</li>
+</ol>
+<p>New source files need no BUILD edit (<code>srcs</code> is a glob), but a new file a crate reads with <code>include_str!</code> or at run time goes into <code>compile_data</code> or <code>data</code>.</p>
+<p>A first-party crate's <code>BUILD.bazel</code> is hand-written: <code>rust_library</code>, <code>rust_test</code> and, for integration tests, <code>rust_test_suite</code>, with <code>crate_name</code> always Cargo's name. A target is visible only to the packages listed in its <code>visibility</code>; a new dependency edge between first-party crates is one line there, in the provider's BUILD file. No first-party target is public.</p>
+<p>Never run <code>bazel mod tidy</code>, also when Bazel's output suggests it: it removes <code>use_repo</code> lines the <code>llvm</code> extension needs. <code>MODULE.bazel.lock</code> and <code>Cargo.Bazel.lock</code> are regenerated (<code>just repin</code>), never merged by hand; after a rebase conflict, take <code>main</code>'s side and repin.</p>
+<p>CI runs with <code>--config=ci</code>, which sets <code>--lockfile_mode=error</code>: a <code>MODULE.bazel</code> change without the matching <code>MODULE.bazel.lock</code> fails.</p>
+<h2 id="tests-and-the-files-they-read"><a class="header" href="#tests-and-the-files-they-read">Tests and the files they read</a></h2>
+<p>A test runs from its runfiles tree, where every file it declares in <code>data</code> is a symbolic link into the checkout. A target whose sources use <code>env!("CARGO_MANIFEST_DIR")</code> sets <code>rustc_env = {"CARGO_MANIFEST_DIR": "&lt;package path&gt;"}</code>: the relative path resolves from the runfiles root. Two consequences:</p>
+<ul>
+<li>A test that refuses symbolic links, as CPE's project discovery does, reads a <code>copy_to_directory</code> of its files with <code>root_paths = []</code>, which keeps their repository paths, and is tagged <code>no-sandbox</code>, because the local sandbox links each copied file again. <code>CARGO_MANIFEST_DIR</code> then points into the copy (<code>cpe-server</code>, <code>cpe-web</code>, <code>access-server</code>).</li>
+<li><code>figment::Jail</code> moves the whole process into a temporary directory while a config test runs, and a relative path read by a test on another thread fails. A test target whose crate uses <code>Jail</code> sets <code>env = {"RUST_TEST_THREADS": "1"}</code>.</li>
+</ul>
+<p>Snapshots are <code>data</code> of their test target. <code>just snap-accept &lt;target&gt;</code> accepts changed ones; review them with <code>git diff</code>.</p>
+<p><code>rust_test_suite</code> names each test crate <code>&lt;suite&gt;_&lt;file&gt;_test</code>, and <code>insta</code> names a snapshot after the crate, so integration tests with snapshots are one <code>rust_test</code> per file with <code>crate_name</code> set to the file stem instead (<code>dsp-cli</code>). <code>rules_rust</code> does not set <code>CARGO_BIN_EXE_&lt;name&gt;</code>: a test that runs a binary of its package sets it with <code>rustc_env = {"CARGO_BIN_EXE_dsp": "$(rootpath :dsp)"}</code> and the binary in <code>data</code>, and makes the runfiles-relative path absolute before use.</p>
+<p>Bazel runs no doctests: <code>rust_doc_test</code> cannot link against the hermetic toolchain. A doctest is an <code>ignore</code> block, and a unit test carries its assertion.</p>
+<p>A test whose result depends on something outside its inputs, as the <code>dsp-cli</code> live tests depend on the running DSP stack, is tagged <code>external</code>, so Bazel never reuses its result, and <code>no-remote-cache</code> when its environment holds a secret.</p>
+<p>A crate with the <code>test-support</code> feature (the Deposit Area's <code>ports</code>, <code>store</code> and <code>web</code> crates) has a second library, <code>&lt;name&gt;_test_support</code>, built with the feature and marked <code>testonly</code>, so its fixtures cannot reach a production binary. It is a library, not an <code>alias</code> marked <code>testonly</code>: Bazel checks the flag on the target an alias resolves to, so production targets could still depend on the alias. Inside a test's graph every crate that has such a variant uses it, or two builds of one crate meet in a compile; a crate whose tests take a sibling's fixtures therefore runs them on its own variant (<code>rust_test(crate = ":editor_web_test_support")</code>).</p>
+<h2 id="stylesheets"><a class="header" href="#stylesheets">Stylesheets</a></h2>
+<p>Each application's stylesheet is a build action: <code>//areas/access/dpe:css</code>, <code>//areas/deposit/editor:css</code> and <code>//modules/mosaic/playground:css</code>, a <code>tailwind_css</code> rule (<code>tools/tailwind/defs.bzl</code>) running the Tailwind standalone CLI. The DPE and editor stylesheets are directories holding <code>app.&lt;hash8&gt;.css</code>, as <code>just css-release</code> and <code>just css-editor-release</code> write them; the playground's is <code>app.css</code>. Their output is byte-identical to the <code>just css*</code> recipes' at the same commit.</p>
+<p>The entry files import <code>tailwindcss</code> with <code>source(none)</code>, so Tailwind reads only the files the target lists, and a class used in a file it does not list is silently missing from the stylesheet. Each scanned crate exports its <code>.rs</code> files as <code>tailwind_sources</code>, a glob over the whole package, tests included; a nested package exports its own. An <code>@source</code> line added to an entry file needs its files added to <code>srcs</code> of <code>:css</code> in the same edit: the dev loop's Tailwind watches the checkout and still shows the classes, the image does not. The entry files say so at their <code>@source</code> lines.</p>
+<p>The CLI is pinned once, by the four <code>http_file</code>s in <code>MODULE.bazel</code>, one per platform, each with its <code>sha256</code>; <code>//tools/tailwind</code> picks the one for the machine that runs the action. The dev recipes' <code>--watch</code> runs the same binary, so the watch and the build cannot use different versions. A Tailwind bump edits the four URLs and hashes together. With the recipes building through Bazel, a new <code>@source</code> line whose files are missing from <code>:css</code> shows in the dev loop, which scans the checkout, and not in the release stylesheet or the image.</p>
+<h2 id="images"><a class="header" href="#images">Images</a></h2>
+<p><code>//areas/access/server:image</code>, <code>//areas/deposit/server:image</code> and <code>//modules/mosaic/playground:image</code> are the DPE, editor and Mosaic playground images: a static musl binary, built for <code>//platforms:linux_x86_64_musl</code> through a transition, on distroless <code>static-debian12:nonroot</code>, pinned by digest in <code>MODULE.bazel</code>. Layers are built by <code>tar.bzl</code> (<code>tools/image/defs.bzl</code>): the binary, the public directory with the stylesheet, and the data directories, each entry owned by root with a fixed modification time. Environment, entrypoint, command, port and working directory are set on <code>app_image</code> in each BUILD file; an OCI image has no <code>HEALTHCHECK</code>, and both servers keep their <code>healthcheck</code> subcommand.</p>
+<p>Each image has <code>:image_load</code>, which loads it into Docker as the tag the Scout workflow scans, and <code>:image_push</code>, which pushes to Docker Hub with the tags passed after <code>--</code>, or to the repository <code>--repository</code> names (<code>just bazel-docker-push //areas/access/server:image_push -- --tag &lt;tag&gt;</code>). Both are <code>manual</code>, so <code>//...</code> does not build images. The image recipes add <code>--config=release</code>, the profile the published binaries are built with, and <code>--stamp</code> for the editor's footer version. These images are what CI publishes, deploys as previews and scans (<a href="./deployment.html#reusable-actions">Deployment</a>).</p>
+<p>The images are <code>linux/amd64</code> only; on an arm64 Mac, Docker runs them emulated.</p>
+<h2 id="fuzz-targets"><a class="header" href="#fuzz-targets">Fuzz targets</a></h2>
+<p><code>//areas/access/dpe/server/fuzz</code> holds the five DPE fuzz targets as <code>cc_fuzz_test</code> (<code>rules_fuzzing</code>), after Sipi's: <code>fuzz_target.cc</code> is libFuzzer's entry point and calls <code>dpe_fuzz_entry</code>, which each target's <code>rust_static_library</code> shim in <code>shims/</code> defines. Without <code>--config=fuzz</code> the engine is <code>replay</code>, which needs no libFuzzer runtime, so <code>bazel test //...</code> builds and runs the five targets on every platform; with no corpus checked in, that run checks that they build and link. <code>--config=fuzz</code> (<code>.bazelrc</code>) switches to libFuzzer, builds with <code>-c opt</code> and instruments the Rust crates with SanitizerCoverage on stable Rust, with debug assertions and overflow checks on.</p>
+<p><code>just build-fuzz</code> builds <code>&lt;target&gt;_bin</code> for each and prints the binaries' paths under <code>bazel-out/</code> (not <code>bazel-bin/</code>, which follows whichever configuration was built last). Run a binary directly with a corpus directory, not through <code>bazel run</code>, whose sandbox discards the corpus the run grows:</p>
+<pre><code class="language-bash">just build-fuzz
+&lt;printed path of tab_validation_bin&gt; areas/access/dpe/server/fuzz/corpus/tab_validation \
+  -artifact_prefix=areas/access/dpe/server/fuzz/artifacts/ -max_total_time=60 -max_len=4096
+</code></pre>
+<p><code>-artifact_prefix</code> keeps a crashing input out of the repository root: libFuzzer writes it as <code>crash-&lt;sha1&gt;</code> to that directory, which must exist. <code>corpus/</code> and <code>artifacts/</code> are git-ignored. The nightly <code>fuzz.yml</code> builds the binaries with <code>just build-fuzz</code> and runs each with its cached corpus, writing a crash to <code>artifacts/&lt;target&gt;/</code>.</p>
+<h2 id="version-stamping"><a class="header" href="#version-stamping">Version stamping</a></h2>
+<p><code>deposit-shell</code>'s footer shows <code>DEPOSIT_VERSION</code>. A build with <code>--stamp</code> takes it from <code>tools/workspace_status.sh</code>, which reads the <code>DEPOSIT_VERSION</code> environment variable (<code>DEPOSIT_VERSION=v1.2.3 bazel build --stamp //areas/deposit/server:deposit_server</code>) and emits <code>dev</code> when it is unset. A build without <code>--stamp</code>, every test build included, shows <code>dev</code>, so a new commit relinks no test.</p>
+<h2 id="remote-cache-and-execution"><a class="header" href="#remote-cache-and-execution">Remote cache and execution</a></h2>
+<p>In CI, the <code>bazel-setup</code> action adds the remote cache and executor flags for DaSCH's NativeLink endpoint. Without the secrets (a pull request from a fork, Dependabot) the flags are empty and the build runs cold and local. So does every pull request while the endpoint is down. Pull requests write to the same cache instance as <code>main</code>, and a pull request's workflow holds the client certificate, so it can write any result. A build that publishes an image therefore takes no action result from the cache: the <code>docker-publish</code> action adds <code>--noremote_accept_cached</code>, Bazel sends <code>skip_cache_lookup</code>, and NativeLink neither reads the cache for the action nor joins a run of the same action already in flight, so every action runs again on the executor. The executors themselves are shared: a pull request's actions run on the same workers. Only a pull request's own preview takes cached results. The action also builds before it logs in to Docker Hub, so the build's code never runs beside the token. The <code>check</code> and <code>test / ubuntu / stable</code> timeouts are twice the slowest warm run of their Bazel steps; a cold run (a fork, Dependabot, the endpoint down) takes longer.</p>
+<h2 id="ide-setup"><a class="header" href="#ide-setup">IDE setup</a></h2>
+<p>rust-analyzer reads <code>rust-project.json</code>, which <code>just rust-project</code> generates from the Bazel graph (git-ignored, it holds absolute paths). Re-run it after adding or moving a target. Under <code>dsp-cli/</code>, rust-analyzer finds <code>dsp-cli/Cargo.toml</code> first and uses it unless <code>rust-analyzer.linkedProjects</code> points at <code>rust-project.json</code>.</p>
+<h2 id="personal-settings"><a class="header" href="#personal-settings">Personal settings</a></h2>
+<p><code>user.bazelrc</code> at the repository root is read if it exists and is git-ignored, for flags such as <code>--disk_cache=~/.cache/bazel-disk</code>.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="repo_structure.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="decisions.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="repo_structure.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="decisions.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="mermaid.min.js"></script>
+        <script src="mermaid-init.js"></script>
+
+
+
+    </div>
+    </body>
+</html>

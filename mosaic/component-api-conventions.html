@@ -364,7 +364,7 @@ per-component code.</p>
 <h2 id="inlining-content-at-call-sites"><a class="header" href="#inlining-content-at-call-sites">Inlining content at call sites</a></h2>
 <p>Because a container takes its content as an <strong>argument</strong> (Maud has no child-block
 syntax for functions), a multi-element <code>html!</code> block passed <em>inline</em> into the call
-is skipped by <code>maudfmt</code> and then mangled by <code>cargo fmt</code>. Bind it to a Rust <code>let</code>
+is skipped by <code>maudfmt</code> and then mangled by <code>rustfmt</code>. Bind it to a Rust <code>let</code>
 first, or extract a <code>fn -&gt; Markup</code> helper:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {

@@ -259,17 +259,17 @@ each image — the full inventory of OS packages, libraries, and application
 dependencies — and matches them against vulnerability databases.</p>
 <h3 id="what-gets-scanned"><a class="header" href="#what-gets-scanned">What Gets Scanned</a></h3>
 <div class="table-wrapper"><table><thead><tr><th>Image</th><th>Workflow</th><th>Trigger</th></tr></thead><tbody>
-<tr><td>DPE (<code>daschswiss/dpe</code>)</td><td><code>scout-dpe.yml</code></td><td>PRs touching <code>areas/access/dpe/**</code>, <code>areas/access/server/**</code>, <code>areas/access/cpe/**</code>, <code>areas/access/sync/**</code>, <code>areas/access/media/**</code>, <code>shared/**</code> or <code>Cargo.lock</code></td></tr>
-<tr><td>Mosaic Playground (<code>daschswiss/mosaic-playground</code>)</td><td><code>scout-mosaic-playground.yml</code></td><td>PRs touching <code>modules/mosaic/**</code> or <code>Cargo.lock</code></td></tr>
-<tr><td>Editor (<code>daschswiss/metadata-editor</code>)</td><td><code>scout-editor.yml</code></td><td>PRs touching <code>areas/deposit/**</code>, <code>shared/**</code> or <code>Cargo.lock</code></td></tr>
+<tr><td>DPE (<code>daschswiss/dpe</code>)</td><td><code>scout-dpe.yml</code></td><td>PRs touching <code>areas/access/dpe/**</code>, <code>areas/access/server/**</code>, <code>areas/access/cpe/**</code>, <code>areas/access/sync/**</code>, <code>areas/access/media/**</code>, <code>shared/**</code>, <code>modules/mosaic/tiles/**</code>, <code>MODULE.bazel</code>, <code>MODULE.bazel.lock</code>, <code>Cargo.Bazel.lock</code> or the other files the Bazel build reads</td></tr>
+<tr><td>Mosaic Playground (<code>daschswiss/mosaic-playground</code>)</td><td><code>scout-mosaic-playground.yml</code></td><td>PRs touching <code>modules/mosaic/**</code> or <code>MODULE.bazel</code>, <code>MODULE.bazel.lock</code>, <code>Cargo.Bazel.lock</code> or the other files the Bazel build reads</td></tr>
+<tr><td>Editor (<code>daschswiss/metadata-editor</code>)</td><td><code>scout-editor.yml</code></td><td>PRs touching <code>areas/deposit/**</code>, <code>shared/**</code>, <code>modules/mosaic/tiles/**</code>, the DPE data set or <code>MODULE.bazel</code>, <code>MODULE.bazel.lock</code>, <code>Cargo.Bazel.lock</code> or the other files the Bazel build reads</td></tr>
 </tbody></table>
 </div>
 <h3 id="how-it-works"><a class="header" href="#how-it-works">How It Works</a></h3>
 <p>Each Scout workflow:</p>
 <ol>
 <li>
-<p><strong>Builds the Docker image locally</strong> — the image is loaded into the runner's Docker
-daemon (<code>load: true</code>) but never pushed to a registry. This means Scout scans
+<p><strong>Builds the image with Bazel</strong> — <code>just build-docker-*</code> loads it into the runner's
+Docker daemon (<code>:image_load</code>) but never pushes it to a registry. This means Scout scans
 exactly what would be deployed, without exposing unreviewed images.</p>
 </li>
 <li>
@@ -294,10 +294,10 @@ alerts.</p>
 scan reports vulnerabilities:</p>
 <ul>
 <li><strong>Critical/High in base image</strong> — check if a newer base image version is available
-that patches the issue. For DPE (distroless), these are rare. For Mosaic
-(Debian-based), update the base image tag.</li>
+that patches the issue. All three images use distroless <code>static-debian12:nonroot</code>, pinned
+by digest in <code>MODULE.bazel</code>, where such issues are rare; a move means a new digest there.</li>
 <li><strong>Critical/High in dependencies</strong> — check if a dependency update resolves the issue.
-Run <code>cargo update</code> and re-test.</li>
+Run <code>just repin &lt;crate&gt;</code> and re-test.</li>
 <li><strong>False positives</strong> — some CVEs may not be exploitable in our context. Document the
 rationale if choosing to accept the risk.</li>
 </ul>
@@ -318,7 +318,7 @@ environments on Docker Hub)</li>
 are detected</li>
 </ul>
 <h2 id="third-party-artifact-integrity"><a class="header" href="#third-party-artifact-integrity">Third-Party Artifact Integrity</a></h2>
-<p>Scanning answers "does this dependency carry a known CVE". It does not answer "are these the bytes we reviewed". Two kinds of third-party artifact in this repo are shipped or executed without passing through Cargo, so nothing else checks them. <code>just check</code> enforces both, which is what the CI <code>check</code> job runs.</p>
+<p>Scanning answers "does this dependency carry a known CVE". It does not answer "are these the bytes we reviewed". Two kinds of third-party artifact in this repo are shipped or executed without passing through the crate lock files. <code>just check</code> verifies the vendored JavaScript, which is what the CI <code>check</code> job runs; Bazel verifies the Tailwind CLI's digest when it downloads it.</p>
 <h3 id="vendored-javascript"><a class="header" href="#vendored-javascript">Vendored JavaScript</a></h3>
 <p><code>areas/access/dpe/public/vendor/</code>, <code>areas/access/cpe/public/vendor/</code> and <code>areas/deposit/editor/public/vendor/</code> hold third-party JavaScript served straight to browsers. Each directory's <code>README.md</code> records a SHA-256 per file. Those digests are now recomputed rather than merely asserted, so the table is a check instead of a claim.</p>
 <p>Verification fails when:</p>
@@ -331,14 +331,10 @@ are detected</li>
 <p>Untracked files in a vendor directory are ignored, so local scratch does not fail anyone's build.</p>
 <p>To change a vendored file, follow the update process in that directory's own <code>README.md</code>: replace the file, then put <code>shasum -a 256 &lt;file&gt;</code> into the table.</p>
 <h3 id="the-tailwind-standalone-cli"><a class="header" href="#the-tailwind-standalone-cli">The Tailwind standalone CLI</a></h3>
-<p>The CSS build runs a Tailwind v4 standalone binary fetched from GitHub Releases, from two places: <code>_tailwind-bin</code> in the <code>justfile</code>, which sits behind every <code>just css*</code> recipe, the <code>build-dpe</code> and <code>build-editor</code> actions and the <code>a11y-dpe</code> workflow; and <code>modules/mosaic/playground/Dockerfile</code>. Unverified, a replaced release asset would run arbitrary code in every developer checkout and every CI job.</p>
-<p><code>tailwind.pins</code> records the version and the expected SHA-256 of each release asset. Both download sites verify against it and fail closed. The justfile checks on every resolve rather than only after a download, so a binary cached by an earlier build is verified too; hashing it costs about 0.05s under coreutils and 0.3s under perl <code>shasum</code>.</p>
-<p>Bump the pinned version with:</p>
-<pre><code class="language-sh">just tailwind-pins-refresh 4.1.19
-</code></pre>
-<p>This takes the digests from the <code>sha256sums.txt</code> published alongside that release and rewrites <code>tailwind.pins</code>. That file is read once, here, and never at build time: whoever can replace a release asset can replace its checksum file too, so verifying one against the other would establish nothing.</p>
-<p>Be precise about what the pin buys, because it is easy to overstate. Nobody can authenticate a 64-character digest by reading it, so review of a bump commit checks the version and the asset names, not the bytes. What the pin gives is a fixed reference point and an audit trail: every later download has to match what was pinned, so tampering after the bump (a replaced asset, a poisoned CDN cache) fails closed, and an unexpected <code>tailwind.pins</code> change shows up in a diff that should not have contained one. A release already compromised at the moment of the bump would be pinned as it stands. Upstream ships no signature, provenance or SBOM that would close that last gap, so this is the strongest check available here.</p>
-<p><code>tailwind.pins</code> is also the only place the Tailwind version is written. The justfile and the mosaic Dockerfile both read it, so neither can drift onto a version the other has not seen.</p>
+<p>The CSS build runs a Tailwind v4 standalone binary fetched from GitHub Releases, through the four <code>http_file</code>s in <code>MODULE.bazel</code>, one per platform: Bazel builds every stylesheet with it, and the dev recipes' <code>--watch</code> runs the same binary (<code>just _tailwind-cli</code> builds <code>//tools/tailwind</code> and prints its path). Unverified, a replaced release asset would run arbitrary code in every developer checkout and every CI job.</p>
+<p>Each <code>http_file</code> records the URL of one release asset and its expected <code>sha256</code>. Bazel verifies the download against it and fails closed, and its repository cache is keyed on that digest, so a cached binary is the one that was pinned. The four entries are the only place the Tailwind version is written.</p>
+<p>To bump the version, take the digests from the <code>sha256sums.txt</code> published alongside that release, and change the four URLs and hashes together. That file is read once, by the person making the bump, and never at build time: whoever can replace a release asset can replace its checksum file too, so verifying one against the other would establish nothing.</p>
+<p>Be precise about what the pin buys, because it is easy to overstate. Nobody can authenticate a 64-character digest by reading it, so review of a bump commit checks the version and the asset names, not the bytes. What the pin gives is a fixed reference point and an audit trail: every later download has to match what was pinned, so tampering after the bump (a replaced asset, a poisoned CDN cache) fails closed, and an unexpected change to those lines shows up in a diff that should not have contained one. A release already compromised at the moment of the bump would be pinned as it stands. Upstream ships no signature, provenance or SBOM that would close that last gap, so this is the strongest check available here.</p>
 
                     </main>
 

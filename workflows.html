@@ -248,37 +248,34 @@
 <p>For any interaction or coding-related workflow, the justfile is the primary source of truth. Run <code>just</code> without arguments to see all available commands with descriptions.</p>
 <h2 id="key-development-commands"><a class="header" href="#key-development-commands">Key Development Commands</a></h2>
 <div class="table-wrapper"><table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>
-<tr><td><code>just check</code></td><td>Run formatting, linting and checksum checks</td></tr>
-<tr><td><code>just build</code></td><td>Build all targets</td></tr>
-<tr><td><code>just test</code></td><td>Run all tests, the gate scripts' tests (<code>just test-scripts</code>) included</td></tr>
-<tr><td><code>just test-changed [base]</code></td><td>Run only the tests of the packages changed since <code>merge-base(base, HEAD)</code> (default <code>origin/main</code>; working tree and untracked files included) and of their dependents, plus the changed scripts' tests; falls back to <code>just test</code> for a workspace-wide or unknown path. The selection rules are the tables at the top of <code>.github/scripts/test-changed.sh</code>; after adding a read of another package's files, run <code>bash .github/scripts/test-changed.sh --audit</code>, which names the reads its <code>EXTRA_EDGES</code> table misses. Run <code>just test</code> before pushing</td></tr>
+<tr><td><code>just check</code></td><td>Run the gate scripts, formatting checks and clippy over every Bazel target</td></tr>
+<tr><td><code>just build</code></td><td>Build every Bazel target</td></tr>
+<tr><td><code>just test</code></td><td>Run every Bazel test, then the gate scripts' tests (<code>just test-scripts</code>). Bazel reruns only the tests whose inputs changed; for one package, <code>bazel test //&lt;package&gt;/...</code></td></tr>
 <tr><td><code>just test-scripts</code></td><td>Run the tests of every <code>.github/scripts</code> gate (<code>*.test.sh</code>); CI runs it as the <code>test / scripts</code> job</td></tr>
-<tr><td><code>just fmt</code></td><td>Format all code (<code>maudfmt</code> for <code>maud::html!</code> macro contents, then <code>cargo +nightly fmt</code>)</td></tr>
-<tr><td><code>just run</code></td><td>Run server (release mode)</td></tr>
-<tr><td><code>just watch</code></td><td>Watch for changes and run tests</td></tr>
+<tr><td><code>just fmt</code></td><td>Format all code (<code>maudfmt</code> for <code>maud::html!</code> macro contents, then the pinned nightly <code>rustfmt</code>)</td></tr>
+<tr><td><code>just run</code></td><td>Run the server from the repository root, a release build with the release stylesheet</td></tr>
 <tr><td><code>just dev</code></td><td>Run DPE with hot reload</td></tr>
 <tr><td><code>just dev-editor</code></td><td>Run the metadata editor with hot reload (binds 4100, so it can run alongside <code>just dev</code>)</td></tr>
 <tr><td><code>just watch-mosaic-playground</code></td><td>Run Mosaic playground with hot reload</td></tr>
+<tr><td><code>just snap-accept &lt;target&gt;</code></td><td>Rewrite the changed <code>insta</code> snapshots of one test target; review with <code>git diff</code></td></tr>
 <tr><td><code>just install-requirements</code></td><td>Install all development dependencies</td></tr>
 <tr><td><code>just install-e2e-requirements</code></td><td>Install Playwright browsers for E2E tests</td></tr>
 <tr><td><code>just docs-serve</code></td><td>Serve documentation locally at localhost:3000</td></tr>
 <tr><td><code>just validate-data</code></td><td>Validate all data files in the default data directory</td></tr>
-<tr><td><code>just verify-checksums</code></td><td>Check vendored JS against each <code>vendor/README.md</code> table and <code>tailwind.pins</code> for completeness (also run by <code>just check</code>)</td></tr>
+<tr><td><code>just verify-checksums</code></td><td>Check vendored JS against each <code>vendor/README.md</code> table (also run by <code>just check</code>)</td></tr>
 <tr><td><code>just check-shared-paths</code></td><td>Fail the build if a crate under <code>shared/</code> hardcodes a path into a service module (also run by <code>just check</code>)</td></tr>
-<tr><td><code>just check-capability-deps</code></td><td>Fail the build if a Deposit or Access Area crate depends on a workspace or third-party crate its role may not use, or sits in a role the script does not know; the roles and their edges are listed at the top of <code>.github/scripts/check-capability-deps.sh</code> (ADR-0003) (also run by <code>just check</code>)</td></tr>
+<tr><td><code>just check-capability-deps</code></td><td>Fail the build if a Deposit or Access Area role's <code>BUILD.bazel</code> uses a third-party crate its role may not, or any <code>BUILD.bazel</code> under <code>areas/</code>, <code>shared/</code>, <code>modules/</code> or <code>dsp-cli/</code> makes a target <code>//visibility:public</code>; the bans are listed at the top of <code>.github/scripts/check-capability-deps.sh</code> (ADR-0003). Edges between first-party crates are each target's <code>visibility</code> (also run by <code>just check</code>)</td></tr>
 <tr><td><code>just check-views-no-axum</code></td><td>Fail the build if a file of <code>editor-web</code>'s or <code>identity-web</code>'s <code>src/</code> outside <code>handlers/</code>, <code>routes.rs</code>, <code>shell.rs</code>, <code>lib.rs</code> and <code>fixtures.rs</code> names an <code>axum</code> or <code>axum_*</code> path: views are <code>fn -&gt; Markup</code> (also run by <code>just check</code>)</td></tr>
-<tr><td><code>just check-cpe-seam</code></td><td>Fail the build if a crate outside <code>areas/access/cpe/</code> depends on a CPE crate other than <code>cpe-ports</code> and <code>cpe-server</code>, a CPE crate depends on Mosaic, <code>cpe-core</code> depends on a CPE crate, or <code>cpe-store</code>, <code>cpe-store-build</code> or <code>cpe-server</code> depends on a CPE crate that is not listed for it (also run by <code>just check</code>)</td></tr>
 <tr><td><code>just check-adr-refs</code></td><td>Fail the build if a decision-record reference does not resolve to a record (also run by <code>just check</code>)</td></tr>
 <tr><td><code>just check-live-tests-ignored</code></td><td>Fail the build if a dsp-cli live test is not <code>#[ignore]</code>d (also run by <code>just check</code>)</td></tr>
-<tr><td><code>just tailwind-pins-refresh &lt;version&gt;</code></td><td>Re-pin the Tailwind standalone CLI digests for a new version</td></tr>
 <tr><td><code>just dsp-cli-run &lt;args&gt;</code></td><td>Run the <code>dsp</code> command-line client with the given arguments</td></tr>
 <tr><td><code>just dsp-cli-test-live</code></td><td>Run dsp-cli's live tests against a reachable DSP stack (never part of <code>just test</code>)</td></tr>
 <tr><td><code>just dsp-cli-stack-up</code></td><td>Start the containerized DSP stack used by dsp-cli's live tests</td></tr>
 <tr><td><code>just dsp-cli-stack-fixtures</code></td><td>Load fixture data into the dsp-cli stack</td></tr>
 <tr><td><code>just dsp-cli-stack-down</code></td><td>Tear down the dsp-cli stack</td></tr>
-<tr><td><code>just dsp-cli-snap-review</code></td><td>Review pending insta snapshots for dsp-cli</td></tr>
 </tbody></table>
 </div>
+<p>The Bazel recipes, with the image, fuzz and lock recipes, are in <a href="./bazel.html#commands">Building with Bazel</a>.</p>
 <h2 id="git-commits-and-pull-requests"><a class="header" href="#git-commits-and-pull-requests">Git, Commits, and Pull Requests</a></h2>
 <p>All git handling — the rebase-merge workflow, commit message schema, commit organization, and PR conventions — lives in a single file: <a href="./git-conventions.html">Git Conventions</a>.</p>
 <h2 id="release-workflow"><a class="header" href="#release-workflow">Release Workflow</a></h2>

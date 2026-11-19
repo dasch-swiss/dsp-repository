@@ -252,16 +252,14 @@
 <li><strong>Shell</strong>: None (distroless — no SSH possible)</li>
 <li><strong>Binary</strong>: Static musl-linked <code>deposit-server</code></li>
 </ul>
-<p>The Dockerfile packages pre-built artifacts; the Rust build happens in
-<code>.github/actions/build-editor</code>. <code>just build-docker-editor</code> reproduces the same
-staging locally, compiling the static musl binary inside a <code>rust:&lt;channel&gt;-bookworm</code>
-container — a host <code>cargo build --target *-unknown-linux-musl</code> needs a musl
-cross-linker, which macOS does not have. It defaults to the host architecture so
-the build is native; <code>just build-docker-editor arch=x86_64</code> reproduces the amd64
-image CI publishes, under emulation.</p>
+<p>CI publishes the image Bazel builds, <code>//areas/deposit/server:image</code> (see
+<a href="../bazel.html#images">Building with Bazel</a>); <code>just build-docker-editor</code> builds
+the same amd64 image locally and loads it as <code>local-scan/editor:latest</code>; Bazel's
+hermetic toolchain cross-compiles the musl binary on macOS too. <code>just run-docker-editor</code>
+runs it on port 8080 with <code>EDITOR_ENV=DEV</code>.</p>
 <h3 id="data-directory-a-deliberate-build-input"><a class="header" href="#data-directory-a-deliberate-build-input">Data directory (a deliberate build input)</a></h3>
-<p>The published project/person/organization set is <strong>DPE's content</strong>, not the editor's. Both <code>.github/actions/build-editor</code> and <code>just build-docker-editor</code> copy <code>areas/access/dpe/server/data</code> into the staging directory, and the Dockerfile places it at <code>/app/server/data</code>, where <code>EDITOR_DATA_DIR</code> points. Git stays the source of truth and the editor reads an image-baked snapshot, so a data change reaches the editor by rebuilding the image, not at runtime.</p>
-<p>That copy is the seam, and it is explicit on both sides. <code>EditorConfig</code> carries <strong>no default</strong> for <code>data_dir</code>: the only plausible one is a relative path into DPE's tree, which would let a records reader resolve another module's directory instead of failing on an unconfigured seam. Every environment that reads records names the directory — the image via <code>ENV EDITOR_DATA_DIR</code>, local development via <code>just dev-editor</code>. Unset is a legitimate state while nothing reads records, and is reported as <code>&lt;unset&gt;</code> at startup rather than as an invented path.</p>
+<p>The published project/person/organization set is <strong>DPE's content</strong>, not the editor's. The image's data layer (<code>image_data</code> in <code>areas/deposit/server/BUILD.bazel</code>) places <code>areas/access/dpe/server/data</code> at <code>/app/server/data</code>, where <code>EDITOR_DATA_DIR</code> points; <code>just build-docker-editor</code> builds the same image locally. Git stays the source of truth and the editor reads an image-baked snapshot, so a data change reaches the editor by rebuilding the image, not at runtime.</p>
+<p>That copy is the seam, and it is explicit on both sides. <code>EditorConfig</code> carries <strong>no default</strong> for <code>data_dir</code>: the only plausible one is a relative path into DPE's tree, which would let a records reader resolve another module's directory instead of failing on an unconfigured seam. Every environment that reads records names the directory — the image through its <code>env</code> (<code>EDITOR_DATA_DIR</code>), local development via <code>just dev-editor</code>. Unset is a legitimate state while nothing reads records, and is reported as <code>&lt;unset&gt;</code> at startup rather than as an invented path.</p>
 <p>Moving the directory under <code>shared/</code> was considered and rejected: the shared-crate rule in <a href="../repo_structure.html#shared-crates">Repo Structure</a> is about crates, and this is DPE's owned content consumed through an existing explicit seam. Reopen it only if a third consumer appears.</p>
 <h2 id="cli-commands"><a class="header" href="#cli-commands">CLI Commands</a></h2>
 <div class="table-wrapper"><table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>
@@ -379,7 +377,7 @@ image CI publishes, under emulation.</p>
 <p>Setting <code>EDITOR_DB_DIR</code> to keep accounts across restarts <strong>turns the on-screen code off</strong> — a durable database is one of the three conditions, because it is what separates a throwaway deployment from a real one. In that case read the code from the log instead:</p>
 <pre><code class="language-bash">EDITOR_RDU_EMAILS=you@dasch.swiss \
 EDITOR_DATA_DIR=areas/access/dpe/server/data \
-cargo run --bin deposit-server -- serve &gt; editor.log 2&gt;&amp;1 &amp;
+bazel run --run_in_cwd //areas/deposit/server:deposit_server -- serve &gt; editor.log 2&gt;&amp;1 &amp;
 
 # after submitting the address at /login:
 grep -o 'is:\\n\\n *[0-9]\{6\}' editor.log | tail -1 | grep -o '[0-9]\{6\}'
@@ -406,7 +404,7 @@ grep -o 'is:\\n\\n *[0-9]\{6\}' editor.log | tail -1 | grep -o '[0-9]\{6\}'
 <h2 id="database"><a class="header" href="#database">Database</a></h2>
 <p>Two SQLite databases: <code>identity.sqlite</code> holds users, sessions, one-time codes and the mail send log; <code>editor.sqlite</code> holds drafts, submissions, review rounds, approved records and entity proposals. Startup opens identity's, then the editor's, and either failing is fatal. See <a href="./persistence.html">Architecture</a> for the pool and PRAGMA design.</p>
 <h3 id="in-memory-is-the-default-deliberately"><a class="header" href="#in-memory-is-the-default-deliberately">In-memory is the default, deliberately</a></h3>
-<p><code>EDITOR_DB_DIR</code> has <strong>no default</strong>, and unset means two named in-memory databases, <code>identity</code> and <code>editor</code>, rather than some path the editor invented. That is preview safety, not a convenience: the Cloud Run PR preview has no mounted volume, runs <code>--max-instances=1</code>, and is publicly reachable, so a publicly reachable preview must not be able to accumulate login codes, sessions or drafts. It also means <code>just dev-editor</code> and <code>cargo test</code> need no volume.</p>
+<p><code>EDITOR_DB_DIR</code> has <strong>no default</strong>, and unset means two named in-memory databases, <code>identity</code> and <code>editor</code>, rather than some path the editor invented. That is preview safety, not a convenience: the Cloud Run PR preview has no mounted volume, runs <code>--max-instances=1</code>, and is publicly reachable, so a publicly reachable preview must not be able to accumulate login codes, sessions or drafts. It also means <code>just dev-editor</code> and <code>just test</code> need no volume.</p>
 <p>The Docker image deliberately does <strong>not</strong> set <code>EDITOR_DB_DIR</code>, for the same reason — the previews run that image. Production sets it through the deployment.</p>
 <h3 id="data-volume"><a class="header" href="#data-volume">Data volume</a></h3>
 <ul>

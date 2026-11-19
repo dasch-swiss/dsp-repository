@@ -247,7 +247,7 @@
 translates DSP-API's RDF/JSON-LD surface into researcher vocabulary — <strong>data-model</strong>,
 <strong>resource-type</strong>, <strong>field</strong>, <strong>value</strong> — instead of DSP-API's own <code>ontology</code> / <code>class</code> /
 <code>property</code> / <code>Value</code> subclass terms. It is a root peer of the areas: a single crate, depending on
-no workspace crate, that reaches DSP-API purely over HTTP.</p>
+no other crate in the repository, that reaches DSP-API purely over HTTP.</p>
 <h2 id="layers"><a class="header" href="#layers">Layers</a></h2>
 <p><code>dsp-cli</code> is organised as five layers inside a single crate that exposes both a library
 (<code>src/lib.rs</code>) and a binary (<code>src/main.rs</code>). Action functions depend on traits (<code>DspClient</code>,
@@ -292,7 +292,9 @@ retry/error behaviour. Slower; few in number; not where verb logic gets validate
 <p>See <a href="./testing-strategy.html">Testing Strategy</a> for the full layer breakdown.</p>
 <h2 id="crate-layout"><a class="header" href="#crate-layout">Crate layout</a></h2>
 <pre><code>dsp-cli/
-├── Cargo.toml
+├── BUILD.bazel                # the Bazel targets: library, binary, tests
+├── Cargo.toml                 # the crates.io manifest (cargo publish, cargo test)
+├── Cargo.lock
 ├── src/
 │   ├── main.rs               # binary entry: parse → dispatch
 │   ├── lib.rs                # library re-exports and command dispatch
@@ -313,7 +315,7 @@ retry/error behaviour. Slower; few in number; not where verb logic gets validate
 </code></pre>
 <p>The cross-layer dependency rule: <strong>client and render are sibling layers; neither may import the
 other; both may import util.</strong></p>
-<p>Single crate keeps build and test cycles simple. The library/binary split lets <code>cargo test</code>
+<p>Single crate keeps build and test cycles simple. The library/binary split lets the tests
 exercise everything except the very thin <code>main.rs</code>. The directory shape mirrors the noun-group
 hierarchy in dsp-cli/ADR-0002, so navigating "where does <code>dsp vre data-model describe</code> live" is
 mechanical: <code>src/actions/vre/data_model.rs</code>.</p>

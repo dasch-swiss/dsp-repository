@@ -247,7 +247,7 @@
 <h2 id="testing-pyramid"><a class="header" href="#testing-pyramid">Testing Pyramid</a></h2>
 <pre><code>          ╱╲
          ╱  ╲         Layer 4: Fuzz Testing (nightly CI)
-        ╱────╲        cargo-fuzz, corpus persisted
+        ╱────╲        libFuzzer via Bazel, corpus persisted
        ╱      ╲
       ╱  E2E   ╲     Layer 3: E2E Tests (Playwright)
      ╱──────────╲     Tab switching, search, accessibility (axe-core)
@@ -255,21 +255,21 @@
    ╱  Snapshots   ╲   Layer 2: Snapshot Tests (insta)
   ╱────────────────╲   SSR output, SSE fragments, ARIA attributes
  ╱                  ╲
-╱    Unit Tests      ╲ Layer 1: Unit Tests (cargo test)
+╱    Unit Tests      ╲ Layer 1: Unit Tests (bazel test)
 ╱────────────────────╲ Fragment handlers, OAI protocol, domain logic
 </code></pre>
 <h2 id="layer-1-unit-tests"><a class="header" href="#layer-1-unit-tests">Layer 1: Unit Tests</a></h2>
 <ul>
 <li><strong>Location</strong>: <code>#[cfg(test)]</code> modules in each crate</li>
-<li><strong>Runner</strong>: <code>cargo test --workspace</code></li>
+<li><strong>Runner</strong>: <code>just test</code> (<code>bazel test //...</code>)</li>
 <li><strong>Scope</strong>: Fragment handlers, OAI protocol, domain types, data loading, filtering/pagination</li>
-<li><strong>Crate</strong>: dpe-core and shared-metadata tests run independently — <code>cargo test -p dpe-core</code>, <code>cargo test -p shared-metadata</code></li>
+<li><strong>Crate</strong>: one package's tests run alone, for example <code>bazel test //areas/access/dpe/core/...</code> or <code>bazel test //shared/metadata/...</code></li>
 </ul>
 <h2 id="layer-2-snapshot-tests-insta"><a class="header" href="#layer-2-snapshot-tests-insta">Layer 2: Snapshot Tests (insta)</a></h2>
 <ul>
 <li><strong>Dependency</strong>: <code>insta</code> with <code>yaml</code> and <code>filters</code> features</li>
 <li><strong>Location</strong>: Adjacent <code>snapshots/</code> directories</li>
-<li><strong>CI</strong>: Set <code>INSTA_UPDATE=new</code> so failures produce <code>.snap.new</code> artifacts for review</li>
+<li><strong>Updates</strong>: <code>.bazelrc</code> sets <code>INSTA_UPDATE=no</code>, so a changed snapshot fails its test; <code>just snap-accept &lt;target&gt;</code> rewrites it from the checkout and <code>git diff</code> is the review</li>
 <li><strong>Scope</strong>: SSR output, SSE fragment response bodies, ARIA attributes</li>
 </ul>
 <h2 id="layer-3-e2e-tests-playwright"><a class="header" href="#layer-3-e2e-tests-playwright">Layer 3: E2E Tests (Playwright)</a></h2>
@@ -277,34 +277,31 @@
 <li><strong>Location</strong>: <code>areas/access/dpe/web-e2e-tests/</code></li>
 <li><strong>Server</strong>: the suite starts <code>access-server</code> without <code>CPE_BASE</code>, so CPE is not mounted in it and only DPE's pages
 are tested; CPE's pages are covered by its crates' own tests.</li>
-<li><strong>Runner</strong>: <code>npx playwright test</code></li>
+<li><strong>Runner</strong>: <code>just test-a11y-dpe</code>, which builds the release server and stylesheet with Bazel and passes the binary's path in <code>ACCESS_SERVER_BIN</code></li>
 <li><strong>Scope</strong>: Tab switching, search autocomplete, scroll preservation, accessibility (axe-core)</li>
 <li><strong>Accessibility</strong>: Full-page axe-core scans against WCAG 2.1 AA</li>
 </ul>
 <h2 id="layer-4-fuzz-testing"><a class="header" href="#layer-4-fuzz-testing">Layer 4: Fuzz Testing</a></h2>
 <ul>
-<li><strong>Tool</strong>: cargo-fuzz (nightly Rust)</li>
+<li><strong>Tool</strong>: libFuzzer through <code>rules_fuzzing</code>, <code>just build-fuzz</code> (<code>--config=fuzz</code>, stable Rust; see <a href="../bazel.html#fuzz-targets">Building with Bazel</a>)</li>
 <li><strong>Schedule</strong>: Nightly CI, 10 minutes per target</li>
 <li><strong>Targets</strong>: Tab name validation, SSE response construction, query parameter parsing</li>
 <li><strong>Corpus</strong>: Persisted between runs</li>
 </ul>
 <h2 id="ci-pipeline-budget"><a class="header" href="#ci-pipeline-budget">CI Pipeline Budget</a></h2>
 <p>Target: <strong>≤ 10 minutes</strong> wall-clock per PR.</p>
-<pre><code>Parallel job group 1 (~2 min):
-  maudfmt --check + cargo fmt --check
-  cargo clippy --all-targets -Dwarnings
-  cargo-deny check
+<pre><code>check (one job):
+  gate scripts, just --fmt check, maudfmt and nightly rustfmt checks
+  clippy over every Bazel target, -Dwarnings (just check)
 
-Parallel job group 2 (~5 min):
-  cargo nextest run --workspace
-  cargo build --release (access-server) + just css-release
-  cargo-llvm-cov (coverage → Codecov)
+test / ubuntu / stable (one job):
+  bazel test //... (just test)
+  build, load and start the three images (just image-smoke)
 
-Parallel job group 3 (~5 min):
-  Playwright E2E tests
-  axe-core accessibility scans
-  Lighthouse CI performance budgets
+a11y / dpe, a11y / editor (on path changes):
+  release server and stylesheet built with Bazel, then Playwright with axe-core
 </code></pre>
+<p>Bazel jobs share the remote cache and executor; see <a href="../bazel.html#remote-cache-and-execution">Building with Bazel</a>.</p>
 <h2 id="testing-conventions"><a class="header" href="#testing-conventions">Testing Conventions</a></h2>
 <p><strong>Test naming</strong>: Use descriptive names following the <code>test_{what}_{condition}_{expected}</code> pattern. For example: <code>test_parse_project_missing_title_returns_error</code>.</p>
 <p><strong>Test locations</strong>:</p>

@@ -260,11 +260,9 @@ CPE builds each project's store from at start; and CPE's project folders (<code>
 assets, documents on the data) at <code>/app/cpe/projects</code> (<code>CPE_PROJECTS_DIR</code>). CPE's stylesheets, scripts and logos
 are compiled into the binary.</li>
 </ul>
-<p>The Dockerfile packages pre-built artifacts; the Rust build happens in <code>.github/actions/build-dpe</code>.
-<code>just build-docker-dpe</code> reproduces the same staging locally, compiling the binary inside a <code>rust:&lt;channel&gt;-bookworm</code>
-container as <code>just build-docker-editor</code> does (see the <a href="../editor/operations.html">editor's operations guide</a>).
-It defaults to the host architecture; <code>just build-docker-dpe arch=x86_64</code> reproduces the amd64 image CI publishes,
-under emulation. <code>just run-docker-dpe</code> runs the result on port 8080.</p>
+<p>CI publishes the image Bazel builds, <code>//areas/access/server:image</code> (see <a href="../bazel.html#images">Building with Bazel</a>);
+<code>just build-docker-dpe</code> builds the same amd64 image locally and loads it as <code>local-scan/dpe:latest</code>, and
+<code>just run-docker-dpe</code> runs it on port 8080 (emulated on an arm64 machine).</p>
 <h2 id="cli-commands"><a class="header" href="#cli-commands">CLI Commands</a></h2>
 <p>The <code>access-server</code> binary provides three subcommands:</p>
 <div class="table-wrapper"><table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>

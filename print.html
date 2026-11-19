@@ -424,37 +424,34 @@ Each section corresponds to a Markdown file in the <code>src</code> directory.</
 <p>For any interaction or coding-related workflow, the justfile is the primary source of truth. Run <code>just</code> without arguments to see all available commands with descriptions.</p>
 <h2 id="key-development-commands"><a class="header" href="#key-development-commands">Key Development Commands</a></h2>
 <div class="table-wrapper"><table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>
-<tr><td><code>just check</code></td><td>Run formatting, linting and checksum checks</td></tr>
-<tr><td><code>just build</code></td><td>Build all targets</td></tr>
-<tr><td><code>just test</code></td><td>Run all tests, the gate scripts' tests (<code>just test-scripts</code>) included</td></tr>
-<tr><td><code>just test-changed [base]</code></td><td>Run only the tests of the packages changed since <code>merge-base(base, HEAD)</code> (default <code>origin/main</code>; working tree and untracked files included) and of their dependents, plus the changed scripts' tests; falls back to <code>just test</code> for a workspace-wide or unknown path. The selection rules are the tables at the top of <code>.github/scripts/test-changed.sh</code>; after adding a read of another package's files, run <code>bash .github/scripts/test-changed.sh --audit</code>, which names the reads its <code>EXTRA_EDGES</code> table misses. Run <code>just test</code> before pushing</td></tr>
+<tr><td><code>just check</code></td><td>Run the gate scripts, formatting checks and clippy over every Bazel target</td></tr>
+<tr><td><code>just build</code></td><td>Build every Bazel target</td></tr>
+<tr><td><code>just test</code></td><td>Run every Bazel test, then the gate scripts' tests (<code>just test-scripts</code>). Bazel reruns only the tests whose inputs changed; for one package, <code>bazel test //&lt;package&gt;/...</code></td></tr>
 <tr><td><code>just test-scripts</code></td><td>Run the tests of every <code>.github/scripts</code> gate (<code>*.test.sh</code>); CI runs it as the <code>test / scripts</code> job</td></tr>
-<tr><td><code>just fmt</code></td><td>Format all code (<code>maudfmt</code> for <code>maud::html!</code> macro contents, then <code>cargo +nightly fmt</code>)</td></tr>
-<tr><td><code>just run</code></td><td>Run server (release mode)</td></tr>
-<tr><td><code>just watch</code></td><td>Watch for changes and run tests</td></tr>
+<tr><td><code>just fmt</code></td><td>Format all code (<code>maudfmt</code> for <code>maud::html!</code> macro contents, then the pinned nightly <code>rustfmt</code>)</td></tr>
+<tr><td><code>just run</code></td><td>Run the server from the repository root, a release build with the release stylesheet</td></tr>
 <tr><td><code>just dev</code></td><td>Run DPE with hot reload</td></tr>
 <tr><td><code>just dev-editor</code></td><td>Run the metadata editor with hot reload (binds 4100, so it can run alongside <code>just dev</code>)</td></tr>
 <tr><td><code>just watch-mosaic-playground</code></td><td>Run Mosaic playground with hot reload</td></tr>
+<tr><td><code>just snap-accept &lt;target&gt;</code></td><td>Rewrite the changed <code>insta</code> snapshots of one test target; review with <code>git diff</code></td></tr>
 <tr><td><code>just install-requirements</code></td><td>Install all development dependencies</td></tr>
 <tr><td><code>just install-e2e-requirements</code></td><td>Install Playwright browsers for E2E tests</td></tr>
 <tr><td><code>just docs-serve</code></td><td>Serve documentation locally at localhost:3000</td></tr>
 <tr><td><code>just validate-data</code></td><td>Validate all data files in the default data directory</td></tr>
-<tr><td><code>just verify-checksums</code></td><td>Check vendored JS against each <code>vendor/README.md</code> table and <code>tailwind.pins</code> for completeness (also run by <code>just check</code>)</td></tr>
+<tr><td><code>just verify-checksums</code></td><td>Check vendored JS against each <code>vendor/README.md</code> table (also run by <code>just check</code>)</td></tr>
 <tr><td><code>just check-shared-paths</code></td><td>Fail the build if a crate under <code>shared/</code> hardcodes a path into a service module (also run by <code>just check</code>)</td></tr>
-<tr><td><code>just check-capability-deps</code></td><td>Fail the build if a Deposit or Access Area crate depends on a workspace or third-party crate its role may not use, or sits in a role the script does not know; the roles and their edges are listed at the top of <code>.github/scripts/check-capability-deps.sh</code> (ADR-0003) (also run by <code>just check</code>)</td></tr>
+<tr><td><code>just check-capability-deps</code></td><td>Fail the build if a Deposit or Access Area role's <code>BUILD.bazel</code> uses a third-party crate its role may not, or any <code>BUILD.bazel</code> under <code>areas/</code>, <code>shared/</code>, <code>modules/</code> or <code>dsp-cli/</code> makes a target <code>//visibility:public</code>; the bans are listed at the top of <code>.github/scripts/check-capability-deps.sh</code> (ADR-0003). Edges between first-party crates are each target's <code>visibility</code> (also run by <code>just check</code>)</td></tr>
 <tr><td><code>just check-views-no-axum</code></td><td>Fail the build if a file of <code>editor-web</code>'s or <code>identity-web</code>'s <code>src/</code> outside <code>handlers/</code>, <code>routes.rs</code>, <code>shell.rs</code>, <code>lib.rs</code> and <code>fixtures.rs</code> names an <code>axum</code> or <code>axum_*</code> path: views are <code>fn -&gt; Markup</code> (also run by <code>just check</code>)</td></tr>
-<tr><td><code>just check-cpe-seam</code></td><td>Fail the build if a crate outside <code>areas/access/cpe/</code> depends on a CPE crate other than <code>cpe-ports</code> and <code>cpe-server</code>, a CPE crate depends on Mosaic, <code>cpe-core</code> depends on a CPE crate, or <code>cpe-store</code>, <code>cpe-store-build</code> or <code>cpe-server</code> depends on a CPE crate that is not listed for it (also run by <code>just check</code>)</td></tr>
 <tr><td><code>just check-adr-refs</code></td><td>Fail the build if a decision-record reference does not resolve to a record (also run by <code>just check</code>)</td></tr>
 <tr><td><code>just check-live-tests-ignored</code></td><td>Fail the build if a dsp-cli live test is not <code>#[ignore]</code>d (also run by <code>just check</code>)</td></tr>
-<tr><td><code>just tailwind-pins-refresh &lt;version&gt;</code></td><td>Re-pin the Tailwind standalone CLI digests for a new version</td></tr>
 <tr><td><code>just dsp-cli-run &lt;args&gt;</code></td><td>Run the <code>dsp</code> command-line client with the given arguments</td></tr>
 <tr><td><code>just dsp-cli-test-live</code></td><td>Run dsp-cli's live tests against a reachable DSP stack (never part of <code>just test</code>)</td></tr>
 <tr><td><code>just dsp-cli-stack-up</code></td><td>Start the containerized DSP stack used by dsp-cli's live tests</td></tr>
 <tr><td><code>just dsp-cli-stack-fixtures</code></td><td>Load fixture data into the dsp-cli stack</td></tr>
 <tr><td><code>just dsp-cli-stack-down</code></td><td>Tear down the dsp-cli stack</td></tr>
-<tr><td><code>just dsp-cli-snap-review</code></td><td>Review pending insta snapshots for dsp-cli</td></tr>
 </tbody></table>
 </div>
+<p>The Bazel recipes, with the image, fuzz and lock recipes, are in <a href="./bazel.html#commands">Building with Bazel</a>.</p>
 <h2 id="git-commits-and-pull-requests"><a class="header" href="#git-commits-and-pull-requests">Git, Commits, and Pull Requests</a></h2>
 <p>All git handling — the rebase-merge workflow, commit message schema, commit organization, and PR conventions — lives in a single file: <a href="./git-conventions.html">Git Conventions</a>.</p>
 <h2 id="release-workflow"><a class="header" href="#release-workflow">Release Workflow</a></h2>
@@ -590,7 +587,7 @@ both bump the minor, and the version would carry no signal about breakage.</p>
 <p><code>revert</code>, <code>style</code>, and <code>ci</code> are <strong>not</strong> valid types — the commit-lint gate rejects them, and release-please hides them if one ever slips onto <code>main</code>.</p>
 <ul>
 <li><strong>CI/build automation</strong> → <code>chore(ci): ...</code> (lands in Miscellaneous Chores). A dedicated Continuous Integration changelog section is noise; it belongs under maintenance. Note that <code>ci</code> remains a valid <em>scope</em>, just not a type.</li>
-<li><strong>Formatting-only changes</strong> → fold into the functional commit, or <code>chore(&lt;scope&gt;): ...</code>. <code>cargo fmt</code> and <code>maudfmt</code> are enforced gates, so a standalone formatting commit should be rare.</li>
+<li><strong>Formatting-only changes</strong> → fold into the functional commit, or <code>chore(&lt;scope&gt;): ...</code>. <code>rustfmt</code> and <code>maudfmt</code> are enforced gates, so a standalone formatting commit should be rare.</li>
 <li><strong>Reverts</strong> → <code>fix(&lt;scope&gt;): revert ...</code> or <code>chore(&lt;scope&gt;): revert ...</code> depending on whether it corrects released behavior. (release-please's built-in revert auto-negation no longer applies; reverts are rare and handled by hand.)</li>
 </ul>
 <h3 id="what-fix-means"><a class="header" href="#what-fix-means">What <code>fix:</code> means</a></h3>
@@ -618,7 +615,7 @@ both bump the minor, and the version would carry no signal about breakage.</p>
 <li><strong>Concern over location.</strong> Scope by the responsibility a change serves, not the enclosing directory. Documentation <em>about</em> a crate takes that crate's scope (<code>docs(dpe-api-oai): ...</code>); only repo-level docs take <code>docs</code>.</li>
 <li>A test <em>about</em> a specific concern takes that concern's scope (<code>test(dpe-core): ...</code>) — the <code>test</code> type already says it is a test.</li>
 <li><strong>No catch-all.</strong> There is no <code>repo</code>/<code>all</code> scope. If none of the enumerated scopes genuinely fits, ask the maintainer before inventing one.</li>
-<li><strong>Keep <code>dsp-cli</code> commits under <code>dsp-cli/**</code> where possible.</strong> release-please attributes a commit to a package by which paths it touches, not by its commit scope — a <code>dsp-cli</code>-scoped commit that also edits a root file (e.g. <code>Cargo.lock</code>) lands in the root release too. See <a href="./deployment.html#dsp-cli">Release Please</a> for the double-bump rule this causes.</li>
+<li><strong>Keep <code>dsp-cli</code> commits under <code>dsp-cli/**</code> where possible.</strong> release-please attributes a commit to a package by which paths it touches, not by its commit scope — a <code>dsp-cli</code>-scoped commit that also edits a root file (e.g. <code>MODULE.bazel</code>) lands in the root release too. See <a href="./deployment.html#dsp-cli">Release Please</a> for the double-bump rule this causes.</li>
 </ul>
 <p>The gate enforces only that a scope is <em>present</em> — it does not restrict which one, so adding a crate needs no config change. The list above is the advisory vocabulary; keep to it.</p>
 <h2 id="enforcement"><a class="header" href="#enforcement">Enforcement</a></h2>
@@ -787,7 +784,7 @@ intended when they were written, and are not rewritten to follow the code.</p>
 areas/
 ├── access/                    # Access Area
 │   ├── server/                # Composition root: CLI, observability, route mounting (crate: access-server)
-│   │   └── Dockerfile         # Production container image
+│   │   └── BUILD.bazel        # The binary and the production image (`:image`)
 │   ├── cpe/                   # Configurable Presentation Environment (its component library, domain crate, image viewer, ports, store, store builder, page assembly and host crate so far)
 │   │   ├── components/        # CPE's component library (crate: cpe-components)
 │   │   │   ├── src/           # The components, the chrome message catalogue, the per-project components
@@ -819,7 +816,7 @@ areas/
 ├── archive/                   # Archive Area (vocabulary only so far)
 └── deposit/                   # Deposit Area
     ├── docs/adr/              # The area's decision records, cited areas/deposit/ADR-NNNN (ADR-0006)
-    ├── server/                # Composition root: CLI, configuration, observability, route mounting, and the production Dockerfile (crate: deposit-server)
+    ├── server/                # Composition root: CLI, configuration, observability, route mounting, and the production image in its BUILD.bazel (crate: deposit-server)
     ├── shell/                 # The area's document shell, sign-in link and error pages (crate: deposit-shell)
     ├── identity/              # Identity: accounts, sessions, sign-in by login code
     │   ├── core/              # Identity's domain types, rules and repository traits (crate: identity-core)
@@ -891,7 +888,7 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 <li><strong>CI path filters.</strong> The path-filtered workflows key on a module glob — <code>areas/access/dpe/**</code>, <code>areas/access/server/**</code>, <code>areas/access/cpe/**</code>, <code>areas/access/sync/**</code> and <code>areas/access/media/**</code> for DPE's preview, Scout and a11y jobs, <code>areas/deposit/**</code> for the editor's. A shared crate left under one service's module is invisible to every other service's jobs: no preview deployed, no image scanned. (<code>check</code>, <code>test</code> and <code>gate</code> carry no path filters, so compilation and tests are never the gap — which is what makes this easy to miss.)</li>
 <li><strong>Dev-loop watch lists.</strong> <code>bacon.toml</code>'s <code>serve</code> and <code>serve-editor</code> jobs each watch their own module directory (the editor's also watches <code>areas/deposit/identity</code> and <code>areas/deposit/shell</code>). A shared crate outside <code>shared/</code> stops triggering a rebuild for whichever service does not own it, with no error — you keep testing a stale binary.</li>
 <li><strong>Directory-scoped agent instructions.</strong> <code>areas/access/dpe/CLAUDE.md</code> governs everything under <code>areas/access/dpe/</code>, so a shared crate parked there takes its rules from one service's file. Repo-wide files are not directory-scoped, but they do accumulate crate-specific lines — <code>REVIEW.md</code> names module paths such as <code>dpe-server</code>'s <code>page_url.rs</code> — and those need to name the real location.</li>
-<li><strong>The dependency direction.</strong> <code>shared-*</code> crates depend on no service crate. Anything that needs to know about one service's routes, data or configuration does not belong in one — pass it in as a parameter instead. Both halves fail the build: a service dependency is a Cargo cycle, and a hardcoded path into another module is caught by <code>just check-shared-paths</code> (<code>.github/scripts/check-shared-paths.sh</code>).</li>
+<li><strong>The dependency direction.</strong> <code>shared-*</code> crates depend on no service crate. Anything that needs to know about one service's routes, data or configuration does not belong in one — pass it in as a parameter instead. Both halves fail the build: a service dependency fails Bazel's <code>visibility</code> check, as no service target grants a shared crate, and a hardcoded path into another module is caught by <code>just check-shared-paths</code> (<code>.github/scripts/check-shared-paths.sh</code>).</li>
 </ul>
 <p><code>mosaic-*</code> predates the convention and stays as it is: it is already a peer of the services rather than a child of one, which is the property that matters.</p>
 <p><strong>The rule covers the shareable part of a crate, not necessarily the whole crate.</strong> <code>dpe-core</code> was not moved wholesale when the editor came to need the data contract: it mixes the contract with DPE's caches, repositories, cluster logic and a DSP-API HTTP client, and moving all of it would have made every one of those a shared concern. What moved is the contract — <code>shared-metadata</code> — and <code>dpe-core</code> now depends on it like any other consumer. Read the rule as <em>the shared thing lives under <code>shared/</code></em>; where the shared thing is a subset of a crate, extract the subset.</p>
@@ -905,6 +902,154 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 <li><strong>Composition</strong>: <code>dpe-server</code> wires the handler into the Axum router</li>
 </ul>
 <p>For detailed crate responsibilities and the dependency graph, see <a href="./dpe/project_structure.html">DPE Project Structure</a>.</p>
+<div style="break-before: page; page-break-before: always;"></div><style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
+<h1 id="building-with-bazel"><a class="header" href="#building-with-bazel">Building with Bazel</a></h1>
+<p>Bazel builds and tests every crate, the stylesheets, the fuzz targets and the images (ADR-0001). Every <code>just</code> recipe and every CI job uses it: <code>check</code> runs <code>just check</code>, which ends with clippy over every target, and <code>test / ubuntu / stable</code> runs <code>just test</code>, then <code>just image-smoke</code>.</p>
+<p>The pins are those of Sipi: Bazel in <code>.bazelversion</code>, the rulesets and the Rust version in <code>MODULE.bazel</code>. The C and C++ toolchain is hermetic (<code>llvm</code>, zero-sysroot): it fetches the macOS SDK itself and builds the Linux libc runtimes from source, so no Xcode and no host compiler is used for compiling.</p>
+<h2 id="dsp-clis-cargo-manifest"><a class="header" href="#dsp-clis-cargo-manifest">dsp-cli's Cargo manifest</a></h2>
+<p><code>dsp-cli</code> publishes to crates.io, so <code>dsp-cli/Cargo.toml</code> and <code>dsp-cli/Cargo.lock</code> stay: a standalone manifest, the only one in the tree. Bazel does not read them. Its dependency list therefore exists twice, and a change to it is made on both sides:</p>
+<ul>
+<li>A dependency of <code>dsp-cli</code> added, removed or changed in <code>dsp-cli/Cargo.toml</code> is also changed in <code>MODULE.bazel</code> and in <code>dsp-cli/BUILD.bazel</code>, followed by <code>just repin</code>. To keep the published crate on the versions Bazel tests, move it in the crate's lock too: <code>cargo update -p &lt;crate&gt; --manifest-path dsp-cli/Cargo.toml</code>.</li>
+<li>A Dependabot security update bumps <code>dsp-cli/Cargo.lock</code> alone. Add the matching <code>just repin &lt;crate&gt;</code> to its branch, or close it and make the bump by hand.</li>
+</ul>
+<p>CI's <code>check / publish-dry-run / stable</code> runs <code>cargo publish --dry-run --locked</code> and <code>cargo test --locked</code> against that manifest: a feature missing from it, such as <code>serde_json</code>'s <code>preserve_order</code>, still compiles, and only the tests notice. Version drift between the two locks within semver ranges is not checked.</p>
+<h2 id="commands"><a class="header" href="#commands">Commands</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Recipe</th><th>What it runs</th></tr></thead><tbody>
+<tr><td><code>just build</code></td><td><code>bazel build //...</code></td></tr>
+<tr><td><code>just test</code></td><td><code>bazel test //...</code>, then the gate scripts' tests</td></tr>
+<tr><td><code>just check</code></td><td>the gate scripts, <code>just</code>, <code>maudfmt</code> and pinned nightly <code>rustfmt</code> formatting, and clippy over every target, tests and the <code>manual</code> dsp-cli live targets included, with <code>-Dwarnings</code></td></tr>
+<tr><td><code>just fmt</code></td><td><code>maudfmt</code>, then the pinned nightly <code>rustfmt</code> (<code>$RUSTFMT</code>, else rustup's), edition 2024 for dsp-cli and 2021 for the rest</td></tr>
+<tr><td><code>just run</code>, <code>just validate-data</code>, <code>just dsp-cli-run</code></td><td><code>bazel run --run_in_cwd</code>, so the binary runs from the repository root</td></tr>
+<tr><td><code>just css</code>, <code>css-release</code>, <code>css-editor</code>, <code>css-editor-release</code>, <code>css-mosaic</code></td><td>builds a stylesheet target and copies it into the application's <code>public/assets/</code></td></tr>
+<tr><td><code>just dev</code>, <code>dev-otel</code>, <code>dev-editor</code>, <code>dev-editor-otel</code>, <code>watch-mosaic-playground</code></td><td>Tailwind <code>--watch</code> with the Bazel-pinned CLI, and bacon restarting the server's binary</td></tr>
+<tr><td><code>just repin [crate]</code></td><td>re-resolves the crate universe and refreshes <code>Cargo.Bazel.lock</code> and <code>MODULE.bazel.lock</code></td></tr>
+<tr><td><code>just audit</code></td><td><code>cargo-audit</code> and <code>osv-scanner</code> over <code>Cargo.Bazel.lock</code> and <code>dsp-cli/Cargo.lock</code></td></tr>
+<tr><td><code>just rust-project</code></td><td>writes <code>rust-project.json</code> for rust-analyzer</td></tr>
+<tr><td><code>just snap-accept &lt;target&gt;</code></td><td>runs one test target from the checkout with <code>INSTA_UPDATE=always</code>, so <code>insta</code> rewrites the snapshots that changed</td></tr>
+<tr><td><code>just dsp-cli-test-live</code></td><td>the <code>dsp-cli</code> live tests against a DSP stack, with the <code>DSP_TEST_*</code> variables and <code>DSP_TOKEN</code> passed through</td></tr>
+<tr><td><code>just canonicalize-projects</code></td><td>runs the editor's canonical round-trip test from the checkout with <code>CANONICALIZE_PROJECT_FILES=1</code>, so it rewrites the committed project files</td></tr>
+<tr><td><code>just build-docker-dpe</code>, <code>build-docker-editor</code>, <code>build-docker-mosaic-playground</code></td><td>builds an image and loads it into Docker as <code>local-scan/&lt;name&gt;:latest</code>; <code>just run-docker-*</code> runs it</td></tr>
+<tr><td><code>just bazel-docker-push &lt;target&gt; [flags] -- --tag &lt;tag&gt; [--repository &lt;repository&gt;]</code></td><td>builds an image and pushes it with its <code>:image_push</code> target; CI only (<code>docker-publish</code> action)</td></tr>
+<tr><td><code>just image-smoke</code></td><td>loads the three images, starts each, and expects 200 from <code>/healthz</code> (the playground: <code>/</code>) and exit 0 from the <code>healthcheck</code> subcommand</td></tr>
+<tr><td><code>just build-fuzz</code></td><td>the libFuzzer binaries of the DPE fuzz targets, <code>--config=fuzz</code></td></tr>
+<tr><td><code>just test-a11y-dpe</code>, <code>test-e2e-editor</code>, <code>test-a11y-editor</code></td><td>builds the server with <code>--config=release</code> for this machine and the release stylesheet, then runs the Playwright suite with the binary's path in <code>ACCESS_SERVER_BIN</code> or <code>DEPOSIT_SERVER_BIN</code></td></tr>
+<tr><td><code>just clean</code></td><td><code>bazel clean</code></td></tr>
+</tbody></table>
+</div>
+<p>A recipe that takes <code>FLAGS</code> passes them to Bazel, as CI passes <code>--config=ci</code> and the remote flags, for example <code>just test --test_output=errors</code>. A single package is plain Bazel: <code>bazel test //shared/telemetry/...</code>.</p>
+<p><code>bazel</code> is the Bazelisk command (<code>brew install bazelisk</code>, or the Nix dev shell). A first build fetches the toolchains and compiles the third-party crates, and takes several minutes; later builds are incremental.</p>
+<h2 id="adding-a-crate-or-a-dependency"><a class="header" href="#adding-a-crate-or-a-dependency">Adding a crate or a dependency</a></h2>
+<p>Third-party crates are declared once, in <code>MODULE.bazel</code>, as <code>crate.spec</code> lines with the union of the features every first-party crate needs. Targets name them as <code>@crates//:&lt;name&gt;</code>. To add one:</p>
+<ol>
+<li>Add the <code>crate.spec</code> (for <code>dsp-cli</code>, also the dependency in <code>dsp-cli/Cargo.toml</code>).</li>
+<li>Run <code>just repin</code>. It resolves the new spec and leaves every other locked version where it is. <code>just repin &lt;crate&gt;</code> moves one crate, which is how a transitive crate gets a security bump.</li>
+<li>Add <code>@crates//:&lt;name&gt;</code> to the <code>deps</code> of the targets that use it.</li>
+</ol>
+<p>New source files need no BUILD edit (<code>srcs</code> is a glob), but a new file a crate reads with <code>include_str!</code> or at run time goes into <code>compile_data</code> or <code>data</code>.</p>
+<p>A first-party crate's <code>BUILD.bazel</code> is hand-written: <code>rust_library</code>, <code>rust_test</code> and, for integration tests, <code>rust_test_suite</code>, with <code>crate_name</code> always Cargo's name. A target is visible only to the packages listed in its <code>visibility</code>; a new dependency edge between first-party crates is one line there, in the provider's BUILD file. No first-party target is public.</p>
+<p>Never run <code>bazel mod tidy</code>, also when Bazel's output suggests it: it removes <code>use_repo</code> lines the <code>llvm</code> extension needs. <code>MODULE.bazel.lock</code> and <code>Cargo.Bazel.lock</code> are regenerated (<code>just repin</code>), never merged by hand; after a rebase conflict, take <code>main</code>'s side and repin.</p>
+<p>CI runs with <code>--config=ci</code>, which sets <code>--lockfile_mode=error</code>: a <code>MODULE.bazel</code> change without the matching <code>MODULE.bazel.lock</code> fails.</p>
+<h2 id="tests-and-the-files-they-read"><a class="header" href="#tests-and-the-files-they-read">Tests and the files they read</a></h2>
+<p>A test runs from its runfiles tree, where every file it declares in <code>data</code> is a symbolic link into the checkout. A target whose sources use <code>env!("CARGO_MANIFEST_DIR")</code> sets <code>rustc_env = {"CARGO_MANIFEST_DIR": "&lt;package path&gt;"}</code>: the relative path resolves from the runfiles root. Two consequences:</p>
+<ul>
+<li>A test that refuses symbolic links, as CPE's project discovery does, reads a <code>copy_to_directory</code> of its files with <code>root_paths = []</code>, which keeps their repository paths, and is tagged <code>no-sandbox</code>, because the local sandbox links each copied file again. <code>CARGO_MANIFEST_DIR</code> then points into the copy (<code>cpe-server</code>, <code>cpe-web</code>, <code>access-server</code>).</li>
+<li><code>figment::Jail</code> moves the whole process into a temporary directory while a config test runs, and a relative path read by a test on another thread fails. A test target whose crate uses <code>Jail</code> sets <code>env = {"RUST_TEST_THREADS": "1"}</code>.</li>
+</ul>
+<p>Snapshots are <code>data</code> of their test target. <code>just snap-accept &lt;target&gt;</code> accepts changed ones; review them with <code>git diff</code>.</p>
+<p><code>rust_test_suite</code> names each test crate <code>&lt;suite&gt;_&lt;file&gt;_test</code>, and <code>insta</code> names a snapshot after the crate, so integration tests with snapshots are one <code>rust_test</code> per file with <code>crate_name</code> set to the file stem instead (<code>dsp-cli</code>). <code>rules_rust</code> does not set <code>CARGO_BIN_EXE_&lt;name&gt;</code>: a test that runs a binary of its package sets it with <code>rustc_env = {"CARGO_BIN_EXE_dsp": "$(rootpath :dsp)"}</code> and the binary in <code>data</code>, and makes the runfiles-relative path absolute before use.</p>
+<p>Bazel runs no doctests: <code>rust_doc_test</code> cannot link against the hermetic toolchain. A doctest is an <code>ignore</code> block, and a unit test carries its assertion.</p>
+<p>A test whose result depends on something outside its inputs, as the <code>dsp-cli</code> live tests depend on the running DSP stack, is tagged <code>external</code>, so Bazel never reuses its result, and <code>no-remote-cache</code> when its environment holds a secret.</p>
+<p>A crate with the <code>test-support</code> feature (the Deposit Area's <code>ports</code>, <code>store</code> and <code>web</code> crates) has a second library, <code>&lt;name&gt;_test_support</code>, built with the feature and marked <code>testonly</code>, so its fixtures cannot reach a production binary. It is a library, not an <code>alias</code> marked <code>testonly</code>: Bazel checks the flag on the target an alias resolves to, so production targets could still depend on the alias. Inside a test's graph every crate that has such a variant uses it, or two builds of one crate meet in a compile; a crate whose tests take a sibling's fixtures therefore runs them on its own variant (<code>rust_test(crate = ":editor_web_test_support")</code>).</p>
+<h2 id="stylesheets"><a class="header" href="#stylesheets">Stylesheets</a></h2>
+<p>Each application's stylesheet is a build action: <code>//areas/access/dpe:css</code>, <code>//areas/deposit/editor:css</code> and <code>//modules/mosaic/playground:css</code>, a <code>tailwind_css</code> rule (<code>tools/tailwind/defs.bzl</code>) running the Tailwind standalone CLI. The DPE and editor stylesheets are directories holding <code>app.&lt;hash8&gt;.css</code>, as <code>just css-release</code> and <code>just css-editor-release</code> write them; the playground's is <code>app.css</code>. Their output is byte-identical to the <code>just css*</code> recipes' at the same commit.</p>
+<p>The entry files import <code>tailwindcss</code> with <code>source(none)</code>, so Tailwind reads only the files the target lists, and a class used in a file it does not list is silently missing from the stylesheet. Each scanned crate exports its <code>.rs</code> files as <code>tailwind_sources</code>, a glob over the whole package, tests included; a nested package exports its own. An <code>@source</code> line added to an entry file needs its files added to <code>srcs</code> of <code>:css</code> in the same edit: the dev loop's Tailwind watches the checkout and still shows the classes, the image does not. The entry files say so at their <code>@source</code> lines.</p>
+<p>The CLI is pinned once, by the four <code>http_file</code>s in <code>MODULE.bazel</code>, one per platform, each with its <code>sha256</code>; <code>//tools/tailwind</code> picks the one for the machine that runs the action. The dev recipes' <code>--watch</code> runs the same binary, so the watch and the build cannot use different versions. A Tailwind bump edits the four URLs and hashes together. With the recipes building through Bazel, a new <code>@source</code> line whose files are missing from <code>:css</code> shows in the dev loop, which scans the checkout, and not in the release stylesheet or the image.</p>
+<h2 id="images"><a class="header" href="#images">Images</a></h2>
+<p><code>//areas/access/server:image</code>, <code>//areas/deposit/server:image</code> and <code>//modules/mosaic/playground:image</code> are the DPE, editor and Mosaic playground images: a static musl binary, built for <code>//platforms:linux_x86_64_musl</code> through a transition, on distroless <code>static-debian12:nonroot</code>, pinned by digest in <code>MODULE.bazel</code>. Layers are built by <code>tar.bzl</code> (<code>tools/image/defs.bzl</code>): the binary, the public directory with the stylesheet, and the data directories, each entry owned by root with a fixed modification time. Environment, entrypoint, command, port and working directory are set on <code>app_image</code> in each BUILD file; an OCI image has no <code>HEALTHCHECK</code>, and both servers keep their <code>healthcheck</code> subcommand.</p>
+<p>Each image has <code>:image_load</code>, which loads it into Docker as the tag the Scout workflow scans, and <code>:image_push</code>, which pushes to Docker Hub with the tags passed after <code>--</code>, or to the repository <code>--repository</code> names (<code>just bazel-docker-push //areas/access/server:image_push -- --tag &lt;tag&gt;</code>). Both are <code>manual</code>, so <code>//...</code> does not build images. The image recipes add <code>--config=release</code>, the profile the published binaries are built with, and <code>--stamp</code> for the editor's footer version. These images are what CI publishes, deploys as previews and scans (<a href="./deployment.html#reusable-actions">Deployment</a>).</p>
+<p>The images are <code>linux/amd64</code> only; on an arm64 Mac, Docker runs them emulated.</p>
+<h2 id="fuzz-targets"><a class="header" href="#fuzz-targets">Fuzz targets</a></h2>
+<p><code>//areas/access/dpe/server/fuzz</code> holds the five DPE fuzz targets as <code>cc_fuzz_test</code> (<code>rules_fuzzing</code>), after Sipi's: <code>fuzz_target.cc</code> is libFuzzer's entry point and calls <code>dpe_fuzz_entry</code>, which each target's <code>rust_static_library</code> shim in <code>shims/</code> defines. Without <code>--config=fuzz</code> the engine is <code>replay</code>, which needs no libFuzzer runtime, so <code>bazel test //...</code> builds and runs the five targets on every platform; with no corpus checked in, that run checks that they build and link. <code>--config=fuzz</code> (<code>.bazelrc</code>) switches to libFuzzer, builds with <code>-c opt</code> and instruments the Rust crates with SanitizerCoverage on stable Rust, with debug assertions and overflow checks on.</p>
+<p><code>just build-fuzz</code> builds <code>&lt;target&gt;_bin</code> for each and prints the binaries' paths under <code>bazel-out/</code> (not <code>bazel-bin/</code>, which follows whichever configuration was built last). Run a binary directly with a corpus directory, not through <code>bazel run</code>, whose sandbox discards the corpus the run grows:</p>
+<pre><code class="language-bash">just build-fuzz
+&lt;printed path of tab_validation_bin&gt; areas/access/dpe/server/fuzz/corpus/tab_validation \
+  -artifact_prefix=areas/access/dpe/server/fuzz/artifacts/ -max_total_time=60 -max_len=4096
+</code></pre>
+<p><code>-artifact_prefix</code> keeps a crashing input out of the repository root: libFuzzer writes it as <code>crash-&lt;sha1&gt;</code> to that directory, which must exist. <code>corpus/</code> and <code>artifacts/</code> are git-ignored. The nightly <code>fuzz.yml</code> builds the binaries with <code>just build-fuzz</code> and runs each with its cached corpus, writing a crash to <code>artifacts/&lt;target&gt;/</code>.</p>
+<h2 id="version-stamping"><a class="header" href="#version-stamping">Version stamping</a></h2>
+<p><code>deposit-shell</code>'s footer shows <code>DEPOSIT_VERSION</code>. A build with <code>--stamp</code> takes it from <code>tools/workspace_status.sh</code>, which reads the <code>DEPOSIT_VERSION</code> environment variable (<code>DEPOSIT_VERSION=v1.2.3 bazel build --stamp //areas/deposit/server:deposit_server</code>) and emits <code>dev</code> when it is unset. A build without <code>--stamp</code>, every test build included, shows <code>dev</code>, so a new commit relinks no test.</p>
+<h2 id="remote-cache-and-execution"><a class="header" href="#remote-cache-and-execution">Remote cache and execution</a></h2>
+<p>In CI, the <code>bazel-setup</code> action adds the remote cache and executor flags for DaSCH's NativeLink endpoint. Without the secrets (a pull request from a fork, Dependabot) the flags are empty and the build runs cold and local. So does every pull request while the endpoint is down. Pull requests write to the same cache instance as <code>main</code>, and a pull request's workflow holds the client certificate, so it can write any result. A build that publishes an image therefore takes no action result from the cache: the <code>docker-publish</code> action adds <code>--noremote_accept_cached</code>, Bazel sends <code>skip_cache_lookup</code>, and NativeLink neither reads the cache for the action nor joins a run of the same action already in flight, so every action runs again on the executor. The executors themselves are shared: a pull request's actions run on the same workers. Only a pull request's own preview takes cached results. The action also builds before it logs in to Docker Hub, so the build's code never runs beside the token. The <code>check</code> and <code>test / ubuntu / stable</code> timeouts are twice the slowest warm run of their Bazel steps; a cold run (a fork, Dependabot, the endpoint down) takes longer.</p>
+<h2 id="ide-setup"><a class="header" href="#ide-setup">IDE setup</a></h2>
+<p>rust-analyzer reads <code>rust-project.json</code>, which <code>just rust-project</code> generates from the Bazel graph (git-ignored, it holds absolute paths). Re-run it after adding or moving a target. Under <code>dsp-cli/</code>, rust-analyzer finds <code>dsp-cli/Cargo.toml</code> first and uses it unless <code>rust-analyzer.linkedProjects</code> points at <code>rust-project.json</code>.</p>
+<h2 id="personal-settings"><a class="header" href="#personal-settings">Personal settings</a></h2>
+<p><code>user.bazelrc</code> at the repository root is read if it exists and is git-ignored, for flags such as <code>--disk_cache=~/.cache/bazel-disk</code>.</p>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
   padding: 8px 16px;
@@ -1096,17 +1241,17 @@ for the full decision.</p>
 <h3 id="checks-and-tests"><a class="header" href="#checks-and-tests">Checks and Tests</a></h3>
 <p>Every push and pull request runs:</p>
 <ul>
-<li><strong>check.yml</strong> — Formatting (<code>maudfmt</code> for <code>html!</code> macros + <code>cargo +nightly fmt</code>), linting (<code>clippy</code>), third-party artifact checksums (see <a href="./security.html">Security</a>), and a dsp-cli packaging dry run (<code>cargo publish -p dsp-cli --dry-run</code>)</li>
-<li><strong>test.yml</strong> — Runs the full test suite, and the tests of the <code>.github/scripts</code> gates (<code>just test-scripts</code>)</li>
-<li><strong>scout-dpe.yml</strong> / <strong>scout-mosaic-playground.yml</strong> — Docker image vulnerability scanning (see <a href="./security.html">Security</a>)</li>
+<li><strong>check.yml</strong> — <code>just check</code> with Bazel: the gate scripts, vendored-JS checksums among them (see <a href="./security.html">Security</a>), formatting (<code>maudfmt</code> for <code>html!</code> macros and the pinned nightly <code>rustfmt</code>), clippy over every Bazel target; a dsp-cli packaging dry run and test run against its own manifest (<code>cargo publish --dry-run</code>, <code>cargo test</code>); the E2E suites' Biome lint; the mdBook build</li>
+<li><strong>test.yml</strong> — <code>just test</code> (every Bazel test) and <code>just image-smoke</code> (the three images built, started and answering), and the tests of the <code>.github/scripts</code> gates (<code>just test-scripts</code>)</li>
+<li><strong>scout-dpe.yml</strong> / <strong>scout-editor.yml</strong> / <strong>scout-mosaic-playground.yml</strong> — Docker image vulnerability scanning of the Bazel-built images (see <a href="./security.html">Security</a>)</li>
 <li><strong>dsp-cli-drift.yml</strong> — its <code>changes</code> job (deciding whether anything under <code>dsp-cli/**</code> changed) runs on every PR; see <a href="deployment.html#dsp-cli-drift-detection">dsp-cli drift detection</a> below</li>
 </ul>
 <h3 id="accessibility-testing"><a class="header" href="#accessibility-testing">Accessibility Testing</a></h3>
 <p>Defined in <code>a11y-dpe.yml</code>.</p>
-<p>Runs on PRs and pushes to <code>main</code> that touch <code>areas/access/dpe/**</code>, <code>areas/access/server/**</code>, <code>areas/access/cpe/**</code>, <code>areas/access/sync/**</code>, <code>areas/access/media/**</code> or <code>shared/**</code> — everything compiled into the binary the suite starts. The suite tests DPE's pages. Builds the DPE, then runs Playwright accessibility tests with axe-core against WCAG 2.1 AA.</p>
+<p>Runs on PRs and pushes to <code>main</code> that touch <code>areas/access/dpe/**</code>, <code>areas/access/server/**</code>, <code>areas/access/cpe/**</code>, <code>areas/access/sync/**</code>, <code>areas/access/media/**</code>, <code>shared/**</code> or <code>modules/mosaic/tiles/**</code> (everything compiled into the binary the suite starts), or the Bazel build's own files. The suite tests DPE's pages. <code>just test-a11y-dpe</code> builds the release server and stylesheet with Bazel, then runs Playwright accessibility tests with axe-core against WCAG 2.1 AA. <code>a11y-editor.yml</code> does the same for the editor, with its whole suite (<code>just test-e2e-editor</code>).</p>
 <h3 id="fuzz-testing"><a class="header" href="#fuzz-testing">Fuzz Testing</a></h3>
 <p>Defined in <code>fuzz.yml</code>.</p>
-<p>Runs nightly at 02:00 UTC (and on manual dispatch). Fuzzes <code>tab_validation</code> and <code>query_params</code> targets for 10 minutes each using <code>cargo-fuzz</code> on nightly Rust. Corpus is cached between runs. On crash, the job uploads the crash input as a <code>fuzz-crashes-{target}</code> artifact (90-day retention) and fails; GitHub Issues are disabled on this repository, so no issue is filed automatically — a person files a Linear issue from the artifact. This is the same signal model the drift job's nightly <code>latest</code> run uses (see below).</p>
+<p>Runs nightly at 02:00 UTC (and on manual dispatch). Builds the libFuzzer binaries with Bazel (<code>just build-fuzz</code>) and fuzzes the <code>tab_validation</code> and <code>query_params</code> targets for 10 minutes each. Corpus is cached between runs. On crash, the job uploads the crash input as a <code>fuzz-crashes-{target}</code> artifact (90-day retention) and fails; GitHub Issues are disabled on this repository, so no issue is filed automatically — a person files a Linear issue from the artifact. This is the same signal model the drift job's nightly <code>latest</code> run uses (see below).</p>
 <h3 id="dsp-cli-drift-detection"><a class="header" href="#dsp-cli-drift-detection">dsp-cli Drift Detection</a></h3>
 <p>Defined in <a href="https://github.com/dasch-swiss/dsp-repository/blob/main/.github/workflows/dsp-cli-drift.yml"><code>dsp-cli-drift.yml</code></a>.</p>
 <p>Runs dsp-cli's live test suite (dsp-cli/ADR-0009 layer 5) against a pinned, containerized dsp-api
@@ -1147,40 +1292,41 @@ failing test names and the dsp-api image digest — and files a Linear issue fro
 <h3 id="reusable-actions"><a class="header" href="#reusable-actions">Reusable Actions</a></h3>
 <p>Common CI steps are extracted into composite actions in <code>.github/actions/</code>:</p>
 <div class="table-wrapper"><table><thead><tr><th>Action</th><th>Purpose</th></tr></thead><tbody>
-<tr><td><code>build-dpe</code></td><td>Compile the Access Area's binary (static musl <code>access-server</code> + content-hashed Tailwind <code>app.css</code> via <code>just css-release</code>) and stage it with DPE's public files and data, <code>sync</code>'s data, <code>media</code>'s data and CPE's project folders</td></tr>
-<tr><td><code>build-editor</code></td><td>Compile the metadata editor (static musl <code>deposit-server</code> binary + content-hashed Tailwind <code>app.css</code> via <code>just css-editor-release</code>) and stage artifacts</td></tr>
-<tr><td><code>docker-publish</code></td><td>Set up Buildx, log in to Docker Hub, build and push an image</td></tr>
+<tr><td><code>bazel-setup</code></td><td>Bazelisk, <code>just</code>, the Bazel repository cache and the remote cache and executor flags (<code>bazel-rbe</code>); see <a href="./bazel.html#remote-cache-and-execution">Building with Bazel</a></td></tr>
+<tr><td><code>build-dpe</code></td><td>Build the DPE image with Bazel and load it into Docker as <code>local-scan/dpe:latest</code>, for the Scout scan</td></tr>
+<tr><td><code>build-editor</code></td><td>Build the editor image with Bazel, stamped with the caller's <code>DEPOSIT_VERSION</code>, and load it into Docker as <code>local-scan/editor:latest</code></td></tr>
+<tr><td><code>docker-publish</code></td><td>Build an image with Bazel and push it with its <code>:image_push</code> target under the caller's tag, to Docker Hub or the repository the caller names; takes no result from the remote cache unless the caller is a pull request's own preview</td></tr>
 <tr><td><code>docker-scout</code></td><td>Run Docker Scout CVE scan and upload SARIF results</td></tr>
 <tr><td><code>commit-lint</code></td><td>Run the commit gate — commitlint-rs (type allowlist and mandatory scope) plus the one-commit-per-PR cap</td></tr>
 <tr><td><code>dsp-cli-stack-test</code></td><td>Start the Fuseki/knora-api stack, load fixtures, mint tokens, and run dsp-cli's live tests against it</td></tr>
 </tbody></table>
 </div>
+<p>Every image is a Bazel target (<code>//areas/access/server:image</code>, <code>//areas/deposit/server:image</code>, <code>//modules/mosaic/playground:image</code>; see <a href="./bazel.html#images">Building with Bazel</a>): a static musl binary, the public directory with the stylesheet, and the data directories on distroless <code>static</code>. The preview, Scout and Mosaic publish workflows also run when the Bazel build changes: <code>MODULE.bazel</code>, <code>MODULE.bazel.lock</code>, <code>Cargo.Bazel.lock</code>, <code>.bazelrc</code>, <code>.bazelversion</code>, <code>platforms/</code>, <code>bazel/</code>, <code>tools/</code> and the composite actions they use.</p>
 <h3 id="mosaic-playground"><a class="header" href="#mosaic-playground">Mosaic Playground</a></h3>
 <p>The Mosaic component library playground has two deployment paths:</p>
 <h4 id="pr-preview-cloud-run"><a class="header" href="#pr-preview-cloud-run">PR Preview (Cloud Run)</a></h4>
 <p>Defined in <code>cloud-run-mosaic-pull-request.yml</code>.</p>
 <p>When a pull request modifies files under <code>modules/mosaic/</code>, a preview of the Mosaic playground is automatically deployed to Google Cloud Run. The preview URL is posted as a comment on the PR and updated on each push.</p>
 <ul>
-<li><strong>Trigger:</strong> PRs that touch <code>modules/mosaic/**</code> (same-repo only, not forks)</li>
+<li><strong>Trigger:</strong> PRs that touch <code>modules/mosaic/**</code> or the Bazel build (same-repo only, not forks)</li>
 <li><strong>Service:</strong> Ephemeral Cloud Run service per PR</li>
 <li><strong>Cleanup:</strong> The Cloud Run service and container image are deleted when the PR is closed or merged</li>
 </ul>
 <p>Authentication uses Workload Identity Federation (keyless, OIDC-based).</p>
 <h4 id="production-docker-hub--jenkins"><a class="header" href="#production-docker-hub--jenkins">Production (Docker Hub + Jenkins)</a></h4>
 <p>Defined in <code>mosaic-docker-publish.yml</code>.</p>
-<p>When changes to <code>modules/mosaic/</code> are merged to <code>main</code>, the playground image is built, pushed to Docker Hub, and a Jenkins webhook triggers the production deployment.</p>
+<p>When changes to <code>modules/mosaic/</code> or the Bazel build are merged to <code>main</code>, Bazel builds the playground image and pushes it to Docker Hub, and a Jenkins webhook triggers the production deployment.</p>
 <h3 id="dpe"><a class="header" href="#dpe">DPE</a></h3>
 <h4 id="pr-preview-cloud-run-1"><a class="header" href="#pr-preview-cloud-run-1">PR Preview (Cloud Run)</a></h4>
 <p>Defined in <code>cloud-run-dpe-pull-request.yml</code>.</p>
-<p>When a pull request modifies files under <code>areas/access/dpe/</code>, <code>areas/access/server/</code>, <code>areas/access/cpe/</code>, <code>areas/access/sync/</code>, <code>areas/access/media/</code>, <code>shared/</code> or the <code>build-dpe</code> action it builds with, a preview of the DPE is automatically deployed to Google Cloud Run. Works the same way as the Mosaic preview: ephemeral service per PR, cleaned up on close/merge.</p>
+<p>When a pull request modifies files under <code>areas/access/dpe/</code>, <code>areas/access/server/</code>, <code>areas/access/cpe/</code>, <code>areas/access/sync/</code>, <code>areas/access/media/</code>, <code>shared/</code>, <code>modules/mosaic/tiles/</code> or the Bazel build, a preview of the DPE is automatically deployed to Google Cloud Run. Works the same way as the Mosaic preview: ephemeral service per PR, cleaned up on close/merge.</p>
 <p>The preview is the whole image, so it serves CPE under <code>/cpe</code> too, from the data the image carries; a change to a presentation's code or files gets a preview of its own. It runs without CPU throttling, because CPE loads its projects after the port is bound.</p>
 <h4 id="continuous-deployment-docker-hub--jenkins"><a class="header" href="#continuous-deployment-docker-hub--jenkins">Continuous Deployment (Docker Hub + Jenkins)</a></h4>
 <p>Defined in <code>dpe-docker-publish.yml</code>.</p>
 <p>On every push to <code>main</code>:</p>
 <ol>
-<li>Builds the content-hashed Tailwind stylesheet (<code>just css-release</code>)</li>
-<li>Builds a static musl-linked <code>access-server</code> binary</li>
-<li>Pushes the Docker image to Docker Hub (<code>daschswiss/dpe:{tag}</code>)</li>
+<li>Builds the image with Bazel (<code>//areas/access/server:image_push</code>), taking no result from the remote cache</li>
+<li>Pushes it to Docker Hub (<code>daschswiss/dpe:{tag}</code>)</li>
 <li>Triggers a Jenkins webhook for DEV deployment</li>
 </ol>
 <h4 id="release-publishing"><a class="header" href="#release-publishing">Release Publishing</a></h4>
@@ -1189,14 +1335,13 @@ failing test names and the dsp-api image digest — and files a Linear issue fro
 <h3 id="editor"><a class="header" href="#editor">Editor</a></h3>
 <h4 id="pr-preview-cloud-run-2"><a class="header" href="#pr-preview-cloud-run-2">PR Preview (Cloud Run)</a></h4>
 <p>Defined in <code>cloud-run-editor-pull-request.yml</code>.</p>
-<p>When a pull request modifies files under <code>areas/deposit/</code> or <code>shared/</code>, a preview of the metadata editor is deployed to Google Cloud Run. Works the same way as the DPE and Mosaic previews: ephemeral service per PR, cleaned up on close/merge.</p>
+<p>When a pull request modifies files under <code>areas/deposit/</code>, <code>shared/</code>, <code>modules/mosaic/tiles/</code>, DPE's data (<code>areas/access/dpe/server/data/</code>, which the image carries) or the Bazel build, a preview of the metadata editor is deployed to Google Cloud Run. Works the same way as the DPE and Mosaic previews: ephemeral service per PR, cleaned up on close/merge.</p>
 <h4 id="continuous-deployment-docker-hub--jenkins-1"><a class="header" href="#continuous-deployment-docker-hub--jenkins-1">Continuous Deployment (Docker Hub + Jenkins)</a></h4>
 <p>Defined in <code>editor-docker-publish.yml</code>.</p>
 <p>On every push to <code>main</code>:</p>
 <ol>
-<li>Builds the content-hashed Tailwind stylesheet (<code>just css-editor-release</code>)</li>
-<li>Builds a static musl-linked <code>deposit-server</code> binary</li>
-<li>Pushes the Docker image to Docker Hub (<code>daschswiss/metadata-editor:{tag}</code>)</li>
+<li>Builds the image with Bazel (<code>//areas/deposit/server:image_push</code>), stamped with the tag as the footer version, taking no result from the remote cache</li>
+<li>Pushes it to Docker Hub (<code>daschswiss/metadata-editor:{tag}</code>)</li>
 <li>Triggers a Jenkins webhook (<code>Service=deposit</code>) for STAGE deployment, <code>deposit.stage.dasch.swiss</code></li>
 </ol>
 <p>The editor deploys as its own <code>deposit</code> stack in ops-deploy. That stack has no dev host, so its stage takes the role DEV plays for DPE: it follows <code>main</code>.</p>
@@ -1207,11 +1352,11 @@ failing test names and the dsp-api image digest — and files a Linear issue fro
 <p>Defined in <code>release-please.yml</code>.</p>
 <p>On every push to <code>main</code>, <a href="https://github.com/googleapis/release-please">Release Please</a> reads conventional commit messages and creates or updates a release PR with auto-generated changelog. Merging the release PR creates a GitHub Release.</p>
 <p>Which prefix produces which changelog section and version bump is defined in <a href="./git-conventions.html#commit-message-schema">Git Conventions</a> — that page is the human source for the type vocabulary, and this config is the machine source.</p>
-<p>Configuration lives in <a href="https://github.com/dasch-swiss/dsp-repository/blob/main/.github/release-please/config.json"><code>.github/release-please/config.json</code></a> and <a href="https://github.com/dasch-swiss/dsp-repository/blob/main/.github/release-please/manifest.json"><code>.github/release-please/manifest.json</code></a>.</p>
+<p>Configuration lives in <a href="https://github.com/dasch-swiss/dsp-repository/blob/main/.github/release-please/config.json"><code>.github/release-please/config.json</code></a> and <a href="https://github.com/dasch-swiss/dsp-repository/blob/main/.github/release-please/manifest.json"><code>.github/release-please/manifest.json</code></a>. The root package is of release type <code>simple</code>, which writes its version to <code>version.txt</code> at the repository root; the dev recipes read it as the services' <code>service.version</code>.</p>
 <h4 id="dsp-cli"><a class="header" href="#dsp-cli">dsp-cli</a></h4>
-<p><code>dsp-cli</code> is a second release-please package, configured alongside the root <code>"."</code> package in the same <code>config.json</code>. Top-level <code>separate-pull-requests: true</code> keeps the two release PRs apart, so merging a workspace release never ships <code>dsp-cli</code>, and merging the <code>dsp-cli</code> release never ships the workspace.</p>
+<p><code>dsp-cli</code> is a second release-please package, configured alongside the root <code>"."</code> package in the same <code>config.json</code>. Top-level <code>separate-pull-requests: true</code> keeps the two release PRs apart, so merging a root release never ships <code>dsp-cli</code>, and merging the <code>dsp-cli</code> release never ships the root package.</p>
 <p>Tag format differs by package: <code>dsp-cli</code> releases are tagged <code>dsp-cli-v&lt;version&gt;</code> (the package sets <code>include-component-in-tag: true</code>), while the root keeps the plain <code>v&lt;version&gt;</code> tag. The <code>dsp-cli</code> release branch is named <code>release-please--branches--main--components--dsp-cli</code>.</p>
-<p><strong>Release attribution is by path, not by commit scope.</strong> release-please assigns a commit to a package when any file it touches sits under that package's path; the root <code>"."</code> package receives every commit unless its <code>exclude-paths</code> excludes it, and a commit is excluded from a package only when <em>all</em> of its files fall under an excluded path. The root's <code>exclude-paths</code> is <code>[".github", "dsp-cli"]</code>. The consequence — accepted and documented, not worked around — is the <strong>double-bump rule</strong>: a <code>dsp-cli</code> commit that also touches a root file (for example, a <code>Cargo.lock</code> dependency bump) lands in both packages' release PRs. Both packages are pre-1.0 and release often, so a double bump is cheap. See <a href="./git-conventions.html#scopes">Git Conventions</a> for keeping <code>dsp-cli</code> commits scoped to <code>dsp-cli/**</code> where possible.</p>
+<p><strong>Release attribution is by path, not by commit scope.</strong> release-please assigns a commit to a package when any file it touches sits under that package's path; the root <code>"."</code> package receives every commit unless its <code>exclude-paths</code> excludes it, and a commit is excluded from a package only when <em>all</em> of its files fall under an excluded path. The root's <code>exclude-paths</code> is <code>[".github", "dsp-cli"]</code>. The consequence — accepted and documented, not worked around — is the <strong>double-bump rule</strong>: a <code>dsp-cli</code> commit that also touches a root file (for example, a <code>MODULE.bazel</code> dependency bump) lands in both packages' release PRs. Both packages are pre-1.0 and release often, so a double bump is cheap. See <a href="./git-conventions.html#scopes">Git Conventions</a> for keeping <code>dsp-cli</code> commits scoped to <code>dsp-cli/**</code> where possible.</p>
 <p>A <code>Release-As: &lt;version&gt;</code> commit footer forces a deliberate version choice for a package, overriding the version release-please would otherwise compute. The first <code>dsp-cli</code> release from its new workspace home carries <code>Release-As: 0.3.0</code>: with <code>bump-minor-pre-major</code>, a <code>feat</code> alone would only produce <code>0.2.2</code>, which would not signal the move.</p>
 <p>Publishing <code>dsp-cli</code> to crates.io is handled by <a href="https://github.com/dasch-swiss/dsp-repository/blob/main/.github/workflows/publish-dsp-cli.yml"><code>publish-dsp-cli.yml</code></a>, triggered on <code>release: published</code> and guarded by <code>startsWith(github.event.release.tag_name, 'dsp-cli-v')</code> so it never fires for a root release. It publishes via <strong>trusted publishing</strong> (<code>rust-lang/crates-io-auth-action@v1</code> with <code>permissions: id-token: write</code>) rather than a long-lived <code>CARGO_REGISTRY_TOKEN</code> secret, and runs in the <code>crates-io</code> GitHub environment as defence in depth. Trusted publishing requires a one-time configuration on crates.io, done by an existing crate owner, naming this repository, the workflow file, and the <code>crates-io</code> environment; authentication fails until that configuration exists.</p>
 <h3 id="documentation-github-pages"><a class="header" href="#documentation-github-pages">Documentation (GitHub Pages)</a></h3>
@@ -1303,17 +1448,17 @@ each image — the full inventory of OS packages, libraries, and application
 dependencies — and matches them against vulnerability databases.</p>
 <h3 id="what-gets-scanned"><a class="header" href="#what-gets-scanned">What Gets Scanned</a></h3>
 <div class="table-wrapper"><table><thead><tr><th>Image</th><th>Workflow</th><th>Trigger</th></tr></thead><tbody>
-<tr><td>DPE (<code>daschswiss/dpe</code>)</td><td><code>scout-dpe.yml</code></td><td>PRs touching <code>areas/access/dpe/**</code>, <code>areas/access/server/**</code>, <code>areas/access/cpe/**</code>, <code>areas/access/sync/**</code>, <code>areas/access/media/**</code>, <code>shared/**</code> or <code>Cargo.lock</code></td></tr>
-<tr><td>Mosaic Playground (<code>daschswiss/mosaic-playground</code>)</td><td><code>scout-mosaic-playground.yml</code></td><td>PRs touching <code>modules/mosaic/**</code> or <code>Cargo.lock</code></td></tr>
-<tr><td>Editor (<code>daschswiss/metadata-editor</code>)</td><td><code>scout-editor.yml</code></td><td>PRs touching <code>areas/deposit/**</code>, <code>shared/**</code> or <code>Cargo.lock</code></td></tr>
+<tr><td>DPE (<code>daschswiss/dpe</code>)</td><td><code>scout-dpe.yml</code></td><td>PRs touching <code>areas/access/dpe/**</code>, <code>areas/access/server/**</code>, <code>areas/access/cpe/**</code>, <code>areas/access/sync/**</code>, <code>areas/access/media/**</code>, <code>shared/**</code>, <code>modules/mosaic/tiles/**</code>, <code>MODULE.bazel</code>, <code>MODULE.bazel.lock</code>, <code>Cargo.Bazel.lock</code> or the other files the Bazel build reads</td></tr>
+<tr><td>Mosaic Playground (<code>daschswiss/mosaic-playground</code>)</td><td><code>scout-mosaic-playground.yml</code></td><td>PRs touching <code>modules/mosaic/**</code> or <code>MODULE.bazel</code>, <code>MODULE.bazel.lock</code>, <code>Cargo.Bazel.lock</code> or the other files the Bazel build reads</td></tr>
+<tr><td>Editor (<code>daschswiss/metadata-editor</code>)</td><td><code>scout-editor.yml</code></td><td>PRs touching <code>areas/deposit/**</code>, <code>shared/**</code>, <code>modules/mosaic/tiles/**</code>, the DPE data set or <code>MODULE.bazel</code>, <code>MODULE.bazel.lock</code>, <code>Cargo.Bazel.lock</code> or the other files the Bazel build reads</td></tr>
 </tbody></table>
 </div>
 <h3 id="how-it-works"><a class="header" href="#how-it-works">How It Works</a></h3>
 <p>Each Scout workflow:</p>
 <ol>
 <li>
-<p><strong>Builds the Docker image locally</strong> — the image is loaded into the runner's Docker
-daemon (<code>load: true</code>) but never pushed to a registry. This means Scout scans
+<p><strong>Builds the image with Bazel</strong> — <code>just build-docker-*</code> loads it into the runner's
+Docker daemon (<code>:image_load</code>) but never pushes it to a registry. This means Scout scans
 exactly what would be deployed, without exposing unreviewed images.</p>
 </li>
 <li>
@@ -1338,10 +1483,10 @@ alerts.</p>
 scan reports vulnerabilities:</p>
 <ul>
 <li><strong>Critical/High in base image</strong> — check if a newer base image version is available
-that patches the issue. For DPE (distroless), these are rare. For Mosaic
-(Debian-based), update the base image tag.</li>
+that patches the issue. All three images use distroless <code>static-debian12:nonroot</code>, pinned
+by digest in <code>MODULE.bazel</code>, where such issues are rare; a move means a new digest there.</li>
 <li><strong>Critical/High in dependencies</strong> — check if a dependency update resolves the issue.
-Run <code>cargo update</code> and re-test.</li>
+Run <code>just repin &lt;crate&gt;</code> and re-test.</li>
 <li><strong>False positives</strong> — some CVEs may not be exploitable in our context. Document the
 rationale if choosing to accept the risk.</li>
 </ul>
@@ -1362,7 +1507,7 @@ environments on Docker Hub)</li>
 are detected</li>
 </ul>
 <h2 id="third-party-artifact-integrity"><a class="header" href="#third-party-artifact-integrity">Third-Party Artifact Integrity</a></h2>
-<p>Scanning answers "does this dependency carry a known CVE". It does not answer "are these the bytes we reviewed". Two kinds of third-party artifact in this repo are shipped or executed without passing through Cargo, so nothing else checks them. <code>just check</code> enforces both, which is what the CI <code>check</code> job runs.</p>
+<p>Scanning answers "does this dependency carry a known CVE". It does not answer "are these the bytes we reviewed". Two kinds of third-party artifact in this repo are shipped or executed without passing through the crate lock files. <code>just check</code> verifies the vendored JavaScript, which is what the CI <code>check</code> job runs; Bazel verifies the Tailwind CLI's digest when it downloads it.</p>
 <h3 id="vendored-javascript"><a class="header" href="#vendored-javascript">Vendored JavaScript</a></h3>
 <p><code>areas/access/dpe/public/vendor/</code>, <code>areas/access/cpe/public/vendor/</code> and <code>areas/deposit/editor/public/vendor/</code> hold third-party JavaScript served straight to browsers. Each directory's <code>README.md</code> records a SHA-256 per file. Those digests are now recomputed rather than merely asserted, so the table is a check instead of a claim.</p>
 <p>Verification fails when:</p>
@@ -1375,14 +1520,10 @@ are detected</li>
 <p>Untracked files in a vendor directory are ignored, so local scratch does not fail anyone's build.</p>
 <p>To change a vendored file, follow the update process in that directory's own <code>README.md</code>: replace the file, then put <code>shasum -a 256 &lt;file&gt;</code> into the table.</p>
 <h3 id="the-tailwind-standalone-cli"><a class="header" href="#the-tailwind-standalone-cli">The Tailwind standalone CLI</a></h3>
-<p>The CSS build runs a Tailwind v4 standalone binary fetched from GitHub Releases, from two places: <code>_tailwind-bin</code> in the <code>justfile</code>, which sits behind every <code>just css*</code> recipe, the <code>build-dpe</code> and <code>build-editor</code> actions and the <code>a11y-dpe</code> workflow; and <code>modules/mosaic/playground/Dockerfile</code>. Unverified, a replaced release asset would run arbitrary code in every developer checkout and every CI job.</p>
-<p><code>tailwind.pins</code> records the version and the expected SHA-256 of each release asset. Both download sites verify against it and fail closed. The justfile checks on every resolve rather than only after a download, so a binary cached by an earlier build is verified too; hashing it costs about 0.05s under coreutils and 0.3s under perl <code>shasum</code>.</p>
-<p>Bump the pinned version with:</p>
-<pre><code class="language-sh">just tailwind-pins-refresh 4.1.19
-</code></pre>
-<p>This takes the digests from the <code>sha256sums.txt</code> published alongside that release and rewrites <code>tailwind.pins</code>. That file is read once, here, and never at build time: whoever can replace a release asset can replace its checksum file too, so verifying one against the other would establish nothing.</p>
-<p>Be precise about what the pin buys, because it is easy to overstate. Nobody can authenticate a 64-character digest by reading it, so review of a bump commit checks the version and the asset names, not the bytes. What the pin gives is a fixed reference point and an audit trail: every later download has to match what was pinned, so tampering after the bump (a replaced asset, a poisoned CDN cache) fails closed, and an unexpected <code>tailwind.pins</code> change shows up in a diff that should not have contained one. A release already compromised at the moment of the bump would be pinned as it stands. Upstream ships no signature, provenance or SBOM that would close that last gap, so this is the strongest check available here.</p>
-<p><code>tailwind.pins</code> is also the only place the Tailwind version is written. The justfile and the mosaic Dockerfile both read it, so neither can drift onto a version the other has not seen.</p>
+<p>The CSS build runs a Tailwind v4 standalone binary fetched from GitHub Releases, through the four <code>http_file</code>s in <code>MODULE.bazel</code>, one per platform: Bazel builds every stylesheet with it, and the dev recipes' <code>--watch</code> runs the same binary (<code>just _tailwind-cli</code> builds <code>//tools/tailwind</code> and prints its path). Unverified, a replaced release asset would run arbitrary code in every developer checkout and every CI job.</p>
+<p>Each <code>http_file</code> records the URL of one release asset and its expected <code>sha256</code>. Bazel verifies the download against it and fails closed, and its repository cache is keyed on that digest, so a cached binary is the one that was pinned. The four entries are the only place the Tailwind version is written.</p>
+<p>To bump the version, take the digests from the <code>sha256sums.txt</code> published alongside that release, and change the four URLs and hashes together. That file is read once, by the person making the bump, and never at build time: whoever can replace a release asset can replace its checksum file too, so verifying one against the other would establish nothing.</p>
+<p>Be precise about what the pin buys, because it is easy to overstate. Nobody can authenticate a 64-character digest by reading it, so review of a bump commit checks the version and the asset names, not the bytes. What the pin gives is a fixed reference point and an audit trail: every later download has to match what was pinned, so tampering after the bump (a replaced asset, a poisoned CDN cache) fails closed, and an unexpected change to those lines shows up in a diff that should not have contained one. A release already compromised at the moment of the bump would be pinned as it stands. Upstream ships no signature, provenance or SBOM that would close that last gap, so this is the strongest check available here.</p>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
   padding: 8px 16px;
@@ -2591,7 +2732,7 @@ a <code>String</code> or a <code>serde_json::Value</code>. What it needs from a 
 <h2 id="testing-pyramid"><a class="header" href="#testing-pyramid">Testing Pyramid</a></h2>
 <pre><code>          ╱╲
          ╱  ╲         Layer 4: Fuzz Testing (nightly CI)
-        ╱────╲        cargo-fuzz, corpus persisted
+        ╱────╲        libFuzzer via Bazel, corpus persisted
        ╱      ╲
       ╱  E2E   ╲     Layer 3: E2E Tests (Playwright)
      ╱──────────╲     Tab switching, search, accessibility (axe-core)
@@ -2599,21 +2740,21 @@ a <code>String</code> or a <code>serde_json::Value</code>. What it needs from a 
    ╱  Snapshots   ╲   Layer 2: Snapshot Tests (insta)
   ╱────────────────╲   SSR output, SSE fragments, ARIA attributes
  ╱                  ╲
-╱    Unit Tests      ╲ Layer 1: Unit Tests (cargo test)
+╱    Unit Tests      ╲ Layer 1: Unit Tests (bazel test)
 ╱────────────────────╲ Fragment handlers, OAI protocol, domain logic
 </code></pre>
 <h2 id="layer-1-unit-tests"><a class="header" href="#layer-1-unit-tests">Layer 1: Unit Tests</a></h2>
 <ul>
 <li><strong>Location</strong>: <code>#[cfg(test)]</code> modules in each crate</li>
-<li><strong>Runner</strong>: <code>cargo test --workspace</code></li>
+<li><strong>Runner</strong>: <code>just test</code> (<code>bazel test //...</code>)</li>
 <li><strong>Scope</strong>: Fragment handlers, OAI protocol, domain types, data loading, filtering/pagination</li>
-<li><strong>Crate</strong>: dpe-core and shared-metadata tests run independently — <code>cargo test -p dpe-core</code>, <code>cargo test -p shared-metadata</code></li>
+<li><strong>Crate</strong>: one package's tests run alone, for example <code>bazel test //areas/access/dpe/core/...</code> or <code>bazel test //shared/metadata/...</code></li>
 </ul>
 <h2 id="layer-2-snapshot-tests-insta"><a class="header" href="#layer-2-snapshot-tests-insta">Layer 2: Snapshot Tests (insta)</a></h2>
 <ul>
 <li><strong>Dependency</strong>: <code>insta</code> with <code>yaml</code> and <code>filters</code> features</li>
 <li><strong>Location</strong>: Adjacent <code>snapshots/</code> directories</li>
-<li><strong>CI</strong>: Set <code>INSTA_UPDATE=new</code> so failures produce <code>.snap.new</code> artifacts for review</li>
+<li><strong>Updates</strong>: <code>.bazelrc</code> sets <code>INSTA_UPDATE=no</code>, so a changed snapshot fails its test; <code>just snap-accept &lt;target&gt;</code> rewrites it from the checkout and <code>git diff</code> is the review</li>
 <li><strong>Scope</strong>: SSR output, SSE fragment response bodies, ARIA attributes</li>
 </ul>
 <h2 id="layer-3-e2e-tests-playwright"><a class="header" href="#layer-3-e2e-tests-playwright">Layer 3: E2E Tests (Playwright)</a></h2>
@@ -2621,34 +2762,31 @@ a <code>String</code> or a <code>serde_json::Value</code>. What it needs from a 
 <li><strong>Location</strong>: <code>areas/access/dpe/web-e2e-tests/</code></li>
 <li><strong>Server</strong>: the suite starts <code>access-server</code> without <code>CPE_BASE</code>, so CPE is not mounted in it and only DPE's pages
 are tested; CPE's pages are covered by its crates' own tests.</li>
-<li><strong>Runner</strong>: <code>npx playwright test</code></li>
+<li><strong>Runner</strong>: <code>just test-a11y-dpe</code>, which builds the release server and stylesheet with Bazel and passes the binary's path in <code>ACCESS_SERVER_BIN</code></li>
 <li><strong>Scope</strong>: Tab switching, search autocomplete, scroll preservation, accessibility (axe-core)</li>
 <li><strong>Accessibility</strong>: Full-page axe-core scans against WCAG 2.1 AA</li>
 </ul>
 <h2 id="layer-4-fuzz-testing"><a class="header" href="#layer-4-fuzz-testing">Layer 4: Fuzz Testing</a></h2>
 <ul>
-<li><strong>Tool</strong>: cargo-fuzz (nightly Rust)</li>
+<li><strong>Tool</strong>: libFuzzer through <code>rules_fuzzing</code>, <code>just build-fuzz</code> (<code>--config=fuzz</code>, stable Rust; see <a href="dpe/../bazel.html#fuzz-targets">Building with Bazel</a>)</li>
 <li><strong>Schedule</strong>: Nightly CI, 10 minutes per target</li>
 <li><strong>Targets</strong>: Tab name validation, SSE response construction, query parameter parsing</li>
 <li><strong>Corpus</strong>: Persisted between runs</li>
 </ul>
 <h2 id="ci-pipeline-budget"><a class="header" href="#ci-pipeline-budget">CI Pipeline Budget</a></h2>
 <p>Target: <strong>≤ 10 minutes</strong> wall-clock per PR.</p>
-<pre><code>Parallel job group 1 (~2 min):
-  maudfmt --check + cargo fmt --check
-  cargo clippy --all-targets -Dwarnings
-  cargo-deny check
+<pre><code>check (one job):
+  gate scripts, just --fmt check, maudfmt and nightly rustfmt checks
+  clippy over every Bazel target, -Dwarnings (just check)
 
-Parallel job group 2 (~5 min):
-  cargo nextest run --workspace
-  cargo build --release (access-server) + just css-release
-  cargo-llvm-cov (coverage → Codecov)
+test / ubuntu / stable (one job):
+  bazel test //... (just test)
+  build, load and start the three images (just image-smoke)
 
-Parallel job group 3 (~5 min):
-  Playwright E2E tests
-  axe-core accessibility scans
-  Lighthouse CI performance budgets
+a11y / dpe, a11y / editor (on path changes):
+  release server and stylesheet built with Bazel, then Playwright with axe-core
 </code></pre>
+<p>Bazel jobs share the remote cache and executor; see <a href="dpe/../bazel.html#remote-cache-and-execution">Building with Bazel</a>.</p>
 <h2 id="testing-conventions"><a class="header" href="#testing-conventions">Testing Conventions</a></h2>
 <p><strong>Test naming</strong>: Use descriptive names following the <code>test_{what}_{condition}_{expected}</code> pattern. For example: <code>test_parse_project_missing_title_returns_error</code>.</p>
 <p><strong>Test locations</strong>:</p>
@@ -2880,11 +3018,9 @@ CPE builds each project's store from at start; and CPE's project folders (<code>
 assets, documents on the data) at <code>/app/cpe/projects</code> (<code>CPE_PROJECTS_DIR</code>). CPE's stylesheets, scripts and logos
 are compiled into the binary.</li>
 </ul>
-<p>The Dockerfile packages pre-built artifacts; the Rust build happens in <code>.github/actions/build-dpe</code>.
-<code>just build-docker-dpe</code> reproduces the same staging locally, compiling the binary inside a <code>rust:&lt;channel&gt;-bookworm</code>
-container as <code>just build-docker-editor</code> does (see the <a href="dpe/../editor/operations.html">editor's operations guide</a>).
-It defaults to the host architecture; <code>just build-docker-dpe arch=x86_64</code> reproduces the amd64 image CI publishes,
-under emulation. <code>just run-docker-dpe</code> runs the result on port 8080.</p>
+<p>CI publishes the image Bazel builds, <code>//areas/access/server:image</code> (see <a href="dpe/../bazel.html#images">Building with Bazel</a>);
+<code>just build-docker-dpe</code> builds the same amd64 image locally and loads it as <code>local-scan/dpe:latest</code>, and
+<code>just run-docker-dpe</code> runs it on port 8080 (emulated on an arm64 machine).</p>
 <h2 id="cli-commands"><a class="header" href="#cli-commands">CLI Commands</a></h2>
 <p>The <code>access-server</code> binary provides three subcommands:</p>
 <div class="table-wrapper"><table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>
@@ -4031,9 +4167,8 @@ sets it is not comparable to them metric for metric and should say so.</p>
 comparable against the rows below if the assessor is the same build. Bumping
 the pin is a reviewed change, made when F-UJI publishes a release and checked
 at least with every change to a landing page — the same discipline as the
-Tailwind CLI pin in <a href="dpe/../security.html">Security</a>. There is no
-<code>tailwind-pins-refresh</code>-style refresh recipe, because <code>fair-check</code> never runs
-in CI.</li>
+Tailwind CLI pin in <a href="dpe/../security.html">Security</a>. There is no refresh recipe,
+because <code>fair-check</code> never runs in CI.</li>
 <li><strong>The container can reach the host's port 4000</strong> during the run, through
 <code>--add-host=host.docker.internal:host-gateway</code>. That is the point: F-UJI
 fetches the URL it is given. The container is published on <code>127.0.0.1</code> only
@@ -7839,7 +7974,7 @@ not mounted in them. <code>just run</code> and <code>just dev</code> set <code>C
 <tr><td><code>editor-pull-requests</code></td><td><code>areas/deposit/editor/pull-requests</code></td><td>The CI binary that turns approved records into pull requests (<a href="editor/./publishing-to-git.html">Publishing to Git</a>)</td></tr>
 </tbody></table>
 </div>
-<p>Dependency direction is <code>server → web → core</code>. <code>deposit-server</code> depends on the two web crates (<code>identity-web</code> and <code>editor-web</code>, which it mounts through the <code>Identity</code> and <code>Editor</code> facades), the two store crates, the two ports crates and <code>deposit-shell</code>, and on no <code>core</code> crate, dev-dependencies included (<code>.github/scripts/check-composition-root-deps.sh</code>). <code>identity-web</code> depends on identity's own crates, <code>deposit-shell</code>, <code>mosaic-tiles</code> and <code>shared-*</code>; <code>deposit-shell</code> depends on no capability crate; <code>identity-core</code> depends on no editor crate; the two ports crates depend on <code>std</code> alone; the two store crates each depend on their own core crate and on the other capability's ports crate, the one it answers; <code>editor-pull-requests</code> sits outside that chain, depending on <code>editor-core</code> and <code>shared-metadata</code> alone and running as a batch job rather than serving a request. <code>editor-web</code> depends on <code>editor-core</code> for the project representation it renders and the repository ports it reads through, on <code>editor-ports</code>, <code>deposit-shell</code>, <code>mosaic-tiles</code> and <code>shared-*</code>, and on no identity crate. <code>.github/scripts/check-capability-deps.sh</code> (<code>just check</code>) holds the edges between capabilities, from a capability or the shell to anything outside its area, and from a ports crate to anything but <code>shared-*</code>, and it keeps third-party crates out of the ports crates, web frameworks, Maud and database crates out of the core crates, and web frameworks out of the shell; inside a capability it allows any workspace edge, and the root's edges are <code>check-composition-root-deps.sh</code>'s. Component CSS is collected from the Tailwind entry's <code>@source</code> globs rather than from the crate graph, so it ships independently of that dependency (<a href="editor/./rendering.html">Rendering</a>).</p>
+<p>Dependency direction is <code>server → web → core</code>. <code>deposit-server</code> depends on the two web crates (<code>identity-web</code> and <code>editor-web</code>, which it mounts through the <code>Identity</code> and <code>Editor</code> facades), the two store crates, the two ports crates and <code>deposit-shell</code>, and on no <code>core</code> crate, its tests included: no <code>core</code> target grants it (Bazel <code>visibility</code>). <code>identity-web</code> depends on identity's own crates, <code>deposit-shell</code>, <code>mosaic-tiles</code> and <code>shared-*</code>; <code>deposit-shell</code> depends on no capability crate; <code>identity-core</code> depends on no editor crate; the two ports crates depend on <code>std</code> alone; the two store crates each depend on their own core crate and on the other capability's ports crate, the one it answers; <code>editor-pull-requests</code> sits outside that chain, depending on <code>editor-core</code> and <code>shared-metadata</code> alone and running as a batch job rather than serving a request. <code>editor-web</code> depends on <code>editor-core</code> for the project representation it renders and the repository ports it reads through, on <code>editor-ports</code>, <code>deposit-shell</code>, <code>mosaic-tiles</code> and <code>shared-*</code>, and on no identity crate. Bazel <code>visibility</code> holds the edges between crates: each target lists the packages that may depend on it, so an edge between capabilities, from a capability or the shell to anything outside its area, from a ports crate to anything but <code>shared-*</code>, or from the root to a <code>core</code> crate fails analysis. <code>.github/scripts/check-capability-deps.sh</code> (<code>just check</code>) keeps third-party crates out of the ports crates, web frameworks, Maud and database crates out of the core crates, and web frameworks out of the shell, reading each <code>BUILD.bazel</code>. Component CSS is collected from the Tailwind entry's <code>@source</code> globs rather than from the crate graph, so it ships independently of that dependency (<a href="editor/./rendering.html">Rendering</a>).</p>
 <p>Unlike DPE, the <strong>HTML document shell is the area's, not a capability's</strong>: <code>deposit-shell</code> (<code>areas/deposit/shell</code>) holds the document, header and footer, the 403, 404 and problem pages, the sign-in link with the area's one open-redirect check (<code>safe_next</code>), and the RDU-only text, so identity's pages and the editor's share one copy without either depending on the other. It depends on no capability crate and has no Axum: <code>editor-web</code>'s and <code>identity-web</code>'s <code>shell.rs</code> each turn its markup into responses, and <code>deposit-server</code>'s renders the fallback 404. The routes it links (<code>/</code>, <code>/projects</code>, <code>/review</code>, <code>/approved</code>, <code>/depositors</code>, <code>/login</code>, <code>/logout</code>) are string literals.</p>
 <p>Inside <code>deposit-server</code>, <code>serve.rs</code> opens both stores, starts identity through <code>identity_web::Identity::start</code> and then the editor through <code>editor_web::Editor::start</code>, handing the editor <code>identity-store</code>'s <code>LiveAuthenticator</code> and <code>LiveUserDirectory</code>; <code>router.rs</code> merges the two routers and owns the layer order (<a href="editor/./routing.html">Routing</a>). Inside <code>editor-web</code>, the handlers are one module per surface under <code>handlers/</code> (<code>sections</code>, <code>review</code>, <code>entities</code>, <code>projects</code>, <code>approved</code>), and only they use Axum; <code>EditorState</code> holds <code>editor: Arc&lt;dyn EditorRepositories&gt;</code>, the editor store's implementation of <code>editor-core</code>'s six repository ports (<a href="editor/./persistence.html">Persistence</a>), and the two ports it asks identity through: the handlers authenticate through <code>Authenticator</code> (<code>handlers/auth.rs</code>) and read names through <code>UserDirectory</code>. <code>reconcile</code> runs the startup comparison inside <code>Editor::start</code>. Identity's state, inside <code>identity-web</code>, holds <code>Arc&lt;dyn IdentityRepositories&gt;</code> (<code>identity-core</code>'s four ports), the mailer, and <code>OpenWork</code>, through which the depositor-removal confirmation reads open work, the account list and edit pages learn which assigned shortcodes name no project, and an RDU page's header gets its review-queue count (the editor's <code>Authenticated</code> reads the same count through <code>SubmissionRepository::count_pending</code>).</p>
 <p>Outside the area the editor depends on <code>shared-metadata</code> (the research-metadata contract), <code>shared-telemetry</code> (the browser beacon), <code>shared-rate-limit</code> (the per-IP rate-limit key), <code>shared-datastar</code> (typed Datastar actions) and <code>mosaic-tiles</code>, and on nothing else in the workspace. It never depends on a <code>dpe-*</code> crate: DPE's corpus is consumed as data, an image-baked snapshot handed over as <code>EDITOR_DATA_DIR</code>, never as code (ADR-0002).</p>
@@ -8215,7 +8350,7 @@ not mounted in them. <code>just run</code> and <code>just dev</code> set <code>C
 <h1 id="editor-persistence"><a class="header" href="#editor-persistence">Editor Persistence</a></h1>
 <p>How the editor stores its working state: two SQLite databases, one per capability, behind the repository ports <code>identity-core</code> and <code>editor-core</code> declare. The decision that nothing in them is irreplaceable is <code>areas/deposit/ADR-0001</code>; the decision to keep one database file per capability is <code>areas/deposit/ADR-0004</code>, "Two databases".</p>
 <p>Two SQLite databases, <code>identity.sqlite</code> and <code>editor.sqlite</code>, <code>rusqlite</code> with the <code>bundled</code> feature: the amalgamation is compiled by <code>cc</code> into the binary, which is what keeps the static musl image self-contained. <code>identity-core</code> and <code>editor-core</code> own the records and one repository trait per aggregate; <code>identity-store</code> implements identity's four against <code>identity.sqlite</code> and <code>editor-store</code> the editor's five against <code>editor.sqlite</code>, so handlers depend on the ports and not on the driver. Each store crate has its own copy of the pool module, its own migration module and its own baseline, and neither depends on the other.</p>
-<p><code>rusqlite</code> is pinned to <strong>0.38, not 0.40</strong>, because <code>deadpool-sqlite</code> 0.13 (the latest) requires <code>rusqlite ^0.38</code> and the two cannot coexist: <code>libsqlite3-sys</code> 0.36 and 0.38 both declare <code>links = "sqlite3"</code>, so cargo refuses to link both. Bump the pair together once <code>deadpool-sqlite</code> tracks 0.40.</p>
+<p><code>rusqlite</code> is pinned to <strong>0.38, not 0.40</strong>, because <code>deadpool-sqlite</code> 0.13 (the latest) requires <code>rusqlite ^0.38</code> and the two cannot coexist: <code>libsqlite3-sys</code> 0.36 and 0.38 both declare <code>links = "sqlite3"</code>, so Cargo and Bazel's crate universe refuse to link both. Bump the pair together once <code>deadpool-sqlite</code> tracks 0.40.</p>
 <h2 id="two-pools-and-what-that-buys"><a class="header" href="#two-pools-and-what-that-buys">Two pools, and what that buys</a></h2>
 <p>Each store's <code>Database</code> holds a <strong>writer</strong> pool of exactly one connection and a <strong>reader</strong> pool of several. The split makes two rules structural instead of conventional:</p>
 <ul>
@@ -8233,7 +8368,7 @@ not mounted in them. <code>just run</code> and <code>just dev</code> set <code>C
 <p><strong>Every schema change is a forward migration</strong> (<code>0002_*</code>, …) under the same mechanism, <strong>and a merged migration is never edited</strong>, both <code>0001</code> files included. Deployed databases have run every merged migration and the <code>user_version</code> guard never re-runs one, so an edit would leave them on the old shape without an error, and the new code would fail at its first query that touches the change. Each store's <code>schema.rs</code> pins the sha256 of every merged migration in a test that fails on such an edit; a new migration appends its hash in the same change. Resetting the database on each schema change instead was considered and rejected: the database holds nothing irreplaceable (see <a href="editor/./operations.html#backups">Operations</a>), but production keeps it on a volume, and a reset would log everyone out, discard unsubmitted drafts and in-flight reviews, and make RDU re-create every depositor account.</p>
 <p><code>drafts</code>, <code>submissions</code> and <code>approved_records</code> carry their body as an opaque JSON <code>payload</code> string. It holds a serialized <code>editor_core::draft::ProjectDraft</code>, which is <code>#[serde(transparent)]</code> over the project's members, so the column already contains the project object and needs no migration to become typed; the persistence layer never interprets it.</p>
 <h2 id="in-memory-variant"><a class="header" href="#in-memory-variant">In-memory variant</a></h2>
-<p>Selected by leaving <code>EDITOR_DB_DIR</code> unset, which is the default, and it gives two named databases, <code>identity</code> and <code>editor</code> (see <a href="editor/./operations.html#database">Operations</a> for why that is also the preview-safety default). Each is a <strong>named shared-cache URI</strong> (<code>file:&lt;name&gt;?mode=memory&amp;cache=shared</code>), never bare <code>:memory:</code>: every <code>:memory:</code> database is distinct and visible only to the connection that opened it, so each pooled connection would get its own empty copy, and with a writer/reader split readers could never see anything the writer wrote. The symptom is <code>no such table</code> that comes and goes with pool timing and test order, which reads exactly like a migration bug. Tests use a distinct name per store each, because a shared-cache in-memory database is scoped to the process and parallel <code>cargo test</code> threads share one.</p>
+<p>Selected by leaving <code>EDITOR_DB_DIR</code> unset, which is the default, and it gives two named databases, <code>identity</code> and <code>editor</code> (see <a href="editor/./operations.html#database">Operations</a> for why that is also the preview-safety default). Each is a <strong>named shared-cache URI</strong> (<code>file:&lt;name&gt;?mode=memory&amp;cache=shared</code>), never bare <code>:memory:</code>: every <code>:memory:</code> database is distinct and visible only to the connection that opened it, so each pooled connection would get its own empty copy, and with a writer/reader split readers could never see anything the writer wrote. The symptom is <code>no such table</code> that comes and goes with pool timing and test order, which reads exactly like a migration bug. Tests use a distinct name per store each, because a shared-cache in-memory database is scoped to the process and parallel test threads share one.</p>
 <h2 id="the-drafts-storage-key-folds-case"><a class="header" href="#the-drafts-storage-key-folds-case">The draft's storage key folds case</a></h2>
 <p><code>drafts.shortcode</code> is an exact-match column, while <code>PublishedProjects::get</code> and <code>Actor::may_reach</code> both fold ASCII case — the published set mixes <code>080C</code> with <code>0801a</code>, so a link typed either way reaches the same project. Keying a draft on the path segment as typed would therefore give <code>/projects/080c</code> and <code>/projects/080C</code> a <strong>row each</strong> for one project, and two people editing it would each keep half the edits with nothing to say so. The section handler folds, in one named place, and <code>is_valid_shortcode</code> admits only ASCII alphanumerics so the fold is total and agrees with the other two by construction.</p>
 <div style="break-before: page; page-break-before: always;"></div><style>
@@ -9450,16 +9585,14 @@ pub async fn my_handler(/* ... */) -&gt; /* ... */ {
 <li><strong>Shell</strong>: None (distroless — no SSH possible)</li>
 <li><strong>Binary</strong>: Static musl-linked <code>deposit-server</code></li>
 </ul>
-<p>The Dockerfile packages pre-built artifacts; the Rust build happens in
-<code>.github/actions/build-editor</code>. <code>just build-docker-editor</code> reproduces the same
-staging locally, compiling the static musl binary inside a <code>rust:&lt;channel&gt;-bookworm</code>
-container — a host <code>cargo build --target *-unknown-linux-musl</code> needs a musl
-cross-linker, which macOS does not have. It defaults to the host architecture so
-the build is native; <code>just build-docker-editor arch=x86_64</code> reproduces the amd64
-image CI publishes, under emulation.</p>
+<p>CI publishes the image Bazel builds, <code>//areas/deposit/server:image</code> (see
+<a href="editor/../bazel.html#images">Building with Bazel</a>); <code>just build-docker-editor</code> builds
+the same amd64 image locally and loads it as <code>local-scan/editor:latest</code>; Bazel's
+hermetic toolchain cross-compiles the musl binary on macOS too. <code>just run-docker-editor</code>
+runs it on port 8080 with <code>EDITOR_ENV=DEV</code>.</p>
 <h3 id="data-directory-a-deliberate-build-input"><a class="header" href="#data-directory-a-deliberate-build-input">Data directory (a deliberate build input)</a></h3>
-<p>The published project/person/organization set is <strong>DPE's content</strong>, not the editor's. Both <code>.github/actions/build-editor</code> and <code>just build-docker-editor</code> copy <code>areas/access/dpe/server/data</code> into the staging directory, and the Dockerfile places it at <code>/app/server/data</code>, where <code>EDITOR_DATA_DIR</code> points. Git stays the source of truth and the editor reads an image-baked snapshot, so a data change reaches the editor by rebuilding the image, not at runtime.</p>
-<p>That copy is the seam, and it is explicit on both sides. <code>EditorConfig</code> carries <strong>no default</strong> for <code>data_dir</code>: the only plausible one is a relative path into DPE's tree, which would let a records reader resolve another module's directory instead of failing on an unconfigured seam. Every environment that reads records names the directory — the image via <code>ENV EDITOR_DATA_DIR</code>, local development via <code>just dev-editor</code>. Unset is a legitimate state while nothing reads records, and is reported as <code>&lt;unset&gt;</code> at startup rather than as an invented path.</p>
+<p>The published project/person/organization set is <strong>DPE's content</strong>, not the editor's. The image's data layer (<code>image_data</code> in <code>areas/deposit/server/BUILD.bazel</code>) places <code>areas/access/dpe/server/data</code> at <code>/app/server/data</code>, where <code>EDITOR_DATA_DIR</code> points; <code>just build-docker-editor</code> builds the same image locally. Git stays the source of truth and the editor reads an image-baked snapshot, so a data change reaches the editor by rebuilding the image, not at runtime.</p>
+<p>That copy is the seam, and it is explicit on both sides. <code>EditorConfig</code> carries <strong>no default</strong> for <code>data_dir</code>: the only plausible one is a relative path into DPE's tree, which would let a records reader resolve another module's directory instead of failing on an unconfigured seam. Every environment that reads records names the directory — the image through its <code>env</code> (<code>EDITOR_DATA_DIR</code>), local development via <code>just dev-editor</code>. Unset is a legitimate state while nothing reads records, and is reported as <code>&lt;unset&gt;</code> at startup rather than as an invented path.</p>
 <p>Moving the directory under <code>shared/</code> was considered and rejected: the shared-crate rule in <a href="editor/../repo_structure.html#shared-crates">Repo Structure</a> is about crates, and this is DPE's owned content consumed through an existing explicit seam. Reopen it only if a third consumer appears.</p>
 <h2 id="cli-commands-1"><a class="header" href="#cli-commands-1">CLI Commands</a></h2>
 <div class="table-wrapper"><table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>
@@ -9577,7 +9710,7 @@ image CI publishes, under emulation.</p>
 <p>Setting <code>EDITOR_DB_DIR</code> to keep accounts across restarts <strong>turns the on-screen code off</strong> — a durable database is one of the three conditions, because it is what separates a throwaway deployment from a real one. In that case read the code from the log instead:</p>
 <pre><code class="language-bash">EDITOR_RDU_EMAILS=you@dasch.swiss \
 EDITOR_DATA_DIR=areas/access/dpe/server/data \
-cargo run --bin deposit-server -- serve &gt; editor.log 2&gt;&amp;1 &amp;
+bazel run --run_in_cwd //areas/deposit/server:deposit_server -- serve &gt; editor.log 2&gt;&amp;1 &amp;
 
 # after submitting the address at /login:
 grep -o 'is:\\n\\n *[0-9]\{6\}' editor.log | tail -1 | grep -o '[0-9]\{6\}'
@@ -9604,7 +9737,7 @@ grep -o 'is:\\n\\n *[0-9]\{6\}' editor.log | tail -1 | grep -o '[0-9]\{6\}'
 <h2 id="database"><a class="header" href="#database">Database</a></h2>
 <p>Two SQLite databases: <code>identity.sqlite</code> holds users, sessions, one-time codes and the mail send log; <code>editor.sqlite</code> holds drafts, submissions, review rounds, approved records and entity proposals. Startup opens identity's, then the editor's, and either failing is fatal. See <a href="editor/./persistence.html">Architecture</a> for the pool and PRAGMA design.</p>
 <h3 id="in-memory-is-the-default-deliberately"><a class="header" href="#in-memory-is-the-default-deliberately">In-memory is the default, deliberately</a></h3>
-<p><code>EDITOR_DB_DIR</code> has <strong>no default</strong>, and unset means two named in-memory databases, <code>identity</code> and <code>editor</code>, rather than some path the editor invented. That is preview safety, not a convenience: the Cloud Run PR preview has no mounted volume, runs <code>--max-instances=1</code>, and is publicly reachable, so a publicly reachable preview must not be able to accumulate login codes, sessions or drafts. It also means <code>just dev-editor</code> and <code>cargo test</code> need no volume.</p>
+<p><code>EDITOR_DB_DIR</code> has <strong>no default</strong>, and unset means two named in-memory databases, <code>identity</code> and <code>editor</code>, rather than some path the editor invented. That is preview safety, not a convenience: the Cloud Run PR preview has no mounted volume, runs <code>--max-instances=1</code>, and is publicly reachable, so a publicly reachable preview must not be able to accumulate login codes, sessions or drafts. It also means <code>just dev-editor</code> and <code>just test</code> need no volume.</p>
 <p>The Docker image deliberately does <strong>not</strong> set <code>EDITOR_DB_DIR</code>, for the same reason — the previews run that image. Production sets it through the deployment.</p>
 <h3 id="data-volume-1"><a class="header" href="#data-volume-1">Data volume</a></h3>
 <ul>
@@ -9824,7 +9957,7 @@ per-component code.</p>
 <h2 id="inlining-content-at-call-sites"><a class="header" href="#inlining-content-at-call-sites">Inlining content at call sites</a></h2>
 <p>Because a container takes its content as an <strong>argument</strong> (Maud has no child-block
 syntax for functions), a multi-element <code>html!</code> block passed <em>inline</em> into the call
-is skipped by <code>maudfmt</code> and then mangled by <code>cargo fmt</code>. Bind it to a Rust <code>let</code>
+is skipped by <code>maudfmt</code> and then mangled by <code>rustfmt</code>. Bind it to a Rust <code>let</code>
 first, or extract a <code>fn -&gt; Markup</code> helper:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -10119,7 +10252,7 @@ Repository is in service.</li>
 translates DSP-API's RDF/JSON-LD surface into researcher vocabulary — <strong>data-model</strong>,
 <strong>resource-type</strong>, <strong>field</strong>, <strong>value</strong> — instead of DSP-API's own <code>ontology</code> / <code>class</code> /
 <code>property</code> / <code>Value</code> subclass terms. It is a root peer of the areas: a single crate, depending on
-no workspace crate, that reaches DSP-API purely over HTTP.</p>
+no other crate in the repository, that reaches DSP-API purely over HTTP.</p>
 <h2 id="layers"><a class="header" href="#layers">Layers</a></h2>
 <p><code>dsp-cli</code> is organised as five layers inside a single crate that exposes both a library
 (<code>src/lib.rs</code>) and a binary (<code>src/main.rs</code>). Action functions depend on traits (<code>DspClient</code>,
@@ -10164,7 +10297,9 @@ retry/error behaviour. Slower; few in number; not where verb logic gets validate
 <p>See <a href="dsp-cli/./testing-strategy.html">Testing Strategy</a> for the full layer breakdown.</p>
 <h2 id="crate-layout"><a class="header" href="#crate-layout">Crate layout</a></h2>
 <pre><code>dsp-cli/
-├── Cargo.toml
+├── BUILD.bazel                # the Bazel targets: library, binary, tests
+├── Cargo.toml                 # the crates.io manifest (cargo publish, cargo test)
+├── Cargo.lock
 ├── src/
 │   ├── main.rs               # binary entry: parse → dispatch
 │   ├── lib.rs                # library re-exports and command dispatch
@@ -10185,7 +10320,7 @@ retry/error behaviour. Slower; few in number; not where verb logic gets validate
 </code></pre>
 <p>The cross-layer dependency rule: <strong>client and render are sibling layers; neither may import the
 other; both may import util.</strong></p>
-<p>Single crate keeps build and test cycles simple. The library/binary split lets <code>cargo test</code>
+<p>Single crate keeps build and test cycles simple. The library/binary split lets the tests
 exercise everything except the very thin <code>main.rs</code>. The directory shape mirrors the noun-group
 hierarchy in dsp-cli/ADR-0002, so navigating "where does <code>dsp vre data-model describe</code> live" is
 mechanical: <code>src/actions/vre/data_model.rs</code>.</p>
@@ -10322,25 +10457,26 @@ write. Mocks are local to each action file rather than shared — see <code>dsp-
 non-obvious constraints for why.</li>
 <li><strong>Snapshot tests</strong> — via the <code>insta</code> crate, in <code>tests/</code>. One snapshot per (noun, verb, format)
 cell with meaningful output. Captures prose / json / csv / tsv / lines exactly. The default way
-to verify output shape; run <code>just dsp-cli-snap-review</code> (<code>cargo insta review</code>) to accept or
-reject a diff.</li>
+to verify output shape; a changed snapshot fails its test, <code>just snap-accept //dsp-cli:&lt;file stem&gt;_test</code> rewrites it from the checkout, and <code>git diff</code> is where a diff is accepted or
+rejected.</li>
 <li><strong>Wiremock client tests</strong> — small, focused on HTTP/serialization correctness: request shape,
 header propagation, response deserialization, retry/error paths. Fixtures are hybrid:
 hand-written for the "what we care about" happy paths, recorded from real DSP-API responses for
 regression cases where dsp-cli's view was wrong.</li>
-<li><strong>Live tests</strong> — <code>tests/live_*.rs</code>, behind the <code>live</code> cargo feature; not in the default suite.
+<li><strong>Live tests</strong> — <code>tests/live_*.rs</code>, built with the <code>live</code> feature as <code>manual</code> Bazel targets; not in the default suite.
 Hit a DSP environment: a developer-selected one locally (via env vars), or the drift job's pinned
 stack in CI. Smoke-check end-to-end integration before significant changes.</li>
 </ol>
 <p><code>just test</code> runs layers 1-4 (the cheap suite CI runs). <code>just dsp-cli-test-live</code> runs layer 5.</p>
 <h2 id="live-tests-are-always-ignored"><a class="header" href="#live-tests-are-always-ignored">Live tests are always <code>#[ignore]</code>d</a></h2>
-<p>Every <code>#[test]</code> in <code>dsp-cli/tests/live_*.rs</code> also carries <code>#[ignore]</code>, so a plain
-<code>cargo test</code>/<code>cargo nextest run</code> never attempts a live call — the tests need a reachable DSP stack,
+<p>Every <code>#[test]</code> in <code>dsp-cli/tests/live_*.rs</code> also carries <code>#[ignore]</code>, so a test run that builds
+them without <code>--ignored</code> never attempts a live call — the tests need a reachable DSP stack,
 and without <code>#[ignore]</code> they would otherwise run and pass vacuously via their own early-return skip
 under CI. <code>.github/scripts/check-live-tests-ignored.sh</code>, run by <code>just check</code>, enforces this: it
 scans every <code>dsp-cli/tests/live_*.rs</code> file and fails if any <code>#[test]</code> lacks a matching <code>#[ignore]</code>.
-Run live tests explicitly with <code>just dsp-cli-test-live</code>, which passes <code>--features live</code> and
-<code>--ignored</code> (or the equivalent) so the ignored tests actually execute.</p>
+Run live tests explicitly with <code>just dsp-cli-test-live</code>: their Bazel targets build with the <code>live</code>
+feature and pass <code>--ignored</code>, so the ignored tests actually execute, and the recipe passes the
+<code>DSP_TEST_*</code> variables and <code>DSP_TOKEN</code> through by name.</p>
 <h2 id="live-test-environment-variables"><a class="header" href="#live-test-environment-variables">Live-test environment variables</a></h2>
 <p>Live tests skip automatically when a required variable is unset — they never fail for missing
 config, only report why they were skipped. Each live-test file documents its own required
@@ -10852,19 +10988,20 @@ and identify opportunities for further improvements.</p>
 </div>
 <h2 id="testing--quality"><a class="header" href="#testing--quality">Testing &amp; Quality</a></h2>
 <div class="table-wrapper"><table><thead><tr><th>Technology</th><th>Purpose</th></tr></thead><tbody>
-<tr><td><strong>cargo test / nextest</strong></td><td>Rust test runner</td></tr>
+<tr><td><strong>Bazel</strong> (<code>rules_rust</code>)</td><td>Builds and runs the Rust tests (<code>just test</code>)</td></tr>
 <tr><td><strong>insta</strong></td><td>Snapshot testing for SSR output</td></tr>
 <tr><td><strong>Playwright</strong></td><td>End-to-end browser tests</td></tr>
 <tr><td><strong>axe-core</strong></td><td>Accessibility scanning (WCAG 2.1 AA)</td></tr>
-<tr><td><strong>cargo-fuzz</strong></td><td>Fuzz testing (nightly CI)</td></tr>
+<tr><td><strong>libFuzzer</strong> (<code>rules_fuzzing</code>)</td><td>Fuzz testing (nightly CI)</td></tr>
 </tbody></table>
 </div>
 <h2 id="build--development"><a class="header" href="#build--development">Build &amp; Development</a></h2>
 <div class="table-wrapper"><table><thead><tr><th>Technology</th><th>Purpose</th></tr></thead><tbody>
-<tr><td><strong>Tailwind CSS CLI</strong></td><td>Standalone CLI that builds the stylesheet (<code>just css</code> / <code>just css-release</code>); no Node or build.rs CSS pipeline</td></tr>
+<tr><td><strong>Bazel</strong></td><td>Builds every crate, the stylesheets, the fuzz binaries and the images (<code>docs/src/bazel.md</code>)</td></tr>
+<tr><td><strong>Tailwind CSS CLI</strong></td><td>Standalone CLI, pinned and run by Bazel, that builds the stylesheet (<code>just css</code> / <code>just css-release</code>); no Node or build.rs CSS pipeline</td></tr>
 <tr><td><strong>just</strong></td><td>Command runner for development workflows</td></tr>
 <tr><td><strong>maudfmt</strong></td><td>Formats the contents of <code>maud::html!</code> macros (stock rustfmt does not)</td></tr>
-<tr><td><strong>cargo +nightly fmt</strong></td><td>Code formatter for Rust outside the <code>html!</code> macros</td></tr>
+<tr><td><strong>rustfmt</strong> (pinned nightly)</td><td>Code formatter for Rust outside the <code>html!</code> macros</td></tr>
 <tr><td><strong>Biome</strong></td><td>Linter/formatter for E2E test TypeScript</td></tr>
 </tbody></table>
 </div>
@@ -11072,7 +11209,7 @@ This helps to ensure that the code is testable and meets the requirements.</p>
 <ul>
 <li>New API crates follow the <code>dpe-api-{name}</code> pattern with <code>shared-metadata</code> and <code>dpe-core</code> as only domain dependencies (see <a href="fundamentals/../repo_structure.html">Project Structure</a>)</li>
 <li><code>dpe-core</code> and <code>shared-metadata</code> have no framework dependencies (no axum, no maud)</li>
-<li><code>shared-metadata</code> takes no dependency on a service crate, and no path into a service's data directory. Both halves fail the build, so this is a spot-check rather than a hand-verification: a service dependency is a Cargo cycle, and a hardcoded path is caught by <code>just check-shared-paths</code> (<code>.github/scripts/check-shared-paths.sh</code>)</li>
+<li><code>shared-metadata</code> takes no dependency on a service crate, and no path into a service's data directory. Both halves fail the build, so this is a spot-check rather than a hand-verification: a service dependency is a dependency cycle, and a hardcoded path is caught by <code>just check-shared-paths</code> (<code>.github/scripts/check-shared-paths.sh</code>)</li>
 <li>Validate command covers all data file types (DPE)</li>
 <li>E2E test directory naming: <code>web-e2e-tests/</code> for DPE, <code>playground-e2e-tests/</code> for Mosaic</li>
 </ul>
@@ -11094,7 +11231,7 @@ This helps to ensure that the code is testable and meets the requirements.</p>
 </ul>
 <p><strong>Security</strong></p>
 <ul>
-<li>No secrets in config files, Cargo.toml, or git</li>
+<li>No secrets in config files, <code>BUILD.bazel</code>, <code>MODULE.bazel</code>, or git</li>
 <li>Path parameters validated before filesystem access</li>
 </ul>
 <h2 id="style"><a class="header" href="#style">Style</a></h2>
@@ -11104,14 +11241,14 @@ This helps to ensure that the code is testable and meets the requirements.</p>
 <li>Contract types belong in <code>shared-metadata</code> and DPE's view model in <code>dpe-core</code>, not in web or API crates</li>
 <li>API crate exposes a handler function (e.g., <code>pub async fn oai_handler(...)</code>) for composition in dpe-server</li>
 <li>View functions return <code>maud::Markup</code> via the <code>html!</code> macro</li>
-<li>No non-trivial <code>html!</code> block passed directly as a function argument — bind it to a Rust <code>let</code> or extract a <code>fn -&gt; Markup</code> helper (nested-as-argument <code>html!</code> is skipped by <code>maudfmt</code> and mangled by <code>cargo fmt</code>; trivial one-liners like <code>html! { (label) }</code> are fine)</li>
+<li>No non-trivial <code>html!</code> block passed directly as a function argument — bind it to a Rust <code>let</code> or extract a <code>fn -&gt; Markup</code> helper (nested-as-argument <code>html!</code> is skipped by <code>maudfmt</code> and mangled by <code>rustfmt</code>; trivial one-liners like <code>html! { (label) }</code> are fine)</li>
 <li>Test files follow naming convention: <code>{feature}_tests.rs</code> for Rust, <code>{feature}.spec.ts</code> for Playwright</li>
 </ul>
 <h2 id="skip"><a class="header" href="#skip">Skip</a></h2>
 <ul>
 <li>Snapshot <code>.snap</code> file contents — verify accepted, don't review formatting</li>
-<li>Formatting-only changes (<code>maudfmt</code> and <code>cargo +nightly fmt</code> diffs)</li>
-<li><code>Cargo.lock</code> changes from dependency updates</li>
+<li>Formatting-only changes (<code>maudfmt</code> and pinned nightly <code>rustfmt</code> diffs)</li>
+<li><code>Cargo.Bazel.lock</code> and <code>MODULE.bazel.lock</code> changes from dependency updates</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
@@ -11185,11 +11322,11 @@ This helps to ensure that the code is testable and meets the requirements.</p>
 <p>Two supported paths:</p>
 <ul>
 <li><strong>Nix</strong> (recommended): <code>nix develop</code> (or direnv via <code>.envrc</code>). The flake provides the full toolchain, including Node.</li>
-<li><strong>Without Nix</strong>: <code>just install-requirements</code> (rustup + <code>cargo binstall</code> + the e2e Node dependencies).</li>
+<li><strong>Without Nix</strong>: <code>just install-requirements</code> (Bazelisk, rustup for the pinned nightly <code>rustfmt</code>, <code>cargo binstall</code> for the tools, and the e2e Node dependencies).</li>
 </ul>
 <p><strong>Node must be on <code>PATH</code> for all shells (non-Nix path).</strong> <code>just</code> runs recipes in <code>sh</code>, which does not load shell-function-based version managers. A <em>lazy</em> nvm setup (where <code>node</code>/<code>npm</code> are shell functions) therefore leaves them invisible to <code>just</code>, and recipes such as <code>lint-e2e</code>, <code>test-a11y-dpe</code>, and the Playwright e2e tests fail with <code>env: node: No such file</code>. To fix, expose your default Node bin on <code>PATH</code> at shell startup — eager-load it in your shell rc, or use a PATH-shim manager such as volta or asdf.</p>
 <p>Only Playwright genuinely requires Node; the Tailwind CSS build is Node-free (standalone CLI). CI provisions Node explicitly, so this affects local non-Nix development only.</p>
-<p><strong>macOS: run <code>just clean</code> once in an older checkout.</strong> <code>.cargo/config.toml</code> stops cargo leaving stale <code>.o</code> files in <code>target/debug/deps</code>, which slow the first launch of each new test binary, but does not remove the ones already there. Its comment names the rustflags settings it overrides and is overridden by. The setting drops file:line from backtrace frames and lldb; to debug with them, build with <code>RUSTFLAGS="-C split-debuginfo=unpacked"</code>.</p>
+<p><strong>An older checkout's <code>target/</code> directory</strong> holds Cargo's build output, which no recipe uses any more: Bazel builds everything, into its own output base. Delete <code>target/</code> to reclaim the space; <code>just clean</code> runs <code>bazel clean</code>.</p>
 <h2 id="rust"><a class="header" href="#rust">Rust</a></h2>
 <p>The main technology we use is Rust.
 A solid understanding of Rust is needed,

@@ -262,19 +262,20 @@
 </div>
 <h2 id="testing--quality"><a class="header" href="#testing--quality">Testing &amp; Quality</a></h2>
 <div class="table-wrapper"><table><thead><tr><th>Technology</th><th>Purpose</th></tr></thead><tbody>
-<tr><td><strong>cargo test / nextest</strong></td><td>Rust test runner</td></tr>
+<tr><td><strong>Bazel</strong> (<code>rules_rust</code>)</td><td>Builds and runs the Rust tests (<code>just test</code>)</td></tr>
 <tr><td><strong>insta</strong></td><td>Snapshot testing for SSR output</td></tr>
 <tr><td><strong>Playwright</strong></td><td>End-to-end browser tests</td></tr>
 <tr><td><strong>axe-core</strong></td><td>Accessibility scanning (WCAG 2.1 AA)</td></tr>
-<tr><td><strong>cargo-fuzz</strong></td><td>Fuzz testing (nightly CI)</td></tr>
+<tr><td><strong>libFuzzer</strong> (<code>rules_fuzzing</code>)</td><td>Fuzz testing (nightly CI)</td></tr>
 </tbody></table>
 </div>
 <h2 id="build--development"><a class="header" href="#build--development">Build &amp; Development</a></h2>
 <div class="table-wrapper"><table><thead><tr><th>Technology</th><th>Purpose</th></tr></thead><tbody>
-<tr><td><strong>Tailwind CSS CLI</strong></td><td>Standalone CLI that builds the stylesheet (<code>just css</code> / <code>just css-release</code>); no Node or build.rs CSS pipeline</td></tr>
+<tr><td><strong>Bazel</strong></td><td>Builds every crate, the stylesheets, the fuzz binaries and the images (<code>docs/src/bazel.md</code>)</td></tr>
+<tr><td><strong>Tailwind CSS CLI</strong></td><td>Standalone CLI, pinned and run by Bazel, that builds the stylesheet (<code>just css</code> / <code>just css-release</code>); no Node or build.rs CSS pipeline</td></tr>
 <tr><td><strong>just</strong></td><td>Command runner for development workflows</td></tr>
 <tr><td><strong>maudfmt</strong></td><td>Formats the contents of <code>maud::html!</code> macros (stock rustfmt does not)</td></tr>
-<tr><td><strong>cargo +nightly fmt</strong></td><td>Code formatter for Rust outside the <code>html!</code> macros</td></tr>
+<tr><td><strong>rustfmt</strong> (pinned nightly)</td><td>Code formatter for Rust outside the <code>html!</code> macros</td></tr>
 <tr><td><strong>Biome</strong></td><td>Linter/formatter for E2E test TypeScript</td></tr>
 </tbody></table>
 </div>

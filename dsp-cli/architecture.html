@@ -336,7 +336,9 @@ mechanical: <code>src/actions/vre/data_model.rs</code>.</p>
 <span class="boring">}</span></code></pre></pre>
 <p>List methods take an owned per-noun view struct (e.g. <code>ProjectListView</code>) carrying the post-filter
 items, the pre-filter total, and the filter string, rather than a bare slice — this lets prose
-render a "(m of n matching …)" count line without the action layer duplicating that logic. The
+render a "(m of n matching …)" count line without the action layer duplicating that logic.
+<code>ResourceListView</code> is the exception: <code>resource list --filter</code> runs DSP-API's label search
+(<code>DspClient::search_resources_by_label</code>), which reports no total. The
 <code>_meta</code> argument (<code>MetaContext</code>: server label, auth state, and the optional notes <code>filter_warning</code>,
 <code>count_caveat</code> and <code>count_cost</code>) threads through
 every renderer call; this is the implementation site of dsp-cli/ADR-0007's auth-state disclosure

@@ -291,6 +291,8 @@ variables; the common ones are:</p>
 <tr><td><code>DSP_TEST_PASSWORD</code></td><td>tests that need auth</td><td>Password for <code>DSP_TEST_USER</code>. Local/dev/test only — never a production password (same policy as <code>DSP_PASSWORD</code> below).</td></tr>
 <tr><td><code>DSP_TEST_NON_ADMIN_TOKEN</code></td><td>the sparql-query non-admin-token live test</td><td>A non-SystemAdmin bearer token, used to verify that the SPARQL passthrough maps a non-admin caller to a 403 auth-required error.</td></tr>
 <tr><td><code>DSP_TEST_VOCAB_PROJECT</code></td><td><code>live_vocabulary.rs</code></td><td>Shortcode or IRI of the project whose controlled vocabularies are inspected. Set to <code>0001</code> in the drift job.</td></tr>
+<tr><td><code>DSP_TEST_LABEL_SEARCH_PROJECT</code></td><td>the label-search live test in <code>live_resource_list.rs</code></td><td>Shortcode or IRI of a project with instances of <code>DSP_TEST_LABEL_SEARCH_CLASS_IRI</code>. Set to <code>0803</code> in the drift job.</td></tr>
+<tr><td><code>DSP_TEST_LABEL_SEARCH_CLASS_IRI</code></td><td>the label-search live test in <code>live_resource_list.rs</code></td><td>Full class IRI whose first listed resource is searched for by its label. Set to incunabula's <code>page</code> in the drift job, which has instances in the fixtures (<code>DSP_TEST_CLASS_IRI</code> has none).</td></tr>
 </tbody></table>
 </div>
 <p>If <code>DSP_TOKEN</code> is set it takes precedence over the <code>DSP_TEST_USER</code>/<code>DSP_TEST_PASSWORD</code> pair. If

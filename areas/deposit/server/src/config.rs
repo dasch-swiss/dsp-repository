@@ -637,6 +637,11 @@ impl EditorConfig {
 }
 
 #[cfg(test)]
+// `figment::Jail::expect_with` fixes its closure's return type to `Result<(), figment::Error>`.
+#[expect(
+    clippy::result_large_err,
+    reason = "figment::Jail's closure signature, not ours to shrink"
+)]
 mod tests {
     use super::*;
 

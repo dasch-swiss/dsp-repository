@@ -25,7 +25,7 @@ reason = "ruzstd decompression bomb, fixed in 0.9. Reached through pyroscope's u
 
 [[IgnoredVulns]]
 id = "RUSTSEC-2026-0459"
-reason = "Bundled SQLite before 3.54.0 reading a database with a crafted -wal file. Fixed in libsqlite3-sys 0.39, held back by the rusqlite 0.38 pin (MODULE.bazel). The servers open only database files they create in their own data directories."
+reason = "Bundled SQLite before 3.54.0 reading a database with a crafted -wal file. Fixed in libsqlite3-sys 0.39 (rusqlite 0.41), held back by the rusqlite 0.40 pin that deadpool-sqlite 0.14 requires (MODULE.bazel). The servers open only database files they create in their own data directories."
 
 [[IgnoredVulns]]
 id = "GHSA-w9wp-h8wv-79jx"

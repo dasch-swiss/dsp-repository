@@ -1920,10 +1920,10 @@ fn make_facet_fragment_handler(
 
         for (c, d) in page.body.iter().zip(comp_data.iter()) {
             match (c, d) {
-                (cpe_core::ir::Component::FacetPanel { .. }, cpe_core::view_data::ComponentData::Facets(groups)) => {
-                    if facet_groups.is_none() {
-                        facet_groups = Some(groups.as_slice());
-                    }
+                (cpe_core::ir::Component::FacetPanel { .. }, cpe_core::view_data::ComponentData::Facets(groups))
+                    if facet_groups.is_none() =>
+                {
+                    facet_groups = Some(groups.as_slice());
                 }
                 (
                     cpe_core::ir::Component::ResourceList {
@@ -1940,19 +1940,17 @@ fn make_facet_fragment_handler(
                         ..
                     },
                     cpe_core::view_data::ComponentData::List(lp),
-                ) => {
-                    if id.as_str() == list_id && list_page.is_none() {
-                        list_page = Some(lp);
-                        list_gloss = gloss.as_ref();
-                        list_chips = chips.as_slice();
-                        list_order_name_label = order_name_label.as_deref();
-                        list_order_name_desc_label = order_name_desc_label.as_deref();
-                        list_order_default_label = order_default_label.as_deref();
-                        list_order_options = order_options.as_slice();
-                        list_grid = *grid;
-                        list_tile_ratio = *tile_ratio;
-                        list_class = class.as_str();
-                    }
+                ) if id.as_str() == list_id && list_page.is_none() => {
+                    list_page = Some(lp);
+                    list_gloss = gloss.as_ref();
+                    list_chips = chips.as_slice();
+                    list_order_name_label = order_name_label.as_deref();
+                    list_order_name_desc_label = order_name_desc_label.as_deref();
+                    list_order_default_label = order_default_label.as_deref();
+                    list_order_options = order_options.as_slice();
+                    list_grid = *grid;
+                    list_tile_ratio = *tile_ratio;
+                    list_class = class.as_str();
                 }
                 _ => {}
             }
@@ -2457,19 +2455,17 @@ fn make_search_fragment_handler(
                         ..
                     },
                     cpe_core::view_data::ComponentData::List(lp),
-                ) => {
-                    if id.as_str() == list_id && list_page.is_none() {
-                        list_page = Some(lp);
-                        list_gloss = gloss.as_ref();
-                        list_chips = chips.as_slice();
-                        list_order_name_label = order_name_label.as_deref();
-                        list_order_name_desc_label = order_name_desc_label.as_deref();
-                        list_order_default_label = order_default_label.as_deref();
-                        list_order_options = order_options.as_slice();
-                        list_grid = *grid;
-                        list_tile_ratio = *tile_ratio;
-                        list_class = class.as_str();
-                    }
+                ) if id.as_str() == list_id && list_page.is_none() => {
+                    list_page = Some(lp);
+                    list_gloss = gloss.as_ref();
+                    list_chips = chips.as_slice();
+                    list_order_name_label = order_name_label.as_deref();
+                    list_order_name_desc_label = order_name_desc_label.as_deref();
+                    list_order_default_label = order_default_label.as_deref();
+                    list_order_options = order_options.as_slice();
+                    list_grid = *grid;
+                    list_tile_ratio = *tile_ratio;
+                    list_class = class.as_str();
                 }
                 (
                     cpe_core::ir::Component::FacetPanel { target, .. },

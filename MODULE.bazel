@@ -91,7 +91,7 @@ rust.toolchain(
     edition = "2021",
     # The version `rust-toolchain.toml` holds, so the compiler does not change together with the
     # build system. Bump both together.
-    versions = ["1.93.0"],
+    versions = ["1.95.0"],
 )
 
 # The toolchains of the two exec platforms, each with every target it builds for. A set named like
@@ -108,7 +108,7 @@ rust.repository_set(
         "@platforms//cpu:aarch64",
     ],
     target_triple = "aarch64-apple-darwin",
-    versions = ["1.93.0"],
+    versions = ["1.95.0"],
 )
 rust.repository_set(
     name = "rust_macos_aarch64",
@@ -137,7 +137,7 @@ rust.repository_set(
         "@platforms//cpu:aarch64",
     ],
     target_triple = "aarch64-apple-darwin",
-    versions = ["1.93.0"],
+    versions = ["1.95.0"],
 )
 rust.repository_set(
     name = "rust_linux_x86_64",
@@ -187,14 +187,15 @@ crate.spec(package = "clap", version = "4", features = ["derive", "env"])
 crate.spec(package = "datastar", version = "0.3", features = ["axum"])
 
 # SQLite for the metadata editor. `bundled` compiles the amalgamation through `cc`, which makes
-# the static Linux binary self-contained. Held at 0.38: `deadpool-sqlite` 0.13 requires rusqlite
-# ^0.38, and two `libsqlite3-sys` versions cannot coexist (`links = "sqlite3"`). Bump both
-# together once deadpool-sqlite tracks a newer rusqlite.
-crate.spec(package = "rusqlite", version = "0.38", features = ["bundled", "chrono"])
+# the static Linux binary self-contained. Held at 0.40 (SQLite 3.53.2): `deadpool-sqlite` 0.14
+# requires rusqlite ^0.40, and two `libsqlite3-sys` versions cannot coexist (`links = "sqlite3"`).
+# Bump both together once deadpool-sqlite tracks a newer rusqlite.
+crate.spec(package = "rusqlite", version = "0.40", features = ["bundled", "chrono"])
 
 # Async pool wrapping each `rusqlite::Connection` in a thread of its own, so every call reaches it
-# through `interact()` and the `!Sync` connection is never held across an `.await`.
-crate.spec(package = "deadpool-sqlite", version = "0.13")
+# through `interact()` and the `!Sync` connection is never held across an `.await`. 0.14 declares
+# Rust 1.95, the floor of the toolchain above.
+crate.spec(package = "deadpool-sqlite", version = "0.14")
 crate.spec(package = "dirs", version = "5")
 crate.spec(package = "dotenvy", version = "0.15")
 
@@ -209,7 +210,7 @@ crate.spec(package = "icondata", version = "0.7")
 crate.spec(package = "jsonwebtoken", version = "10", features = ["rust_crypto"])
 
 # cpe-core's configuration language. `span` is required: diagnostics carry source positions. Held
-# at 6.5: kdl 6.6 and later need Rust 1.95 and turn `serde` on by default.
+# at 6.5: kdl 6.6 and later turn `serde` on by default.
 crate.spec(package = "kdl", version = "~6.5", features = ["span"])
 
 # Mail. `rustls` rather than the default `native-tls`, which needs an OpenSSL to link against.

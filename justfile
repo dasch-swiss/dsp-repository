@@ -264,8 +264,9 @@ audit:
         # the objects mapped into the server's own process, not outside input.
         --ignore RUSTSEC-2026-0344
         # Bundled SQLite before 3.54.0 reading a database with a crafted `-wal` file. Fixed in
-        # libsqlite3-sys 0.39, held back by the rusqlite 0.38 pin (MODULE.bazel). The servers open
-        # only database files they create in their own data directories.
+        # libsqlite3-sys 0.39 (rusqlite 0.41), held back by the rusqlite 0.40 pin that
+        # deadpool-sqlite 0.14 requires (MODULE.bazel). The servers open only database files they
+        # create in their own data directories.
         --ignore RUSTSEC-2026-0459
     )
     # `Cargo.Bazel.lock` is what Bazel builds; `dsp-cli/Cargo.lock` is what `cargo install dsp-cli` gets.

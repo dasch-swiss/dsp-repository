@@ -10,7 +10,7 @@ The capabilities:
 
 - The Deposit Area: `identity` and `editor` (`areas/deposit/ADR-0004`); the data-model creator, data creation
   and the Deposit Area's `media` are planned beside them.
-- The Access Area: DPE, `sync` and CPE (ADR-0007) and the Access Area's `media` (ADR-0012); DaTEI (ADR-0009),
+- The Access Area: DPE, `sync` and CPE (ADR-0007), DaTEI (ADR-0009) and the Access Area's `media` (ADR-0012);
   `profile`, the SPARQL endpoint and the admin view are planned beside them.
 - The Archive Area: Spycherli.
 
@@ -70,7 +70,8 @@ Within a capability, the crates are `{capability}-{role}`. The general roles:
 A capability may add a role. The role is named, with its allowed edges, in the record that governs the
 capability or its area, and its BUILD file's consumer lists and any third-party ban in
 `check-capability-deps.sh` follow in the same change: `pull-requests` in `areas/deposit/ADR-0004`;
-`components`, `image-viewer` and `store-build` in ADR-0007.
+`components`, `image-viewer` and `store-build` (no edge on `store`) in ADR-0007; `store-build` for DaTEI, with an
+edge on `store`, in ADR-0009.
 
 An area may hold one **shell** crate, `areas/<area>/shell`: a view library (`fn -> Markup`: the document,
 header, footer, error pages) that depends on `mosaic-tiles` and `shared-*` only, never on a capability crate.
@@ -185,9 +186,11 @@ a second copy of the projection (ADR-0008).
 
 Not yet in code: the data-model creator, data creation, `profile`, the SPARQL endpoint, the admin view and
 Spycherli have no crate (not scheduled).
-Not yet in code: the Deposit Area has no `media` capability; the Access Area's `media` is its hand-fed
-stand-in, `media-store` over a committed directory (ADR-0012), with no routes and no authorisation check; and
-Vitrinli is not in this repository (not scheduled).
+Not yet in code: DaTEI has no crate here; its engine and presenter are in `dsp-incubator/da-tei` (DEV-7549).
+Not yet in code: `access-server` does not mount DaTEI (DEV-7574).
+Not yet in code: the Deposit Area has no `media` capability; the Access Area's `media` is its stand-in,
+`media-store` over the directory `MEDIA_DATA_DIR` names (ADR-0012), with no routes and no authorisation check;
+and Vitrinli is not in this repository (not scheduled).
 Not yet in code: `sync` serves a committed N-Quads snapshot through `sync-store`, not a Chischtli projection
 rebuilt from snapshot plus replay (not scheduled).
 Not yet in code: DPE reads its own data directory (`areas/access/dpe/server/data`) through `dpe-core`, not

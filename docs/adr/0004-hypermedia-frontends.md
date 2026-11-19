@@ -76,6 +76,8 @@ second rendering path built for machines alone.
 Not yet in code: CPE has no end-to-end suite, so no journey of it runs with JavaScript disabled (DEV-7404).
 Not yet in code: DPE's suite (`areas/access/dpe/web-e2e-tests`) disables JavaScript in single specs only, not
 for every journey (not scheduled).
+Not yet in code: DaTEI's search popover, still in `dsp-incubator`, answers `text/html` with Datastar headers,
+not server-sent events, and DaTEI has no end-to-end suite; ADR-0009 accepts both for now (not scheduled).
 
 Enforced by: `check-datastar-attributes.sh` (static-analysis); the Deposit Area's no-JavaScript Playwright pass
 in `areas/deposit/editor/web-e2e-tests` (static-analysis); review for the absence of a client framework and a

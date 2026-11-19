@@ -182,10 +182,10 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Boundary rules:**
   - `ACCESS_HIDDEN_PROJECTS` is read here and nowhere else (normalised and validated here, and upper-cased
     again by each capability as a guard), and handed to every
-    capability that presents projects as a value in its config: CPE, and DaTEI once it has code; not DPE, whose
+    capability that presents projects as a value in its config: CPE and DaTEI (not yet in code, DEV-7549); not DPE, whose
     metadata record is public by design; each such capability keeps the four obligations of a Hidden project
     (`areas/access/CONTEXT.md`). CPE's are pinned by `serve.rs`'s and `cpe-server`'s tests; a new
-    capability's are **review** until it has tests of its own (DaTEI: `datei/CONTEXT.md`, DEV-7574).
+    capability's are **review** until it has tests of its own (DaTEI: `datei/CONTEXT.md`, DEV-7549).
   - The image carries each capability's data (`sync/data`, `cpe/projects`, `media/data`): the `image_data`
     layer in `BUILD.bazel` and the `env` of `app_image` (`SYNC_DATA_DIR`, `CPE_PROJECTS_DIR`,
     `MEDIA_DATA_DIR`) have to agree (**review**; see `areas/access/server/CLAUDE.md`; `just image-smoke` only
@@ -1296,17 +1296,18 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Purpose:** DaTEI, the Access Area's third capability (ADR-0009): a hypermedia server presenting
   TEI-based digital editions, one project per route prefix, used instead of a CPE presentation where
   an edition project wants a custom one. Its store is a derived read model (ADR-0008), rebuilt from
-  empty at project activation from the archived files its port serves, the project's deposited TOML
-  configuration among them, each with its rights; it stores them per row and the presenter filters every
-  request on them, as the anonymous consumer until an authorisation mechanism exists (ADR-0012, ADR-0013). First projects: MSSL (086A), then eHKKA (083C). The URL layout and the component
-  library are open.
+  empty at project activation from the files its port serves, the project's deposited TOML
+  configuration among them. For now it stores no rights and filters on none, a deviation from ADR-0008,
+  ADR-0012 and ADR-0013 that ADR-0009 records and ends when the port carries the VRE's permissions. First
+  projects: eHKKA (083C), then MSSL (086A). It is mounted at `DATEI_BASE` (`/datei`), a project's pages
+  under `/datei/<shortcode>`, and keeps its own CSS (ADR-0009).
 - **Key entities:** (design vocabulary, `areas/access/datei/CONTEXT.md`) Presenter, Rebuild, Read
   model, Configuration, Edition file, ODD / Project CSS, Driving file, Table of contents; in the
   incubator `tei-serve`, `rebuild`, `config_doc`, `viewer`
 - **Public interface:** its router (planned), mounted by areas/access/server on the area's origin.
-  `datei/ports` is not an interface DaTEI offers but the port it consumes: the files of one project
-  with their bytes, which areas/access/media implements once DaTEI declares it; `media`'s adapter of it waits
-  for the port, and the port for DaTEI's code.
+  `datei/ports` is not an interface DaTEI offers but the port it consumes, `DateiFiles` (ADR-0009):
+  `projects()` and `file(shortcode, name)`, which areas/access/media implements. Not yet in code: the port,
+  its crates, `media`'s adapter and the mount (DEV-7549, DEV-7574).
 - **Local-context kit:** `areas/access/datei/CONTEXT.md`,
   `docs/adr/0009-datei-joins-the-access-area-as-its-third-capability.md`,
   `docs/adr/0012-build-time-inputs-come-through-two-channels-one-consumer-each.md`,
@@ -1318,15 +1319,15 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Depends on:** areas/access/media through `datei/ports` (DaTEI declares the port, `media`
   implements it); shared/telemetry (expected); never DPE's, CPE's or `sync`'s crates, never
   Chischtli. Third-party, from the incubator: axum, maud, rusqlite (reconciled with the
-  workspace's one pin on entry), quick-xml, roxmltree, toml
+  workspace's one pin on entry), quick-xml, roxmltree, toml, lightningcss, cel
 - **Used by:** areas/access/server (expected: `datei-server` mounted beside DPE and CPE;
   `datei/ports` only where the root constructs the `Live<Port>` adapter)
 - **Boundary rules:** a capability of the Access Area's modulith (ADR-0003): its own tables, one
   consumer-defined port, no shared shape, and the platform-wide style commitment in `## Conventions`.
   The read model is fed by the port only, the configuration included: nothing under `areas/access/datei/`
   is a configuration, an Edition file, ODD, CSS, driving file or table of contents (ADR-0012). The
-  presenter never writes the read model and filters every request on the rights stored per row with
-  ADR-0013's decision (ADR-0012; **review**). A project fails alone (ADR-0007). The incubator renders elements as `<tei-{name}>` and calls its build the Rebuild (**docs-only** until code exists; then
+  presenter never writes the read model; it filters on no rights until the port carries the VRE's
+  permissions (ADR-0009's deviation from ADR-0012 and ADR-0013; **review**). A project fails alone (ADR-0007). The incubator renders elements as `<tei-{name}>` and calls its build the Rebuild (**docs-only** until code exists; then
   **static-analysis** for one rebuild-from-empty test against a `Fake<Port>`, and **structure** via
   Bazel visibility after ADR-0001).
 - **Durable state:** one read model per project (SQLite), single writer the Rebuild, disposable and
@@ -1425,7 +1426,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   (ADR-0009, DEV-7512): `media-store` serves CPE's bytes port from a hand-fed directory laid out as the bucket
   will be, `MEDIA_DATA_DIR` (default `areas/access/media/data`), the same port the Access bucket will later
   stand behind. Not built: Vitrinli, the tables, the routes (so CPE serves a project's `assets/` from its
-  folder until then), and DaTEI's port, whose adapter waits for it.
+  folder until then), and the adapter of DaTEI's port `DateiFiles` (DEV-7574).
 - **Key entities:** `LiveDepositedFiles` (in `media-store`, CPE's `DepositedFiles` over the stand-in
   directory); (design vocabulary) Stand-in directory, Anonymous consumer (`areas/access/media/CONTEXT.md`),
   Media capability, Access bucket, Byte source, Authorisation check (Vitrinli's traits); later the
@@ -1450,8 +1451,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   filegroup, which `cpe-store-build` also reads); areas/access/server (links `media_store`, the only target it grants,
   constructs `LiveDepositedFiles` over `MEDIA_DATA_DIR` and hands it to `Cpe::activate`); expected later:
   areas/access/datei (through `datei/ports`), areas/access/cpe and areas/access/dpe for IIIF and downloads
-- **Boundary rules:** reads only the Access bucket, and until it exists only its own committed data
-  directory; never the sealed store, Preservation Files or Originals; never derives, because the archive
+- **Boundary rules:** reads only the Access bucket, and until it exists only the directory
+  `MEDIA_DATA_DIR` names (its committed `data/` by default); never the sealed store, Preservation Files or Originals; never derives, because the archive
   already did; implements consumer-declared ports beside its data and never serves a consumer's shape
   (`vitrinli/CONTEXT.md` → Boundary commitments; **review**). `media-store` depends on `cpe-ports` and on no
   `sync` or other sibling crate (**structure**: no other sibling target grants it). Only the composition root
@@ -1462,7 +1463,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `is_shortcode` and `is_file_name` accept them, and no component below the directory may be a symbolic
   link (**static-analysis**: `media-store`'s tests). It is the Access bucket's only consumer and never reads
   the projection stream (ADR-0003); a bytes port serves every file with its rights attached and never
-  pre-filters; change reaches a reader only through its port, which `media` announces, and until the bucket
+  pre-filters (DaTEI's serves none for now, ADR-0009); change reaches a reader only through its port, which `media` announces, and until the bucket
   exists `media` owns the operator lever (a file watch or an admin endpoint behind a token) that makes its
   adapter announce; a reader grows no endpoint of its own (ADR-0012; **review**). Not yet in code: rights on
   the port, the announcement and the lever; until they land, an edit under `MEDIA_DATA_DIR` needs a restart
@@ -1471,7 +1472,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   (target design). Until the Access bucket: the hand-fed stand-in directory `areas/access/media/data/`, laid
   out as the bucket will be (`0803/config.kdl`, `curation.csv`, `narrative/`), text in plain git with its
   provenance in `data/PROVENANCE`, images not committed (ADR-0009, ADR-0012, DEV-7512); **single writer** a
-  person: hand-authored, edited in place and never generated (**review**). Since dsp-incubator#500 (DEV-7496)
+  person: hand-authored, edited in place and never generated (**review**). On a server, the directory
+  `MEDIA_DATA_DIR` names is to have one writer, the VRE bridge (ADR-0012). Not yet in code: the VRE bridge
+  (P-DEV-301). Since dsp-incubator#500 (DEV-7496)
   the curation file is the only copy of Incunabula's curation; a change is made here and reaches the
   incubator when it re-vendors (**review**). `media-store` reads it on every call and holds nothing in
   between; an edit to the curation file changes the committed-data tests of `cpe-store-build` in the same

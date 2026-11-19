@@ -3080,6 +3080,7 @@ access-server healthcheck --url http://localhost:9090/healthz # custom URL
 <tr><td><code>CPE_BASE</code></td><td>No</td><td><em>(empty)</em></td><td>Path CPE is mounted at. The Docker image sets <code>/cpe</code>. A leading <code>/</code>, no trailing one, unreserved characters only. Unset, empty or refused (logged as a warning and as an error with the reason): CPE is not mounted and DPE is served alone. It must not be a path DPE serves (<code>/dpe</code>, <code>/assets</code>, …): nothing checks that, and under such a base CPE answers every path DPE has no route of its own for, its static files included. A path the binary or DPE has a route for (<code>/healthz</code>, <code>/telemetry/collect</code>, <code>/dpe/projects</code>) keeps its answer under any base. If the router cannot be built with CPE at the base, that is logged as an error naming <code>CPE_BASE</code>, and CPE is not mounted; no value is known to do that.</td></tr>
 <tr><td><code>CPE_PROJECTS_DIR</code></td><td>No</td><td><code>areas/access/cpe/projects</code></td><td>Folder whose subfolders are CPE's projects: each declares its shortcode in a <code>SHORTCODE</code> file and holds its assets and the documents on its data; its configuration, curation and narrative are in <code>MEDIA_DATA_DIR</code>. The Docker image sets <code>/app/cpe/projects</code>.</td></tr>
 <tr><td><code>CPE_PUBLIC_ORIGIN</code></td><td>No</td><td><em>(none)</em></td><td>Origin CPE's absolute URLs (the share links) start with, e.g. <code>https://repository.dasch.swiss</code>. An origin only: scheme <code>http</code> or <code>https</code> and a host, no path (not <code>…/cpe</code>: the base is <code>CPE_BASE</code>), no query, no trailing slash. A value of another shape is refused, and CPE then answers <code>503</code> on every path under its base. Not set in the image. Unset, CPE takes the origin of each request from <code>X-Forwarded-Proto</code> and <code>Host</code> and logs once at start that it does. Both headers are the client's unless a proxy in front overwrites them (Cloud Run does), so set the variable on every deployment that has a cache or a proxy that passes them through.</td></tr>
+<tr><td><code>ACCESS_HIDDEN_PROJECTS</code></td><td>No</td><td><em>(none)</em></td><td>Comma-separated shortcodes of the Hidden projects (<code>areas/access/CONTEXT.md</code>), e.g. <code>083C,086A</code>: their presentations carry <code>X-Robots-Tag: noindex, nofollow</code> and the robots meta, and no overview lists them. Read once at start by <code>access-server</code>, honoured by CPE, ignored by DPE. Entries are trimmed and upper-cased; unset, empty or blank means none, and an entry that is not a shortcode is logged as a warning and ignored. Not set in the image: it is the deployment's to set. Not access control: anyone with the link reaches the project.</td></tr>
 </tbody></table>
 </div>
 <blockquote>
@@ -7757,8 +7758,8 @@ to CPE.</p>
 <h2 id="what-is-served"><a class="header" href="#what-is-served">What is served</a></h2>
 <ul>
 <li><strong>Where</strong>: every path under <code>/cpe</code> (<code>CPE_BASE</code>). A project is at <code>/cpe/&lt;project id&gt;/</code>; today there is one,
-Incunabula, at <code>/cpe/incunabula/</code>. <code>/cpe</code> and <code>/cpe/</code> are CPE's overview: the projects it serves, each
-with a link to its start page. Any other path that names no project is CPE's own not-found page.</li>
+Incunabula, at <code>/cpe/incunabula/</code>. <code>/cpe</code> and <code>/cpe/</code> are CPE's overview: the projects it serves that are not
+hidden, each with a link to its start page. Any other path that names no project is CPE's own not-found page.</li>
 <li><strong>From what</strong>: the project folders in <code>CPE_PROJECTS_DIR</code> (<code>SHORTCODE</code>, assets), <code>sync</code>'s snapshots in
 <code>SYNC_DATA_DIR</code> and <code>media</code>'s deposited files in <code>MEDIA_DATA_DIR</code> (configuration, curation, narrative). All
 three are in the image. Each project's store is built in memory from that data at every start; nothing is
@@ -7775,20 +7776,35 @@ project's own files at <code>/cpe/&lt;project id&gt;/_assets/…</code>.</li>
 <p>The five variables (<code>CPE_BASE</code>, <code>CPE_PROJECTS_DIR</code>, <code>CPE_PUBLIC_ORIGIN</code>, <code>SYNC_DATA_DIR</code>, <code>MEDIA_DATA_DIR</code>) are
 in the <a href="cpe/../dpe/operations.html#environment-variables">environment table</a> of DPE Operations. The image sets all but
 <code>CPE_PUBLIC_ORIGIN</code>. The three <code>CPE_*</code> values can also come from a <code>cpe.toml</code> in the working directory; the
-environment wins.</p>
+environment wins. A sixth, <code>ACCESS_HIDDEN_PROJECTS</code>, is in the same table: <code>access-server</code> reads it and hands
+it to CPE, which honours it but never reads it, and it cannot come from <code>cpe.toml</code>.</p>
+<h3 id="hiding-and-un-hiding-a-project"><a class="header" href="#hiding-and-un-hiding-a-project">Hiding and un-hiding a project</a></h3>
+<p>A project whose shortcode is in <code>ACCESS_HIDDEN_PROJECTS</code> is a Hidden project: every response under its prefix
+carries <code>X-Robots-Tag: noindex, nofollow</code>, its pages and its not-found carry
+<code>&lt;meta name="robots" content="noindex, nofollow"&gt;</code>, and the overview neither lists nor counts it. It is
+otherwise served as before, to anyone with the link. The start log has three lines for it: the shortcodes
+read (<code>hidden projects: none</code>, or <code>hidden projects: &lt;list&gt;</code>), the hidden project ids (<code>hidden project ids</code>),
+and each listed shortcode that no project folder has (<code>a hidden shortcode names no project folder</code>), so a typo
+shows there.</p>
+<p>The variable is read at start: hiding or un-hiding takes a restart or a redeploy. Search engines notice that a
+project was un-hidden only when they next crawl it, and an HTTP cache keeps a <code>noindex</code> response until it
+expires.</p>
 <h2 id="start-up-and-what-cpe-answers-when-something-is-missing"><a class="header" href="#start-up-and-what-cpe-answers-when-something-is-missing">Start-up, and what CPE answers when something is missing</a></h2>
 <p>The port is bound first, and CPE's projects are loaded afterwards, in the background. Until they are, every
-path under <code>/cpe</code> answers <code>503</code> with <code>Retry-After: 30</code> and <code>Cache-Control: no-store</code>. DPE and <code>/healthz</code>
-answer throughout. Nothing of CPE's stops the binary or delays its start.</p>
+path under <code>/cpe</code> answers <code>503</code> with <code>Retry-After: 30</code> and <code>Cache-Control: no-store</code>. That <code>503</code>, and the one
+a refused configuration answers, carries no <code>X-Robots-Tag</code>, since no project id is known yet. DPE and
+<code>/healthz</code> answer throughout. Nothing of CPE's stops the binary or delays its start.</p>
 <div class="table-wrapper"><table><thead><tr><th>Situation</th><th>Under <code>/cpe</code></th><th>Logged</th><th>DPE</th></tr></thead><tbody>
 <tr><td>Projects are still loading</td><td><code>503</code>, every path</td><td><code>CPE is mounted and activates in the background</code> (info)</td><td>serves</td></tr>
-<tr><td>A project is loaded</td><td>its pages, and its entry in the overview</td><td><code>project loaded</code>, then <code>CPE's projects are loaded</code> with the counts (info)</td><td>serves</td></tr>
+<tr><td>A project is loaded</td><td>its pages, and its entry in the overview, unless it is a Hidden project</td><td><code>project loaded</code>, then <code>CPE's projects are loaded</code> with the counts (info)</td><td>serves</td></tr>
 <tr><td><code>SYNC_DATA_DIR</code> or a project's file in it is missing</td><td><code>503</code> on that project's paths; the overview does not list it</td><td><code>project does not load; its prefix answers 503</code>, with the reason (error); for a missing directory also <code>SYNC_DATA_DIR names no directory …</code> at start (warning)</td><td>serves</td></tr>
 <tr><td><code>MEDIA_DATA_DIR</code>, a project's directory in it, or a file the project needs from it is missing, unreadable or not UTF-8</td><td><code>503</code> on that project's paths; the overview does not list it</td><td><code>project does not load; its prefix answers 503</code>, with the reason (error); for a missing directory also <code>MEDIA_DATA_DIR names no directory …</code> at start (warning)</td><td>serves</td></tr>
 <tr><td>A project folder has no <code>SHORTCODE</code></td><td>the folder is no project: CPE's not-found, <code>404</code>, on its paths</td><td>nothing</td><td>serves</td></tr>
 <tr><td>A project folder's <code>SHORTCODE</code> is malformed or a symlink</td><td>the project is not served: CPE's not-found, <code>404</code>, on its paths</td><td><code>a project folder is not served</code>, with the folder and the reason (warning)</td><td>serves</td></tr>
 <tr><td>Two project folders declare the same <code>SHORTCODE</code></td><td><code>503</code> on both projects' paths</td><td><code>project does not load; its prefix answers 503</code>, naming the other folder (error)</td><td>serves</td></tr>
 <tr><td><code>CPE_PROJECTS_DIR</code> does not exist</td><td>the overview with no project, <code>200</code>, at <code>/cpe</code> and <code>/cpe/</code>; CPE's not-found, <code>404</code>, on every other path</td><td><code>CPE's projects are loaded</code> with <code>served=0</code> (info) and nothing else</td><td>serves</td></tr>
+<tr><td>An entry of <code>ACCESS_HIDDEN_PROJECTS</code> is not a shortcode</td><td>as without that entry; the other entries hide their projects</td><td><code>ACCESS_HIDDEN_PROJECTS: an entry is not a shortcode and is ignored</code>, with the entry (warning)</td><td>serves</td></tr>
+<tr><td><code>ACCESS_HIDDEN_PROJECTS</code> is not UTF-8</td><td>as without the variable: nothing is hidden</td><td><code>ACCESS_HIDDEN_PROJECTS is not UTF-8 and is ignored: no project is hidden</code> (warning)</td><td>serves</td></tr>
 <tr><td><code>CPE_PUBLIC_ORIGIN</code> is refused (a path, a trailing slash)</td><td><code>503</code>, every path</td><td><code>CPE's configuration is refused …</code>, with the reason (error)</td><td>serves</td></tr>
 <tr><td><code>CPE_BASE</code> is unset or empty</td><td>not mounted: DPE's <code>404</code></td><td><code>CPE_BASE is not set: CPE is not mounted …</code> (warning)</td><td>serves alone</td></tr>
 <tr><td><code>CPE_BASE</code> is refused (no leading <code>/</code>, a trailing one)</td><td>not mounted: DPE's <code>404</code></td><td><code>CPE's configuration is refused …</code>, with the reason (error)</td><td>serves alone</td></tr>

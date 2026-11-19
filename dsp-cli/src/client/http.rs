@@ -1148,6 +1148,47 @@ fn node_dto_to_summary(
     }
 }
 
+/// Project a resource-sequence response (`/v2/resources`, `/v2/searchbylabel`)
+/// onto a [`ResourcePage`].
+fn resource_page_from_dto(dto: ResourceListDto) -> ResourcePage {
+    let may_have_more_results = dto.may_have_more_results;
+
+    // Distinguish the three JSON-LD forms:
+    // 1. @graph present → many results
+    // 2. @id present (but no @graph) → single result
+    // 3. neither → empty
+    let resources: Vec<ResourceSummary> = if let Some(graph) = dto.graph {
+        graph
+            .into_iter()
+            .map(|node| {
+                node_dto_to_summary(
+                    node.id,
+                    node.type_field.as_ref(),
+                    node.label.as_ref(),
+                    node.ark_url.as_ref(),
+                    node.creation_date.as_ref(),
+                    node.last_modification_date.as_ref(),
+                )
+            })
+            .collect()
+    } else if let Some(id) = dto.id {
+        // Single result: the top-level fields carry the single node's data.
+        vec![node_dto_to_summary(
+            id,
+            dto.type_field.as_ref(),
+            dto.label.as_ref(),
+            dto.ark_url.as_ref(),
+            dto.creation_date.as_ref(),
+            dto.last_modification_date.as_ref(),
+        )]
+    } else {
+        // Empty result.
+        vec![]
+    };
+
+    ResourcePage { resources, may_have_more_results }
+}
+
 /// Wire DTO for a single-resource `GET /v2/resources/{iri}?schema=complex` response.
 ///
 /// Named envelope fields are parsed directly; the `@context` is captured for CURIE
@@ -2681,42 +2722,65 @@ project owns the existing dump; cannot safely proceed"
             .json()
             .map_err(|e| Diagnostic::ServerError(format!("resource list response could not be parsed: {e}")))?;
 
-        let may_have_more_results = dto.may_have_more_results;
+        Ok(resource_page_from_dto(dto))
+    }
 
-        // Distinguish the three JSON-LD forms:
-        // 1. @graph present → many results
-        // 2. @id present (but no @graph) → single result
-        // 3. neither → empty
-        let resources: Vec<ResourceSummary> = if let Some(graph) = dto.graph {
-            graph
-                .into_iter()
-                .map(|node| {
-                    node_dto_to_summary(
-                        node.id,
-                        node.type_field.as_ref(),
-                        node.label.as_ref(),
-                        node.ark_url.as_ref(),
-                        node.creation_date.as_ref(),
-                        node.last_modification_date.as_ref(),
-                    )
+    fn search_resources_by_label(
+        &self,
+        server: &str,
+        project_iri: &str,
+        resource_type_iri: &str,
+        term: &str,
+        page: u32,
+        token: Option<&str>,
+    ) -> Result<ResourcePage, Diagnostic> {
+        let base = server.trim_end_matches('/');
+        // The term is a path segment: enc() keeps `/`, `?` and `#` in it from
+        // being read as URL structure. DSP-API escapes Lucene syntax itself.
+        let url = format!("{base}/v2/searchbylabel/{}", enc(term));
+
+        // DSP-API wire names stay here at the client boundary (dsp-cli/ADR-0001).
+        // `offset` is a page number on this endpoint, not an item offset.
+        let req = self.client.get(&url).query(&[
+            ("limitToProject", project_iri),
+            ("limitToResourceClass", resource_type_iri),
+            ("offset", &page.to_string()),
+        ]);
+        let req = if let Some(t) = token { req.bearer_auth(t) } else { req };
+
+        let response = req.send().map_err(|e| Diagnostic::Network(e.to_string()))?;
+        let status = response.status();
+
+        if status == reqwest::StatusCode::BAD_REQUEST {
+            // A term the server refuses (too short, or otherwise invalid) is the
+            // caller's input, so a usage error with the server's reason.
+            let body = response.bytes().unwrap_or_default();
+            let reason = serde_json::from_slice::<serde_json::Value>(&body)
+                .ok()
+                .and_then(|v| {
+                    v.get("knora-api:error")
+                        .and_then(|e| e.as_str())
+                        .map(crate::util::text::sanitise_and_cap)
                 })
-                .collect()
-        } else if let Some(id) = dto.id {
-            // Single result: the top-level fields carry the single node's data.
-            vec![node_dto_to_summary(
-                id,
-                dto.type_field.as_ref(),
-                dto.label.as_ref(),
-                dto.ark_url.as_ref(),
-                dto.creation_date.as_ref(),
-                dto.last_modification_date.as_ref(),
-            )]
-        } else {
-            // Empty result.
-            vec![]
-        };
+                .unwrap_or_else(|| crate::util::text::sanitise_bytes_for_prose(&body));
+            let reason = if reason.trim().is_empty() {
+                "no reason given".to_string()
+            } else {
+                reason
+            };
+            return Err(Diagnostic::Usage(format!(
+                "the server rejected the label search term: {reason}"
+            )));
+        }
+        if !status.is_success() {
+            return Err(map_unexpected_status(status, &url));
+        }
 
-        Ok(ResourcePage { resources, may_have_more_results })
+        let dto: ResourceListDto = response
+            .json()
+            .map_err(|e| Diagnostic::ServerError(format!("label search response could not be parsed: {e}")))?;
+
+        Ok(resource_page_from_dto(dto))
     }
 
     fn describe_resource(

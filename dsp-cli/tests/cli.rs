@@ -729,6 +729,31 @@ fn resource_list_page_and_all_together_exits_usage() {
 }
 
 #[test]
+fn resource_list_order_by_and_filter_together_exits_usage() {
+    // The label search behind --filter returns matches in server order and
+    // cannot sort by a field, so clap rejects the combination (exit 2).
+    dsp()
+        .args([
+            "vre",
+            "resource",
+            "list",
+            "--server",
+            "https://api.example.invalid",
+            "--project",
+            "0803",
+            "--resource-type",
+            "page",
+            "--filter",
+            "folio",
+            "--order-by",
+            "pagenum",
+        ])
+        .assert()
+        .failure()
+        .code(2);
+}
+
+#[test]
 fn docs_topic_with_json_flag_exits_usage() {
     // `dsp docs output -j` — -j conflicts_with_all includes topic (positional);
     // clap rejects at parse time with exit code 2.

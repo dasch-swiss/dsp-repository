@@ -736,7 +736,8 @@ dsp-cli-run *args:
 
 # Needs a reachable DSP stack and the environment variables the live tests read
 # (DSP_TEST_SERVER, DSP_TEST_USER, DSP_TEST_PASSWORD, DSP_TEST_PROJECT,
-# DSP_TEST_CLASS_IRI, DSP_TEST_VOCAB_PROJECT, DSP_TEST_NON_ADMIN_TOKEN, DSP_TOKEN, and optionally
+# DSP_TEST_CLASS_IRI, DSP_TEST_VOCAB_PROJECT, DSP_TEST_LABEL_SEARCH_PROJECT,
+# DSP_TEST_LABEL_SEARCH_CLASS_IRI, DSP_TEST_NON_ADMIN_TOKEN, DSP_TOKEN, and optionally
 # DSP_TEST_ORDER_BY_IRI). DSP_LIVE_STRICT=1 makes a missing required variable
 # panic instead of the test quietly skipping. `live_update_check` is excluded:
 # it calls out to crates.io to check for a newer dsp-cli release, not a DSP
@@ -748,6 +749,7 @@ dsp-cli-test-live *FLAGS:
     bazel test {{ FLAGS }} \
         --test_env=DSP_TEST_SERVER --test_env=DSP_TEST_USER --test_env=DSP_TEST_PASSWORD \
         --test_env=DSP_TEST_PROJECT --test_env=DSP_TEST_CLASS_IRI --test_env=DSP_TEST_VOCAB_PROJECT \
+        --test_env=DSP_TEST_LABEL_SEARCH_PROJECT --test_env=DSP_TEST_LABEL_SEARCH_CLASS_IRI \
         --test_env=DSP_TEST_NON_ADMIN_TOKEN --test_env=DSP_TEST_ORDER_BY_IRI --test_env=DSP_TOKEN \
         $(bazel query 'filter("^//dsp-cli:live_[a-z_]+_test$", //dsp-cli:all) except //dsp-cli:live_update_check_test')
 

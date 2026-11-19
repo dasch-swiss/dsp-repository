@@ -279,6 +279,33 @@ pub trait DspClient {
         token: Option<&str>,
     ) -> Result<ResourcePage, Diagnostic>;
 
+    /// Search resource instances of a project by label, server-side.
+    ///
+    /// Issues `GET {server}/v2/searchbylabel/{enc(term)}` with:
+    /// - query param `limitToProject=<project_iri>`
+    /// - query param `limitToResourceClass=<resource_type_iri>` (DSP-API wire name)
+    /// - query param `offset=<page>` (zero-based page number, not an item offset)
+    ///
+    /// DSP-API matches `term` against its label index: the term is split on
+    /// spaces, every word must match a whole whitespace-separated word of the
+    /// label, and the last word also matches as a prefix. Matching ignores case
+    /// and diacritics. The server includes instances of subclasses of
+    /// `resource_type_iri`, and requires a term of at least three characters.
+    ///
+    /// Returns the same [`ResourcePage`] shape as [`Self::list_resources`],
+    /// permission-filtered the same way. Status mapping as `list_resources`,
+    /// except `400` (a term the server rejects) → `Err(Diagnostic::Usage(...))`
+    /// carrying the server's message.
+    fn search_resources_by_label(
+        &self,
+        server: &str,
+        project_iri: &str,
+        resource_type_iri: &str,
+        term: &str,
+        page: u32,
+        token: Option<&str>,
+    ) -> Result<ResourcePage, Diagnostic>;
+
     /// Fetch the full envelope metadata of a single resource by its IRI.
     ///
     /// Issues `GET {server}/v2/resources/{enc(resource_iri)}?schema=complex`.

@@ -58,6 +58,8 @@ runs:
         DSP_TEST_PROJECT: "0801"
         DSP_TEST_CLASS_IRI: http://0.0.0.0:3333/ontology/0801/beol/v2#page
         DSP_TEST_VOCAB_PROJECT: "0001"
+        DSP_TEST_LABEL_SEARCH_PROJECT: "0803"
+        DSP_TEST_LABEL_SEARCH_CLASS_IRI: http://0.0.0.0:3333/ontology/0803/incunabula/v2#page
       # Always tee to test-output.log: the pinned job doesn't need it, but the
       # summarize step below (shared by both jobs, gated by an input) does.
       # `--test_output=errors` prints each failing target's test log into it. pipefail: the

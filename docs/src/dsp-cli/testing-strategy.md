@@ -56,6 +56,8 @@ variables; the common ones are:
 | `DSP_TEST_PASSWORD` | tests that need auth | Password for `DSP_TEST_USER`. Local/dev/test only — never a production password (same policy as `DSP_PASSWORD` below). |
 | `DSP_TEST_NON_ADMIN_TOKEN` | the sparql-query non-admin-token live test | A non-SystemAdmin bearer token, used to verify that the SPARQL passthrough maps a non-admin caller to a 403 auth-required error. |
 | `DSP_TEST_VOCAB_PROJECT` | `live_vocabulary.rs` | Shortcode or IRI of the project whose controlled vocabularies are inspected. Set to `0001` in the drift job. |
+| `DSP_TEST_LABEL_SEARCH_PROJECT` | the label-search live test in `live_resource_list.rs` | Shortcode or IRI of a project with instances of `DSP_TEST_LABEL_SEARCH_CLASS_IRI`. Set to `0803` in the drift job. |
+| `DSP_TEST_LABEL_SEARCH_CLASS_IRI` | the label-search live test in `live_resource_list.rs` | Full class IRI whose first listed resource is searched for by its label. Set to incunabula's `page` in the drift job, which has instances in the fixtures (`DSP_TEST_CLASS_IRI` has none). |
 
 If `DSP_TOKEN` is set it takes precedence over the `DSP_TEST_USER`/`DSP_TEST_PASSWORD` pair. If
 neither a token nor user+password is available, the live test skips with an `eprintln!` note

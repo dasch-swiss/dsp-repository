@@ -4,7 +4,8 @@
 //! pagination (`--page` / `--all`) and the first real use of
 //! `MetaContext.filter_warning` (dsp-cli/ADR-0007 silent-filter disclosure). Class-IRI
 //! resolution follows D1 (plan 022): full-IRI bypass, optional `--data-model`
-//! scope, bare-name scan across all project data-models.
+//! scope, bare-name scan across all project data-models. With `--filter`, the
+//! pages come from DSP-API's label search instead of the resource-type listing.
 //!
 //! Phase 8b implements `describe` — fetches a single resource's envelope metadata
 //! by its internal IRI. Includes the D2 cross-project guard and D3 filter_warning.
@@ -16,7 +17,7 @@ use crate::cli::{ResourceDescribeArgs, ResourceListArgs};
 use crate::client::DspClient;
 use crate::config::{AuthCache, Config, resolve_token};
 use crate::diagnostic::Diagnostic;
-use crate::model::ResourceSummary;
+use crate::model::{ResourcePage, ResourceSummary};
 use crate::render::{MetaContext, Renderer, ResourceListPagination, ResourceListView};
 use crate::util::text::strip_control_chars;
 
@@ -74,6 +75,9 @@ pub(crate) fn run_list_impl(
         .as_deref()
         .ok_or_else(|| Diagnostic::Usage("--resource-type <name-or-IRI> is required".to_string()))?;
 
+    // ── 2b. --filter becomes a label-search term (fail-fast, BEFORE any IO) ───
+    let search_term = args.filter.as_deref().map(label_search_term).transpose()?;
+
     // ── 3. Load cache (auth-optional: failures fall back to empty cache) ──────
     let cache_result = match cache_path {
         Some(p) => AuthCache::load_from(p),
@@ -122,21 +126,28 @@ pub(crate) fn run_list_impl(
         token,
     )?;
 
-    // ── 8b. Resolve --order-by field name to property IRI ────────────────────
-    let order_by: Option<String> = if let Some(ob) = args.order_by.as_deref() {
-        Some(resolve_order_by_property(ob, &rt_ref, &cfg.server, client, token)?)
-    } else {
-        None
+    // ── 9. Fetch pages ────────────────────────────────────────────────────────
+    //
+    // With --filter, pages come from DSP-API's label search, so --page / --all
+    // walk the matches rather than every resource of the type. --order-by
+    // conflicts with --filter at the parser.
+    let order_by: Option<String> = match args.order_by.as_deref().filter(|_| search_term.is_none()) {
+        Some(ob) => Some(resolve_order_by_property(ob, &rt_ref, &cfg.server, client, token)?),
+        None => None,
+    };
+    let fetch_page = |page: u32| -> Result<ResourcePage, Diagnostic> {
+        match &search_term {
+            None => client.list_resources(&cfg.server, &pref.iri, &rt_ref.iri, order_by.as_deref(), page, token),
+            Some(term) => client.search_resources_by_label(&cfg.server, &pref.iri, &rt_ref.iri, term, page, token),
+        }
     };
 
-    // ── 9. D5: Fetch pages ────────────────────────────────────────────────────
-    let (all_resources, pagination) = if args.all {
+    let (items, pagination) = if args.all {
         // Fetch all pages: 0, 1, 2, … until may_have_more is false.
         let mut all: Vec<ResourceSummary> = Vec::new();
         let mut page = 0u32;
         loop {
-            let page_result =
-                client.list_resources(&cfg.server, &pref.iri, &rt_ref.iri, order_by.as_deref(), page, token)?;
+            let page_result = fetch_page(page)?;
             all.extend(page_result.resources);
             if !page_result.may_have_more_results {
                 break;
@@ -148,8 +159,7 @@ pub(crate) fn run_list_impl(
     } else {
         // Single-page mode: fetch exactly the resolved page (default: 0).
         let page = args.page.unwrap_or(0);
-        let page_result =
-            client.list_resources(&cfg.server, &pref.iri, &rt_ref.iri, order_by.as_deref(), page, token)?;
+        let page_result = fetch_page(page)?;
         let may_have_more = page_result.may_have_more_results;
         (
             page_result.resources,
@@ -157,21 +167,10 @@ pub(crate) fn run_list_impl(
         )
     };
 
-    // ── 10. Capture total BEFORE client-side filter ───────────────────────────
-    let total = all_resources.len();
-
-    // ── 11. Apply --filter (case-insensitive substring over label) ────────────
-    let mut items = all_resources;
-    if let Some(ref f) = args.filter {
-        let lower = f.to_lowercase();
-        items.retain(|r| r.label.to_lowercase().contains(&lower));
-    }
-
-    // ── 12. Build view + meta and render ─────────────────────────────────────
+    // ── 10. Build view + meta and render ─────────────────────────────────────
     let view = ResourceListView {
         items,
-        total,
-        filter: args.filter.clone(),
+        filter: search_term,
         resource_type: rt_ref.name,
         pagination,
     };
@@ -183,6 +182,27 @@ pub(crate) fn run_list_impl(
         count_cost: None,
     };
     renderer.resources(&view, &meta)
+}
+
+/// Minimum length of a `--filter` term: DSP-API's default
+/// `search-value-min-length`. The check only saves a round trip; the server's
+/// own limit is authoritative, and a term it rejects comes back as a usage
+/// error from `search_resources_by_label`.
+const MIN_FILTER_CHARS: usize = 3;
+
+/// Normalise a `--filter` value into a label-search term.
+///
+/// DSP-API splits the term on single spaces, so runs of whitespace are
+/// collapsed to one space first; a term that is still shorter than
+/// [`MIN_FILTER_CHARS`] is a usage error raised before any request.
+fn label_search_term(filter: &str) -> Result<String, Diagnostic> {
+    let term = filter.split_whitespace().collect::<Vec<_>>().join(" ");
+    if term.chars().count() < MIN_FILTER_CHARS {
+        return Err(Diagnostic::Usage(format!(
+            "--filter needs at least {MIN_FILTER_CHARS} characters (the server's minimum for a label search); got {filter:?}"
+        )));
+    }
+    Ok(term)
 }
 
 /// Resolve the `resource_type` argument to a [`ResourceTypeRef`].
@@ -550,6 +570,10 @@ mod tests {
     /// token).
     type ListResourcesArg = (String, String, Option<String>, u32, Option<String>);
 
+    /// Captured `search_resources_by_label` arguments: (project_iri, resource_type_iri, term,
+    /// page, token).
+    type SearchByLabelArg = (String, String, String, u32, Option<String>);
+
     struct MockDspClient {
         resolve_result: Option<Result<ProjectRef, Diagnostic>>,
         resolve_calls: RefCell<u32>,
@@ -565,6 +589,9 @@ mod tests {
         list_resources_queue: RefCell<Vec<Result<ResourcePage, Diagnostic>>>,
         list_resources_calls: RefCell<u32>,
         list_resources_args: RefCell<Vec<ListResourcesArg>>,
+        // Queue for search_resources_by_label: each call pops the front
+        search_by_label_queue: RefCell<Vec<Result<ResourcePage, Diagnostic>>>,
+        search_by_label_args: RefCell<Vec<SearchByLabelArg>>,
         // Queue for describe_resource: each call pops the front
         describe_resource_queue: RefCell<Vec<Result<ResourceDetail, Diagnostic>>>,
         describe_resource_calls: RefCell<u32>,
@@ -585,6 +612,8 @@ mod tests {
                 list_resources_queue: RefCell::new(Vec::new()),
                 list_resources_calls: RefCell::new(0),
                 list_resources_args: RefCell::new(Vec::new()),
+                search_by_label_queue: RefCell::new(Vec::new()),
+                search_by_label_args: RefCell::new(Vec::new()),
                 describe_resource_queue: RefCell::new(Vec::new()),
                 describe_resource_calls: RefCell::new(0),
                 describe_resource_with_values_args: RefCell::new(Vec::new()),
@@ -616,6 +645,11 @@ mod tests {
             self
         }
 
+        fn with_search_by_label(self, result: Result<ResourcePage, Diagnostic>) -> Self {
+            self.search_by_label_queue.borrow_mut().push(result);
+            self
+        }
+
         fn with_describe_resource(self, result: Result<ResourceDetail, Diagnostic>) -> Self {
             self.describe_resource_queue.borrow_mut().push(result);
             self
@@ -639,6 +673,10 @@ mod tests {
 
         fn list_resources_args(&self) -> Vec<ListResourcesArg> {
             self.list_resources_args.borrow().clone()
+        }
+
+        fn search_by_label_args(&self) -> Vec<SearchByLabelArg> {
+            self.search_by_label_args.borrow().clone()
         }
 
         fn describe_resource_calls(&self) -> u32 {
@@ -790,6 +828,29 @@ mod tests {
             let mut queue = self.list_resources_queue.borrow_mut();
             if queue.is_empty() {
                 panic!("list_resources called more times than expected (queue is empty)");
+            }
+            queue.remove(0)
+        }
+
+        fn search_resources_by_label(
+            &self,
+            _server: &str,
+            project_iri: &str,
+            resource_type_iri: &str,
+            term: &str,
+            page: u32,
+            token: Option<&str>,
+        ) -> Result<ResourcePage, Diagnostic> {
+            self.search_by_label_args.borrow_mut().push((
+                project_iri.to_string(),
+                resource_type_iri.to_string(),
+                term.to_string(),
+                page,
+                token.map(str::to_owned),
+            ));
+            let mut queue = self.search_by_label_queue.borrow_mut();
+            if queue.is_empty() {
+                panic!("search_resources_by_label called more times than expected (queue is empty)");
             }
             queue.remove(0)
         }
@@ -1603,7 +1664,6 @@ mod tests {
 
         let view = renderer.resources_view.expect("must have been called");
         assert_eq!(view.items.len(), 2);
-        assert_eq!(view.total, 2);
         match &view.pagination {
             crate::render::ResourceListPagination::SinglePage { page, may_have_more } => {
                 assert_eq!(*page, 0);
@@ -1676,7 +1736,6 @@ mod tests {
 
         let view = renderer.resources_view.expect("must have been called");
         assert_eq!(view.items.len(), 3, "all pages merged");
-        assert_eq!(view.total, 3);
         match &view.pagination {
             crate::render::ResourceListPagination::AllPages { pages_fetched } => {
                 assert_eq!(*pages_fetched, 2);
@@ -1729,7 +1788,7 @@ mod tests {
         assert!(renderer.resources_view.is_none(), "no partial result must be rendered on error");
     }
 
-    /// Empty result (zero resources): renders with total=0.
+    /// Empty result (zero resources): renders an empty list.
     #[test]
     fn test_list_empty_result() {
         let client = MockDspClient::new()
@@ -1742,25 +1801,138 @@ mod tests {
 
         let view = renderer.resources_view.expect("must have been called");
         assert!(view.items.is_empty());
-        assert_eq!(view.total, 0);
     }
 
-    /// --filter narrows items; total reflects pre-filter count.
+    /// --filter searches by label server-side instead of listing: the search gets
+    /// the project, the resource-type and the term, and the listing is never called.
     #[test]
-    fn test_list_filter_narrows_total_is_prefilter() {
+    fn test_list_filter_uses_label_search() {
         let client = MockDspClient::new()
             .with_resolve_project(Ok(make_project_ref()))
-            .with_list_resources(Ok(make_resource_page(&["AliceA", "BobB", "AliceC"], false)));
+            .with_search_by_label(Ok(make_resource_page(&["Alice A", "Alice C"], false)));
 
         let mut renderer = RecordingRenderer::new();
         let args = make_args(Some("0801"), Some(LETTER_IRI), None, None, false, Some("alice"));
         run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
 
+        assert_eq!(client.list_resources_calls(), 0, "--filter must not walk the listing");
+        let calls = client.search_by_label_args();
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].0, PROJECT_IRI);
+        assert_eq!(calls[0].1, LETTER_IRI);
+        assert_eq!(calls[0].2, "alice");
+        assert_eq!(calls[0].3, 0, "default page is 0");
+
         let view = renderer.resources_view.expect("must have been called");
-        assert_eq!(view.total, 3, "total is pre-filter");
-        assert_eq!(view.items.len(), 2, "filter keeps only Alice items");
-        assert!(view.items.iter().all(|r| r.label.to_lowercase().contains("alice")));
+        assert_eq!(view.items.len(), 2);
         assert_eq!(view.filter.as_deref(), Some("alice"));
+        match &view.pagination {
+            crate::render::ResourceListPagination::SinglePage { page, may_have_more } => {
+                assert_eq!(*page, 0);
+                assert!(!may_have_more);
+            }
+            other => panic!("expected SinglePage, got {:?}", other),
+        }
+    }
+
+    /// --filter keeps the server's matches as they are: no client-side substring
+    /// check drops a label that the search matched on a word prefix.
+    #[test]
+    fn test_list_filter_keeps_server_matches() {
+        let client = MockDspClient::new()
+            .with_resolve_project(Ok(make_project_ref()))
+            .with_search_by_label(Ok(make_resource_page(&["Smith, Alice"], false)));
+
+        let mut renderer = RecordingRenderer::new();
+        let args = make_args(Some("0801"), Some(LETTER_IRI), None, None, false, Some("alice smith"));
+        run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
+
+        let view = renderer.resources_view.expect("must have been called");
+        assert_eq!(view.items.len(), 1);
+    }
+
+    /// --filter with --page N asks the search for page N of the matches.
+    #[test]
+    fn test_list_filter_with_page_pages_through_matches() {
+        let client = MockDspClient::new()
+            .with_resolve_project(Ok(make_project_ref()))
+            .with_search_by_label(Ok(make_resource_page(&["Alice A"], true)));
+
+        let mut renderer = RecordingRenderer::new();
+        let args = make_args(Some("0801"), Some(LETTER_IRI), None, Some(2), false, Some("alice"));
+        run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
+
+        assert_eq!(client.search_by_label_args()[0].3, 2);
+        let view = renderer.resources_view.expect("must have been called");
+        match &view.pagination {
+            crate::render::ResourceListPagination::SinglePage { page, may_have_more } => {
+                assert_eq!(*page, 2);
+                assert!(may_have_more, "the search's more-results flag must reach the view");
+            }
+            other => panic!("expected SinglePage, got {:?}", other),
+        }
+    }
+
+    /// --filter with --all drains the search's pages, not the listing's.
+    #[test]
+    fn test_list_filter_with_all_drains_matches() {
+        let client = MockDspClient::new()
+            .with_resolve_project(Ok(make_project_ref()))
+            .with_search_by_label(Ok(make_resource_page(&["Alice A", "Alice B"], true)))
+            .with_search_by_label(Ok(make_resource_page(&["Alice C"], false)));
+
+        let mut renderer = RecordingRenderer::new();
+        let args = make_args(Some("0801"), Some(LETTER_IRI), None, None, true, Some("alice"));
+        run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
+
+        let pages: Vec<u32> = client.search_by_label_args().iter().map(|c| c.3).collect();
+        assert_eq!(pages, vec![0, 1]);
+        assert_eq!(client.list_resources_calls(), 0);
+        let view = renderer.resources_view.expect("must have been called");
+        assert_eq!(view.items.len(), 3);
+        match &view.pagination {
+            crate::render::ResourceListPagination::AllPages { pages_fetched } => assert_eq!(*pages_fetched, 2),
+            other => panic!("expected AllPages, got {:?}", other),
+        }
+    }
+
+    /// Runs of whitespace in --filter collapse to single spaces before the search,
+    /// which splits the term on single spaces.
+    #[test]
+    fn test_list_filter_collapses_whitespace() {
+        let client = MockDspClient::new()
+            .with_resolve_project(Ok(make_project_ref()))
+            .with_search_by_label(Ok(make_resource_page(&[], false)));
+
+        let mut renderer = RecordingRenderer::new();
+        let args = make_args(Some("0801"), Some(LETTER_IRI), None, None, false, Some("  alice \t smith "));
+        run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None).expect("expected Ok");
+
+        assert_eq!(client.search_by_label_args()[0].2, "alice smith");
+        let view = renderer.resources_view.expect("must have been called");
+        assert_eq!(
+            view.filter.as_deref(),
+            Some("alice smith"),
+            "the view shows the term searched for"
+        );
+    }
+
+    /// A --filter shorter than the server's minimum is a usage error raised before
+    /// any request; whitespace does not count towards the minimum.
+    #[test]
+    fn test_list_filter_too_short_is_usage_error() {
+        for filter in ["ab", "  a  ", ""] {
+            let client = MockDspClient::new();
+            let mut renderer = RecordingRenderer::new();
+            let args = make_args(Some("0801"), Some(LETTER_IRI), None, None, false, Some(filter));
+            let result = run_list_impl(&args, &make_cfg(), &client, &mut renderer, None, None);
+
+            match result {
+                Err(Diagnostic::Usage(msg)) => assert!(msg.contains("at least 3 characters"), "got: {msg}"),
+                other => panic!("--filter {filter:?} must yield Usage, got {other:?}"),
+            }
+            assert_eq!(client.resolve_calls(), 0, "no request before the term is validated");
+        }
     }
 
     /// --project missing → Usage error; no client calls.

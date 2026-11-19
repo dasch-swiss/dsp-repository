@@ -47,6 +47,7 @@ The shape carries the full context by design, which is why some action signature
 `Renderer` has explicit per-(noun, shape) methods, not a generic `render<T: Renderable>`. Prose rendering is irreducibly per-noun (each entity has its own phrasing);
 a generic render would force every format to read the data through the same lens, which is wrong for prose. List methods take an owned per-noun
 `<Noun>ListView` carrying the post-filter items, the pre-filter total and the filter string, so prose can render a "(m of n matching …)" line without the action duplicating it.
+`ResourceListView` has no total: its `--filter` is a server-side label search, which reports none.
 A `MetaContext` (server label, auth state, optional filter warning and count caveats) threads through every renderer call; it is the implementation site of
 dsp-cli/ADR-0007's auth-state disclosure. The cost, more trait methods as the surface grows, is bounded because the noun-group set is small and grows slowly.
 

@@ -21,13 +21,16 @@ laid out as the bucket's prefixes will be: one directory per project, named by i
 the project deposited under their names, `<shortcode>/<name>`. Today `0803/` holds Incunabula's `config.kdl`,
 `curation.csv` and `narrative/<name>.<lang>.md`. The committed `data/` holds text only, in plain git, and
 `data/PROVENANCE` records where each file came from and how it is changed: every file there is edited in place
-by a person and never generated. On a server, the directory `MEDIA_DATA_DIR` names is written by the VRE
-bridge (P-DEV-301), not the committed `data/`: a project's text files from the VRE under their Stored
-names, the File manifest that names the VRE resource each came from, and the Ready token, holding the as-of time,
-last (DaTEI's vocabulary, in [`../datei/CONTEXT.md`](../datei/CONTEXT.md)). For DaTEI, the bridge also writes
-`datei.toml` and `file-layout.xml` from its image. There the File manifest, the Ready token and the bridge's
-image record provenance, as `data/PROVENANCE` does for the committed files. A project is in `media` when its
-directory is; there is no list of known projects beside it. Not yet in code: the VRE bridge (P-DEV-301).
+by a person and never generated. On a server, the directory `MEDIA_DATA_DIR` names is the `media` subtree of the
+stand-in directory the VRE bridge writes (`areas/deposit/ADR-0005`, ADR-0012), not the committed `data/`: one
+directory per project, holding its text files from the VRE under their Stored names, the File manifest that
+names the VRE resource each came from (DaTEI's vocabulary, in [`../datei/CONTEXT.md`](../datei/CONTEXT.md)), the
+files the bridge's shipped inputs hold for the project (for DaTEI, `datei.toml`, `file-layout.xml` and the file mapping), and its
+Ready token. The shipped inputs are the one authoritative copy of the files the VRE does not hold, and `data/`
+becomes a test fixture pinned to them. There the File manifest, the Ready token and the shipped inputs record
+provenance, as `data/PROVENANCE` does for the committed files. Today a project is in `media` when its directory
+is; on a server it is when its Ready token is. There is no list of known projects beside it. Not yet in code:
+the VRE bridge, and `media` knowing a project by its Ready token (P-DEV-301).
 _Avoid_: the bucket (the stand-in is not it), project folder (CPE's, which holds code and the documents about
 the data), committed snapshot (`sync`'s).
 
@@ -39,7 +42,7 @@ names no directory, is `UnknownProject`; a refused name, or one that names no re
 No component below `<dir>` may be a symbolic link: a linked project directory is `UnknownProject`, a linked
 directory or file of the name `UnknownFile`. Any other failure, a directory under the file's name or one the
 process may not search included, is `Unavailable`, whose source names the path and is logged, never served.
-The window between that check and the read is accepted, since only an operator writes the directory.
+The window between that check and the read is accepted, since only the stand-in's one writer writes it.
 _Avoid_: the media port (CPE declares the port; `media` implements it), cache (it holds nothing between calls),
 `FakeDepositedFiles` (CPE's in-memory adapter for its own tests).
 
@@ -61,10 +64,11 @@ _Avoid_: public user, guest (a request's viewer; a bytes port has no request).
 - **Render or derive.** Vitrinli is not here, and the Access Area's `media` never derives: the archive already
   did (`vitrinli/CONTEXT.md`).
 - **Announce change.** A file edited under `MEDIA_DATA_DIR` reaches CPE only when the Access binary restarts,
-  since activation runs once. Not yet in code: the ports announce change, `media` for its bytes ports and
-  `sync` for the archive projection port; until the bucket exists `media` owns the operator lever, a file watch
-  or an admin endpoint behind a token, that makes its adapter announce, and CPE rebuilds the one project named
-  and grows no endpoint of its own (ADR-0012, DEV-7622).
+  since activation runs once. Not yet in code: the ports announce change, `media` for its bytes ports
+  (DEV-7938) and `sync` for the archive projection port (DEV-7622); until the bucket exists `media` owns the
+  Ready-token poll, which reads each project's Ready token in its subtree at a fixed interval and
+  makes its adapter announce, and a reader rebuilds the one project named and grows no endpoint of its own
+  (ADR-0012).
 - **Serve DaTEI.** `media-store` implements DaTEI's port, `datei_ports::DateiFiles`, beside
   `LiveDepositedFiles`: `projects()` lists the shortcode directories holding both the Ready token and
   `datei.toml`, and `file()` reads `<dir>/<shortcode>/<stored name>` with CPE's name check. Not yet in code:
@@ -78,5 +82,6 @@ alone and a reader's tests use `media_store_for_tests`, which is `testonly`; and
 but `cpe_ports`, and `datei_ports` once it exists, grants `media-store`.
 
 A new consumer of `media` declares its own bytes port in its own ports crate, as DaTEI does with `datei-ports`,
-and `media-store` implements it beside `LiveDepositedFiles`. `is_shortcode` and `is_file_name` are CPE's rules
-until a second consumer needs them; moving them out of `cpe-ports` is an architecture change, made by an ADR.
+and `media-store` implements it beside `LiveDepositedFiles`. `is_shortcode` and `is_file_name` belong in
+`shared-names`, which the VRE bridge, `sync`, `media` and CPE all use (ADR-0002); not yet in code, they are in
+`cpe-ports` (P-DEV-301).

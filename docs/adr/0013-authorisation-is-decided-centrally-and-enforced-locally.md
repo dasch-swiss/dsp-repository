@@ -8,12 +8,23 @@ and an image `media` refuses could be described in full beside it. This record f
 from and where it is applied. The decision, phrased so a violation is describable in code:
 
 - **The archive owns the policy data, and it travels with the facts.** Rights are recorded by the archive per
-  Representation version, never per value: a version is visible as a whole or not at all. A port that serves
+  Representation version, never per value: what a principal may see of a version is decided for the version
+  as a whole, never value by value. A port that serves
   a resource or a file serves its rights with it (ADR-0012); no capability authors, overrides or infers a
-  right.
+  right. Before the archive exists, the Deposit Area's VRE bridge stands in for its policy data
+  (`areas/deposit/ADR-0005`): it writes into the interim format the rights it found in the VRE, "public", or
+  "restricted view" for a still image the anonymous user may see only at a reduced size, and refuses a project
+  with anything else, so it never decides a right of its own. How the decision function answers for a version
+  with restricted view, visible but only at a reduced size, is not decided.
+- **A data classification travels beside the rights.** Each Representation version carries, besides its
+  rights, a data classification saying how sensitive its data is, recorded and served the same way. Today one
+  value exists, `unclassified`, because no classification level has been agreed with a depositor. Whether the
+  decision function takes the classification beside the rights, or consumers filter on it separately, is not
+  decided.
 - **Identity comes from one Access-Area capability through a consumer-defined port.** Who is asking is
   answered by the one capability that owns sessions; each capability that needs it declares its own
-  authenticator port and principal DTO in its own `ports` crate, as ADR-0003 prescribes. No surface reads a session, a token or a cookie of its own.
+  authenticator port and principal DTO in its own `ports` crate, as ADR-0003 prescribes. No surface reads a
+  session, a token or a cookie of its own.
 - **The decision is one pure function in a `shared-*` crate.** It takes a principal and a set of rights and
   returns allow or deny, with no I/O: no store, no network, no clock it reads itself. It is the one place
   that says what a right means. Every capability that enforces depends on it, as any capability may depend
@@ -54,6 +65,8 @@ from and where it is applied. The decision, phrased so a violation is describabl
 
 Not yet in code: the shared crate and its function, rights on any port, a rights column in any read model,
 the predicate in any query layer, `media`'s check and the Access Area's identity port (not scheduled).
+Not yet in code: the interim format carries no rights and no data classification, and no VRE bridge writes them
+(P-DEV-301).
 
 Enforced by: review until the crate exists; then the crate graph, Bazel `visibility` per ADR-0001, for "the
 decision lives in one `shared-*` crate" (**structure**), and its BUILD file's `deps` for "with no I/O

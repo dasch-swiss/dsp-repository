@@ -27,9 +27,17 @@ use cpe_core::util::page_title_heading;
 use cpe_core::view_data::ComponentData;
 use maud::{html, Markup, DOCTYPE};
 
+/// Whether a document may be indexed; a Hidden project's pages may not.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Indexing {
+    Indexable,
+    NoIndex,
+}
+
 /// The single source of truth for the CPE document `<head>`.
 ///
-/// Emits: charset/viewport meta, `<title>`, two Google Fonts preconnects
+/// Emits: charset/viewport meta, the robots meta `noindex, nofollow` for
+/// [`Indexing::NoIndex`] only, `<title>`, two Google Fonts preconnects
 /// (with `display=swap` to avoid FOIT), the Newsreader + IBM Plex Mono font
 /// `<link>`, the 7 CSS `<link>`s in load order:
 /// `tokens.css` → `shell.css` → `editorial.css` → `record.css` → `grid.css`
@@ -55,16 +63,23 @@ use maud::{html, Markup, DOCTYPE};
 ///
 /// `statics` is where this page loads the shared static files from: its
 /// project's directory, or CPE's own for a page without a project.
+///
+/// `indexing` is the project's: `NoIndex` for a Hidden project, and
+/// `Indexable` for every page without a project.
 pub fn document_head(
     site_title: &str,
     view_transitions: bool,
     typeface: Option<Typeface>,
     statics: &cpe_core::url::StaticDir,
+    indexing: Indexing,
 ) -> Markup {
     html! {
         head {
             meta charset="utf-8";
             meta name="viewport" content="width=device-width, initial-scale=1";
+            @if indexing == Indexing::NoIndex {
+                meta name="robots" content="noindex, nofollow";
+            }
             title { (site_title) }
             // Google Fonts preconnects — deviation #7 from the bundle (display=swap).
             link rel="preconnect" href="https://fonts.googleapis.com";
@@ -396,6 +411,7 @@ pub fn render_page(
     ctx: &RenderContext<'_>,
     components: &[ComponentData],
     data_arks: &DataArks,
+    indexing: Indexing,
 ) -> Markup {
     // The site's default-language `Lang`, resolved once per request.
     // `lang::resolve` with an empty preference slice always returns
@@ -456,6 +472,7 @@ pub fn render_page(
                 view_transitions,
                 Some(site.theme.typeface),
                 &ctx.urls().static_dir(),
+                indexing,
             )
         })
         body {
@@ -539,7 +556,7 @@ pub(crate) fn project_html(
 /// `ctx.current_query`. The consequence (deliberate, per the no-reflection
 /// rule) is that the switcher/toggle navigate to the project home rather
 /// than re-rendering this 404.
-pub fn render_not_found_project(site: &SiteConfig, ctx: &RenderContext<'_>) -> Markup {
+pub fn render_not_found_project(site: &SiteConfig, ctx: &RenderContext<'_>, indexing: Indexing) -> Markup {
     use cpe_components::chrome::ChromeMsg;
     let lang = &ctx.lang;
     let title = format!("{} — {}", site_title(site, lang), ChromeMsg::NfPathTitle.text(lang));
@@ -550,6 +567,7 @@ pub fn render_not_found_project(site: &SiteConfig, ctx: &RenderContext<'_>) -> M
                 false,
                 Some(site.theme.typeface),
                 &ctx.urls().static_dir(),
+                indexing,
             )
         })
         body {
@@ -610,8 +628,9 @@ pub struct ProjectTeaser<'a> {
     pub cover_image: Option<&'a str>,
 }
 
-/// Render CPE's overview: the page at its base, one teaser per served
-/// project, each linking to the project's start page.
+/// Render CPE's overview: the page at its base, one teaser per project it is
+/// given (the host leaves out Hidden projects), each linking to the project's
+/// start page.
 ///
 /// Bare chrome ([`site_page`]) and the degenerate crumb line (`CPE`, current,
 /// unlinked) with the share control, whose link is `public_origin` and the
@@ -723,7 +742,7 @@ fn site_page(base: &cpe_core::url::Base, lang: &Lang, appearance: Appearance, ma
             data-bg=(data_bg)
             data-pick=(data_pick)
         {
-            (document_head(SITE_TITLE, false, None, statics))
+            (document_head(SITE_TITLE, false, None, statics, Indexing::Indexable))
             body {
                 a class="skip-link" href="#main" { (ChromeMsg::SkipToContent.text(lang)) }
                 div class="shell" {
@@ -3897,7 +3916,8 @@ mod tests {
             incoming_links: None,
             resource_links: &[],
         };
-        let out = render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default()).into_string();
+        let out =
+            render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default(), Indexing::Indexable).into_string();
         assert!(
             out.contains("<title>Das Spiegelarchiv — Willkommen</title>"),
             "<title> must use the DE site title: {out}"
@@ -3944,7 +3964,8 @@ mod tests {
             incoming_links: None,
             resource_links: &[],
         };
-        let out = render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default()).into_string();
+        let out =
+            render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default(), Indexing::Indexable).into_string();
         assert!(
             out.contains(r#"href="/cpe/alice-in-daschland/""#),
             "the project's start page: {out}"
@@ -4271,7 +4292,8 @@ mod tests {
             resource_links: &[],
         };
         // Narrative-only page: pass an empty resolved slice — no data-backed components.
-        let out = render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default()).into_string();
+        let out =
+            render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default(), Indexing::Indexable).into_string();
         insta::assert_snapshot!(out);
     }
 
@@ -4303,7 +4325,8 @@ mod tests {
             resource_links: &[],
         };
         // Narrative-only page: pass an empty resolved slice — no data-backed components.
-        let out = render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default()).into_string();
+        let out =
+            render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default(), Indexing::Indexable).into_string();
         // The de snapshot must:
         // - show the German nav label ("Startseite")
         // - show the German narrative content ("Willkommen")
@@ -4341,7 +4364,8 @@ mod tests {
             incoming_links: None,
             resource_links: &[],
         };
-        let out = render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default()).into_string();
+        let out =
+            render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default(), Indexing::Indexable).into_string();
         assert!(
             out.contains("data-direction=\"edition\""),
             "html element must carry data-direction=\"edition\", got: {out}"
@@ -4379,7 +4403,8 @@ mod tests {
             incoming_links: None,
             resource_links: &[],
         };
-        let out = render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default()).into_string();
+        let out =
+            render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default(), Indexing::Indexable).into_string();
         // Every stylesheet is linked, in load order.
         let order = [
             "tokens.css",
@@ -4443,7 +4468,8 @@ mod tests {
             incoming_links: None,
             resource_links: &[],
         };
-        let out = render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default()).into_string();
+        let out =
+            render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default(), Indexing::Indexable).into_string();
         for cls in &[
             "class=\"shell\"",
             "class=\"shell__header\"",
@@ -4484,7 +4510,8 @@ mod tests {
             incoming_links: None,
             resource_links: &[],
         };
-        let out = render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default()).into_string();
+        let out =
+            render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default(), Indexing::Indexable).into_string();
         let body_idx = out.find("<body>").expect("body present") + "<body>".len();
         assert!(
             out[body_idx..].starts_with(r##"<a class="skip-link" href="#main">"##),
@@ -4525,7 +4552,8 @@ mod tests {
             incoming_links: None,
             resource_links: &[],
         };
-        let out = render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default()).into_string();
+        let out =
+            render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default(), Indexing::Indexable).into_string();
         assert!(
             out.contains("data-appearance=\"dark\""),
             "data-appearance=\"dark\" must appear when appearance is Dark, got: {out}"
@@ -4560,7 +4588,8 @@ mod tests {
             incoming_links: None,
             resource_links: &[],
         };
-        let out = render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default()).into_string();
+        let out =
+            render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default(), Indexing::Indexable).into_string();
         assert!(
             !out.contains("data-appearance"),
             "data-appearance must NOT appear when appearance is Light, got: {out}"
@@ -4642,7 +4671,8 @@ mod tests {
             incoming_links: None,
             resource_links: &[],
         };
-        let out = render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default()).into_string();
+        let out =
+            render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default(), Indexing::Indexable).into_string();
         for marker in ["lang-menu", "hreflang=", "<details"] {
             assert!(
                 !out.contains(marker),
@@ -4682,7 +4712,8 @@ mod tests {
             incoming_links: None,
             resource_links: &[],
         };
-        let out = render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default()).into_string();
+        let out =
+            render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default(), Indexing::Indexable).into_string();
         assert!(
             out.contains("data-accent=\"ochre\""),
             "html must carry data-accent=\"ochre\" for default knob, got: {out}"
@@ -4728,7 +4759,8 @@ mod tests {
             incoming_links: None,
             resource_links: &[],
         };
-        let out = render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default()).into_string();
+        let out =
+            render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default(), Indexing::Indexable).into_string();
         assert!(
             out.contains("data-accent=\"green\""),
             "html must carry data-accent=\"green\" from site.theme, got: {out}"
@@ -4775,7 +4807,8 @@ mod tests {
             incoming_links: None,
             resource_links: &[],
         };
-        let out = render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default()).into_string();
+        let out =
+            render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default(), Indexing::Indexable).into_string();
         assert_eq!(site.languages, ["en", "de"], "the fixture's languages");
         for (code, endonym) in [("en", "English"), ("de", "Deutsch")] {
             let link = tag_containing(&out, &format!(r#"hreflang="{code}""#));
@@ -4964,7 +4997,8 @@ mod tests {
             incoming_links: None,
             resource_links: &[],
         };
-        let out = render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default()).into_string();
+        let out =
+            render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default(), Indexing::Indexable).into_string();
         assert!(
             out.contains("<strong>DaSCH</strong>"),
             "footer attribution must emphasize the final DaSCH with <strong>, got: {out}"
@@ -5013,7 +5047,8 @@ mod tests {
             incoming_links: None,
             resource_links: &[],
         };
-        let out = render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default()).into_string();
+        let out =
+            render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default(), Indexing::Indexable).into_string();
         assert!(
             out.contains("class=\"breadcrumb\""),
             "project home page must have a breadcrumb (narrative variant), got: {out}"
@@ -5068,7 +5103,8 @@ mod tests {
             incoming_links: None,
             resource_links: &[],
         };
-        let out = render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default()).into_string();
+        let out =
+            render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default(), Indexing::Indexable).into_string();
         assert!(
             out.contains("class=\"breadcrumb\""),
             "non-home narrative page must have a breadcrumb, got: {out}"
@@ -5119,7 +5155,16 @@ mod tests {
             resource_links: &[],
         };
         let components: Vec<ComponentData> = vec![ComponentData::Detail(Some(resource))];
-        let out = render_page(&site, &page, &narrative, &ctx, &components, &DataArks::default()).into_string();
+        let out = render_page(
+            &site,
+            &page,
+            &narrative,
+            &ctx,
+            &components,
+            &DataArks::default(),
+            Indexing::Indexable,
+        )
+        .into_string();
         assert!(
             out.contains("class=\"breadcrumb\""),
             "resource-detail page must have a breadcrumb, got: {out}"
@@ -5373,7 +5418,7 @@ mod tests {
         let ctx = book_ctx(site, &route_params, current_query, appearance);
         let narrative = make_alice_narrative();
         let arks = DataArks::default();
-        let full = render_page(site, &page, &narrative, &ctx, &components, &arks).into_string();
+        let full = render_page(site, &page, &narrative, &ctx, &components, &arks, Indexing::Indexable).into_string();
         let controls = render_compound_fragment(site, &page, &narrative, &ctx, &components, &arks)
             .expect("a book page renders a fragment")
             .header_controls
@@ -5542,7 +5587,7 @@ mod tests {
         let site = make_alice_site();
         let route_params = [("id".to_owned(), "CH_001".to_owned())];
         let ctx = book_ctx(&site, &route_params, None, Appearance::Light);
-        let not_found = render_not_found_project(&site, &ctx).into_string();
+        let not_found = render_not_found_project(&site, &ctx, Indexing::Indexable).into_string();
         for (name, out) in [("page", full), ("N1", not_found)] {
             assert_eq!(out.matches(&marker).count(), 1, "{name}: {out}");
         }
@@ -5911,7 +5956,7 @@ mod tests {
     fn rail_document(site: &SiteConfig, page: &cpe_core::ir::Page, store: &NarrativeStore) -> String {
         let lang = resolve(&["en".to_owned()], site);
         let ctx = make_browse_ctx(lang, "/alice-in-daschland/", None);
-        render_page(site, page, store, &ctx, &[], &DataArks::default()).into_string()
+        render_page(site, page, store, &ctx, &[], &DataArks::default(), Indexing::Indexable).into_string()
     }
 
     /// The opening `<html …>` tag of a document.
@@ -5947,7 +5992,7 @@ mod tests {
         let lang = resolve(&["en".to_owned()], &site);
         let browse = rail_document(&site, &make_nonfaceted_browse_page(), &rail_store(&[]));
         let ctx = make_browse_ctx(lang.clone(), "/alice-in-daschland/", None);
-        let n1 = render_not_found_project(&site, &ctx).into_string();
+        let n1 = render_not_found_project(&site, &ctx, Indexing::Indexable).into_string();
         let n2 = render_not_found_site(&cpe_core::url::ROOT, &lang, Appearance::Light).into_string();
         for (name, document) in [("browse", browse), ("N1", n1), ("N2", n2)] {
             assert!(html_tag(&document).contains("data-accent"), "{name}");
@@ -6003,7 +6048,7 @@ mod tests {
         let store = rail_store(&[]);
 
         let start_page = rail_document(&site, &page, &store);
-        let start_n1 = render_not_found_project(&site, &ctx).into_string();
+        let start_n1 = render_not_found_project(&site, &ctx, Indexing::Indexable).into_string();
         for (name, document) in [("page", start_page), ("N1", start_n1)] {
             assert!(html_tag(&document).contains("data-accent"), "{name}");
             assert!(!document.contains("data-align"), "{name}: {document}");
@@ -6011,7 +6056,7 @@ mod tests {
 
         site.text_align = TextAlign::Justify;
         let page = rail_document(&site, &page, &store);
-        let n1 = render_not_found_project(&site, &ctx).into_string();
+        let n1 = render_not_found_project(&site, &ctx, Indexing::Indexable).into_string();
         for (name, document) in [("page", page), ("N1", n1)] {
             let tag = html_tag(&document);
             assert!(tag.contains(r#" data-align="justify""#), "{name}: {tag}");
@@ -6118,7 +6163,7 @@ mod tests {
         let store = rail_store(&[("home.md", RAIL_HOME), ("more.md", RAIL_MORE)]);
         let documents = [
             rail_document(&site, &page, &store),
-            render_not_found_project(&site, &ctx).into_string(),
+            render_not_found_project(&site, &ctx, Indexing::Indexable).into_string(),
             render_not_found_site(&cpe_core::url::ROOT, &lang, Appearance::Dark).into_string(),
         ];
 
@@ -6421,7 +6466,16 @@ mod tests {
         };
         let components = [ComponentData::Compound(compound)];
         let narrative = make_alice_narrative();
-        let full = render_page(&site, &page, &narrative, &ctx, &components, &DataArks::default()).into_string();
+        let full = render_page(
+            &site,
+            &page,
+            &narrative,
+            &ctx,
+            &components,
+            &DataArks::default(),
+            Indexing::Indexable,
+        )
+        .into_string();
         let fragment = render_compound_fragment(&site, &page, &narrative, &ctx, &components, &DataArks::default())
             .expect("a compound-viewer page renders a fragment")
             .viewer
@@ -6812,7 +6866,16 @@ mod tests {
             resource_links: &[],
         };
         let components: Vec<ComponentData> = vec![ComponentData::Detail(Some(resource))];
-        let out = render_page(&site, &page, &narrative, &ctx, &components, &DataArks::default()).into_string();
+        let out = render_page(
+            &site,
+            &page,
+            &narrative,
+            &ctx,
+            &components,
+            &DataArks::default(),
+            Indexing::Indexable,
+        )
+        .into_string();
         assert_eq!(
             out.matches("breadcrumb__item").count(),
             4,
@@ -6903,7 +6966,16 @@ mod tests {
             resource_links: &[],
         };
         let components: Vec<ComponentData> = vec![ComponentData::Detail(Some(resource))];
-        let out = render_page(&site, &page, &narrative, &ctx, &components, &DataArks::default()).into_string();
+        let out = render_page(
+            &site,
+            &page,
+            &narrative,
+            &ctx,
+            &components,
+            &DataArks::default(),
+            Indexing::Indexable,
+        )
+        .into_string();
         assert_eq!(
             out.matches("breadcrumb__item").count(),
             3,
@@ -6946,7 +7018,16 @@ mod tests {
             resource_links: &[],
         };
         let components: Vec<ComponentData> = vec![ComponentData::Detail(Some(resource))];
-        let out = render_page(&site, &page, &narrative, &ctx, &components, &DataArks::default()).into_string();
+        let out = render_page(
+            &site,
+            &page,
+            &narrative,
+            &ctx,
+            &components,
+            &DataArks::default(),
+            Indexing::Indexable,
+        )
+        .into_string();
         assert!(
             out.contains("href=\"http://localhost:8080/alice-in-daschland/characters/CH_001?img=3\""),
             "share control href must carry the load-time ?img= state, got: {out}"
@@ -7027,7 +7108,16 @@ mod tests {
             resource_links: &[],
         };
         let components: Vec<ComponentData> = vec![ComponentData::Detail(Some(resource))];
-        let out = render_page(&site, &page, &narrative, &ctx, &components, &DataArks::default()).into_string();
+        let out = render_page(
+            &site,
+            &page,
+            &narrative,
+            &ctx,
+            &components,
+            &DataArks::default(),
+            Indexing::Indexable,
+        )
+        .into_string();
 
         // Server-rendered static href keeps `lang=de`, omits `img` (no `img`
         // param on this request, so it's absent from `current_query` too —
@@ -7235,7 +7325,16 @@ mod tests {
             resource_links: &[],
         };
         let components: Vec<ComponentData> = vec![ComponentData::Detail(None)];
-        let out = render_page(&site, &page, &narrative, &ctx, &components, &DataArks::default()).into_string();
+        let out = render_page(
+            &site,
+            &page,
+            &narrative,
+            &ctx,
+            &components,
+            &DataArks::default(),
+            Indexing::Indexable,
+        )
+        .into_string();
         assert!(
             out.contains("class=\"breadcrumb\""),
             "not-found page must have a breadcrumb (N3 variant), got: {out}"
@@ -7301,7 +7400,16 @@ mod tests {
             resource_links: &[],
         };
         let components: Vec<ComponentData> = vec![ComponentData::Detail(None)];
-        let out = render_page(&site, &page, &narrative, &ctx, &components, &DataArks::default()).into_string();
+        let out = render_page(
+            &site,
+            &page,
+            &narrative,
+            &ctx,
+            &components,
+            &DataArks::default(),
+            Indexing::Indexable,
+        )
+        .into_string();
         assert_eq!(
             out.matches("breadcrumb__item").count(),
             4,
@@ -7798,7 +7906,16 @@ mod tests {
             unfiltered_total: Some(54),
         };
         let components: Vec<ComponentData> = vec![ComponentData::Facets(facets_data), ComponentData::List(list_page)];
-        let out = render_page(&site, &page, &narrative, &ctx, &components, &DataArks::default()).into_string();
+        let out = render_page(
+            &site,
+            &page,
+            &narrative,
+            &ctx,
+            &components,
+            &DataArks::default(),
+            Indexing::Indexable,
+        )
+        .into_string();
         assert!(
             out.contains("class=\"breadcrumb\""),
             "browse page must have a breadcrumb, got: {out}"
@@ -7863,7 +7980,16 @@ mod tests {
             unfiltered_total: None,
         };
         let components: Vec<ComponentData> = vec![ComponentData::Other, ComponentData::List(list_page)];
-        let out = render_page(&site, &page, &narrative, &ctx, &components, &DataArks::default()).into_string();
+        let out = render_page(
+            &site,
+            &page,
+            &narrative,
+            &ctx,
+            &components,
+            &DataArks::default(),
+            Indexing::Indexable,
+        )
+        .into_string();
         assert!(
             out.contains("id=\"crumb-character-list\""),
             "must render the browse crumb id (matching the fragment handlers' patch \
@@ -7935,7 +8061,8 @@ mod tests {
             incoming_links: None,
             resource_links: &[],
         };
-        let out = render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default()).into_string();
+        let out =
+            render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default(), Indexing::Indexable).into_string();
         assert_eq!(out.matches("<h1").count(), 1, "exactly one <h1> must be present, got: {out}");
         assert!(
             out.contains("<h1 class=\"visually-hidden\">"),
@@ -7973,7 +8100,8 @@ mod tests {
             incoming_links: None,
             resource_links: &[],
         };
-        let out = render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default()).into_string();
+        let out =
+            render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default(), Indexing::Indexable).into_string();
         assert!(
             !out.contains(r#"<h1 class="visually-hidden""#),
             "a narrative page with its own visible h1 must NOT get a hidden one, got: {out}"
@@ -8012,7 +8140,16 @@ mod tests {
             resource_links: &[],
         };
         let components: Vec<ComponentData> = vec![ComponentData::Detail(Some(resource))];
-        let out = render_page(&site, &page, &narrative, &ctx, &components, &DataArks::default()).into_string();
+        let out = render_page(
+            &site,
+            &page,
+            &narrative,
+            &ctx,
+            &components,
+            &DataArks::default(),
+            Indexing::Indexable,
+        )
+        .into_string();
         assert!(
             !out.contains(r#"<h1 class="visually-hidden""#),
             "a resource-detail page already has h1.record__title; must not also get a \
@@ -8052,7 +8189,16 @@ mod tests {
             resource_links: &[],
         };
         let components: Vec<ComponentData> = vec![ComponentData::Detail(None)];
-        let out = render_page(&site, &page, &narrative, &ctx, &components, &DataArks::default()).into_string();
+        let out = render_page(
+            &site,
+            &page,
+            &narrative,
+            &ctx,
+            &components,
+            &DataArks::default(),
+            Indexing::Indexable,
+        )
+        .into_string();
         assert!(
             !out.contains(r#"<h1 class="visually-hidden""#),
             "not-found page already has h1.record__title; must not also get a hidden \
@@ -8107,7 +8253,8 @@ mod tests {
             incoming_links: None,
             resource_links: &[],
         };
-        let out = render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default()).into_string();
+        let out =
+            render_page(&site, &page, &narrative, &ctx, &[], &DataArks::default(), Indexing::Indexable).into_string();
 
         assert_eq!(
             out.matches("<h1").count(),
@@ -8237,7 +8384,16 @@ mod tests {
         // The components slice has exactly one entry (paired with the one ResourceDetail
         // component).
         let components: Vec<ComponentData> = vec![ComponentData::Detail(Some(resource))];
-        let out = render_page(&site, &page, &narrative, &ctx, &components, &DataArks::default()).into_string();
+        let out = render_page(
+            &site,
+            &page,
+            &narrative,
+            &ctx,
+            &components,
+            &DataArks::default(),
+            Indexing::Indexable,
+        )
+        .into_string();
         insta::assert_snapshot!(out);
     }
 
@@ -8271,7 +8427,16 @@ mod tests {
             resource_links: &[],
         };
         let components: Vec<ComponentData> = vec![ComponentData::Detail(Some(resource))];
-        let out = render_page(&site, &page, &narrative, &ctx, &components, &DataArks::default()).into_string();
+        let out = render_page(
+            &site,
+            &page,
+            &narrative,
+            &ctx,
+            &components,
+            &DataArks::default(),
+            Indexing::Indexable,
+        )
+        .into_string();
         insta::assert_snapshot!(out);
     }
 
@@ -8330,7 +8495,16 @@ mod tests {
             resource_links: &[],
         };
         let components: Vec<ComponentData> = vec![ComponentData::Detail(Some(resource))];
-        let out = render_page(&site, &page, &narrative, &ctx, &components, &DataArks::default()).into_string();
+        let out = render_page(
+            &site,
+            &page,
+            &narrative,
+            &ctx,
+            &components,
+            &DataArks::default(),
+            Indexing::Indexable,
+        )
+        .into_string();
         insta::assert_snapshot!(out);
     }
 
@@ -8364,7 +8538,16 @@ mod tests {
         };
         // Detail(None) → not-found body inside chrome.
         let components: Vec<ComponentData> = vec![ComponentData::Detail(None)];
-        let out = render_page(&site, &page, &narrative, &ctx, &components, &DataArks::default()).into_string();
+        let out = render_page(
+            &site,
+            &page,
+            &narrative,
+            &ctx,
+            &components,
+            &DataArks::default(),
+            Indexing::Indexable,
+        )
+        .into_string();
         insta::assert_snapshot!(out);
     }
 
@@ -8397,7 +8580,16 @@ mod tests {
             resource_links: &[],
         };
         let components: Vec<ComponentData> = vec![ComponentData::Detail(None)];
-        let out = render_page(&site, &page, &narrative, &ctx, &components, &DataArks::default()).into_string();
+        let out = render_page(
+            &site,
+            &page,
+            &narrative,
+            &ctx,
+            &components,
+            &DataArks::default(),
+            Indexing::Indexable,
+        )
+        .into_string();
         insta::assert_snapshot!(out);
     }
 
@@ -8510,7 +8702,16 @@ mod tests {
         // [1] ResourceList → List(...)
         let components: Vec<ComponentData> = vec![ComponentData::Facets(facets_data), ComponentData::List(list_page)];
 
-        let out = render_page(&site, &page, &narrative, &ctx, &components, &DataArks::default()).into_string();
+        let out = render_page(
+            &site,
+            &page,
+            &narrative,
+            &ctx,
+            &components,
+            &DataArks::default(),
+            Indexing::Indexable,
+        )
+        .into_string();
         insta::assert_snapshot!(out);
 
         // Regression: the language-switcher and appearance-toggle hrefs must
@@ -8593,7 +8794,16 @@ mod tests {
         // [1] ResourceList → List(...)
         let components: Vec<ComponentData> = vec![ComponentData::Facets(facets_data), ComponentData::List(list_page)];
 
-        let out = render_page(&site, &page, &narrative, &ctx, &components, &DataArks::default()).into_string();
+        let out = render_page(
+            &site,
+            &page,
+            &narrative,
+            &ctx,
+            &components,
+            &DataArks::default(),
+            Indexing::Indexable,
+        )
+        .into_string();
 
         assert!(
             !out.contains(r#"class="browse page""#) && !out.contains("class=\"browse "),
@@ -8681,7 +8891,16 @@ mod tests {
 
         let components: Vec<ComponentData> = vec![ComponentData::Facets(facets_data), ComponentData::List(list_page)];
 
-        let out = render_page(&site, &page, &narrative, &ctx, &components, &DataArks::default()).into_string();
+        let out = render_page(
+            &site,
+            &page,
+            &narrative,
+            &ctx,
+            &components,
+            &DataArks::default(),
+            Indexing::Indexable,
+        )
+        .into_string();
 
         assert!(
             out.contains(r#"class="search-empty""#),
@@ -8819,7 +9038,16 @@ mod tests {
             ComponentData::List(list_page),
         ];
 
-        let out = render_page(&site, &page, &narrative, &ctx, &components, &DataArks::default()).into_string();
+        let out = render_page(
+            &site,
+            &page,
+            &narrative,
+            &ctx,
+            &components,
+            &DataArks::default(),
+            Indexing::Indexable,
+        )
+        .into_string();
         insta::assert_snapshot!(out);
 
         // The search row must be INSIDE section.browse.page.
@@ -8927,7 +9155,16 @@ mod tests {
             ComponentData::List(list_page),
         ];
 
-        let out = render_page(&site, &page, &narrative, &ctx, &components, &DataArks::default()).into_string();
+        let out = render_page(
+            &site,
+            &page,
+            &narrative,
+            &ctx,
+            &components,
+            &DataArks::default(),
+            Indexing::Indexable,
+        )
+        .into_string();
         insta::assert_snapshot!(out);
 
         assert!(
@@ -9108,7 +9345,16 @@ mod tests {
         // [1] ResourceList → List(...)
         let components: Vec<ComponentData> = vec![ComponentData::Other, ComponentData::List(list_page)];
 
-        let out = render_page(&site, &page, &narrative, &ctx, &components, &DataArks::default()).into_string();
+        let out = render_page(
+            &site,
+            &page,
+            &narrative,
+            &ctx,
+            &components,
+            &DataArks::default(),
+            Indexing::Indexable,
+        )
+        .into_string();
         insta::assert_snapshot!(out);
 
         assert!(
@@ -9164,7 +9410,16 @@ mod tests {
 
         let components: Vec<ComponentData> = vec![ComponentData::Other, ComponentData::List(list_page)];
 
-        let out = render_page(&site, &page, &narrative, &ctx, &components, &DataArks::default()).into_string();
+        let out = render_page(
+            &site,
+            &page,
+            &narrative,
+            &ctx,
+            &components,
+            &DataArks::default(),
+            Indexing::Indexable,
+        )
+        .into_string();
         insta::assert_snapshot!(out);
 
         assert!(
@@ -9225,7 +9480,16 @@ mod tests {
 
         let components: Vec<ComponentData> = vec![ComponentData::Other, ComponentData::List(list_page)];
 
-        let out = render_page(&site, &page, &narrative, &ctx, &components, &DataArks::default()).into_string();
+        let out = render_page(
+            &site,
+            &page,
+            &narrative,
+            &ctx,
+            &components,
+            &DataArks::default(),
+            Indexing::Indexable,
+        )
+        .into_string();
         insta::assert_snapshot!(out);
 
         assert!(
@@ -9289,7 +9553,16 @@ mod tests {
 
         let components: Vec<ComponentData> = vec![ComponentData::Other, ComponentData::List(list_page)];
 
-        let out = render_page(&site, &page, &narrative, &ctx, &components, &DataArks::default()).into_string();
+        let out = render_page(
+            &site,
+            &page,
+            &narrative,
+            &ctx,
+            &components,
+            &DataArks::default(),
+            Indexing::Indexable,
+        )
+        .into_string();
         insta::assert_snapshot!(out);
 
         assert!(
@@ -9364,7 +9637,16 @@ mod tests {
             ComponentData::Other,
             ComponentData::List(list_page),
         ];
-        let out = render_page(&site, &page, &narrative, &ctx, &components, &DataArks::default()).into_string();
+        let out = render_page(
+            &site,
+            &page,
+            &narrative,
+            &ctx,
+            &components,
+            &DataArks::default(),
+            Indexing::Indexable,
+        )
+        .into_string();
 
         let browse_start = out.find(r#"class="browse page""#).expect("browse wrapper present");
         let browse_section = &out[browse_start..];
@@ -9457,7 +9739,16 @@ mod tests {
             ComponentData::Other,
             ComponentData::List(list_page),
         ];
-        let out = render_page(&site, &page, &narrative, &ctx, &components, &DataArks::default()).into_string();
+        let out = render_page(
+            &site,
+            &page,
+            &narrative,
+            &ctx,
+            &components,
+            &DataArks::default(),
+            Indexing::Indexable,
+        )
+        .into_string();
 
         let search_row_start = out.find(r#"<form class="search-row""#).expect("search row present");
         let search_row_end = out[search_row_start..]
@@ -9539,7 +9830,16 @@ mod tests {
             ComponentData::Other,
             ComponentData::List(list_page),
         ];
-        let out = render_page(&site, &page, &narrative, &ctx, &components, &DataArks::default()).into_string();
+        let out = render_page(
+            &site,
+            &page,
+            &narrative,
+            &ctx,
+            &components,
+            &DataArks::default(),
+            Indexing::Indexable,
+        )
+        .into_string();
 
         let browse_start = out.find(r#"class="browse page""#).expect("browse wrapper present");
         let browse_section = &out[browse_start..];
@@ -9607,7 +9907,16 @@ mod tests {
             resource_links: &[],
         };
         let components: Vec<ComponentData> = vec![ComponentData::Other, ComponentData::Other];
-        let out = render_page(&site, &page, &narrative, &ctx, &components, &DataArks::default()).into_string();
+        let out = render_page(
+            &site,
+            &page,
+            &narrative,
+            &ctx,
+            &components,
+            &DataArks::default(),
+            Indexing::Indexable,
+        )
+        .into_string();
 
         let search_row_start = out.find(r#"<form class="search-row"#).expect("search row present");
         let search_row_end = out[search_row_start..]
@@ -9938,12 +10247,23 @@ mod tests {
         let narrative = make_alice_narrative();
         let components = data_book_components();
         let arks = book_arks();
-        let full = render_page(&site, &page, &narrative, &ctx, &components, &arks).into_string();
+        let full = render_page(&site, &page, &narrative, &ctx, &components, &arks, Indexing::Indexable).into_string();
         let crumb = render_compound_fragment(&site, &page, &narrative, &ctx, &components, &arks)
             .and_then(|f| f.crumb)
             .expect("a crumb")
             .into_string();
         assert!(crumb.contains("crumb-data-entry-4"), "{crumb}");
         assert!(full.contains(&crumb), "the full page differs from: {crumb}");
+    }
+
+    /// Catches an `indexing` parameter that is wired but ignored.
+    #[test]
+    fn document_head_writes_the_robots_meta_for_noindex_only() {
+        const ROBOTS: &str = r#"<meta name="robots" content="noindex, nofollow">"#;
+        let statics = cpe_core::url::ROOT.static_dir();
+        let hidden = document_head("T", false, None, &statics, Indexing::NoIndex).into_string();
+        assert!(hidden.contains(ROBOTS), "{hidden}");
+        let indexable = document_head("T", false, None, &statics, Indexing::Indexable).into_string();
+        assert!(!indexable.contains("name=\"robots\""), "{indexable}");
     }
 }

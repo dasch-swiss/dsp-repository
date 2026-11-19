@@ -45,15 +45,25 @@ fn activate(cpe: &Cpe) {
     cpe.activate(&LiveArchiveProjection::new(sync_data()), &LiveDepositedFiles::new(media_data()));
 }
 
+/// Incunabula under `/cpe` with `hidden_shortcodes`, activated.
+fn incunabula(hidden_shortcodes: BTreeSet<String>) -> Cpe {
+    let cpe = Cpe::new(&CpeConfig { hidden_shortcodes, ..config() });
+    activate(&cpe);
+    assert_eq!(cpe.projects().len(), 1, "Incunabula activates from the committed data");
+    cpe
+}
+
 /// Incunabula under `/cpe`, activated once for every test of this module.
 fn cpe() -> &'static Cpe {
     static CPE: OnceLock<Cpe> = OnceLock::new();
-    CPE.get_or_init(|| {
-        let cpe = Cpe::new(&config());
-        activate(&cpe);
-        assert_eq!(cpe.projects().len(), 1, "Incunabula activates from the committed data");
-        cpe
-    })
+    CPE.get_or_init(|| incunabula(BTreeSet::new()))
+}
+
+/// Incunabula under `/cpe` as a Hidden project. The shared [`cpe`] is built
+/// without the set, so it cannot be reused.
+fn hidden_cpe() -> &'static Cpe {
+    static CPE: OnceLock<Cpe> = OnceLock::new();
+    CPE.get_or_init(|| incunabula(BTreeSet::from(["0803".to_owned()])))
 }
 
 struct Answer {
@@ -676,5 +686,31 @@ async fn a_base_of_two_segments_is_written_whole() {
     let body = format!("{body}{overview}");
     for path in body.split('"').filter(|text| text.starts_with('/') && !text.starts_with("//")) {
         assert!(path.starts_with("/a/b/"), "{path} leaves the base");
+    }
+}
+
+/// Catches a robots layer that covers a Hidden project's pages but not its
+/// fragments or assets. The status check keeps a 404, which carries the
+/// header too, from passing.
+#[tokio::test]
+async fn a_hidden_projects_fragments_and_assets_carry_x_robots_tag() {
+    for (url, datastar) in [
+        ("/cpe/incunabula/books/_sort", true),
+        ("/cpe/incunabula/_assets/assets/cover.webp", false),
+    ] {
+        let hidden = answer(hidden_cpe(), url, datastar).await;
+        assert!(hidden.status.is_success(), "{url}: {}", hidden.status);
+        assert_eq!(
+            hidden.header(header::HeaderName::from_static("x-robots-tag")),
+            Some("noindex, nofollow"),
+            "{url}"
+        );
+        let shown = answer(cpe(), url, datastar).await;
+        assert!(shown.status.is_success(), "{url}: {}", shown.status);
+        assert_eq!(
+            shown.header(header::HeaderName::from_static("x-robots-tag")),
+            None,
+            "{url} of a project that is not hidden"
+        );
     }
 }

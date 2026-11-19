@@ -1,5 +1,6 @@
 //! `serve()` and `shutdown_signal`.
 
+use std::collections::BTreeSet;
 use std::process::ExitCode;
 
 use axum::Router;
@@ -18,6 +19,57 @@ const DEFAULT_MEDIA_DATA_DIR: &str = "areas/access/media/data";
 /// passes an empty value (a compose file's `${VAR}` of an unset variable) means "not set".
 fn data_dir(value: Option<String>, default: &str) -> String {
     value.filter(|value| !value.is_empty()).unwrap_or_else(|| default.to_owned())
+}
+
+/// `ACCESS_HIDDEN_PROJECTS`, split, trimmed and upper-cased; the entries that are
+/// not a shortcode come back separately, as written but trimmed, for the caller to log.
+/// Unset, empty and blank all mean no Hidden project.
+fn parse_hidden_projects(value: Option<&str>) -> (BTreeSet<String>, Vec<String>) {
+    let mut hidden = BTreeSet::new();
+    let mut rejected = Vec::new();
+    for entry in value
+        .unwrap_or_default()
+        .split(',')
+        .map(str::trim)
+        .filter(|entry| !entry.is_empty())
+    {
+        let shortcode = entry.to_ascii_uppercase();
+        if cpe_ports::is_shortcode(&shortcode) {
+            hidden.insert(shortcode);
+        } else {
+            rejected.push(entry.to_owned());
+        }
+    }
+    (hidden, rejected)
+}
+
+/// The Access Area's one list of Hidden projects, from `ACCESS_HIDDEN_PROJECTS`, for each
+/// capability that presents projects: CPE, and DaTEI once it has code; not DPE, whose
+/// metadata record is public by design. A bad entry, or a value that is not UTF-8, is
+/// ignored and logged, and never stops the binary.
+fn hidden_projects_from_env() -> BTreeSet<String> {
+    let value = match std::env::var("ACCESS_HIDDEN_PROJECTS") {
+        Ok(value) => Some(value),
+        Err(std::env::VarError::NotPresent) => None,
+        Err(std::env::VarError::NotUnicode(_)) => {
+            tracing::warn!("ACCESS_HIDDEN_PROJECTS is not UTF-8 and is ignored: no project is hidden");
+            None
+        }
+    };
+    let (hidden, rejected) = parse_hidden_projects(value.as_deref());
+    for entry in &rejected {
+        tracing::warn!(
+            entry = entry.as_str(),
+            "ACCESS_HIDDEN_PROJECTS: an entry is not a shortcode and is ignored"
+        );
+    }
+    if hidden.is_empty() {
+        tracing::info!("hidden projects: none");
+    } else {
+        let listed: Vec<&str> = hidden.iter().map(String::as_str).collect();
+        tracing::info!("hidden projects: {}", listed.join(", "));
+    }
+    hidden
 }
 
 /// The app the composition root serves over DPE's router, and whether CPE is
@@ -210,7 +262,8 @@ pub(crate) async fn serve() -> ExitCode {
     });
 
     // Neither call can fail: a CPE that cannot be served must not stop DPE.
-    let cpe_config = cpe_server::CpeConfig::load();
+    let mut cpe_config = cpe_server::CpeConfig::load();
+    cpe_config.hidden_shortcodes = hidden_projects_from_env();
     let cpe = Cpe::new(&cpe_config);
 
     let addr: std::net::SocketAddr = std::env::var("DPE_SITE_ADDR")
@@ -314,6 +367,7 @@ async fn shutdown_signal() {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeSet;
     use std::path::{Path, PathBuf};
     use std::sync::{mpsc, Mutex, OnceLock, PoisonError};
     use std::time::Duration;
@@ -330,7 +384,9 @@ mod tests {
     use sync_store::LiveArchiveProjection;
     use tower::ServiceExt;
 
-    use super::{activate_in_background, data_dir, DEFAULT_MEDIA_DATA_DIR, DEFAULT_SYNC_DATA_DIR};
+    use super::{
+        activate_in_background, data_dir, parse_hidden_projects, DEFAULT_MEDIA_DATA_DIR, DEFAULT_SYNC_DATA_DIR,
+    };
 
     const BASE: &str = "/cpe";
 
@@ -388,12 +444,14 @@ remodel {
 }
 "#;
 
-    fn things_snapshot() -> ProjectSnapshot {
+    /// The snapshot of a Things project: `0001`, or another shortcode whose config is
+    /// [`THINGS`] with that shortcode.
+    fn things_snapshot(shortcode: &str) -> ProjectSnapshot {
         ProjectSnapshot {
-            shortcode: "0001".to_owned(),
+            shortcode: shortcode.to_owned(),
             resources: vec![Resource {
-                iri: ResourceIri("http://rdfh.ch/0001/lamp".to_owned()),
-                ark: DataArk(format!("{DATA_ARK_PREFIX}0001/lamp")),
+                iri: ResourceIri(format!("http://rdfh.ch/{shortcode}/lamp")),
+                ark: DataArk(format!("{DATA_ARK_PREFIX}{shortcode}/lamp")),
                 class: ClassIri("http://www.knora.org/ontology/0001/things#Thing".to_owned()),
                 label: "Brass lamp".to_owned(),
                 values: vec![Value {
@@ -422,28 +480,48 @@ remodel {
         root
     }
 
-    /// The deposited files of the Things projects `0001` and `0002`: each one's config.
+    /// The deposited files of the Things projects `0001`, `0002` and `0003`: each one's config.
+    /// `0001` is titled "Things Fixture", and every other "Other Fixture <shortcode>", so two
+    /// served projects can be told apart.
     fn things_files() -> FakeDepositedFiles {
-        ["0001", "0002"]
+        ["0001", "0002", "0003"]
             .into_iter()
             .fold(FakeDepositedFiles::default(), |files, shortcode| {
-                let config = THINGS.replace("shortcode \"0001\"", &format!("shortcode \"{shortcode}\""));
+                let mut config = THINGS.replace("shortcode \"0001\"", &format!("shortcode \"{shortcode}\""));
+                if shortcode != "0001" {
+                    config = config.replace("\"Things Fixture\"", &format!("\"Other Fixture {shortcode}\""));
+                }
                 files.with_file(shortcode, "config.kdl", config)
             })
     }
 
-    /// CPE at `base` with `things` served and `offline` failed. The folder
-    /// is returned to keep it for the test's length.
-    fn things_and_offline(base: &str) -> (tempfile::TempDir, Cpe) {
-        let root = projects_folder(&[("things", "0001"), ("offline", "0002")]);
-        let cpe = Cpe::new(&cpe_config(root.path(), base));
+    /// CPE at `base` over the project `folders` (folder, shortcode), of which 0001 and 0003
+    /// are served and 0002 fails, and `hidden` the shortcodes of the Hidden projects. The
+    /// folder is returned to keep it for the test's length.
+    fn activated(base: &str, folders: &[(&str, &str)], hidden: &[&str]) -> (tempfile::TempDir, Cpe) {
+        let root = projects_folder(folders);
+        let mut config = cpe_config(root.path(), base);
+        config.hidden_shortcodes = hidden.iter().map(|&shortcode| shortcode.to_owned()).collect();
+        let cpe = Cpe::new(&config);
         cpe.activate(
             &FakeArchiveProjection::default()
-                .with_project(things_snapshot())
+                .with_project(things_snapshot("0001"))
+                .with_project(things_snapshot("0003"))
                 .with_unavailable("0002"),
             &things_files(),
         );
         (root, cpe)
+    }
+
+    /// CPE at `base` with `things` (0001) and `other` (0003) served and `offline` (0002)
+    /// failed, and `hidden` the shortcodes of the Hidden projects.
+    fn things_other_and_offline(base: &str, hidden: &[&str]) -> (tempfile::TempDir, Cpe) {
+        activated(base, &[("things", "0001"), ("other", "0003"), ("offline", "0002")], hidden)
+    }
+
+    /// CPE at `base` with `things` served and `offline` failed, nothing hidden.
+    fn things_and_offline(base: &str) -> (tempfile::TempDir, Cpe) {
+        activated(base, &[("things", "0001"), ("offline", "0002")], &[])
     }
 
     /// Incunabula from the committed folder and data, activated once.
@@ -473,15 +551,22 @@ remodel {
         req
     }
 
+    /// The answer to `method` on `uri`, from a peer.
+    async fn answer(app: &axum::Router, method: &str, uri: &str) -> (StatusCode, HeaderMap, String) {
+        let mut req = request_with_peer(uri);
+        *req.method_mut() = method.parse().expect("a valid method");
+        let response = app.clone().oneshot(req).await.unwrap();
+        let (parts, body) = response.into_parts();
+        let body = axum::body::to_bytes(body, usize::MAX).await.expect("the body is finite");
+        (parts.status, parts.headers, String::from_utf8_lossy(&body).into_owned())
+    }
+
     async fn status_of(app: axum::Router, uri: &str) -> StatusCode {
         app.oneshot(request_with_peer(uri)).await.unwrap().status()
     }
 
     async fn get(app: &axum::Router, uri: &str) -> (StatusCode, HeaderMap, String) {
-        let response = app.clone().oneshot(request_with_peer(uri)).await.unwrap();
-        let (parts, body) = response.into_parts();
-        let body = axum::body::to_bytes(body, usize::MAX).await.expect("the body is finite");
-        (parts.status, parts.headers, String::from_utf8_lossy(&body).into_owned())
+        answer(app, "GET", uri).await
     }
 
     fn assert_unavailable(status: StatusCode, headers: &HeaderMap, what: &str) {
@@ -634,7 +719,7 @@ remodel {
         let folder = projects_folder(&[("things", "0001")]);
         let cpe = Cpe::new(&cpe_config(folder.path(), "/overview-g7h8"));
         cpe.activate(
-            &FakeArchiveProjection::default().with_project(things_snapshot()),
+            &FakeArchiveProjection::default().with_project(things_snapshot("0001")),
             &things_files(),
         );
         let router = app(&dpe(), &cpe);
@@ -776,7 +861,7 @@ remodel {
         let folder = projects_folder(&[("cpe", "0001")]);
         let cpe = Cpe::new(&cpe_config(folder.path(), BASE));
         cpe.activate(
-            &FakeArchiveProjection::default().with_project(things_snapshot()),
+            &FakeArchiveProjection::default().with_project(things_snapshot("0001")),
             &things_files(),
         );
         let router = app(&dpe(), &cpe);
@@ -989,7 +1074,7 @@ remodel {
             // Returns when the test sends, or drops its end.
             let _ = self.release.lock().unwrap().recv_timeout(Duration::from_secs(30));
             FakeArchiveProjection::default()
-                .with_project(things_snapshot())
+                .with_project(things_snapshot("0001"))
                 .snapshot(shortcode)
         }
     }
@@ -1137,7 +1222,7 @@ remodel {
         ] {
             let cpe = Cpe::new(&cpe_config(folder.path(), base));
             cpe.activate(
-                &FakeArchiveProjection::default().with_project(things_snapshot()),
+                &FakeArchiveProjection::default().with_project(things_snapshot("0001")),
                 &things_files(),
             );
             let (router, cpe_is_mounted) = super::app(dpe().router(), &cpe);
@@ -1196,6 +1281,149 @@ remodel {
                 "{uri} is DPE's: {body}"
             );
         }
+    }
+
+    const ROBOTS_META: &str = r#"<meta name="robots" content="noindex, nofollow">"#;
+
+    #[test]
+    fn hidden_projects_unset_empty_or_blank_are_none() {
+        for value in [None, Some(""), Some("  "), Some(" , ")] {
+            assert_eq!(parse_hidden_projects(value), (BTreeSet::new(), Vec::new()), "{value:?}");
+        }
+    }
+
+    /// Catches whitespace, stray commas and case left unnormalised.
+    #[test]
+    fn hidden_projects_are_trimmed_and_upper_cased() {
+        let (hidden, rejected) = parse_hidden_projects(Some(",083c, 086A ,,"));
+        assert_eq!(hidden, BTreeSet::from(["083C".to_owned(), "086A".to_owned()]));
+        assert!(rejected.is_empty(), "{rejected:?}");
+    }
+
+    /// Catches one bad entry that rejects the whole list, or that passes through. A rejected
+    /// entry is as written, trimmed, so the warning names what the operator wrote.
+    #[test]
+    fn a_hidden_project_that_is_no_shortcode_is_rejected_alone() {
+        let (hidden, rejected) = parse_hidden_projects(Some("083C,83C, 0803x ,/cpe/x"));
+        assert_eq!(hidden, BTreeSet::from(["083C".to_owned()]));
+        assert_eq!(rejected, ["83C", "0803x", "/cpe/x"]);
+    }
+
+    /// Catches a layer that covers some answers of a Hidden project and misses others.
+    #[tokio::test]
+    async fn every_answer_under_a_hidden_projects_prefix_carries_x_robots_tag() {
+        let (_folder, cpe) = things_other_and_offline(BASE, &["0001", "0002"]);
+        let router = app(&dpe(), &cpe);
+        let cases = [
+            ("GET", "/cpe/things", StatusCode::OK),
+            ("GET", "/cpe/things/", StatusCode::OK),
+            ("HEAD", "/cpe/things", StatusCode::OK),
+            ("HEAD", "/cpe/things/", StatusCode::OK),
+            ("GET", "/cpe/things/?lang=de", StatusCode::OK),
+            ("GET", "/cpe/things/things/lamp", StatusCode::OK),
+            ("GET", "/cpe/things/?appearance=dark", StatusCode::SEE_OTHER),
+            ("GET", "/cpe/things/no-such-page", StatusCode::NOT_FOUND),
+            // `nest` hands CPE `/things/` for this path, so it is the project's page.
+            ("GET", "/cpe//things/", StatusCode::OK),
+        ];
+        for (method, uri, expected) in cases {
+            let (status, headers, _) = answer(&router, method, uri).await;
+            assert_eq!(status, expected, "{method} {uri}");
+            assert_eq!(headers["x-robots-tag"], "noindex, nofollow", "{method} {uri}");
+        }
+    }
+
+    /// Catches a header that leaks outside the Hidden project, or a path match that differs
+    /// from the fallback's.
+    #[tokio::test]
+    async fn no_answer_outside_a_hidden_projects_prefix_carries_x_robots_tag() {
+        let (_folder, cpe) = things_other_and_offline(BASE, &["0001", "0002"]);
+        let router = app(&dpe(), &cpe);
+        let uris = [
+            "/cpe/other",
+            "/cpe/other/",
+            "/cpe/other/?lang=de",
+            "/cpe/other/?appearance=dark",
+            "/cpe/other/no-such-page",
+            "/cpe",
+            "/cpe/",
+            "/cpe/THINGS/",
+            "/dpe/projects",
+        ];
+        for uri in uris {
+            let (_, headers, _) = get(&router, uri).await;
+            assert!(!headers.contains_key("x-robots-tag"), "{uri}: {headers:?}");
+        }
+    }
+
+    /// Catches the header without the meta, or the meta on every project.
+    #[tokio::test]
+    async fn a_hidden_projects_pages_and_404_carry_the_robots_meta_and_no_other_project_does() {
+        let (_folder, cpe) = things_other_and_offline(BASE, &["0001", "0002"]);
+        let router = app(&dpe(), &cpe);
+        for uri in ["/cpe/things/", "/cpe/things/things/lamp", "/cpe/things/no-such-page"] {
+            let (_, _, body) = get(&router, uri).await;
+            assert!(body.contains(ROBOTS_META), "{uri}: {body}");
+        }
+        for uri in ["/cpe/other/", "/cpe/other/no-such-page", "/cpe/"] {
+            let (_, _, body) = get(&router, uri).await;
+            assert!(!body.contains("name=\"robots\""), "{uri}: {body}");
+        }
+    }
+
+    /// Catches an overview that still lists a Hidden project, or counts it.
+    #[tokio::test]
+    async fn the_overview_lists_and_counts_only_the_projects_that_are_not_hidden() {
+        let (_folder, cpe) = things_other_and_offline(BASE, &["0001", "0002"]);
+        let router = app(&dpe(), &cpe);
+        let (status, _, overview) = get(&router, "/cpe").await;
+        assert_eq!(status, StatusCode::OK);
+        assert!(
+            overview.contains("href=\"/cpe/other/\"") && overview.contains("Other Fixture 0003"),
+            "the project that is not hidden is listed: {overview}"
+        );
+        assert!(overview.contains(">1 project<"), "the count of one project: {overview}");
+        assert!(
+            !overview.contains("/cpe/things") && !overview.contains("Things Fixture"),
+            "the Hidden project is not mentioned: {overview}"
+        );
+    }
+
+    /// Catches hiding that changes anything beyond the header and the meta.
+    #[tokio::test]
+    async fn a_hidden_project_answers_as_it_would_unhidden_apart_from_the_header_and_the_meta() {
+        let (_hidden_folder, hidden) = things_other_and_offline(BASE, &["0001"]);
+        let (_shown_folder, shown) = things_other_and_offline(BASE, &[]);
+        let (hidden_status, _, hidden_body) = get(&app(&dpe(), &hidden), "/cpe/things/").await;
+        let (shown_status, _, shown_body) = get(&app(&dpe(), &shown), "/cpe/things/").await;
+        assert_eq!(hidden_status, shown_status);
+        assert!(hidden_body.contains(ROBOTS_META), "{hidden_body}");
+        assert_eq!(hidden_body.replace(ROBOTS_META, ""), shown_body);
+    }
+
+    /// Catches an unavailable Hidden project whose shortcode was never mapped to its id.
+    #[tokio::test]
+    async fn an_unavailable_hidden_project_answers_503_with_x_robots_tag() {
+        let (_folder, cpe) = things_other_and_offline(BASE, &["0001", "0002"]);
+        let router = app(&dpe(), &cpe);
+        let (status, headers, _) = get(&router, "/cpe/offline/").await;
+        assert_unavailable(status, &headers, "/cpe/offline/");
+        assert_eq!(headers["x-robots-tag"], "noindex, nofollow");
+    }
+
+    /// Catches a layer that matches the full path instead of the path CPE sees once the base
+    /// is stripped.
+    #[tokio::test]
+    async fn a_hidden_project_is_hidden_under_any_base() {
+        let (_folder, cpe) = things_other_and_offline("/presentations", &["0001"]);
+        let router = app(&dpe(), &cpe);
+        let (status, headers, _) = get(&router, "/presentations/things/").await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(headers["x-robots-tag"], "noindex, nofollow");
+        let (status, _, overview) = get(&router, "/presentations").await;
+        assert_eq!(status, StatusCode::OK);
+        assert!(overview.contains("href=\"/presentations/other/\""), "{overview}");
+        assert!(!overview.contains("/presentations/things"), "{overview}");
     }
 
     #[test]

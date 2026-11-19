@@ -7,8 +7,8 @@ to CPE.
 ## What is served
 
 - **Where**: every path under `/cpe` (`CPE_BASE`). A project is at `/cpe/<project id>/`; today there is one,
-  Incunabula, at `/cpe/incunabula/`. `/cpe` and `/cpe/` are CPE's overview: the projects it serves, each
-  with a link to its start page. Any other path that names no project is CPE's own not-found page.
+  Incunabula, at `/cpe/incunabula/`. `/cpe` and `/cpe/` are CPE's overview: the projects it serves that are not
+  hidden, each with a link to its start page. Any other path that names no project is CPE's own not-found page.
 - **From what**: the project folders in `CPE_PROJECTS_DIR` (`SHORTCODE`, assets), `sync`'s snapshots in
   `SYNC_DATA_DIR` and `media`'s deposited files in `MEDIA_DATA_DIR` (configuration, curation, narrative). All
   three are in the image. Each project's store is built in memory from that data at every start; nothing is
@@ -26,24 +26,42 @@ to CPE.
 The five variables (`CPE_BASE`, `CPE_PROJECTS_DIR`, `CPE_PUBLIC_ORIGIN`, `SYNC_DATA_DIR`, `MEDIA_DATA_DIR`) are
 in the [environment table](../dpe/operations.md#environment-variables) of DPE Operations. The image sets all but
 `CPE_PUBLIC_ORIGIN`. The three `CPE_*` values can also come from a `cpe.toml` in the working directory; the
-environment wins.
+environment wins. A sixth, `ACCESS_HIDDEN_PROJECTS`, is in the same table: `access-server` reads it and hands
+it to CPE, which honours it but never reads it, and it cannot come from `cpe.toml`.
+
+### Hiding and un-hiding a project
+
+A project whose shortcode is in `ACCESS_HIDDEN_PROJECTS` is a Hidden project: every response under its prefix
+carries `X-Robots-Tag: noindex, nofollow`, its pages and its not-found carry
+`<meta name="robots" content="noindex, nofollow">`, and the overview neither lists nor counts it. It is
+otherwise served as before, to anyone with the link. The start log has three lines for it: the shortcodes
+read (`hidden projects: none`, or `hidden projects: <list>`), the hidden project ids (`hidden project ids`),
+and each listed shortcode that no project folder has (`a hidden shortcode names no project folder`), so a typo
+shows there.
+
+The variable is read at start: hiding or un-hiding takes a restart or a redeploy. Search engines notice that a
+project was un-hidden only when they next crawl it, and an HTTP cache keeps a `noindex` response until it
+expires.
 
 ## Start-up, and what CPE answers when something is missing
 
 The port is bound first, and CPE's projects are loaded afterwards, in the background. Until they are, every
-path under `/cpe` answers `503` with `Retry-After: 30` and `Cache-Control: no-store`. DPE and `/healthz`
-answer throughout. Nothing of CPE's stops the binary or delays its start.
+path under `/cpe` answers `503` with `Retry-After: 30` and `Cache-Control: no-store`. That `503`, and the one
+a refused configuration answers, carries no `X-Robots-Tag`, since no project id is known yet. DPE and
+`/healthz` answer throughout. Nothing of CPE's stops the binary or delays its start.
 
 | Situation | Under `/cpe` | Logged | DPE |
 |-----------|--------------|--------|-----|
 | Projects are still loading | `503`, every path | `CPE is mounted and activates in the background` (info) | serves |
-| A project is loaded | its pages, and its entry in the overview | `project loaded`, then `CPE's projects are loaded` with the counts (info) | serves |
+| A project is loaded | its pages, and its entry in the overview, unless it is a Hidden project | `project loaded`, then `CPE's projects are loaded` with the counts (info) | serves |
 | `SYNC_DATA_DIR` or a project's file in it is missing | `503` on that project's paths; the overview does not list it | `project does not load; its prefix answers 503`, with the reason (error); for a missing directory also `SYNC_DATA_DIR names no directory …` at start (warning) | serves |
 | `MEDIA_DATA_DIR`, a project's directory in it, or a file the project needs from it is missing, unreadable or not UTF-8 | `503` on that project's paths; the overview does not list it | `project does not load; its prefix answers 503`, with the reason (error); for a missing directory also `MEDIA_DATA_DIR names no directory …` at start (warning) | serves |
 | A project folder has no `SHORTCODE` | the folder is no project: CPE's not-found, `404`, on its paths | nothing | serves |
 | A project folder's `SHORTCODE` is malformed or a symlink | the project is not served: CPE's not-found, `404`, on its paths | `a project folder is not served`, with the folder and the reason (warning) | serves |
 | Two project folders declare the same `SHORTCODE` | `503` on both projects' paths | `project does not load; its prefix answers 503`, naming the other folder (error) | serves |
 | `CPE_PROJECTS_DIR` does not exist | the overview with no project, `200`, at `/cpe` and `/cpe/`; CPE's not-found, `404`, on every other path | `CPE's projects are loaded` with `served=0` (info) and nothing else | serves |
+| An entry of `ACCESS_HIDDEN_PROJECTS` is not a shortcode | as without that entry; the other entries hide their projects | `ACCESS_HIDDEN_PROJECTS: an entry is not a shortcode and is ignored`, with the entry (warning) | serves |
+| `ACCESS_HIDDEN_PROJECTS` is not UTF-8 | as without the variable: nothing is hidden | `ACCESS_HIDDEN_PROJECTS is not UTF-8 and is ignored: no project is hidden` (warning) | serves |
 | `CPE_PUBLIC_ORIGIN` is refused (a path, a trailing slash) | `503`, every path | `CPE's configuration is refused …`, with the reason (error) | serves |
 | `CPE_BASE` is unset or empty | not mounted: DPE's `404` | `CPE_BASE is not set: CPE is not mounted …` (warning) | serves alone |
 | `CPE_BASE` is refused (no leading `/`, a trailing one) | not mounted: DPE's `404` | `CPE's configuration is refused …`, with the reason (error) | serves alone |

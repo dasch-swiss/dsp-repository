@@ -77,6 +77,7 @@ mod tests {
             &AssetInventory::default(),
             OriginConfig::fixed("http://localhost:8080"),
             &cpe_core::url::ROOT,
+            &std::sync::Arc::default(),
         )
         .oneshot(
             Request::builder()

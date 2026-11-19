@@ -45,6 +45,11 @@ itself untraced. A test pins it — do not reorder without checking `serve.rs`'s
   `app` builds the router with CPE inside `catch_unwind`: if that build panics, it logs an error naming
   `CPE_BASE` and builds DPE alone. No base does that today: a route of DPE's or the binary's under the base
   (`/healthz`, `/dpe/projects`) keeps answering, and only a second any-method route for `<base>/` panics.
+- **Hidden projects are the root's to read.** `hidden_projects_from_env` reads `ACCESS_HIDDEN_PROJECTS` once
+  (`parse_hidden_projects`: trimmed, upper-cased, checked with `cpe_ports::is_shortcode`; a bad entry is a
+  warning, never a stop) and hands the set to each capability that presents projects as a value in its
+  config, today `CpeConfig::hidden_shortcodes`; no capability reads the variable itself. The image does not
+  set it: it is the deployment's to set, as `CPE_PUBLIC_ORIGIN` is (`areas/access/CONTEXT.md`, Hidden project).
 - **The span of a CPE request.** The OTel layer sees CPE as one service, so `name_span_by_cpe_route`
   names the span from the `cpe_server::MatchedRoute` CPE puts on its responses:
   `GET /cpe/<project id>/<route template>`, and `GET /cpe/` for the overview. A path that matches no
@@ -74,7 +79,7 @@ built from.
 `shared-rate-limit`, `shared-telemetry` and infra crates only — never on a capability's `core`, `web` or `api-*` crate, and never on
 `cpe-store`. This crate imports only `dpe-server`'s public surface (`DpeConfig`, `Dpe`, `validate`,
 `normalize_page_url`), `cpe-server`'s (`CpeConfig`, `Cpe`,
-`MatchedRoute`), the ports' traits from `cpe-ports`, `sync-store`'s `LiveArchiveProjection` and
+`MatchedRoute`), the ports' traits and `is_shortcode` from `cpe-ports`, `sync-store`'s `LiveArchiveProjection` and
 `media-store`'s `LiveDepositedFiles`;
 reaching past them into a capability's internals defeats the boundary the capability crate exists
 to hold. Bazel `visibility` enforces this: no `core`, `web` or `api-*` target and not `cpe-store` grants this

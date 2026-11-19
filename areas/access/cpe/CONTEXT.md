@@ -243,11 +243,12 @@ the base in front.
 _Avoid_: prefix, mount path
 
 **Overview**:
-The page at the **Base**, with and without a trailing slash: one teaser per loaded project (title,
+The page at the **Base**, with and without a trailing slash: one teaser per loaded project that is not hidden (title,
 description, eyebrow, cover image and credit from the project's `site {}` node), each a link to the
 project's start page, in CPE's bare chrome and one of the four built-in languages. It is the route at the
 root of `Cpe::router()`, rendered by `cpe-web`'s `page::render_site_index`. An **Unavailable project** is
-not on it, and with no project loaded it says so and is still answered 200. The code and the config
+not on it, nor is a Hidden project (`../CONTEXT.md`), whose pages carry the robots meta and whose responses
+carry `X-Robots-Tag`, and with no project loaded it says so and is still answered 200. The code and the config
 language's documentation call it the site index, the prototype's name (`render_site_index`,
 `ChromeMsg::SiteIndex*`).
 _Avoid_: home, landing page (a project's `/` page is its start page), index (DPE's project list). Not the

@@ -161,8 +161,9 @@ repository. The decision, phrased so a violation is describable in code:
   while it is the answer, every path under the base is answered by it. Whether a project's assets keep a path
   under its prefix once `media` serves them is not decided.
 - **The base is the overview of the projects CPE serves.** `/cpe` and `/cpe/` are the same page, and neither
-  redirects to the other. It has one teaser per loaded project (title, description, eyebrow, cover image and
-  credit, all from the project's `site {}` node), each a link to `<base>/<project id>/`, in CPE's bare chrome;
+  redirects to the other. It has one teaser per loaded project that is not hidden
+  (a Hidden project, `areas/access/CONTEXT.md`, is left out), with its title, description, eyebrow, cover
+  image and credit from the project's `site {}` node, each a link to `<base>/<project id>/`, in CPE's bare chrome;
   with no project loaded it says so and answers 200, and a project that did not activate is not on it.
   `cpe-web` renders it (`page::render_site_index`) and `cpe-server` routes it. A path under the base that names
   no project is CPE's not-found, which links to the overview.

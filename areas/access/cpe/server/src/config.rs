@@ -8,6 +8,7 @@
 //! `CPE_*` value must not stop the others: a configuration that cannot be used
 //! is kept with its reason, and `Cpe`'s router then answers 503 on every path.
 
+use std::collections::BTreeSet;
 use std::path::PathBuf;
 
 use figment::providers::{Env, Format, Serialized, Toml};
@@ -42,6 +43,12 @@ pub struct CpeConfig {
     /// fell back to the defaults. Never read from a file or a variable.
     #[serde(skip)]
     pub(crate) load_error: Option<String>,
+
+    /// The shortcodes of the Hidden projects (`ACCESS_HIDDEN_PROJECTS`, which the
+    /// host reads; CPE never does). The host hands it upper case; CPE upper-cases
+    /// again so a host that does not still hides the project.
+    #[serde(skip)]
+    pub hidden_shortcodes: BTreeSet<String>,
 }
 
 impl Default for CpeConfig {
@@ -51,6 +58,7 @@ impl Default for CpeConfig {
             public_origin: None,
             base: String::new(),
             load_error: None,
+            hidden_shortcodes: BTreeSet::new(),
         }
     }
 }

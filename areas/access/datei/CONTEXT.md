@@ -67,6 +67,7 @@ The files of one project, with their bytes: the Configuration, Edition files, OD
 - The Presenter never writes the Read model; the Rebuild is its only writer and stores each row's rights, and the Presenter filters every request on them with ADR-0013's decision, as the anonymous consumer until an authorisation mechanism exists (ADR-0012).
 - DaTEI reads nothing from `sync` and never opens Chischtli.
 - A project fails alone, as for CPE (ADR-0007): a project whose Rebuild fails is offline on its own prefix while every other project keeps serving.
+- The Presenter honours a **Hidden project** (`../CONTEXT.md`) with the same four obligations as CPE, using the set of Shortcodes the composition root hands it from `ACCESS_HIDDEN_PROJECTS`; it reads no variable of its own for this. The root hands the set upper case; the Presenter upper-cases it again, as CPE does, so a host that does not still hides the project.
 
 ## Example dialogue
 

@@ -5,6 +5,7 @@
 //! and leaves that project unavailable: its prefix answers 503, and the others
 //! are served. Nothing here returns an error or panics.
 
+use std::collections::BTreeSet;
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::Arc;
 use std::time::Instant;
@@ -96,6 +97,7 @@ fn load_all(
     discovered: Vec<DiscoveredProject>,
     sources: impl Fn(&DiscoveredProject) -> Result<Sources, String>,
 ) -> Activated {
+    let hidden_ids = Arc::new(hidden_ids(&config.hidden_shortcodes, &discovered));
     let mut loaded = Vec::new();
     let mut served = Vec::new();
     let mut unavailable = Vec::new();
@@ -144,13 +146,44 @@ fn load_all(
         &assets::AssetInventory::of(&served),
         request::OriginConfig::new(config.public_origin.as_deref()),
         &base,
+        &hidden_ids,
     )
+    .layer(axum::middleware::from_fn_with_state(
+        Arc::clone(&hidden_ids),
+        request::robots_for_hidden_projects,
+    ))
     .layer(axum::middleware::from_fn(request::resolve_request_prefs))
     .layer(axum::middleware::from_fn_with_state(
         base.clone(),
         request::report_matched_route,
     ));
     Activated { router, projects }
+}
+
+/// The ids of the folders whose shortcode is one of `hidden_shortcodes`, in
+/// any case, served or not. Logs them, and each shortcode no folder has: a
+/// project may be listed before it is deployed, and a mistyped shortcode
+/// shows here.
+fn hidden_ids(hidden_shortcodes: &BTreeSet<String>, discovered: &[DiscoveredProject]) -> BTreeSet<String> {
+    // A folder's shortcode is upper case (`cpe_ports::is_shortcode`). The host hands the set upper
+    // case; upper-casing again keeps a host that does not from showing a project it meant to hide.
+    let hidden_shortcodes: BTreeSet<String> = hidden_shortcodes.iter().map(|code| code.to_ascii_uppercase()).collect();
+    let mut ids = BTreeSet::new();
+    let mut matched = BTreeSet::new();
+    for project in discovered {
+        if let Some(shortcode) = project.shortcode.as_deref().filter(|code| hidden_shortcodes.contains(*code)) {
+            ids.insert(project.id.clone());
+            matched.insert(shortcode);
+        }
+    }
+    if !ids.is_empty() {
+        let ids: Vec<&str> = ids.iter().map(String::as_str).collect();
+        tracing::info!(project_ids = ids.join(", ").as_str(), "hidden project ids");
+    }
+    for shortcode in hidden_shortcodes.iter().filter(|code| !matched.contains(code.as_str())) {
+        tracing::info!(shortcode = shortcode.as_str(), "a hidden shortcode names no project folder");
+    }
+    ids
 }
 
 /// What a caught panic said, for the log.
@@ -303,6 +336,7 @@ fn with_routes_that_register(project: Project) -> Result<Arc<Project>, String> {
             &assets::AssetInventory::default(),
             request::OriginConfig::new(None),
             &cpe_core::url::ROOT,
+            &Arc::default(),
         );
     }))
     .map_err(|_| "two of its routes are the same to the router".to_owned())?;
@@ -677,6 +711,28 @@ mod tests {
         }
         assert!(cpe.projects().is_empty());
         assert_eq!(files.requests(), [] as [(String, String); 0]);
+    }
+
+    /// Catches hidden ids collected from the served projects only.
+    #[tokio::test]
+    async fn folders_that_share_a_hidden_shortcode_both_answer_503_with_x_robots_tag() {
+        let root = projects(&[("first", "00AB"), ("second", "00AB")]);
+        let cpe = Cpe::new(&crate::CpeConfig {
+            // Lower case: a host that hands the set over unnormalised still hides the project.
+            hidden_shortcodes: std::collections::BTreeSet::from(["00ab".to_owned()]),
+            ..config_for(root.path())
+        });
+
+        cpe.activate(
+            &FakeArchiveProjection::default().with_project(snapshot("00AB", "Brass lamp")),
+            &configs(&[("00AB", THINGS)]),
+        );
+
+        for uri in ["/first/", "/second/", "/first/things/lamp"] {
+            let (status, headers, _) = get(&cpe, uri).await;
+            assert_unavailable(status, &headers, uri);
+            assert_eq!(headers["x-robots-tag"], "noindex, nofollow", "{uri}");
+        }
     }
 
     /// The names are the base files the config names and their variants, in the site's

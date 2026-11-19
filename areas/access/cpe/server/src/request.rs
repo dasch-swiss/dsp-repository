@@ -2,10 +2,11 @@
 //! and appearance preferences, the query-string and cookie readers, and the
 //! public origin that absolute links are built from.
 
+use std::collections::BTreeSet;
 use std::sync::Arc;
 
 use axum::extract::{MatchedPath, Request, State};
-use axum::http::HeaderMap;
+use axum::http::{HeaderMap, HeaderName, HeaderValue};
 use axum::middleware::Next;
 use axum::response::Response;
 
@@ -105,6 +106,29 @@ pub(crate) async fn report_matched_route(
     let mut response = next.run(req).await;
     if let Some(route) = route {
         response.extensions_mut().insert(route);
+    }
+    response
+}
+
+/// The header that asks a search engine not to index a response.
+const X_ROBOTS_TAG: HeaderName = HeaderName::from_static("x-robots-tag");
+
+/// What [`X_ROBOTS_TAG`] says on every response of a Hidden project.
+const NOINDEX: HeaderValue = HeaderValue::from_static("noindex, nofollow");
+
+/// Sets `X-Robots-Tag: noindex, nofollow` on every response under the prefix
+/// of a project whose id is in `hidden_ids`: its pages, redirects, fragments,
+/// assets, 404 and 503 alike. The project is resolved by
+/// [`crate::router::project_segment`], as the fallback resolves it.
+pub(crate) async fn robots_for_hidden_projects(
+    State(hidden_ids): State<Arc<BTreeSet<String>>>,
+    req: Request,
+    next: Next,
+) -> Response {
+    let hidden = crate::router::project_segment(req.uri().path()).is_some_and(|id| hidden_ids.contains(id));
+    let mut response = next.run(req).await;
+    if hidden {
+        response.headers_mut().insert(X_ROBOTS_TAG, NOINDEX);
     }
     response
 }

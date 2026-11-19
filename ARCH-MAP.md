@@ -156,12 +156,14 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   adapters of CPE's two ports over `SYNC_DATA_DIR` and `MEDIA_DATA_DIR` and has CPE activate over them in the
   background, after the listener is bound.
 - **Key entities:** `app`, `assemble`, `mount_cpe`, `name_span_by_cpe_route`, `activate_in_background`, `serve`,
-  `DEFAULT_SYNC_DATA_DIR`, `DEFAULT_MEDIA_DATA_DIR`, `data_dir`, `shutdown_signal`, `init_otel`, `init_pyroscope`,
-  `TELEMETRY_NAME`, `is_allowed_healthcheck_url`
+  `DEFAULT_SYNC_DATA_DIR`, `DEFAULT_MEDIA_DATA_DIR`, `data_dir`, `parse_hidden_projects`, `shutdown_signal`,
+  `init_otel`, `init_pyroscope`, `TELEMETRY_NAME`, `is_allowed_healthcheck_url`
 - **Public interface:** the `access-server serve | validate <data_dir> | healthcheck <url>` CLI;
   `/healthz` and `POST /telemetry/collect` (untraced), every route DPE's router carries, and every
   path under `Cpe::base()` (`CPE_BASE`, `/cpe` in the image), which is CPE's. `DPE_SITE_ADDR`,
-  `SYNC_DATA_DIR` and `MEDIA_DATA_DIR` are read here (an empty data directory variable is unset); `DPE_*` and `CPE_*` by the capabilities' own configurations. The
+  `SYNC_DATA_DIR`, `MEDIA_DATA_DIR` and `ACCESS_HIDDEN_PROJECTS` are read here (an empty data directory variable is unset;
+  the Hidden projects' shortcodes are handed to each capability that presents projects, today CPE's
+  `CpeConfig::hidden_shortcodes`); `DPE_*` and `CPE_*` by the capabilities' own configurations. The
   Docker image stays `daschswiss/dpe`.
 - **Local-context kit:** `areas/access/server/CLAUDE.md`, `areas/access/server/src/serve.rs`,
   `areas/access/server/src/observability.rs`, `areas/access/server/BUILD.bazel` (its `deps`, the
@@ -178,6 +180,12 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Used by:** — (deployment: the image `//areas/access/server:image`, built by `app_image` in
   `tools/image/defs.bzl`, published by `dpe-docker-publish.yml` and scanned through `.github/actions/build-dpe/`)
 - **Boundary rules:**
+  - `ACCESS_HIDDEN_PROJECTS` is read here and nowhere else (normalised and validated here, and upper-cased
+    again by each capability as a guard), and handed to every
+    capability that presents projects as a value in its config: CPE, and DaTEI once it has code; not DPE, whose
+    metadata record is public by design; each such capability keeps the four obligations of a Hidden project
+    (`areas/access/CONTEXT.md`). CPE's are pinned by `serve.rs`'s and `cpe-server`'s tests; a new
+    capability's are **review** until it has tests of its own (DaTEI: `datei/CONTEXT.md`, DEV-7574).
   - The image carries each capability's data (`sync/data`, `cpe/projects`, `media/data`): the `image_data`
     layer in `BUILD.bazel` and the `env` of `app_image` (`SYNC_DATA_DIR`, `CPE_PROJECTS_DIR`,
     `MEDIA_DATA_DIR`) have to agree (**review**; see `areas/access/server/CLAUDE.md`; `just image-smoke` only
@@ -1077,7 +1085,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   holds no routes. `public/` holds
   the files every CPE page refers to (two logos, the fingerprint, Datastar). `cpe-server` is the host crate, a
   facade in the shape of `dpe-server`: `CpeConfig`, and `Cpe` with its router and its activation. The router's
-  root, which is the base with and without a trailing slash, is the overview of the loaded projects (ADR-0007). Activation
+  root, which is the base with and without a trailing slash, is the overview of the loaded projects that are not hidden (ADR-0007). Activation
   loads every project folder that holds a `SHORTCODE`, from the files the bytes port serves for that
   shortcode and a store built from the archive projection port's snapshot, and a project that does not
   activate answers 503 on its own prefix while the others are served (ADR-0007); the crate also serves the stylesheets and `public/` from a
@@ -1119,9 +1127,11 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `get_resource`) and `project::LoadError`, `page::render_page`, `page::render_compound_fragment` and
   `page::CompoundFragmentOutput`, `page::render_site_index` and `page::ProjectTeaser` (the overview and one
   project on it, from `Project::teaser`), `page::render_not_found_project`, `page::render_not_found_site`,
-  `page::render_browse_breadcrumb_for_page`, `page::SearchFragmentSurface`, `page::document_head`,
+  `page::render_browse_breadcrumb_for_page`, `page::SearchFragmentSurface`, `page::document_head`, `page::Indexing`
+  (whether a document carries the robots meta, `NoIndex` for a Hidden project),
   `share_link::compose_canonical_query`, `share_link::compose_absolute_url`, `share_link::ViewSurface`. In
-  `cpe-server`: `CpeConfig` (`CPE_PROJECTS_DIR`, `CPE_PUBLIC_ORIGIN`, `CPE_BASE`), `Cpe` (`new`, `activate`, `router`,
+  `cpe-server`: `CpeConfig` (`CPE_PROJECTS_DIR`, `CPE_PUBLIC_ORIGIN`, `CPE_BASE`, and `hidden_shortcodes`, which the
+  host sets and no file or variable of CPE's does), `Cpe` (`new`, `activate`, `router`,
   `base`, `projects`, and the doc-hidden `from_sql_folders`, which ends with DEV-7498), `ProjectSummary` and
   `MatchedRoute` (the route template a response carries in its extensions, for the host's request span)
 - **Public interface:** `cpe-server`'s `Cpe` and `CpeConfig`: the router, mounted by areas/access/server

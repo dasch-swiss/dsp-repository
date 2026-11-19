@@ -32,7 +32,7 @@ use std::sync::{Arc, PoisonError, RwLock};
 pub use config::CpeConfig;
 
 /// One project CPE serves, as a host needs it to link there. CPE's own list
-/// of them is the page at its base.
+/// of them is the overview at its base, which leaves the Hidden projects out.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProjectSummary {
     /// The project id: its folder's name and its URL segment.
@@ -103,7 +103,7 @@ impl Cpe {
     /// project, so an async host calls it inside `spawn_blocking`, after its
     /// listener is bound. It returns nothing and never panics. A project
     /// that does not load is logged with its id and answers 503 on its
-    /// prefix, and the others are served and listed at the base; any other
+    /// prefix, and the others are served and, unless hidden, listed at the base; any other
     /// path that names no project is CPE's not-found. A later call loads
     /// everything again and replaces what is served; if it panics outside a
     /// project's own load, what was served before stays.
@@ -203,7 +203,8 @@ impl Cpe {
     }
 
     /// The projects CPE serves, sorted by id; empty until they are loaded.
-    /// The page at the base lists the same projects.
+    /// The Hidden projects are included; the overview at the base leaves them
+    /// out.
     #[must_use]
     pub fn projects(&self) -> Vec<ProjectSummary> {
         self.activated().map(|activated| activated.projects.clone()).unwrap_or_default()

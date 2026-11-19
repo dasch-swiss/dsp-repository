@@ -29,6 +29,10 @@ _Avoid_: detail page, project page (fine informally, but the obligations attach 
 A standards-shaped rendering of a Landing page's metadata at its own URL beside the page — JSON-LD, DataCite JSON, Turtle if it earns its place — advertised by `describedby` and answering with `rel="describes"`; the only negotiation is a `303` from the Landing page on `Accept` (ADR-0005).
 _Avoid_: API response (the JSON API under `/dpe/api/v2` is DPE's own shape, not a standard's), content negotiation (the page itself never renders differently).
 
+**Hidden project**:
+A project whose Shortcode is in `ACCESS_HIDDEN_PROJECTS`, the list `access-server` reads once, upper-cases and validates, and hands to every capability that presents projects: CPE, and DaTEI once it has code; not DPE, whose metadata record is public by design. Each such capability keeps four obligations for it: every response under the project's prefix carries `X-Robots-Tag: noindex, nofollow` (except the 503 a capability answers before it knows its projects, which no crawler indexes); every HTML document rendered from the loaded project carries `<meta name="robots" content="noindex, nofollow">`; no overview the capability renders lists it; and it otherwise answers exactly as a project that is not hidden. It is a search-index signal, not access control: anyone with the link reaches it, crawlers that follow only `robots.txt` (AI-training crawlers among them) are not addressed, images served from the IIIF host carry no header, and DPE's metadata record for the same Shortcode stays public; trace spans still carry the project's path to the trace backend, which is internal. No public page should link to it, since a link lets crawlers learn the URL even when they do not index it. CPE keeps the obligations; DaTEI commits to them (see [`datei/CONTEXT.md`](datei/CONTEXT.md)).
+_Avoid_: private, unlisted, unpublished, embargoed (each suggests access control, which ADR-0013's decision function owns).
+
 ### What DPE serves
 
 **View model**:

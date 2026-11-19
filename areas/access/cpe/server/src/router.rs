@@ -26,7 +26,7 @@
 //! only where a route string is handed to `app.route(…)`, via
 //! `axum_route(...)`.
 
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 use std::convert::Infallible;
 use std::sync::Arc;
 
@@ -38,6 +38,7 @@ use axum::routing::get;
 use axum::Router;
 use cpe_core::theme::Appearance;
 use cpe_core::url::{Base, ROOT};
+use cpe_web::page::Indexing;
 use datastar::prelude::{ExecuteScript, PatchElements, PatchSignals};
 use futures_util::stream;
 
@@ -102,22 +103,34 @@ fn status_code(status: cpe_core::view_data::PageStatus) -> StatusCode {
 /// `base` is where a host mounts the router. No route holds it: the route
 /// paths are the layout of `cpe_core::url` at the root, and `base` goes into
 /// what the handlers answer.
+///
+/// `hidden_ids` holds the ids of the Hidden projects: their pages and their
+/// 404 carry the robots meta, and the overview leaves them out. The
+/// `X-Robots-Tag` header is not set here but by
+/// `request::robots_for_hidden_projects`, layered over this router.
 pub(crate) fn build(
     projects: &[Arc<cpe_web::project::Project>],
     unavailable: &[String],
     assets: &AssetInventory,
     origin_cfg: crate::request::OriginConfig,
     base: &Base,
+    hidden_ids: &Arc<BTreeSet<String>>,
 ) -> Router {
     let served = Arc::new(projects.to_vec());
+    let listed = projects
+        .iter()
+        .filter(|project| !hidden_ids.contains(project.id()))
+        .cloned()
+        .collect();
     // The shared static files for a page without a project (the overview,
     // CPE's own not-found). The viewer's files sit in a directory of the same
     // table, as `document_head` asks for them.
     let mut app = static_routes(Router::new(), &ROOT.static_dir()).route(
         &ROOT.home(),
-        get(site_index_handler(Arc::clone(&served), origin_cfg.clone(), base.clone())),
+        get(site_index_handler(Arc::new(listed), origin_cfg.clone(), base.clone())),
     );
     for project in projects {
+        let indexing = indexing_of(hidden_ids, project.id());
         let routes = ROOT.project(project.id());
         // The same files once more under the project, where its pages load
         // them from, and the project's own files (a cover image). Both
@@ -144,7 +157,13 @@ pub(crate) fn build(
                 // Static page: no path parameters — use the simple handler.
                 app = app.route(
                     &axum_route(&p),
-                    get(make_handler(Arc::clone(project), idx, origin_cfg.clone(), base.clone())),
+                    get(make_handler(
+                        Arc::clone(project),
+                        idx,
+                        origin_cfg.clone(),
+                        base.clone(),
+                        indexing,
+                    )),
                 );
 
                 // For the root page, also register the trailing-slash form.
@@ -153,7 +172,13 @@ pub(crate) fn build(
                 if page.route == "/" {
                     app = app.route(
                         &axum_route(&home),
-                        get(make_handler(Arc::clone(project), idx, origin_cfg.clone(), base.clone())),
+                        get(make_handler(
+                            Arc::clone(project),
+                            idx,
+                            origin_cfg.clone(),
+                            base.clone(),
+                            indexing,
+                        )),
                     );
                 }
 
@@ -275,6 +300,7 @@ pub(crate) fn build(
                         idx,
                         origin_cfg.clone(),
                         base.clone(),
+                        indexing,
                     )),
                 );
 
@@ -378,7 +404,22 @@ pub(crate) fn build(
 
     // A router without a fallback of its own inherits the outer router's when
     // it is nested, which would hand CPE's unknown paths to another capability.
-    app.fallback(fallback_handler(served, unavailable.into(), origin_cfg, base.clone()))
+    app.fallback(fallback_handler(
+        served,
+        unavailable.into(),
+        Arc::clone(hidden_ids),
+        origin_cfg,
+        base.clone(),
+    ))
+}
+
+/// Whether the pages of project `id` may be indexed.
+fn indexing_of(hidden_ids: &BTreeSet<String>, id: &str) -> Indexing {
+    if hidden_ids.contains(id) {
+        Indexing::NoIndex
+    } else {
+        Indexing::Indexable
+    }
 }
 
 /// Serve the static table, and the viewer's files in its `image-viewer`
@@ -392,7 +433,8 @@ fn static_routes(app: Router, dir: &cpe_core::url::StaticDir) -> Router {
 }
 
 /// The overview of the projects, at the router's root: one teaser per loaded
-/// project. A project that did not load has none, as its prefix answers 503.
+/// project that is not hidden. A project that did not load has none, as its
+/// prefix answers 503.
 ///
 /// `?appearance=` sets the cookie and redirects to the page without it, as
 /// on a project's page; no other query key is read or removed. The page is
@@ -432,25 +474,34 @@ fn site_index_handler(
     }
 }
 
-/// Router-wide fallback for any path that matched no route registered above.
+/// The id of the project a path below the base belongs to, if any project
+/// has it: the first segment of the undecoded path, byte for byte.
 ///
-/// **Project resolution** is byte-level, undecoded, first-path-segment
-/// equality against the known project ids:
 /// - Strip exactly one leading `/`.
 /// - Take up to the next `/` (or the rest of the string).
-/// - Test the resulting slice for EXACT STRING EQUALITY against a project id — no percent-decoding,
-///   no case-folding, no normalization, no prefix matching.
+/// - An empty segment is `None`; any other is compared with a project id for EXACT STRING EQUALITY
+///   by the caller — no percent-decoding, no case-folding, no normalization, no prefix matching.
 ///
-/// This is why `//evil.example/x` resolves to the EMPTY segment, never
-/// `evil.example`: stripping one leading `/` from `//evil.example/x` leaves
-/// `/evil.example/x`, and taking up to the next `/` of THAT stops at index 0
-/// (empty). The extracted segment is used ONLY in the equality tests
-/// above — it is never echoed into a response.
+/// This is why `//evil.example/x` belongs to no project, never to
+/// `evil.example`: stripping one leading `/` leaves `/evil.example/x`, whose
+/// first segment is empty. Whatever asks which project a path belongs to asks
+/// this one function, so no two answers differ. The segment is never echoed
+/// into a response.
+pub(crate) fn project_segment(path: &str) -> Option<&str> {
+    let rest = path.strip_prefix('/').unwrap_or(path);
+    let segment = rest.split('/').next().unwrap_or(rest);
+    (!segment.is_empty()).then_some(segment)
+}
+
+/// Router-wide fallback for any path that matched no route registered above.
+///
+/// **Project resolution** is [`project_segment`]'s, compared with the known
+/// project ids.
 ///
 /// - The id of a project that did not load → 503 ([`unavailable::response`]): the project exists
 ///   and is not served, which is not a missing page.
 /// - A loaded project's id → `cpe_web::page::render_not_found_project`: the project's own 404, full
-///   project chrome and its `theme {}`.
+///   project chrome and its `theme {}`, with the robots meta when the project is hidden.
 /// - No match → `cpe_web::page::render_not_found_site`: CPE's own 404, product-default knob,
 ///   built-in language resolution.
 ///
@@ -484,23 +535,15 @@ fn site_index_handler(
 fn fallback_handler(
     projects: Arc<Vec<Arc<cpe_web::project::Project>>>,
     unavailable: Arc<[String]>,
+    hidden_ids: Arc<BTreeSet<String>>,
     origin_cfg: crate::request::OriginConfig,
     base: Base,
 ) -> impl Fn(Request) -> std::future::Ready<Response> + Clone + Send + 'static {
     move |req: Request| {
         let public_origin = origin_cfg.resolve(req.headers());
-        let path = req.uri().path();
-        // Byte-level, undecoded extraction — see the doc comment above for
-        // the `//evil.example/x` → "" (empty) worked example.
-        let segment = path.strip_prefix('/').unwrap_or(path);
-        let segment = match segment.find('/') {
-            Some(idx) => &segment[..idx],
-            None => segment,
-        };
+        let segment = project_segment(req.uri().path());
 
-        // An empty segment (the `//evil.example/x` sentinel) is no project's
-        // id; the guard below and this one keep that explicit.
-        if !segment.is_empty() && unavailable.iter().any(|id| id == segment) {
+        if segment.is_some_and(|segment| unavailable.iter().any(|id| id == segment)) {
             return std::future::ready(unavailable::response());
         }
 
@@ -516,17 +559,7 @@ fn fallback_handler(
             .unwrap_or(RequestedAppearance { value: None, from_query: false });
         let appearance = requested_appearance.value.unwrap_or_default();
 
-        // Guard: `segment` is empty for the `//evil.example/x` sentinel (see
-        // the doc comment above) — it must never match a loaded project id.
-        // `Vec::iter().find()` on an empty needle would only match a project
-        // id that is itself the empty string, which no loaded project has,
-        // but the explicit guard makes the invariant load-bearing rather than
-        // incidental.
-        let matched_project = if segment.is_empty() {
-            None
-        } else {
-            projects.iter().find(|p| p.id() == segment)
-        };
+        let matched_project = segment.and_then(|segment| projects.iter().find(|p| p.id() == segment));
 
         let markup = match matched_project {
             Some(project) => {
@@ -560,7 +593,7 @@ fn fallback_handler(
                     incoming_links: None,
                     resource_links: &[],
                 };
-                cpe_web::page::render_not_found_project(site, &ctx)
+                cpe_web::page::render_not_found_project(site, &ctx, indexing_of(&hidden_ids, project.id()))
             }
             None => {
                 // No loaded project id matches the raw first segment.
@@ -953,6 +986,7 @@ fn make_handler(
     page_idx: usize,
     origin_cfg: crate::request::OriginConfig,
     base: Base,
+    indexing: Indexing,
 ) -> impl Fn(Request) -> std::future::Ready<Response> + Clone + Send + 'static {
     move |req: Request| {
         let public_origin = origin_cfg.resolve(req.headers());
@@ -1041,6 +1075,7 @@ fn make_handler(
             &ctx,
             &components,
             project.data_arks(),
+            indexing,
         );
 
         // Overrides are never `from_query` here (that path 303-redirects above),
@@ -1066,6 +1101,7 @@ fn make_parameterized_handler(
     page_idx: usize,
     origin_cfg: crate::request::OriginConfig,
     base: Base,
+    indexing: Indexing,
 ) -> impl Fn(Path<HashMap<String, String>>, Request) -> std::future::Ready<Response> + Clone + Send + 'static {
     move |Path(path_params): Path<HashMap<String, String>>, req: Request| {
         let public_origin = origin_cfg.resolve(req.headers());
@@ -1152,6 +1188,7 @@ fn make_parameterized_handler(
             &ctx,
             &components,
             project.data_arks(),
+            indexing,
         );
 
         // Overrides are never `from_query` here (that path 303-redirects above).
@@ -2749,6 +2786,7 @@ mod tests {
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
             base,
+            &Arc::default(),
         )
         .layer(from_fn(resolve_request_prefs));
         let mut request = Request::builder().uri(uri);
@@ -3093,6 +3131,7 @@ mod tests {
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
             &cpe_core::url::ROOT,
+            &Arc::default(),
         );
         let response = router
             .clone()
@@ -3127,6 +3166,7 @@ mod tests {
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
             &cpe_core::url::ROOT,
+            &Arc::default(),
         );
         let response = router
             .clone()
@@ -3164,6 +3204,7 @@ mod tests {
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
             &cpe_core::url::ROOT,
+            &Arc::default(),
         )
         .layer(from_fn(resolve_request_prefs));
         let response = router
@@ -3221,6 +3262,7 @@ mod tests {
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
             &cpe_core::url::ROOT,
+            &Arc::default(),
         );
         let response = router
             .clone()
@@ -3276,6 +3318,7 @@ mod tests {
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
             &cpe_core::url::ROOT,
+            &Arc::default(),
         );
         let response = router
             .clone()
@@ -3313,6 +3356,7 @@ mod tests {
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
             &cpe_core::url::ROOT,
+            &Arc::default(),
         );
         let response = router
             .clone()
@@ -3348,6 +3392,7 @@ mod tests {
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
             &cpe_core::url::ROOT,
+            &Arc::default(),
         )
         .layer(from_fn(resolve_request_prefs));
         let response = router
@@ -3383,6 +3428,7 @@ mod tests {
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
             &cpe_core::url::ROOT,
+            &Arc::default(),
         );
         let response = router
             .clone()
@@ -3418,6 +3464,7 @@ mod tests {
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
             &cpe_core::url::ROOT,
+            &Arc::default(),
         );
         let response = router
             .clone()
@@ -3454,6 +3501,7 @@ mod tests {
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
             &cpe_core::url::ROOT,
+            &Arc::default(),
         );
         let response = router
             .clone()
@@ -3483,6 +3531,7 @@ mod tests {
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
             &cpe_core::url::ROOT,
+            &Arc::default(),
         );
         let response = router
             .clone()
@@ -3545,6 +3594,7 @@ mod tests {
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
             &cpe_core::url::ROOT,
+            &Arc::default(),
         );
         let response = router
             .oneshot(
@@ -3585,6 +3635,7 @@ mod tests {
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
             &cpe_core::url::ROOT,
+            &Arc::default(),
         )
         .layer(from_fn(resolve_request_prefs));
         let response = router
@@ -3724,6 +3775,7 @@ mod tests {
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
             &cpe_core::url::ROOT,
+            &Arc::default(),
         );
         let response = router
             .oneshot(
@@ -3773,6 +3825,7 @@ mod tests {
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
             &cpe_core::url::ROOT,
+            &Arc::default(),
         );
         let response = router
             .oneshot(
@@ -4681,6 +4734,7 @@ mod tests {
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
             &cpe_core::url::ROOT,
+            &Arc::default(),
         );
         let response = router
             .oneshot(
@@ -4734,6 +4788,7 @@ mod tests {
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
             &cpe_core::url::ROOT,
+            &Arc::default(),
         );
         let response = router
             .oneshot(
@@ -4794,6 +4849,7 @@ mod tests {
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
             &cpe_core::url::ROOT,
+            &Arc::default(),
         );
         let response = router
             .oneshot(
@@ -4854,6 +4910,7 @@ mod tests {
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
             &cpe_core::url::ROOT,
+            &Arc::default(),
         );
         let response = router
             .oneshot(
@@ -4902,6 +4959,7 @@ mod tests {
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
             &cpe_core::url::ROOT,
+            &Arc::default(),
         );
         let response = router
             .oneshot(
@@ -4957,6 +5015,7 @@ mod tests {
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
             &cpe_core::url::ROOT,
+            &Arc::default(),
         );
         let response = router
             .oneshot(
@@ -4998,6 +5057,7 @@ mod tests {
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
             &cpe_core::url::ROOT,
+            &Arc::default(),
         );
         let response = router
             .oneshot(
@@ -5090,6 +5150,7 @@ INSERT INTO properties (resource_id, name, seq, value_type, value_text) VALUES (
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
             &cpe_core::url::ROOT,
+            &Arc::default(),
         );
         let response = router
             .oneshot(Request::builder().uri(uri).body(Body::empty()).expect("well-formed request"))
@@ -5181,6 +5242,7 @@ INSERT INTO compound_parts (parent_id, child_id, seq) VALUES ('bk1', 'p2', 1);
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
             &cpe_core::url::ROOT,
+            &Arc::default(),
         );
         let response = router
             .oneshot(Request::builder().uri(uri).body(Body::empty()).expect("well-formed request"))
@@ -5450,6 +5512,7 @@ INSERT INTO representations (resource_id, kind, uri, width, height, seq) VALUES 
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
             &cpe_core::url::ROOT,
+            &Arc::default(),
         );
         let response = router
             .oneshot(Request::builder().uri(uri).body(Body::empty()).expect("well-formed request"))
@@ -5597,6 +5660,7 @@ INSERT INTO annotations (id, resource_id, shape, x, y, w, h, color) VALUES ('A1'
             &AssetInventory::default(),
             crate::request::OriginConfig::fixed("http://localhost:8080"),
             &cpe_core::url::ROOT,
+            &Arc::default(),
         );
         let response = router
             .oneshot(Request::builder().uri(uri).body(Body::empty()).expect("well-formed request"))

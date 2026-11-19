@@ -34,10 +34,10 @@ code:
   rebuilt from empty against its ports, and that rebuild is the baseline every capability must support. Applying
   change incrementally, from the changes a port announces, is an optimisation a capability may add on top of
   the rebuild, never a substitute for it.
-- **A read model stores rights per row.** A rebuild reads on no one's behalf. Both ports serve what they serve
-  with its rights attached and never pre-filter; the read model stores the rights per row, and the presenter
-  filters at request time, as the anonymous consumer until an authorisation mechanism exists (ADR-0012,
-  ADR-0013).
+- **A read model stores rights per row.** A rebuild reads on no one's behalf. Every port serves what it serves
+  with its rights attached and never pre-filters (DaTEI deviates for now, ADR-0009); the read model stores the
+  rights per row, and the presenter filters at request time, as the anonymous consumer until an authorisation
+  mechanism exists (ADR-0012, ADR-0013).
 - **Change reaches a reader only through its port, and the port announces it.** The provider owns the
   trigger; the reader rebuilds the one project the port named and grows no endpoint of its own. Until a port
   carries change, a restart is the rebuild.
@@ -90,7 +90,7 @@ code:
 Not yet in code: DPE reads its corpus from disk, not through a port against `sync` (not scheduled).
 Not yet in code: neither the port against `sync` nor the bytes port against `media` announces change, and no
 reader rebuilds one named project (DEV-7622).
-Not yet in code: neither port serves rights, no read model stores them per row, and no presenter filters on
+Not yet in code: no port serves rights, no read model stores them per row, and no presenter filters on
 them (not scheduled).
 
 Enforced by: Bazel `visibility` per ADR-0001 for "fed by its own ports" (**structure**): a reading capability's

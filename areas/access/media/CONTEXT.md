@@ -1,13 +1,14 @@
 # media
 
-The Access Area's `media` capability: the Access bucket's only consumer, as `sync` is the projection stream's,
-and the implementer of the bytes ports through which a sibling capability reads a project's deposited files at
-build time (ADR-0012). It exists so far at its minimum, the crate `media-store` in `store/`, which serves CPE's
-bytes port from a committed **Stand-in directory**, `data/`. `access-server` constructs it over the directory
-`MEDIA_DATA_DIR` names (default `areas/access/media/data`; an empty value is unset) and hands it to CPE's activation; a directory that does not
-exist is logged when the binary starts, and every CPE project then fails to load and answers 503. The port's
-terms (Bytes port, Curation) are in [`../cpe/CONTEXT.md`](../cpe/CONTEXT.md), the media engine's (Media
-capability, Access bucket, Byte source, Authorisation check) in
+The Access Area's `media` capability: the Access bucket's only consumer, as `sync` is the projection stream's, and
+the implementer of the bytes ports through which a sibling capability reads a project's deposited files at build
+time (ADR-0012). It exists so far at its minimum, the crate `media-store` in `store/`, which serves CPE's bytes
+port from a committed **Stand-in directory**, `data/`. `access-server` constructs it over the directory
+`MEDIA_DATA_DIR` names (default `areas/access/media/data`; an empty value is unset) and hands it to CPE's
+activation; a directory that does not exist is logged when the binary starts, and every CPE project then fails to
+load and answers 503. Its adapter of DaTEI's port, not yet in code, will read the same directory (*Serve DaTEI*,
+below). The terms of CPE's port (Bytes port, Curation) are in [`../cpe/CONTEXT.md`](../cpe/CONTEXT.md), the media
+engine's (Media capability, Access bucket, Byte source, Authorisation check) in
 [`../../../vitrinli/CONTEXT.md`](../../../vitrinli/CONTEXT.md), the Access Area's in
 [`../CONTEXT.md`](../CONTEXT.md), the contract terms (Project, Shortcode) and the file vocabulary (Service File)
 in the root [`CONTEXT.md`](../../../CONTEXT.md) `## Shared`.
@@ -15,12 +16,18 @@ in the root [`CONTEXT.md`](../../../CONTEXT.md) `## Shared`.
 ## Language
 
 **Stand-in directory**:
-`data/`, the hand-fed directory that stands in for the Access bucket until the archive publishes to it. It is
+`data/`, the directory that stands in for the Access bucket until the archive publishes to it. It is
 laid out as the bucket's prefixes will be: one directory per project, named by its shortcode, holding the files
 the project deposited under their names, `<shortcode>/<name>`. Today `0803/` holds Incunabula's `config.kdl`,
-`curation.csv` and `narrative/<name>.<lang>.md`. It holds text only, in plain git, and `data/PROVENANCE`
-records where each file came from and how it is changed: every file is edited in place by a person and never
-generated. A project is in `media` when its directory is; there is no list of known projects beside it.
+`curation.csv` and `narrative/<name>.<lang>.md`. The committed `data/` holds text only, in plain git, and
+`data/PROVENANCE` records where each file came from and how it is changed: every file there is edited in place
+by a person and never generated. On a server, the directory `MEDIA_DATA_DIR` names is written by the VRE
+bridge (P-DEV-301), not the committed `data/`: a project's text files from the VRE under their Stored
+names, the File manifest that names the VRE resource each came from, and the Ready token, holding the as-of time,
+last (DaTEI's vocabulary, in [`../datei/CONTEXT.md`](../datei/CONTEXT.md)). For DaTEI, the bridge also writes
+`datei.toml` and `file-layout.xml` from its image. There the File manifest, the Ready token and the bridge's
+image record provenance, as `data/PROVENANCE` does for the committed files. A project is in `media` when its
+directory is; there is no list of known projects beside it. Not yet in code: the VRE bridge (P-DEV-301).
 _Avoid_: the bucket (the stand-in is not it), project folder (CPE's, which holds code and the documents about
 the data), committed snapshot (`sync`'s).
 
@@ -58,14 +65,18 @@ _Avoid_: public user, guest (a request's viewer; a bytes port has no request).
   `sync` for the archive projection port; until the bucket exists `media` owns the operator lever, a file watch
   or an admin endpoint behind a token, that makes its adapter announce, and CPE rebuilds the one project named
   and grows no endpoint of its own (ADR-0012, DEV-7622).
-- **Serve DaTEI.** DaTEI has no code and declares no port yet; its adapter here waits for that port.
+- **Serve DaTEI.** `media-store` implements DaTEI's port, `datei_ports::DateiFiles`, beside
+  `LiveDepositedFiles`: `projects()` lists the shortcode directories holding both the Ready token and
+  `datei.toml`, and `file()` reads `<dir>/<shortcode>/<stored name>` with CPE's name check. Not yet in code:
+  that adapter, and `media-store`'s dependency on `datei_ports` (DEV-7574).
 - **Read the Access bucket.** The adapter that replaces `LiveDepositedFiles` there resolves a name without
   following a symbolic link (`openat2`, `cap-std`) rather than checking first.
 
-`media-store` depends on `cpe-ports` alone of this repository's crates. Bazel `visibility` holds both sides:
-`media_store` is granted to the composition root alone and a reader's tests use `media_store_for_tests`, which
-is `testonly`; and no `sync` or sibling target but `cpe_ports` grants `media-store`.
+`media-store` depends on `cpe-ports` alone of this repository's crates, and on `datei-ports` too once it
+implements DaTEI's port. Bazel `visibility` holds both sides: `media_store` is granted to the composition root
+alone and a reader's tests use `media_store_for_tests`, which is `testonly`; and no `sync` or sibling target
+but `cpe_ports`, and `datei_ports` once it exists, grants `media-store`.
 
-A new consumer of `media`, DaTEI for one, declares its own bytes port in its own ports crate, and `media-store`
-implements it beside `LiveDepositedFiles`. `is_shortcode` and `is_file_name` are CPE's rules until a second
-consumer needs them; moving them out of `cpe-ports` is an architecture change, made by an ADR.
+A new consumer of `media` declares its own bytes port in its own ports crate, as DaTEI does with `datei-ports`,
+and `media-store` implements it beside `LiveDepositedFiles`. `is_shortcode` and `is_file_name` are CPE's rules
+until a second consumer needs them; moving them out of `cpe-ports` is an architecture change, made by an ADR.

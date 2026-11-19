@@ -15,7 +15,10 @@ phrased so a violation is describable in code:
   publishes each as a Service File that is the file itself. A reading capability that needs them at build time
   declares a port for bytes, as DaTEI's port does (ADR-0009), and `media` implements it beside its data; CPE
   declares such a port too. The port carries files by shortcode and name, whole or refused, and nothing else:
-  no fact, no meaning of a key. What a CPE project folder holds is in ADR-0007.
+  no fact, no meaning of a key. It may also list the projects whose directory holds the capability's
+  configuration under its fixed name, so that a project gets a presentation when its configuration arrives, as
+  DaTEI's does. That listing walks no project's files, which is what makes a port drift toward a file
+  system, and the Access bucket answers it by prefix. What a CPE project folder holds is in ADR-0007.
 - **A configuration is an opaque file with a declared format.** A project's configuration carries a format
   identifier and a schema version (`cpe-config`, version N; DaTEI's TOML under an identifier of its own), and
   the capability reads version N and N-1. A schema bump is a migration deposit that DaSCH runs on the
@@ -41,19 +44,25 @@ phrased so a violation is describable in code:
   Driving files and Tables of contents are build-time inputs, not assets: the Rebuild parses them into the read
   model and the Presenter serves rendered text. The rights a rebuild stores with each row are what make that
   consistent: a rendered text is filtered as the file it came from would be.
-- **Change reaches a reader only through its port, and the port announces it.** A port carries a change
-  subscription, and the trigger lives on the provider's side. In the target, `sync`'s stream consumer
-  announces a project's new sequence through the port, and `media` does the same for the bucket. For the
+- **Change reaches a reader only through its port, never by watching the provider's directory, and the port
+  announces it.** A port carries a change subscription, and the trigger lives on the provider's side. In the
+  target, `sync`'s stream consumer announces a project's new sequence through the port, and `media` does the
+  same for the bucket. For the
   stand-ins, `sync` and `media` each own an operator lever, a file watch or an admin endpoint behind a token,
   that makes its adapter announce. A reader rebuilds the one project the port named, and every project at
   start; CPE and DaTEI grow no endpoint of their own, and the binary is never restarted to refresh data. The
   lever is the operator's way in before the archive exists, and there is no second trigger to remove later.
-- **Before the archive exists, each channel has a hand-fed stand-in.** `sync`'s committed snapshot stands in
-  for the projection stream (ADR-0007); `media`'s on-disk directory, laid out as the Access bucket will be,
-  stands in for the bucket. Each sits behind the port and adapter the real channel will stand behind, is fed
-  by hand from today's systems, and records its provenance. Before the archive exists, changing a project's
-  presentation means editing a file in the stand-in and rebuilding; afterwards it means a deposit. That cost is
-  accepted.
+- **Before the archive exists, each channel has a stand-in.** `sync`'s committed snapshot stands in for the
+  projection stream (ADR-0007); `media`'s on-disk directory, laid out as the Access bucket will be, stands in
+  for the bucket. Each sits behind the port and adapter the real channel will stand behind and is fed from
+  today's systems. `sync`'s is fed by hand; `media`'s by hand, or by the VRE bridge (P-DEV-301), which writes a
+  project's files from the VRE. Each directory has one writer: a person for the committed directory, the bridge
+for a server's. Either way the stand-in records each file's provenance. A project's directory
+  holds its files under their stored names; a project the bridge writes also holds the file manifest, which
+  names the VRE resource each file came from, and the Ready token, written last, which says the project is
+  complete. A reader learns of both only through its port. Before the archive exists, changing a project's
+  presentation means changing a file in the stand-in, by hand or in the VRE, and rebuilding; afterwards it
+  means a deposit. That cost is accepted.
 
 ## Considered Options
 
@@ -89,13 +98,16 @@ phrased so a violation is describable in code:
   `sync`'s `SYNC_DATA_DIR`.
 - ADR-0013 records the authorisation decision behind the presentation clause: the archive owns the policy
   data, one shared function decides, and each capability enforces in its own query layer.
+- DaTEI deviates for now from the clauses on rights, configuration versions, change subscription and asset
+  serving; ADR-0009 lists each deviation with its end.
 
 Not yet in code: a configuration carries no format identifier or schema version, and no capability reads
 version N and N-1 (not scheduled).
-Not yet in code: neither port serves rights, no read model stores them per row, and no presenter filters on
+Not yet in code: no port serves rights, no read model stores them per row, and no presenter filters on
 them; the port against `sync` and CPE's store carry no rights (not scheduled).
-Not yet in code: neither port carries a change subscription, the stand-ins have no lever, and no reader
+Not yet in code: no port carries a change subscription, the stand-ins have no lever, and no reader
 rebuilds one named project; a restart is the rebuild (DEV-7622).
+Not yet in code: the VRE bridge does not exist, so `media`'s stand-in is written by hand only (P-DEV-301).
 Not yet in code: CPE's rebuild test runs against `FakeArchiveProjection` only, with curated values passed in by
 hand; no rebuild test runs against a fake of the bytes port (not scheduled).
 Not yet in code: CPE reads Incunabula's `assets/` from `areas/access/cpe/projects/incunabula/` at activation

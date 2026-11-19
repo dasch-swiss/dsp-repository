@@ -15,20 +15,25 @@ areas sit together under `areas/`, so the root shows the two kinds of thing the 
 contexts, and what they share or what serves them.
 
 - `areas/deposit/` — the producer side: where a depositing project team creates and edits its data and metadata
-  and RDU reviews it before anything is submitted to the archive. Today identity and the metadata editor. The
-  name is "Deposit", not "Ingest": "Deposit" is the producer-side vocabulary the platform already uses
-  (depositor, Deposition, DepositAgreement), while "Ingest" is an OAIS functional entity inside the archive, so
-  naming the producer side after it puts the wrong context's word on the door.
+  and RDU reviews it before anything is submitted to the archive. Today identity, the metadata editor and the
+  VRE bridge, which feeds the Access Area's stand-ins from the VRE until the archive exists
+  (`areas/deposit/ADR-0005`). The name is "Deposit", not "Ingest": "Deposit" is the producer-side vocabulary
+  the platform already uses (depositor, Deposition, DepositAgreement), while "Ingest" is an OAIS functional
+  entity inside the archive, so naming the producer side after it puts the wrong context's word on the door.
 - `areas/archive/` — the OAIS archive, working name **Spycherli**: ingest, archival storage and the supporting
   functional entities; the sealed heart of the platform. It holds its `CONTEXT.md` and no crate.
 - `areas/access/` — the consumer side, OAIS Access: the services that produce dissemination packages for
-  consumers. Today DPE, the Discovery and Presentation Environment, `sync` and CPE, the Configurable
+  consumers. Today DPE, the Discovery and Presentation Environment, `sync`, `media` and CPE, the Configurable
   Presentation Environment; the further read-side capabilities are listed in ADR-0003.
 - `shared/` — `shared-{role}` crates used by more than one area, or decided to be: the record that creates a
   shared crate with one consuming area names the second. Today `shared-metadata` (the research-metadata
   contract), `shared-telemetry` (the browser-beacon collector), `shared-rate-limit` (the client-IP key
   every per-IP rate limit buckets on), `shared-fair` (the FAIR exposure engine, whose Deposit-Area
-  consumer ADR-0005 names) and `shared-datastar` (typed Datastar actions).
+  consumer ADR-0005 names), `shared-datastar` (typed Datastar actions), `shared-names` (the name rules
+  `is_shortcode` and `is_file_name`, by which the VRE bridge writes and `sync`, `media` and CPE read; they
+  outlive the stand-ins) and `shared-stand-in` (the stand-in directory below: its layout and the Ready token's
+  types, which the VRE bridge and the readers both depend on, while only the write and replace code lives in
+  `vre-bridge-*`; it ends with the stand-ins).
 - `mosaic/` — the design system, a component library plus its playground, used by the hypermedia servers of
   both areas (CPE keeps its own component library, ADR-0007).
 - `vitrinli/` — the media engine (IIIF Image API rendering, range-served downloads, derivation of Service
@@ -62,7 +67,10 @@ Between areas, the rules are:
 - **No crate under one area depends on a crate under another area.** Areas integrate over the wire, never by
   Rust import. Until the archive exists, the Deposit Area publishes to the Access Area through this repository:
   the editor's pull-request run turns approved records into pull requests against the committed project files under
-  `areas/access/dpe/server/data`, which is the one file path either area names in the other's tree. In the
+  `areas/access/dpe/server/data`, and the VRE bridge writes the stand-ins of `sync` and `media` into a directory
+  that `deposit-server` and `access-server` share by mount (ADR-0012). These are the two paths that cross the
+  areas, and the only ones; the `just check` script that pins the 0803 `media` fixture byte for byte to the
+  bridge's shipped inputs belongs to the second. Both end when the archive exists. In the
   target design, the Deposit Area submits packages to Spycherli over an intent protocol (register an intent with
   a declared manifest, upload to a quarantine bucket, complete, validate), and Spycherli feeds every Access-Area
   service with pointer messages on a message bus plus immutable objects in object storage.
@@ -70,8 +78,9 @@ Between areas, the rules are:
   dependency arrow is `areas → shared, mosaic, vitrinli, chischtli`.
 - **Each service owns its durable state and is its sole reader and writer** — the editor's SQLite database,
   DPE's data directory and in-process caches, Spycherli's sealed store. A cross-area reference is an opaque
-  identifier (a shortcode, an ARK), resolved through the owning area's published surface. Inside an area,
-  ADR-0003 applies the same rule per capability.
+  identifier (a shortcode, an ARK), resolved through the owning area's published surface. The stand-in directory
+  is the one exception: the VRE bridge is its only writer, and `sync` and `media` each read only their own
+  subtree of it. Inside an area, ADR-0003 applies the same rule per capability.
 - **A concept shared by two areas lives in `shared/`** (`shared-metadata` is the research-metadata contract both
   speak); a shape one area happens to need from another does not. Share concepts, never shapes.
 - **Preservation storage is exclusive to the Archive Area.** No other area reaches into the sealed store, its
@@ -130,10 +139,17 @@ scheduled).
 Not yet in code: `vitrinli/` and `chischtli/` hold only a `CONTEXT.md`; both engines live in their own
 repositories (not scheduled).
 Not yet in code: the Archive Area has no crate, so the Deposit Area publishes through pull requests against
-`areas/access/dpe/server/data` rather than to Spycherli (not scheduled).
+`areas/access/dpe/server/data` and through the stand-in directory rather than to Spycherli (not scheduled).
 Not yet in code: DPE's terms are in `areas/access/CONTEXT.md`, not in `areas/access/dpe/CONTEXT.md` (not
 scheduled).
 Not yet in code: dsp-cli calls DSP-API only; no area modulith serves it (not scheduled).
+Not yet in code: no stand-in directory is shared by mount; `sync`'s and `media`'s data is carried in
+`access-server`'s image (DEV-7514).
+Not yet in code: `shared-stand-in` and the VRE bridge do not exist (P-DEV-301).
+Not yet in code: no `just check` script pins the 0803 `media` fixture to the bridge's shipped inputs
+(P-DEV-301).
+Not yet in code: `shared-names` does not exist; `is_shortcode` and `is_file_name` are in `cpe-ports`
+(P-DEV-301).
 
 Enforced by: Bazel `visibility` under ADR-0001 for crate edges (structure): every first-party target lists its
 consumers, no grant crosses `areas/access` and `areas/deposit` except the published corpus
@@ -141,7 +157,11 @@ consumers, no grant crosses `areas/access` and `areas/deposit` except the publis
 area target grants a `shared-*` or `mosaic-*` crate, and nothing grants dsp-cli an area or `shared-*` crate; a new
 grant is one line in the provider's BUILD file and is reviewed there; `check-capability-deps.sh`, run by
 `just check`, for no `//visibility:public` in a `BUILD.bazel` under `areas/`, `shared/`, `modules/` or
-`dsp-cli/`, which would undo every grant (static-analysis); `check-shared-paths.sh` for paths from a shared
-crate into an area, which no dependency edge shows (static-analysis); `cargo publish --dry-run --locked --manifest-path dsp-cli/Cargo.toml` in
-`check.yml` for dsp-cli's publishing manifest (static-analysis); review for state ownership, shared concepts and the
-archive's storage.
+`dsp-cli/`, which would undo every grant (static-analysis); the stand-in directory's single writer by
+the write and replace code living only in `vre-bridge-*` crates, so that no other crate has it (structure), and
+by no other code writing the directory with `std::fs` (review); `access-server` mounting the directory
+read-only is deployment-level, in
+ops-deploy, and not checked in this repository; `check-shared-paths.sh` for paths from a shared crate into an
+area, which no dependency edge shows (static-analysis); `cargo publish --dry-run --locked --manifest-path
+dsp-cli/Cargo.toml` in `check.yml` for dsp-cli's publishing manifest (static-analysis); review for state
+ownership, shared concepts and the archive's storage.

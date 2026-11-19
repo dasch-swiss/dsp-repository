@@ -8,8 +8,8 @@ wire (ADR-0002).
 
 The capabilities:
 
-- The Deposit Area: `identity` and `editor` (`areas/deposit/ADR-0004`); the data-model creator, data creation
-  and the Deposit Area's `media` are planned beside them.
+- The Deposit Area: `identity`, `editor` and the VRE bridge (`areas/deposit/ADR-0004`, `areas/deposit/ADR-0005`);
+  the data-model creator, data creation and the Deposit Area's `media` are planned beside them.
 - The Access Area: DPE, `sync` and CPE (ADR-0007), DaTEI (ADR-0009) and the Access Area's `media` (ADR-0012);
   `profile`, the SPARQL endpoint and the admin view are planned beside them.
 - The Archive Area: Spycherli.
@@ -62,8 +62,9 @@ Within a capability, the crates are `{capability}-{role}`. The general roles:
 - `web` — views and, where the capability has no `server` crate, its routes and handlers. It may also depend on
   its area's shell and on `mosaic-tiles`. Beside a `server` crate it holds views only and uses no web framework.
 - `ports` — the ports the capability declares as a consumer.
-- `server` — the capability's host crate, holding its routes, configuration and startup behind its facade. It
-  may also depend on its area's shell and on `mosaic-tiles`.
+- `server` — the capability's host crate, holding its configuration, startup and, where the capability has any,
+  its routes behind its facade. It may also depend on its area's shell and on `mosaic-tiles`. A capability
+  without routes and without a `web` crate (the VRE bridge) has a `server` crate as its entry crate.
 - `api-*` — a machine-facing protocol surface of the capability (`dpe-api-oai`), depending on the capability's
   `core` and on `shared-*` crates alone.
 
@@ -80,11 +81,12 @@ literals, a coupling recorded, not compiled.
 
 **The composition root is wiring.** `areas/<area>/server` constructs each provider's adapters and injects them
 into the consumers at startup, and holds no adapter logic. It depends on each capability's entry crate — the
-`server` crate where the capability has one (DPE, CPE), its `web` crate where it has none (`identity`,
-`editor`) — and on a capability's `store` and `ports` crates only to construct and inject adapters. It never
-depends on a `core` or `api-*` crate, nor on the `web` crate of a capability that has a `server` crate;
-the dependencies of its `testonly` targets are held to the same rule. The entry crate exposes one facade that owns the capability's
-configuration, startup and router (`Dpe`, `Cpe`, `Identity`, `Editor`), so the root names no domain type.
+`server` crate where the capability has one (DPE, CPE, the VRE bridge), its `web` crate where it has none
+(`identity`, `editor`) — and on a capability's `store` and `ports` crates only to construct and inject adapters.
+It never depends on a `core` or `api-*` crate, nor on the `web` crate of a capability that has a `server` crate;
+the dependencies of its `testonly` targets are held to the same rule. The entry crate exposes one facade that owns the
+capability's configuration, startup and, where it has routes, its router (`Dpe`, `Cpe`, `Identity`, `Editor`,
+`VreBridge`), so the root names no domain type.
 
 **Shared engines are libraries behind capabilities, never capabilities of their own.** Two exist (ADR-0002), and
 the same rule holds for both: the engine is a root-level library with no routes, no authentication and no
@@ -151,8 +153,10 @@ a second copy of the projection (ADR-0008).
 - **The shell in the composition root** — rejected: the handlers that need it live in the capabilities' web
   crates, so the root would either implement a shell port per consumer, which is view code at the composition
   root, or rewrite responses in a layer.
-- **A `server` host crate per Deposit capability, the root depending on the hosts only, as in the Access Area**
-  — rejected: it adds two crates in a role whose only content would be routes the `web` crate already holds.
+- **A `server` host crate beside the `web` crate of every Deposit capability, the root depending on the hosts
+  only, as in the Access Area** — rejected: for `identity` and `editor` it adds two crates whose only content
+  would be routes the `web` crate already holds. A capability with no `web` crate, such as the VRE bridge, takes
+  `server` as its entry crate instead.
 - **Chischtli as a shared service (one triplestore process per area, reached over a socket)** — not chosen for
   the layout: whether the engine runs in-process or as a supervised sidecar of the area's binary is an
   operational choice inside the area's modulith and does not change who owns which graph or who may depend on
@@ -188,11 +192,14 @@ Not yet in code: the data-model creator, data creation, `profile`, the SPARQL en
 Spycherli have no crate (not scheduled).
 Not yet in code: DaTEI has no crate here; its engine and presenter are in `dsp-incubator/da-tei` (DEV-7549).
 Not yet in code: `access-server` does not mount DaTEI (DEV-7574).
-Not yet in code: the Deposit Area has no `media` capability; the Access Area's `media` is its stand-in,
-`media-store` over the directory `MEDIA_DATA_DIR` names (ADR-0012), with no routes and no authorisation check;
-and Vitrinli is not in this repository (not scheduled).
-Not yet in code: `sync` serves a committed N-Quads snapshot through `sync-store`, not a Chischtli projection
-rebuilt from snapshot plus replay (not scheduled).
+Not yet in code: the Deposit Area has no `media` capability (not scheduled).
+Not yet in code: the Access Area's `media` is its stand-in, `media-store` over the directory `MEDIA_DATA_DIR`
+names (ADR-0012), with no routes and no authorisation check (not scheduled).
+Not yet in code: Vitrinli is not in this repository (not scheduled).
+Not yet in code: `sync` serves an on-disk snapshot through `sync-store`, not a Chischtli projection rebuilt from
+snapshot plus replay (not scheduled).
+Not yet in code: the VRE bridge has no crate (P-DEV-301).
+Not yet in code: `sync-store` and `media-store` read files committed to this repository (P-DEV-301).
 Not yet in code: DPE reads its own data directory (`areas/access/dpe/server/data`) through `dpe-core`, not
 through a port against `sync` (not scheduled).
 

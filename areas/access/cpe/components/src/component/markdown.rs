@@ -41,7 +41,7 @@ pub fn render_markdown_fragment(base: &Base, src: &str) -> Markup {
 /// shapes. A value is archive data, not narrative: it gets no base.
 pub(crate) fn render_richtext_fragment(src: &str) -> Markup {
     let rewritten = events(src).map(|event| match event {
-        Event::Start(Tag::Link { link_type, dest_url, title, id }) if !is_safe_external_url(&dest_url) => {
+        Event::Start(Tag::Link { link_type: _, dest_url, title, id }) if !is_safe_external_url(&dest_url) => {
             Event::Start(Tag::Link { link_type: LinkType::Inline, dest_url: "#".into(), title, id })
         }
         Event::Start(Tag::Image { link_type, dest_url, title, id }) if !is_safe_external_url(&dest_url) => {

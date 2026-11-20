@@ -355,6 +355,25 @@ fn test_copy_tree_copies_nested_files_and_counts_sizes() {
 }
 
 #[test]
+fn test_copy_file_copies_under_its_name_and_refuses_a_symlink() {
+    let (dir, subtrees) = subtrees();
+    let src = dir.path().join("download-0");
+    fs::write(&src, b"<TEI/>").expect("write");
+    let link = dir.path().join("link");
+    std::os::unix::fs::symlink(&src, &link).expect("symlink");
+    let mut writer = subtrees.begin(SC, generation(GEN_A)).expect("begin");
+
+    writer.copy_file(Subtree::Media, "Abc.xml", &src).expect("copy");
+    let refused = writer.copy_file(Subtree::Media, "Def.xml", &link);
+
+    let generation_root = subtrees.root(Subtree::Media).join(SC).join(GEN_A);
+    assert_eq!(fs::read(generation_root.join("Abc.xml")).expect("copied"), b"<TEI/>");
+    assert_eq!(writer.sizes().media, 6);
+    assert!(matches!(refused, Err(StoreError::NotRegular(_))), "{refused:?}");
+    assert!(!generation_root.join("Def.xml").exists());
+}
+
+#[test]
 fn test_copy_tree_source_with_symlink_refused_and_nothing_written() {
     let (dir, subtrees) = subtrees();
     let src = dir.path().join("inputs");

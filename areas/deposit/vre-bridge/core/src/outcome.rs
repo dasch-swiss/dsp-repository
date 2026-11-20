@@ -23,8 +23,11 @@ pub enum RefusalReason {
     PublicGuard,
     /// The dump breaks the interim format's closed world.
     ClosedWorld,
-    /// The server answered `401` or `403`.
+    /// The server answered `401` or `403`, to the export or to an anonymous file download.
     Unauthorized,
+    /// A file the project's file mapping names is not a current, public text file or still
+    /// image of the dump, or its stored name is not usable.
+    FileMapping,
 }
 
 /// Why the refresh could not finish.
@@ -92,6 +95,7 @@ impl RefusalReason {
             Self::PublicGuard => "public-guard",
             Self::ClosedWorld => "closed-world",
             Self::Unauthorized => "unauthorized",
+            Self::FileMapping => "file-mapping",
         }
     }
 }
@@ -141,6 +145,7 @@ mod tests {
             (Outcome::Refused(RefusalReason::PublicGuard), "refused", Some("public-guard")),
             (Outcome::Refused(RefusalReason::ClosedWorld), "refused", Some("closed-world")),
             (Outcome::Refused(RefusalReason::Unauthorized), "refused", Some("unauthorized")),
+            (Outcome::Refused(RefusalReason::FileMapping), "refused", Some("file-mapping")),
             (Outcome::Failed(FailureReason::Busy), "failed", Some("busy")),
             (Outcome::Failed(FailureReason::Unreachable), "failed", Some("unreachable")),
             (Outcome::Failed(FailureReason::Timeout), "failed", Some("timeout")),

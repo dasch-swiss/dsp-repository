@@ -54,6 +54,25 @@ async fn test_from_raw_without_output_locations_is_inactive_and_start_spawns_not
 }
 
 #[test]
+fn test_from_raw_with_a_file_mapping_and_no_iiif_base_for_its_server_is_inactive() {
+    let _ = rustls::crypto::ring::default_provider().install_default();
+    let dirs = Dirs::new();
+    std::fs::create_dir(dirs.inputs.path().join("0001")).unwrap();
+    std::fs::write(dirs.inputs.path().join("0001/file-mapping.json"), "{}").unwrap();
+    let with_base = RawSettings {
+        iiif_bases: Some("prod=https://iiif.example.test".to_owned()),
+        ..dirs.raw("0001=prod")
+    };
+
+    let reason = reason(&from_raw(dirs.raw("0001=prod")));
+
+    assert!(reason.contains("EDITOR_VRE_BRIDGE_IIIF_BASES"), "{reason}");
+    assert!(reason.contains("0001"), "{reason}");
+    assert!(from_raw(with_base).is_active());
+    assert!(from_raw(dirs.raw("0803=prod")).is_active());
+}
+
+#[test]
 fn test_from_raw_with_the_work_dir_inside_an_output_location_is_inactive() {
     let dirs = Dirs::new();
     let inside = dirs.sync.path().join("work");

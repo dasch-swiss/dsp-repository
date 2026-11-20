@@ -307,7 +307,12 @@ impl Env {
             .map(|(id, s)| {
                 let identity =
                     ServiceIdentity::new(&self.settings.service_name, &s.key_id, s.signing_key.expose()).unwrap();
-                (id.clone(), Server::new(&s.base_url, identity, timeouts).unwrap())
+                let server = Server::new(&s.base_url, identity, timeouts).unwrap();
+                let server = match &s.iiif_base {
+                    Some(base) => server.with_file_base(base).unwrap(),
+                    None => server,
+                };
+                (id.clone(), server)
             })
             .collect();
         assert_eq!(vre.len(), self.servers.len());
@@ -901,6 +906,11 @@ async fn test_outcome_lines_name_the_refresh_and_no_log_holds_dump_content_a_key
         assert!(!text.contains(leak), "the logs hold {leak:?}");
     }
 }
+
+// ---------------------------------------------------------------- DaTEI's files
+
+#[path = "refresh_datei_tests.rs"]
+mod datei;
 
 // ---------------------------------------------------------------- names and the sweep
 

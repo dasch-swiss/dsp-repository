@@ -240,6 +240,59 @@ fn test_snapshot_malformed_token_returns_unavailable() {
     );
 }
 
+// Provenance
+
+#[test]
+fn test_provenance_known_project_equals_its_tokens_provenance() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(&dir, BOOK_0803);
+
+    let provenance = LiveArchiveProjection::new(dir.path())
+        .provenance("0803")
+        .expect("a valid token is read")
+        .expect("0803 has a token");
+
+    assert_eq!(
+        provenance,
+        cpe_ports::Provenance {
+            generation: GENERATION.to_string(),
+            as_of: "2026-11-20T01:02:03Z".to_string(),
+            server: "prod".to_string(),
+            interim_format_version: 1,
+            transformation_version: 1,
+            inputs_digest: format!("sha256:{}", "0".repeat(64)),
+        }
+    );
+}
+
+#[test]
+fn test_provenance_project_without_token_is_none() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_snapshot(dir.path(), "0803", GENERATION, BOOK_0803);
+    let projection = LiveArchiveProjection::new(dir.path());
+
+    for shortcode in ["0803", "0804", "../x"] {
+        assert_eq!(projection.provenance(shortcode).expect(shortcode), None, "{shortcode}");
+    }
+}
+
+#[test]
+fn test_provenance_malformed_token_returns_unavailable() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(&dir, BOOK_0803);
+    fs::write(dir.path().join("0803/.ready"), "{}\n").expect("overwrite the token");
+
+    let error = LiveArchiveProjection::new(dir.path())
+        .provenance("0803")
+        .expect_err("a malformed token has no provenance");
+
+    let source = expect_unavailable(&error);
+    assert!(
+        matches!(source, SnapshotError::Token { source: TokenError::Invalid(_), .. }),
+        "{source:?}"
+    );
+}
+
 #[cfg(unix)]
 #[test]
 fn test_snapshot_symlinked_project_directory_returns_unavailable() {

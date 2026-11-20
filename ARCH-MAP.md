@@ -157,12 +157,12 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   adapters of CPE's two ports over `SYNC_DATA_DIR` and `MEDIA_DATA_DIR` and has CPE activate over them in the
   background, after the listener is bound.
 - **Key entities:** `app`, `assemble`, `mount_cpe`, `name_span_by_cpe_route`, `activate_in_background`, `serve`,
-  `DEFAULT_SYNC_DATA_DIR`, `DEFAULT_MEDIA_DATA_DIR`, `data_dir`, `parse_hidden_projects`, `shutdown_signal`,
+  `DEFAULT_SYNC_DATA_DIR`, `DEFAULT_MEDIA_DATA_DIR`, `data_dir`, `sync_poll_interval`, `parse_hidden_projects`, `shutdown_signal`,
   `init_otel`, `init_pyroscope`, `TELEMETRY_NAME`, `is_allowed_healthcheck_url`
 - **Public interface:** the `access-server serve | validate <data_dir> | healthcheck <url>` CLI;
   `/healthz` and `POST /telemetry/collect` (untraced), every route DPE's router carries, and every
   path under `Cpe::base()` (`CPE_BASE`, `/cpe` in the image), which is CPE's. `DPE_SITE_ADDR`,
-  `SYNC_DATA_DIR`, `MEDIA_DATA_DIR` and `ACCESS_HIDDEN_PROJECTS` are read here (an empty data directory variable is unset;
+  `SYNC_DATA_DIR`, `SYNC_POLL_SECS`, `MEDIA_DATA_DIR` and `ACCESS_HIDDEN_PROJECTS` are read here (an empty data directory variable is unset;
   the Hidden projects' shortcodes are handed to each capability that presents projects, today CPE's
   `CpeConfig::hidden_shortcodes`); `DPE_*` and `CPE_*` by the capabilities' own configurations. The
   Docker image stays `daschswiss/dpe`.
@@ -1195,7 +1195,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   data, and no code; until `media` serves assets at request time, it also holds its `assets/`. A
   hook is a module of the builder and a `HOOKS` row, a project component a `PROJECT_RENDERERS` row (ADR-0007).
 - **Key entities:** `ArchiveProjection`, `ProjectSnapshot`, `Resource`, `Annotation`,
-  `Motivation`, `DataArk`, `DATA_ARK_PREFIX`, `FakeArchiveProjection`,
+  `Motivation`, `DataArk`, `DATA_ARK_PREFIX`, `Provenance`, `ChangeListener`, `FakeArchiveProjection`,
   `contract::violations`, and the bytes port `DepositedFiles`, `FilesError`, `FakeDepositedFiles` and its name
   rules `is_shortcode` and `is_file_name` (from `shared-names`, re-exported); an annotation (Region, LinkObj) is an ordinary `Resource`, found by
   `Resource.annotation`, never by `class`; every `Resource` carries its plain data ARK, whose
@@ -1459,7 +1459,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   The snapshot is interim-DAO N-Quads in an interim format version `READABLE` lists
   (ADR-0007, `areas/deposit/vre-bridge/lift/FORMAT.md`), read with a strict `oxttl` parse. DPE keeps reading its corpus
   directly; moving it onto `sync` is its own decision.
-- **Key entities:** `LiveArchiveProjection`, `READABLE`, `SnapshotError`, `InvalidFact`,
+- **Key entities:** `LiveArchiveProjection`, `DEFAULT_POLL_INTERVAL`, the Ready-token poll (`poll.rs`), `READABLE`, `SnapshotError`, `InvalidFact`,
   `ArkError` (in `sync-store`; a resource IRI with no data ARK is `InvalidFact::NoDataArk`);
   (design vocabulary) Projection (`chischtli/CONTEXT.md`), Data product
   (`areas/archive/CONTEXT.md`)
@@ -1494,7 +1494,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   projection stream (ADR-0003, ADR-0008: the Access bucket is `media`'s channel, and `sync`
   never reads it); serves every resource with its rights attached and never pre-filters for a consumer (ADR-0012, ADR-0013;
   **review**; not yet in code, the port carries no rights); announces a project's new sequence through the port, and until the stream exists owns the
-  Ready-token poll that makes its adapter announce (ADR-0012; not yet in code, DEV-7622); maps its
+  Ready-token poll that makes its adapter announce (ADR-0012; `sync-store`'s `poll.rs`, a thread that
+  `subscribe` starts and dropping the adapter stops); serves a project's provenance from its token; maps its
   data to each consumer's DTOs, archive-shaped, and holds no presentation remodelling (ADR-0007's guardrail);
   it serves no deposited file, a project's curation included (ADR-0012; **review**); readers reach the projection only through the
   ports it implements, never by opening its store; a reader's tests may build `sync-store`'s adapter,
@@ -1520,7 +1521,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Durable state:** the archive projection, **single writer** `sync`; disposable, rebuilt from
   snapshot plus replay, never repaired in place (target design). Today the `sync` stand-in subtree: one directory per project with
   its Ready token and its generations, **single writer** the VRE bridge (`areas/deposit/ADR-0005`; not yet in
-  code, P-DEV-301); `sync-store` only reads it, on every call, and holds nothing in between. The committed
+  code, P-DEV-301); `sync-store` only reads it, on every call, and holds nothing in between but the poll's
+  last-seen tokens, in memory. The committed
   fixture under `areas/access/sync/data/` is in that layout: its `snapshot.nq` was written by `dao-lift` on a
   VRE dump and committed unedited, its token by hand (**review**). The test oracle `0803-arks.txt`, **single writer**
   the extraction `PROVENANCE` gives over the incubator's `data.sql`, never generated from `ark.rs`
@@ -1547,7 +1549,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   same port. Not built: Vitrinli, the tables, the routes (so CPE serves a project's `assets/` from its
   folder until then), and the adapter of DaTEI's port `DateiFiles` (DEV-7574).
 - **Key entities:** `LiveDepositedFiles` (in `media-store`, CPE's `DepositedFiles` over the stand-in
-  directory); (design vocabulary) Stand-in directory, Anonymous consumer (`areas/access/media/CONTEXT.md`),
+  directory, its provenance the Ready token's); (design vocabulary) Stand-in directory, Anonymous consumer (`areas/access/media/CONTEXT.md`),
   Media capability, Access bucket, Byte source, Authorisation check (Vitrinli's traits); later the
   `Live<Port>` adapter for `datei/ports`
 - **Public interface:** nothing to a browser yet. `media-store`'s `LiveDepositedFiles` for CPE's bytes

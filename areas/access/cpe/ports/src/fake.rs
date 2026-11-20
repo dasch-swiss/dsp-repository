@@ -1,18 +1,33 @@
 use std::collections::BTreeMap;
-use std::io;
-use std::sync::{Mutex, PoisonError};
+use std::sync::{Arc, Mutex, PoisonError};
+use std::{fmt, io};
 
 use crate::{
-    is_file_name, is_shortcode, ArchiveProjection, DepositedFiles, FilesError, ProjectSnapshot, ProjectionError,
+    is_file_name, is_shortcode, ArchiveProjection, ChangeListener, DepositedFiles, FilesError, ProjectSnapshot,
+    ProjectionError, Provenance,
 };
 
 /// An in-memory [`ArchiveProjection`] for CPE's tests.
 ///
 /// Serves each registered snapshot exactly as given, every `Vec` in its original order, and can
 /// simulate an unknown or an unavailable project. The last registration for a shortcode wins.
+/// Provenance is served as registered, independently of the snapshots, and nothing is announced
+/// until a test calls [`announce`](Self::announce). A clone shares its subscribed listeners.
 #[derive(Debug, Clone, Default)]
 pub struct FakeArchiveProjection {
     projects: BTreeMap<String, Entry>,
+    provenance: BTreeMap<String, Provenance>,
+    listeners: Listeners,
+}
+
+#[derive(Clone, Default)]
+struct Listeners(Arc<Mutex<Vec<Arc<dyn ChangeListener>>>>);
+
+impl fmt::Debug for Listeners {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let count = self.0.lock().unwrap_or_else(PoisonError::into_inner).len();
+        write!(f, "Listeners({count})")
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -35,6 +50,21 @@ impl FakeArchiveProjection {
         self.projects.insert(shortcode.to_string(), Entry::Unavailable);
         self
     }
+
+    /// Answer [`ArchiveProjection::provenance`] for `shortcode` with `provenance`.
+    #[must_use]
+    pub fn with_provenance(mut self, shortcode: &str, provenance: Provenance) -> Self {
+        self.provenance.insert(shortcode.to_string(), provenance);
+        self
+    }
+
+    /// Tell every subscribed listener that `shortcode` changed, on the caller's thread.
+    pub fn announce(&self, shortcode: &str) {
+        let listeners = self.listeners.0.lock().unwrap_or_else(PoisonError::into_inner).clone();
+        for listener in listeners {
+            listener.changed(shortcode);
+        }
+    }
 }
 
 impl ArchiveProjection for FakeArchiveProjection {
@@ -45,6 +75,14 @@ impl ArchiveProjection for FakeArchiveProjection {
             None => Err(ProjectionError::UnknownProject { shortcode: shortcode.to_string() }),
         }
     }
+
+    fn provenance(&self, shortcode: &str) -> Result<Option<Provenance>, ProjectionError> {
+        Ok(self.provenance.get(shortcode).cloned())
+    }
+
+    fn subscribe(&self, listener: Arc<dyn ChangeListener>) {
+        self.listeners.0.lock().unwrap_or_else(PoisonError::into_inner).push(listener);
+    }
 }
 
 /// An in-memory [`DepositedFiles`] for CPE's tests.
@@ -54,10 +92,12 @@ impl ArchiveProjection for FakeArchiveProjection {
 /// [`with_unavailable`](Self::with_unavailable) makes the project available again with that file
 /// alone, and `with_unavailable` after a file drops the project's files. A shortcode that fails
 /// [`is_shortcode`] and a name that fails [`is_file_name`] are refused whatever was registered,
-/// as [`DepositedFiles::file`] requires of every adapter.
+/// as [`DepositedFiles::file`] requires of every adapter. Provenance is served as registered,
+/// independently of the files.
 #[derive(Debug, Default)]
 pub struct FakeDepositedFiles {
     projects: BTreeMap<String, Project>,
+    provenance: BTreeMap<String, Provenance>,
     requests: Mutex<Vec<(String, String)>>,
 }
 
@@ -91,6 +131,13 @@ impl FakeDepositedFiles {
     #[must_use]
     pub fn with_unavailable_file(self, shortcode: &str, name: &str) -> Self {
         self.with_entry(shortcode, name, FileEntry::Unavailable)
+    }
+
+    /// Answer [`DepositedFiles::provenance`] for `shortcode` with `provenance`.
+    #[must_use]
+    pub fn with_provenance(mut self, shortcode: &str, provenance: Provenance) -> Self {
+        self.provenance.insert(shortcode.to_string(), provenance);
+        self
     }
 
     /// Every `(shortcode, name)` asked for, in order, refused names included.
@@ -133,6 +180,10 @@ impl DepositedFiles for FakeDepositedFiles {
                 None => Err(unknown_file()),
             },
         }
+    }
+
+    fn provenance(&self, shortcode: &str) -> Result<Option<Provenance>, FilesError> {
+        Ok(self.provenance.get(shortcode).cloned())
     }
 }
 
@@ -247,6 +298,67 @@ mod tests {
         let error = projection.snapshot("0803").unwrap_err();
 
         assert!(matches!(error, ProjectionError::Unavailable(_)), "{error:?}");
+    }
+
+    fn provenance(generation: &str) -> Provenance {
+        Provenance {
+            generation: generation.to_string(),
+            as_of: "2026-10-07T00:00:00Z".to_string(),
+            server: "prod".to_string(),
+            interim_format_version: 1,
+            transformation_version: 1,
+            inputs_digest: format!("sha256:{}", "0".repeat(64)),
+        }
+    }
+
+    #[derive(Default)]
+    struct Recording(Mutex<Vec<String>>);
+
+    impl ChangeListener for Recording {
+        fn changed(&self, shortcode: &str) {
+            self.0.lock().unwrap().push(shortcode.to_string());
+        }
+    }
+
+    #[test]
+    fn test_announce_reaches_every_subscribed_listener() {
+        let fake = FakeArchiveProjection::default().with_project(book_snapshot());
+        let first = Arc::new(Recording::default());
+        let second = Arc::new(Recording::default());
+        let projection: &dyn ArchiveProjection = &fake;
+        projection.subscribe(first.clone());
+        projection.subscribe(second.clone());
+
+        fake.announce("0803");
+        fake.announce("0804");
+
+        assert_eq!(*first.0.lock().unwrap(), ["0803", "0804"]);
+        assert_eq!(*second.0.lock().unwrap(), ["0803", "0804"]);
+    }
+
+    #[test]
+    fn test_provenance_registered_is_returned_and_unregistered_is_none() {
+        let fake = FakeArchiveProjection::default()
+            .with_project(book_snapshot())
+            .with_provenance("0803", provenance("20261007T000000Z-00000000"));
+        let projection: &dyn ArchiveProjection = &fake;
+
+        assert_eq!(
+            projection.provenance("0803").unwrap(),
+            Some(provenance("20261007T000000Z-00000000"))
+        );
+        assert_eq!(projection.provenance("0001").unwrap(), None);
+    }
+
+    #[test]
+    fn test_files_provenance_registered_is_returned_and_unregistered_is_none() {
+        let fake = FakeDepositedFiles::default()
+            .with_file("0803", "config.kdl", KDL)
+            .with_provenance("0803", provenance("20261007T000000Z-00000000"));
+        let files: &dyn DepositedFiles = &fake;
+
+        assert_eq!(files.provenance("0803").unwrap(), Some(provenance("20261007T000000Z-00000000")));
+        assert_eq!(files.provenance("0001").unwrap(), None);
     }
 
     /// Bytes that are not UTF-8, so the fake cannot be decoding or re-encoding them.

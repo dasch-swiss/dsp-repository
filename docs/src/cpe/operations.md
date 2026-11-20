@@ -15,9 +15,9 @@ to CPE.
   three are in the image. Each project's store is built in memory from that data at every start; nothing is
   written to disk, and a restart leaves nothing behind.
 - **Refresh**: for now, a restart. A file edited under `MEDIA_DATA_DIR` or `SYNC_DATA_DIR` reaches CPE only
-  when `access-server` restarts, since activation runs once. Not yet in code: the ports announce change, `sync`
-  (DEV-7622) and `media` (DEV-7938) each with a Ready-token poll that makes its adapter announce, and CPE
-  rebuilds the one project named, with no endpoint of its own (ADR-0012).
+  when `access-server` restarts, since activation runs once. `sync`'s port can announce a project whose Ready token
+  changed (`SYNC_POLL_SECS`), but CPE does not subscribe to it yet (DEV-7622). Not yet in code: `media`'s port
+  announces change (DEV-7938), and CPE rebuilds the one project named, with no endpoint of its own (ADR-0012).
 - **Static files**: CPE's stylesheets, scripts and logos are compiled into the binary and served at
   `/cpe/<project id>/_static/…`, and at `/cpe/_static/…` for the overview and CPE's not-found page; a
   project's own files at `/cpe/<project id>/_assets/…`.
@@ -28,7 +28,8 @@ The five variables (`CPE_BASE`, `CPE_PROJECTS_DIR`, `CPE_PUBLIC_ORIGIN`, `SYNC_D
 in the [environment table](../dpe/operations.md#environment-variables) of DPE Operations. The image sets all but
 `CPE_PUBLIC_ORIGIN`. The three `CPE_*` values can also come from a `cpe.toml` in the working directory; the
 environment wins. A sixth, `ACCESS_HIDDEN_PROJECTS`, is in the same table: `access-server` reads it and hands
-it to CPE, which honours it but never reads it, and it cannot come from `cpe.toml`.
+it to CPE, which honours it but never reads it, and it cannot come from `cpe.toml`. A seventh, `SYNC_POLL_SECS`,
+how often `sync` polls its Ready tokens, is there too; the image does not set it.
 
 ### Hiding and un-hiding a project
 

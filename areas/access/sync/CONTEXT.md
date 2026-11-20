@@ -30,9 +30,26 @@ A project whose Ready token, `<root>/<shortcode>/.ready`, exists in the `sync` s
 nothing else. A shortcode `is_shortcode` refuses, or one without a token, is `UnknownProject`, whatever the
 subtree holds. A known project whose token cannot be read or parsed, names an unread format version or a
 generation that is not there, or whose snapshot cannot be served is `Unavailable`, never `UnknownProject`: a
-broken project is not a removed one. A project becomes known when the VRE bridge writes its token; nothing in
-`sync-store` lists projects.
+broken project is not a removed one. A project becomes known when the VRE bridge writes its token; only the
+Ready-token poll lists projects, and serving one never does.
 _Avoid_: active project (CPE's activation is its own), known list, known by directory.
+
+**Provenance**:
+What a project's current data was made from, as its Ready token records it (generation, as-of time, server,
+interim format and transformation versions, inputs digest), served by the port beside the snapshot and read from
+the token on every call. `media`'s port serves the same project's provenance from its own token, and the two are
+equal when both subtrees hold the same generation. A reader compares it and never interprets it.
+_Avoid_: version (the format and transformation versions are two of its fields), `PROVENANCE` (the committed
+fixture's file on where its bytes came from).
+
+**Ready-token poll**:
+How `sync` announces change before the projection stream exists (ADR-0012). The first `subscribe` on
+`LiveArchiveProjection` reads every known project's token as a baseline, then a thread of its own,
+`sync-ready-token-poll`, reads every token again each interval (`SYNC_POLL_SECS` in `access-server`, default 30 s)
+and tells each listener the shortcode of every project whose token appeared, changed or went. A token that cannot
+be read is skipped for the round and logged once when it starts and once when it stops failing. A poll, never a
+file-system notification: the subtree may be NFS. Dropping the adapter stops the thread.
+_Avoid_: watcher, inotify, reload, refresh (the bridge's; the poll only announces).
 
 **Committed fixture**:
 `data/`, project 0803 laid out as the VRE bridge writes it: its token and one generation, whose `snapshot.nq` is

@@ -14,6 +14,10 @@
 //! refused name with [`FilesError::UnknownFile`]. The two rules come from `shared-names` and are
 //! re-exported here.
 //!
+//! Both ports serve a project's [`Provenance`], and [`ArchiveProjection::subscribe`] tells a
+//! [`ChangeListener`] of a project whose data changed. Each has a default, so an adapter that
+//! records no provenance or announces nothing need not implement it.
+//!
 //! The crate depends on `std` and `shared-names` alone: a consumer's `ports` crate may reach only
 //! `std` and `shared-*` (ADR-0003). No type is `#[non_exhaustive]`, so CPE's fixtures can use
 //! struct literals and a new [`ValueKind`] fails CPE's compile instead of hiding behind a `_ =>`
@@ -21,6 +25,7 @@
 
 use std::error::Error;
 use std::fmt;
+use std::sync::Arc;
 
 pub mod contract;
 mod fake;
@@ -39,10 +44,41 @@ pub use snapshot::{
 /// Synchronous and dyn-compatible, so the composition root can hold an `Arc<dyn
 /// ArchiveProjection>`; CPE calls it inside `spawn_blocking`.
 pub trait ArchiveProjection: Send + Sync {
-    /// The project's current facts, whole. Every call is a full snapshot; the port
-    /// announces no change. A read that fails midway is [`ProjectionError::Unavailable`], never a
-    /// partial snapshot.
+    /// The project's current facts, whole. Every call is a full snapshot. A read that fails midway
+    /// is [`ProjectionError::Unavailable`], never a partial snapshot.
     fn snapshot(&self, shortcode: &str) -> Result<ProjectSnapshot, ProjectionError>;
+
+    /// What the project's current facts were made from. `Ok(None)`: the adapter records no
+    /// provenance for it (fakes, hand-fed data).
+    fn provenance(&self, _shortcode: &str) -> Result<Option<Provenance>, ProjectionError> {
+        Ok(None)
+    }
+
+    /// Calls `listener` for every project whose data appeared, changed or went, from now on: a
+    /// change made before `subscribe` returns is not announced. The default announces nothing.
+    fn subscribe(&self, _listener: Arc<dyn ChangeListener>) {}
+}
+
+/// What a project's current data was made from, as its Ready token records it. A reader compares
+/// and logs it, never interprets it: equal values name the same data.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Provenance {
+    pub generation: String,
+    /// The time the source's data is as of (RFC 3339, UTC).
+    pub as_of: String,
+    /// The id of the server the data came from.
+    pub server: String,
+    pub interim_format_version: u32,
+    pub transformation_version: u32,
+    pub inputs_digest: String,
+}
+
+/// Told the shortcode of a project whose data changed. Called on the announcing adapter's thread,
+/// so it hands the shortcode off and returns, reading the port on its own thread. It holds no
+/// handle on the adapter it subscribed to: the adapter owns its listeners, so such a handle keeps
+/// the adapter, and its poll, alive for good.
+pub trait ChangeListener: Send + Sync {
+    fn changed(&self, shortcode: &str);
 }
 
 /// Why [`ArchiveProjection::snapshot`] returned no snapshot.
@@ -87,7 +123,7 @@ impl Error for ProjectionError {
 ///
 /// It gives no file a meaning and refuses no file for want of a right: in the target each file
 /// comes with its rights attached and CPE decides at request time (ADR-0012, ADR-0013). Not yet in
-/// code: the rights, and the change the port announces (DEV-7622); today it announces none.
+/// code: the rights, and a subscription to the change `media` announces (DEV-7938).
 /// Synchronous and dyn-compatible like [`ArchiveProjection`]; CPE calls it inside
 /// `spawn_blocking`.
 pub trait DepositedFiles: Send + Sync {
@@ -95,6 +131,13 @@ pub trait DepositedFiles: Send + Sync {
     /// prefix. A `shortcode` that fails [`is_shortcode`] is [`FilesError::UnknownProject`], and
     /// otherwise a `name` that fails [`is_file_name`] is [`FilesError::UnknownFile`].
     fn file(&self, shortcode: &str, name: &str) -> Result<Vec<u8>, FilesError>;
+
+    /// What the project's current files were made from: the archive projection's provenance of the
+    /// same project when both serve the same data. `Ok(None)`: the adapter records no provenance
+    /// for it.
+    fn provenance(&self, _shortcode: &str) -> Result<Option<Provenance>, FilesError> {
+        Ok(None)
+    }
 }
 
 /// Why [`DepositedFiles::file`] returned no bytes.

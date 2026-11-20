@@ -345,5 +345,5 @@ them (ADR-0012).
 | — | Rights and legal information (license, copyright holder, authorship) | Its own follow-up, needed before CPE serves ADR-0005 landing pages (ADR-0007's ARK clause) |
 | — | Permissions, creation and deletion metadata | Not presented yet; in the target the port serves every resource with its rights attached (ADR-0012, ADR-0013) |
 | — | Deleted resources and values, superseded value versions | Not current facts |
-| — | Change announcements, a snapshot revision | ADR-0008: a full rebuild until a port carries change |
+| — | A snapshot revision | The port announces a changed project beside the snapshot (`subscribe`); CPE rebuilds in full, and does not follow the announcements yet (ADR-0008, DEV-7622) |
 | — | Links to resources outside the project | The adapter omits them; an annotation target outside the project makes the snapshot unavailable |

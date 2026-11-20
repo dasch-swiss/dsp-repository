@@ -52,6 +52,10 @@
 - [Observability](./editor/observability.md)
 - [Operations](./editor/operations.md)
 
+## VRE Bridge
+
+- [Operations](./vre-bridge/operations.md)
+
 ## Mosaic
 
 - [Component API Conventions](./mosaic/component-api-conventions.md)

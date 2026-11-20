@@ -8,6 +8,7 @@ use chrono_tz::Tz;
 use tracing::{error, info};
 
 use crate::bridge::Active;
+use crate::withhold::withhold;
 
 /// How far a local time in a daylight-saving gap is moved forward per step until it exists.
 const GAP_STEP: TimeDelta = TimeDelta::minutes(15);
@@ -52,7 +53,7 @@ pub(crate) async fn run(active: Arc<Active>) {
         let date = next.with_timezone(&active.time_zone).date_naive();
         let pass = tokio::spawn({
             let active = Arc::clone(&active);
-            async move { active.nightly_run(date).await }
+            withhold(async move { active.nightly_run(date).await })
         });
         if let Err(join) = pass.await {
             error!(

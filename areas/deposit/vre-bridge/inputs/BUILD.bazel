@@ -1,0 +1,14 @@
+# The shipped inputs, one directory per shortcode (`EDITOR_VRE_BRIDGE_INPUTS_DIR`): the files a
+# project's `media` generation carries besides what the bridge downloads. `README.md` is in the
+# filegroup so the image always holds the directory: a refresh fails while it is missing.
+filegroup(
+    name = "inputs",
+    srcs = glob(
+        ["**"],
+        exclude = ["BUILD.bazel"],
+    ),
+    visibility = [
+        "//areas/deposit/server:__pkg__",
+        "//areas/deposit/vre-bridge/server:__pkg__",
+    ],
+)

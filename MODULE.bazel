@@ -307,7 +307,8 @@ crate.spec(package = "tower", version = "0.5.3", features = ["util"])
 crate.spec(package = "tower-http", version = "0.6.11", features = ["cors", "fs", "set-header", "trace"])
 crate.spec(package = "tower_governor", version = "0.6")
 crate.spec(package = "tracing", version = "0.1.44")
-crate.spec(package = "tracing-subscriber", version = "0.3.22", features = ["env-filter", "fmt"])
+# `json`: deposit-server's operator's refresh logs JSON lines without `init-tracing-opentelemetry`.
+crate.spec(package = "tracing-subscriber", version = "0.3.22", features = ["env-filter", "fmt", "json"])
 
 # cpe-store-build makes the ids in CPE's URLs from slugs (NFKD, combining marks dropped). The
 # requirement is that of `dao-lift` in dsp-incubator, whose slugs it must reproduce.

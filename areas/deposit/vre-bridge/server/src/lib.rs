@@ -7,6 +7,8 @@
 //! removal of the private work directory block, so they run in `spawn_blocking` with owned
 //! arguments; a `GenerationWriter` never lives across an `.await`. The network goes through
 //! [`Vre`], the outcome through [`Report`], the time through [`Clock`], so tests replace each.
+//! A panic raised by that work may quote the data it handles; [`panic_payload_withheld`] tells a
+//! panic hook so.
 
 #![cfg_attr(
     not(test),
@@ -20,15 +22,17 @@ mod refresh;
 mod report;
 mod schedule;
 mod vre;
+mod withhold;
 
 pub use bridge::{Inactive, VreBridge, EXIT_LOCKED, EXIT_UNUSABLE};
 pub use clock::{Clock, SystemClock};
 pub use refresh::{sweep_dump_dirs, Busy, Refresher, SNAPSHOT_FILE};
-pub use report::{LogReport, RefreshReport, RefreshSizes, Report};
+pub use report::{LogReport, RefreshReport, RefreshSizes, Report, METER_SCOPE};
 pub use vre::Vre;
 /// The settings as `deposit-server`'s loader reads them; `vre-bridge-core` is visible to this
 /// crate alone.
 pub use vre_bridge_core::{RawSettings, SigningKeys};
+pub use withhold::panic_payload_withheld;
 
 #[cfg(test)]
 mod bridge_tests;
@@ -36,6 +40,8 @@ mod bridge_tests;
 mod nightly_tests;
 #[cfg(test)]
 mod refresh_tests;
+#[cfg(test)]
+mod report_tests;
 #[cfg(test)]
 mod schedule_tests;
 #[cfg(test)]

@@ -2,10 +2,11 @@ load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
 load("//tools/image:defs.bzl", "MUSL", "app_image", "binary_layer", "files_layer")
 
 # The Deposit Area's composition root (ADR-0003, `areas/deposit/ADR-0004`): the binary links the two
-# web crates, the two store crates and the shell, and no `core` or `ports` crate. Its tests also
-# take `editor-ports`' fakes, through its `testonly` variant.
+# web crates, the two store crates, the shell and the VRE bridge's entry crate, and no `core` or
+# `ports` crate. Its tests also take `editor-ports`' fakes, through its `testonly` variant.
 _DEPS = [
     "//areas/deposit/shell:deposit_shell",
+    "//areas/deposit/vre-bridge/server:vre_bridge_server",
     "//shared/rate-limit:shared_rate_limit",
     "//shared/telemetry:shared_telemetry",
     "@crates//:axum",
@@ -77,6 +78,22 @@ rust_test(
     ],
 )
 
+# The binary as the operator runs it: `vre-bridge-refresh`'s exit statuses, and `serve` with the VRE
+# bridge unconfigured and configured. `CARGO_BIN_EXE_*` is set by Cargo for integration tests and
+# not by `rules_rust`.
+rust_test(
+    name = "vre_bridge_test",
+    srcs = ["tests/vre_bridge.rs"],
+    compile_data = ["//areas/deposit/vre-bridge/client:testdata/ed25519-private.b64"],
+    crate_root = "tests/vre_bridge.rs",
+    data = [":deposit_server"],
+    rustc_env = {"CARGO_BIN_EXE_deposit_server": "$(rootpath :deposit_server)"},
+    deps = [
+        "@crates//:assert_cmd",
+        "@crates//:tempfile",
+    ],
+)
+
 # ── The editor image, `daschswiss/metadata-editor` ─────────────────────────
 #
 # A static musl binary on distroless `static` (`//tools/image:defs.bzl`), built with
@@ -114,6 +131,14 @@ files_layer(
     target_compatible_with = MUSL,
 )
 
+# The VRE bridge's shipped inputs, read through `EDITOR_VRE_BRIDGE_INPUTS_DIR`.
+files_layer(
+    name = "image_vre_bridge_inputs",
+    srcs = ["//areas/deposit/vre-bridge/inputs"],
+    prefixes = {"areas/deposit/vre-bridge/inputs": "app/vre-bridge/inputs"},
+    target_compatible_with = MUSL,
+)
+
 app_image(
     name = "image",
     repository = "index.docker.io/daschswiss/metadata-editor",
@@ -123,7 +148,9 @@ app_image(
     # `EDITOR_DB_DIR` stays unset: an in-memory database. The Cloud Run previews run this image with
     # no volume and publicly reachable, so a default path would let a preview accumulate login codes,
     # sessions and drafts; production sets it through the deployment
-    # (docs/src/editor/operations.md#database).
+    # (docs/src/editor/operations.md#database). For the same reason no VRE bridge output location
+    # (`EDITOR_VRE_BRIDGE_SYNC_DIR`, `EDITOR_VRE_BRIDGE_MEDIA_DIR`) may be set here: without both the
+    # bridge does nothing, and with them every preview would write, and dump from DSP, on its own.
     env = {
         "RUST_LOG": "info",
         # The panic hook's backtrace, with the line tables `--config=release` keeps.
@@ -132,12 +159,14 @@ app_image(
         "EDITOR_ENV": "PROD",
         "EDITOR_PUBLIC_DIR": "/app/public",
         "EDITOR_DATA_DIR": "/app/server/data",
+        "EDITOR_VRE_BRIDGE_INPUTS_DIR": "/app/vre-bridge/inputs",
     },
     exposed_ports = ["8080/tcp"],
     tars = [
         ":image_binary",
         ":image_public",
         ":image_data",
+        ":image_vre_bridge_inputs",
     ],
     workdir = "/app",
 )

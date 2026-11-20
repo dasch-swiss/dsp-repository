@@ -41,43 +41,120 @@ impl<'de> Deserialize<'de> for Secret {
     /// fails closed — the relay rejects the credential — but choose a password that is not purely
     /// numeric.
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        struct AnyScalar;
-
-        impl serde::de::Visitor<'_> for AnyScalar {
-            type Value = Secret;
-
-            fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                // Deliberately says nothing about what was found.
-                f.write_str("a secret value")
-            }
-
-            fn visit_str<E: serde::de::Error>(self, value: &str) -> Result<Secret, E> {
-                Ok(Secret(value.to_string()))
-            }
-
-            fn visit_string<E: serde::de::Error>(self, value: String) -> Result<Secret, E> {
-                Ok(Secret(value))
-            }
-
-            fn visit_u64<E: serde::de::Error>(self, value: u64) -> Result<Secret, E> {
-                Ok(Secret(value.to_string()))
-            }
-
-            fn visit_i64<E: serde::de::Error>(self, value: i64) -> Result<Secret, E> {
-                Ok(Secret(value.to_string()))
-            }
-
-            fn visit_f64<E: serde::de::Error>(self, value: f64) -> Result<Secret, E> {
-                Ok(Secret(value.to_string()))
-            }
-
-            fn visit_bool<E: serde::de::Error>(self, value: bool) -> Result<Secret, E> {
-                Ok(Secret(value.to_string()))
-            }
-        }
-
-        deserializer.deserialize_any(AnyScalar)
+        deserializer.deserialize_any(AnyScalar).map(Secret)
     }
+}
+
+/// Any scalar, as text: what [`Secret`] and the VRE bridge's settings are read through.
+struct AnyScalar;
+
+impl serde::de::Visitor<'_> for AnyScalar {
+    type Value = String;
+
+    fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // Deliberately says nothing about what was found.
+        f.write_str("a scalar value")
+    }
+
+    fn visit_str<E: serde::de::Error>(self, value: &str) -> Result<String, E> {
+        Ok(value.to_string())
+    }
+
+    fn visit_string<E: serde::de::Error>(self, value: String) -> Result<String, E> {
+        Ok(value)
+    }
+
+    fn visit_u64<E: serde::de::Error>(self, value: u64) -> Result<String, E> {
+        Ok(value.to_string())
+    }
+
+    fn visit_i64<E: serde::de::Error>(self, value: i64) -> Result<String, E> {
+        Ok(value.to_string())
+    }
+
+    fn visit_u128<E: serde::de::Error>(self, value: u128) -> Result<String, E> {
+        Ok(value.to_string())
+    }
+
+    fn visit_i128<E: serde::de::Error>(self, value: i128) -> Result<String, E> {
+        Ok(value.to_string())
+    }
+
+    fn visit_f64<E: serde::de::Error>(self, value: f64) -> Result<String, E> {
+        Ok(value.to_string())
+    }
+
+    fn visit_bool<E: serde::de::Error>(self, value: bool) -> Result<String, E> {
+        Ok(value.to_string())
+    }
+}
+
+/// An optional setting read as text whatever figment parsed it as.
+fn optional_text<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<Option<String>, D::Error> {
+    struct Text(String);
+
+    impl<'de> Deserialize<'de> for Text {
+        fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+            deserializer.deserialize_any(AnyScalar).map(Text)
+        }
+    }
+
+    Ok(Option::<Text>::deserialize(deserializer)?.map(|Text(text)| text))
+}
+
+/// The VRE bridge's settings, `EDITOR_VRE_BRIDGE_*`, tabled with their defaults in
+/// `docs/src/vre-bridge/operations.md`. Each is read as text and handed to the bridge unchecked:
+/// the bridge parses them and applies the defaults, and a value it refuses leaves the bridge
+/// inactive rather than failing this load (`areas/deposit/ADR-0005`: the bridge never stops
+/// `deposit-server`). All unset, the bridge does nothing.
+#[derive(Debug, Default, Deserialize, Serialize)]
+pub struct VreBridgeConfig {
+    #[serde(default, deserialize_with = "optional_text")]
+    pub vre_bridge_sync_dir: Option<String>,
+    #[serde(default, deserialize_with = "optional_text")]
+    pub vre_bridge_media_dir: Option<String>,
+    #[serde(default, deserialize_with = "optional_text")]
+    pub vre_bridge_lock_file: Option<String>,
+    #[serde(default, deserialize_with = "optional_text")]
+    pub vre_bridge_allowlist: Option<String>,
+    #[serde(default, deserialize_with = "optional_text")]
+    pub vre_bridge_servers: Option<String>,
+    #[serde(default, deserialize_with = "optional_text")]
+    pub vre_bridge_iiif_bases: Option<String>,
+    #[serde(default, deserialize_with = "optional_text")]
+    pub vre_bridge_key_ids: Option<String>,
+    #[serde(default)]
+    pub vre_bridge_signing_keys: Option<Secret>,
+    #[serde(default, deserialize_with = "optional_text")]
+    pub vre_bridge_service_name: Option<String>,
+    #[serde(default, deserialize_with = "optional_text")]
+    pub vre_bridge_inputs_dir: Option<String>,
+    #[serde(default, deserialize_with = "optional_text")]
+    pub vre_bridge_work_dir: Option<String>,
+    #[serde(default, deserialize_with = "optional_text")]
+    pub vre_bridge_nightly_at: Option<String>,
+    #[serde(default, deserialize_with = "optional_text")]
+    pub vre_bridge_time_zone: Option<String>,
+    #[serde(default, deserialize_with = "optional_text")]
+    pub vre_bridge_dump_retries: Option<String>,
+    #[serde(default, deserialize_with = "optional_text")]
+    pub vre_bridge_dump_retry_secs: Option<String>,
+    #[serde(default, deserialize_with = "optional_text")]
+    pub vre_bridge_request_timeout_secs: Option<String>,
+    #[serde(default, deserialize_with = "optional_text")]
+    pub vre_bridge_export_timeout_secs: Option<String>,
+    #[serde(default, deserialize_with = "optional_text")]
+    pub vre_bridge_export_poll_secs: Option<String>,
+    #[serde(default, deserialize_with = "optional_text")]
+    pub vre_bridge_download_timeout_secs: Option<String>,
+    #[serde(default, deserialize_with = "optional_text")]
+    pub vre_bridge_file_timeout_secs: Option<String>,
+    #[serde(default, deserialize_with = "optional_text")]
+    pub vre_bridge_max_dump_bytes: Option<String>,
+    #[serde(default, deserialize_with = "optional_text")]
+    pub vre_bridge_max_unpacked_bytes: Option<String>,
+    #[serde(default, deserialize_with = "optional_text")]
+    pub vre_bridge_max_file_bytes: Option<String>,
 }
 
 impl Secret {
@@ -284,6 +361,10 @@ pub struct EditorConfig {
     /// Unset is legitimate — a fresh checkout and the PR preview both run with
     /// no accounts at all.
     pub rdu_emails: Option<String>,
+
+    /// The VRE bridge's settings, at the top level of the configuration like every other key.
+    #[serde(flatten)]
+    pub vre_bridge: VreBridgeConfig,
 }
 
 impl Default for EditorConfig {
@@ -316,6 +397,7 @@ impl Default for EditorConfig {
             // so a shorter timeout would sign people out mid-edit.
             session_idle_secs: 2 * 60 * 60,
             rdu_emails: None,
+            vre_bridge: VreBridgeConfig::default(),
         }
     }
 }
@@ -633,6 +715,36 @@ impl EditorConfig {
     /// The configured `busy_timeout`.
     pub fn db_busy_timeout(&self) -> std::time::Duration {
         std::time::Duration::from_millis(self.db_busy_timeout_ms)
+    }
+
+    /// The VRE bridge's settings, for `VreBridge::from_raw`, which checks them.
+    pub fn vre_bridge_settings(&self) -> vre_bridge_server::RawSettings {
+        let c = &self.vre_bridge;
+        vre_bridge_server::RawSettings {
+            sync_dir: c.vre_bridge_sync_dir.clone(),
+            media_dir: c.vre_bridge_media_dir.clone(),
+            lock_file: c.vre_bridge_lock_file.clone(),
+            allowlist: c.vre_bridge_allowlist.clone(),
+            servers: c.vre_bridge_servers.clone(),
+            iiif_bases: c.vre_bridge_iiif_bases.clone(),
+            key_ids: c.vre_bridge_key_ids.clone(),
+            signing_keys: c.vre_bridge_signing_keys.as_ref().map(|keys| keys.expose().to_owned().into()),
+            service_name: c.vre_bridge_service_name.clone(),
+            inputs_dir: c.vre_bridge_inputs_dir.clone(),
+            work_dir: c.vre_bridge_work_dir.clone(),
+            nightly_at: c.vre_bridge_nightly_at.clone(),
+            time_zone: c.vre_bridge_time_zone.clone(),
+            dump_retries: c.vre_bridge_dump_retries.clone(),
+            dump_retry_secs: c.vre_bridge_dump_retry_secs.clone(),
+            request_timeout_secs: c.vre_bridge_request_timeout_secs.clone(),
+            export_timeout_secs: c.vre_bridge_export_timeout_secs.clone(),
+            export_poll_secs: c.vre_bridge_export_poll_secs.clone(),
+            download_timeout_secs: c.vre_bridge_download_timeout_secs.clone(),
+            file_timeout_secs: c.vre_bridge_file_timeout_secs.clone(),
+            max_dump_bytes: c.vre_bridge_max_dump_bytes.clone(),
+            max_unpacked_bytes: c.vre_bridge_max_unpacked_bytes.clone(),
+            max_file_bytes: c.vre_bridge_max_file_bytes.clone(),
+        }
     }
 }
 
@@ -1117,6 +1229,149 @@ mod tests {
             assert_eq!(config.smtp_credentials(), Some(("user", "1234567890")));
             Ok(())
         });
+    }
+
+    /// Every `EDITOR_VRE_BRIDGE_*` variable with a value of its kind, and the field it lands in.
+    const VRE_BRIDGE: [(&str, &str); 22] = [
+        ("SYNC_DIR", "/srv/stand-in/sync"),
+        ("MEDIA_DIR", "/srv/stand-in/media"),
+        ("LOCK_FILE", "/var/lib/deposit/vre-bridge.lock"),
+        ("ALLOWLIST", "0803=prod,083C=prod"),
+        ("SERVERS", "prod=https://api.dasch.swiss"),
+        ("IIIF_BASES", "prod=https://iiif.dasch.swiss"),
+        ("KEY_IDS", "prod=dsp-repository-prod-2026-11"),
+        ("SERVICE_NAME", "dsp-repository-prod"),
+        ("INPUTS_DIR", "/app/vre-bridge/inputs"),
+        ("WORK_DIR", "/var/lib/deposit/vre-bridge-work"),
+        ("NIGHTLY_AT", "03:30"),
+        ("TIME_ZONE", "Europe/Zurich"),
+        ("DUMP_RETRIES", "4"),
+        ("DUMP_RETRY_SECS", "600"),
+        ("REQUEST_TIMEOUT_SECS", "60"),
+        ("EXPORT_TIMEOUT_SECS", "1800"),
+        ("EXPORT_POLL_SECS", "10"),
+        ("DOWNLOAD_TIMEOUT_SECS", "1200"),
+        ("FILE_TIMEOUT_SECS", "120"),
+        ("MAX_DUMP_BYTES", "1073741824"),
+        ("MAX_UNPACKED_BYTES", "2147483648"),
+        ("MAX_FILE_BYTES", "268435456"),
+    ];
+
+    const SIGNING_KEYS: &str = "prod=MC4CAQAwBQYDK2VwBCIEIFAKEKEYMATERIAL0000000000000000000000000000==";
+
+    fn vre_bridge_fields(raw: &vre_bridge_server::RawSettings) -> [Option<&str>; 22] {
+        [
+            &raw.sync_dir,
+            &raw.media_dir,
+            &raw.lock_file,
+            &raw.allowlist,
+            &raw.servers,
+            &raw.iiif_bases,
+            &raw.key_ids,
+            &raw.service_name,
+            &raw.inputs_dir,
+            &raw.work_dir,
+            &raw.nightly_at,
+            &raw.time_zone,
+            &raw.dump_retries,
+            &raw.dump_retry_secs,
+            &raw.request_timeout_secs,
+            &raw.export_timeout_secs,
+            &raw.export_poll_secs,
+            &raw.download_timeout_secs,
+            &raw.file_timeout_secs,
+            &raw.max_dump_bytes,
+            &raw.max_unpacked_bytes,
+            &raw.max_file_bytes,
+        ]
+        .map(Option::as_deref)
+    }
+
+    fn assert_every_vre_bridge_setting_read(config: &EditorConfig) {
+        let raw = config.vre_bridge_settings();
+        assert_eq!(vre_bridge_fields(&raw), VRE_BRIDGE.map(|(_, value)| Some(value)));
+        assert_eq!(raw.signing_keys, Some(SIGNING_KEYS.to_owned().into()));
+    }
+
+    #[test]
+    fn test_vre_bridge_every_setting_read_from_the_environment_alone() {
+        figment::Jail::expect_with(|jail| {
+            for (var, value) in VRE_BRIDGE {
+                jail.set_env(format!("EDITOR_VRE_BRIDGE_{var}"), value);
+            }
+            jail.set_env("EDITOR_VRE_BRIDGE_SIGNING_KEYS", SIGNING_KEYS);
+            assert_every_vre_bridge_setting_read(&EditorConfig::load().expect("config should load"));
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn test_vre_bridge_every_setting_read_from_editor_toml() {
+        figment::Jail::expect_with(|jail| {
+            let mut toml = format!("vre_bridge_signing_keys = \"{SIGNING_KEYS}\"\n");
+            for (var, value) in VRE_BRIDGE {
+                let key = format!("vre_bridge_{}", var.to_ascii_lowercase());
+                // Numbers as TOML integers, as an operator would write them.
+                if value.bytes().all(|b| b.is_ascii_digit()) {
+                    toml.push_str(&format!("{key} = {value}\n"));
+                } else {
+                    toml.push_str(&format!("{key} = \"{value}\"\n"));
+                }
+            }
+            jail.create_file("editor.toml", &toml)?;
+            assert_every_vre_bridge_setting_read(&EditorConfig::load().expect("config should load"));
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn test_vre_bridge_unset_by_default_and_the_bridge_inactive() {
+        figment::Jail::expect_with(|_| {
+            let raw = EditorConfig::load().expect("config should load").vre_bridge_settings();
+            assert_eq!(vre_bridge_fields(&raw), [None; 22]);
+            assert!(raw.signing_keys.is_none());
+            let bridge = vre_bridge_server::VreBridge::from_raw(raw, &opentelemetry::global::meter("test"));
+            assert_eq!(bridge.inactive_reason(), Some(&vre_bridge_server::Inactive::NotConfigured));
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn test_vre_bridge_a_malformed_number_loads_and_reaches_the_bridge() {
+        // The bridge refuses it and stays inactive; the editor still starts.
+        figment::Jail::expect_with(|jail| {
+            jail.set_env("EDITOR_VRE_BRIDGE_DUMP_RETRIES", "three");
+            jail.set_env("EDITOR_VRE_BRIDGE_EXPORT_POLL_SECS", "1.5");
+            let raw = EditorConfig::load().expect("config should load").vre_bridge_settings();
+            assert_eq!(raw.dump_retries.as_deref(), Some("three"));
+            assert_eq!(raw.export_poll_secs.as_deref(), Some("1.5"));
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn test_vre_bridge_signing_keys_never_reach_a_rendering_whatever_shape_they_take() {
+        for keys in [
+            SIGNING_KEYS,
+            "1234567890",
+            "123456789012345678901234567890",
+            "9876.54",
+            "true",
+        ] {
+            figment::Jail::expect_with(|jail| {
+                jail.set_env("EDITOR_VRE_BRIDGE_SIGNING_KEYS", keys);
+                let rendered = match EditorConfig::load() {
+                    Ok(config) => format!("{config:?} {:?}", config.vre_bridge_settings()),
+                    Err(e) => format!("{e}"),
+                };
+                let secret = keys.trim_start_matches("prod=");
+                assert!(
+                    !rendered.contains(secret),
+                    "the keys {keys:?} reached a rendered string: {rendered}"
+                );
+                Ok(())
+            });
+        }
     }
 
     #[test]

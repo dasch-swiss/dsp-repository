@@ -255,18 +255,28 @@ _Avoid_: home, landing page (a project's `/` page is its start page), index (DPE
 `overview` tab of DPE's project page (`areas/access/CONTEXT.md`).
 
 **Activation**:
-`Cpe::activate(&dyn ArchiveProjection, &dyn DepositedFiles)`: the one step that loads the projects. For each
-project folder it reads the shortcode of its `SHORTCODE` and asks the **Bytes port** for that project's
-`config.kdl`; refuses the project when the **Mapping** declares another
+`Cpe::activate(&dyn ArchiveProjection, &dyn DepositedFiles)`, which `Cpe::follow` runs first: the step that
+loads the projects. For each project folder it reads the shortcode of its `SHORTCODE`, reads the provenance both
+ports serve, and asks the archive projection port for the **Project snapshot**; a project it holds no snapshot
+for is `Unknown` when its place in `sync` is there, and `Failed` otherwise. It asks the **Bytes port** for the
+project's `config.kdl`; refuses the project when the **Mapping** declares another
 shortcode; asks for each narrative file the KDL names, the base name and its variant in each site language,
-and takes an `UnknownFile` as absent; asks for `curation.csv`; asks the archive projection port once for the
-**Project snapshot**; reads the **Curation** against it; builds the store with `cpe-store-build` and the
-project's **Hook**; reads the assets from the folder; and loads the project (`cpe-web`'s `Project::load`), which validates the configuration
-against the store. It is blocking, returns nothing and does not panic; a host calls it once, off the async
+and takes an `UnknownFile` as absent; asks for `curation.csv`; reads the **Curation** against the snapshot;
+builds the store with `cpe-store-build` and the project's **Hook**; reads the provenance again, and fails the
+project unless all four reads are equal; reads the assets from the folder; and loads the project (`cpe-web`'s `Project::load`), which validates the configuration
+against the store. It is blocking, returns nothing and does not panic; a host calls it off the async
 runtime, after its listener is bound. `Cpe::router` may be taken and mounted before: it answers 503 until
-activation has finished and the projects' routes from then on.
+activation has finished and the projects' routes from then on. Each project comes out `Loaded`, `Unknown` or
+`Failed`.
 _Avoid_: boot, start-up (the process is already serving), warm (DPE's verb, which fills a cache; activation
 builds what is served). One project's step inside it is its load.
+
+**Re-activation**:
+An activation that `Cpe::follow` runs when `sync`'s port announces a shortcode a project folder declares. It
+loads every project again and replaces what is served only if every project `Loaded` before is `Loaded` or
+`Unknown` now. Otherwise it is **held back**: what was served stays, the projects that held it back are logged,
+and it is tried once more after the host's retry interval.
+_Avoid_: reload, refresh (the operator's word for the whole effect), rebuild (one project's store, DEV-7989).
 
 **Unavailable project**:
 A project folder that did not activate: another folder declares its shortcode, a port does not hold the
@@ -345,5 +355,5 @@ them (ADR-0012).
 | — | Rights and legal information (license, copyright holder, authorship) | Its own follow-up, needed before CPE serves ADR-0005 landing pages (ADR-0007's ARK clause) |
 | — | Permissions, creation and deletion metadata | Not presented yet; in the target the port serves every resource with its rights attached (ADR-0012, ADR-0013) |
 | — | Deleted resources and values, superseded value versions | Not current facts |
-| — | A snapshot revision | The port announces a changed project beside the snapshot (`subscribe`); CPE rebuilds in full, and does not follow the announcements yet (ADR-0008, DEV-7622) |
+| — | A snapshot revision | The port announces a changed project beside the snapshot (`subscribe`); CPE re-activates every project on it, not the one named (ADR-0008, DEV-7989) |
 | — | Links to resources outside the project | The adapter omits them; an annotation target outside the project makes the snapshot unavailable |

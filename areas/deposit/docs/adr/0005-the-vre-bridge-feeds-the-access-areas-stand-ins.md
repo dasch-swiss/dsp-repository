@@ -134,7 +134,6 @@ classification, Generation and Ready token (P-DEV-301).
 Not yet in code: DSP-API has no service identity, so no dump can be taken without a person's account
 (DEV-7936).
 Not yet in code: no location is shared by `deposit-server` and `access-server` (DEV-7514).
-Not yet in code: CPE re-activates on no project `sync` announces (DEV-7622).
 Not yet in code: `media` announces no changed project (DEV-7938).
 
 Enforced by: Bazel `visibility` per ADR-0001 for the bridge's crate edges, `deposit-server` granted

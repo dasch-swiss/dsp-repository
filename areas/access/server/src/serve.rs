@@ -2,6 +2,7 @@
 
 use std::collections::BTreeSet;
 use std::process::ExitCode;
+use std::sync::Arc;
 use std::time::Duration;
 
 use axum::Router;
@@ -41,6 +42,9 @@ fn sync_poll_interval(value: Option<&str>) -> Duration {
         },
     }
 }
+
+/// In poll intervals.
+const RETRY_AFTER_POLLS: u32 = 10;
 
 /// `ACCESS_HIDDEN_PROJECTS`, split, trimmed and upper-cased; the entries that are
 /// not a shortcode come back separately, as written but trimmed, for the caller to log.
@@ -239,14 +243,17 @@ async fn name_span_by_cpe_route(
 }
 
 /// Starts CPE's activation on the blocking pool and returns at once: reading
-/// the ports takes seconds, and CPE answers 503 until it is done.
+/// the ports takes seconds, and CPE answers 503 until it is done. The task ends
+/// with the first activation; CPE follows `projection`'s announcements on a
+/// thread of its own from then on.
 fn activate_in_background(
     cpe: &Cpe,
     projection: impl cpe_ports::ArchiveProjection + 'static,
     files: impl cpe_ports::DepositedFiles + 'static,
+    retry_after: Duration,
 ) -> tokio::task::JoinHandle<()> {
     let cpe = cpe.clone();
-    tokio::task::spawn_blocking(move || cpe.activate(&projection, &files))
+    tokio::task::spawn_blocking(move || cpe.follow(Arc::new(projection), Arc::new(files), retry_after))
 }
 
 #[tokio::main]
@@ -333,6 +340,7 @@ pub(crate) async fn serve() -> ExitCode {
             &cpe,
             sync_store::LiveArchiveProjection::new(sync_data_dir).with_poll_interval(sync_poll),
             media_store::LiveDepositedFiles::new(media_data_dir),
+            sync_poll.saturating_mul(RETRY_AFTER_POLLS),
         );
     }
 
@@ -1114,6 +1122,7 @@ remodel {
             &cpe,
             HeldProjection { asked: Mutex::new(asked), release: Mutex::new(released) },
             things_files(),
+            Duration::from_secs(60),
         );
         tokio::task::spawn_blocking(move || was_asked.recv_timeout(Duration::from_secs(30)))
             .await
@@ -1146,6 +1155,7 @@ remodel {
             &cpe,
             LiveArchiveProjection::new(root.join("areas/access/sync/no-such-directory")),
             LiveDepositedFiles::new(root.join(DEFAULT_MEDIA_DATA_DIR)),
+            Duration::from_secs(60),
         )
         .await
         .expect("activation does not panic");
@@ -1199,6 +1209,88 @@ remodel {
             !body.contains("where the store comes from"),
             "PROVENANCE.md is not served: {body}"
         );
+    }
+
+    /// Copies the directories and regular files below `from` to `to`.
+    fn copy_tree(from: &Path, to: &Path) {
+        std::fs::create_dir_all(to).expect("the directory is created");
+        for entry in std::fs::read_dir(from).expect("the directory is readable") {
+            let entry = entry.expect("the entry is readable");
+            let target = to.join(entry.file_name());
+            if entry.file_type().expect("the entry's type is readable").is_dir() {
+                copy_tree(&entry.path(), &target);
+            } else {
+                std::fs::copy(entry.path(), &target).expect("the file is copied");
+            }
+        }
+    }
+
+    /// Writes `bytes` as `path` by a rename, so a reader never sees half of it.
+    fn replace_file(path: &Path, bytes: &str) {
+        let temporary = path.with_extension("tmp");
+        std::fs::write(&temporary, bytes).expect("the file is written");
+        std::fs::rename(&temporary, path).expect("the file is renamed");
+    }
+
+    /// 0803's data is replaced under a running CPE as the VRE bridge replaces it: a generation
+    /// written beside the served one in both subtrees, then the `media` token, then the `sync` one.
+    /// The token is written from the format by hand, as this crate does not see `shared-stand-in`.
+    #[tokio::test]
+    async fn cpe_serves_a_replaced_generation_of_0803_without_a_restart() {
+        const SERVED: &str = "20261007T000000Z-00000000";
+        const REPLACING: &str = "20261120T000000Z-00000001";
+        const LABEL: &str = "Bereitung zu dem Heiligen Sakrament";
+        const RELABELLED: &str = "Bereitung zum Heiligen Sakrament, neu gesetzt";
+        let root = repository_root();
+        let data = tempfile::tempdir().expect("a temporary directory");
+        let (sync, media) = (data.path().join("sync"), data.path().join("media"));
+        copy_tree(&root.join(DEFAULT_SYNC_DATA_DIR).join("0803"), &sync.join("0803"));
+        copy_tree(&root.join(DEFAULT_MEDIA_DATA_DIR).join("0803"), &media.join("0803"));
+        let cpe = Cpe::new(&cpe_config(&root.join("areas/access/cpe/projects"), BASE));
+        let router = app(&dpe(), &cpe);
+
+        activate_in_background(
+            &cpe,
+            LiveArchiveProjection::new(&sync).with_poll_interval(Duration::from_millis(100)),
+            LiveDepositedFiles::new(&media),
+            Duration::from_secs(1),
+        )
+        .await
+        .expect("activation does not panic");
+        let page = "/cpe/incunabula/books/bereitung";
+        let (status, _, body) = get(&router, page).await;
+        assert_eq!(status, StatusCode::OK);
+        assert!(body.contains(LABEL) && !body.contains(RELABELLED), "{body}");
+
+        copy_tree(&media.join("0803").join(SERVED), &media.join("0803").join(REPLACING));
+        let snapshot = std::fs::read_to_string(sync.join("0803").join(SERVED).join("snapshot.nq"))
+            .expect("the snapshot is readable");
+        assert!(snapshot.contains(LABEL));
+        std::fs::create_dir(sync.join("0803").join(REPLACING)).expect("the generation directory is created");
+        std::fs::write(
+            sync.join("0803").join(REPLACING).join("snapshot.nq"),
+            snapshot.replace(LABEL, RELABELLED),
+        )
+        .expect("the snapshot is written");
+        let token = format!(
+            r#"{{"token_version":1,"generation":"{REPLACING}","previous_generation":"{SERVED}","as_of":"2026-11-20T00:00:00Z","server":"prod","interim_format_version":1,"transformation_version":1,"inputs_digest":"sha256:{}"}}"#,
+            "0".repeat(64)
+        );
+        replace_file(&media.join("0803/.ready"), &token);
+        replace_file(&sync.join("0803/.ready"), &token);
+
+        let deadline = std::time::Instant::now() + Duration::from_secs(10);
+        loop {
+            let (status, _, body) = get(&router, page).await;
+            if status == StatusCode::OK && body.contains(RELABELLED) {
+                break;
+            }
+            assert!(
+                std::time::Instant::now() < deadline,
+                "the replaced generation is not served: {status}"
+            );
+            tokio::time::sleep(Duration::from_millis(50)).await;
+        }
     }
 
     /// A path written here would be a second source of the base, and the

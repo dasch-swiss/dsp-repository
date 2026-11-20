@@ -76,10 +76,12 @@ fn a_still_image_emits_its_representation_node_with_type_filename_and_dimensions
         typed_line(&n, vocab::DAO_INTERNAL_FILENAME, &plain("sdSIAoxiS4.bin")),
         typed_line(&n, vocab::DAO_DIM_X, &integer("3297")),
         typed_line(&n, vocab::DAO_DIM_Y, &integer("5141")),
+        typed_line(&n, vocab::DAO_ACCESS_RIGHTS, &plain("public")),
+        typed_line(&n, vocab::DAO_DATA_CLASSIFICATION, &plain("unclassified")),
     ] {
         assert!(out.contains(&expected), "missing {expected}\n{out}");
     }
-    assert_eq!(out.matches(&format!("<{n}>")).count(), 6, "{out}");
+    assert_eq!(out.matches(&format!("<{n}>")).count(), 8, "{out}");
     assert!(!out.contains("hasStillImageFileValue"), "{out}");
     assert_eq!(
         stats.representations_by_type.into_iter().collect::<Vec<_>>(),

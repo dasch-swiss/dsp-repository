@@ -6,11 +6,11 @@ use oxigraph::model::Literal;
 
 use super::index::Index;
 use super::list::LiveLists;
-use super::tests::{Fixture, ZEBRA, boolean, onto, output, report, resource_lines};
+use super::tests::{Fixture, ZEBRA, boolean, build_public, onto, output, report, resource_lines};
 use super::value::{self, ValueKind};
 use super::violations::{Rule, Violations};
 use super::writer::Snapshot;
-use super::{Stats, build, vocab};
+use super::{Stats, vocab};
 use crate::model::{self, kb, nn};
 
 const GRAPH: &str = "<urn:dsp:project:0803>";
@@ -232,9 +232,9 @@ fn interval_time_and_geoname_values_are_omitted_whole_and_counted() {
     }
     let dump = f.dump();
     let mut stats = Stats::default();
-    let snapshot = build(&dump, &mut stats).unwrap();
+    let snapshot = build_public(&dump, &mut stats).unwrap();
 
-    assert_eq!(snapshot.len(), 3);
+    assert_eq!(snapshot.len(), 5);
     assert_eq!(stats.omitted.get("interval, time or geoname value (§4.10)"), Some(&3));
 }
 
@@ -482,7 +482,7 @@ fn an_unknown_precision_a_non_integer_jdn_and_an_inverted_date_are_violations() 
 /// The omission counts of a fixture that builds without violations.
 fn omitted(f: &Fixture) -> BTreeMap<&'static str, usize> {
     let mut stats = Stats::default();
-    build(&f.dump(), &mut stats).unwrap();
+    build_public(&f.dump(), &mut stats).unwrap();
     stats.omitted
 }
 

@@ -15,24 +15,24 @@ use crate::test_support::TempDir;
 
 const DATA: &str = "http://www.knora.org/data/0803/incunabula";
 const ONTO: &str = "http://www.knora.org/ontology/0803/incunabula";
-pub(super) const ZEBRA: &str = "http://rdfh.ch/0803/ZEBRA";
-const APPLE: &str = "http://rdfh.ch/0803/APPLE";
+pub(crate) const ZEBRA: &str = "http://rdfh.ch/0803/ZEBRA";
+pub(crate) const APPLE: &str = "http://rdfh.ch/0803/APPLE";
 const MANGO: &str = "http://rdfh.ch/0803/MANGO";
 
-pub(super) fn onto(local: &str) -> String {
+pub(crate) fn onto(local: &str) -> String {
     format!("{ONTO}#{local}")
 }
 
 /// A dump under construction: quads in insertion order, split into one data and
 /// one ontology graph, with Page and Book declared as project classes.
-pub(super) struct Fixture {
+pub(crate) struct Fixture {
     data: String,
     onto: String,
-    pub(super) quads: Vec<Quad>,
+    pub(crate) quads: Vec<Quad>,
 }
 
 impl Fixture {
-    pub(super) fn new() -> Fixture {
+    pub(crate) fn new() -> Fixture {
         Fixture::with_graphs(DATA, ONTO)
     }
 
@@ -47,23 +47,23 @@ impl Fixture {
         f
     }
 
-    pub(super) fn class(&mut self, local: &str) {
+    pub(crate) fn class(&mut self, local: &str) {
         let class = format!("{}#{local}", self.onto);
         self.onto_triple(&class, model::RDF_TYPE, nn(model::OWL_CLASS));
     }
 
-    pub(super) fn onto_triple(&mut self, s: &str, p: &str, o: impl Into<Term>) {
+    pub(crate) fn onto_triple(&mut self, s: &str, p: &str, o: impl Into<Term>) {
         let g = GraphName::NamedNode(nn(&self.onto));
         self.quads.push(Quad::new(nn(s), nn(p), o, g));
     }
 
-    pub(super) fn add(&mut self, s: &str, p: &str, o: impl Into<Term>) {
+    pub(crate) fn add(&mut self, s: &str, p: &str, o: impl Into<Term>) {
         let g = GraphName::NamedNode(nn(&self.data));
         self.quads.push(Quad::new(nn(s), nn(p), o, g));
     }
 
     /// A live resource of project class `local` with one plain label.
-    pub(super) fn resource(&mut self, iri: &str, local: &str, label: &str) {
+    pub(crate) fn resource(&mut self, iri: &str, local: &str, label: &str) {
         let class = format!("{}#{local}", self.onto);
         self.add(iri, model::RDF_TYPE, nn(&class));
         self.add(iri, model::RDFS_LABEL, Literal::new_simple_literal(label));
@@ -78,7 +78,7 @@ impl Fixture {
         Dump::from_store(store).unwrap()
     }
 
-    pub(super) fn dump(&self) -> Dump {
+    pub(crate) fn dump(&self) -> Dump {
         Fixture::dump_from(self.quads.iter().cloned())
     }
 
@@ -87,51 +87,72 @@ impl Fixture {
     }
 }
 
-pub(super) fn boolean(v: &str) -> Literal {
+pub(crate) fn boolean(v: &str) -> Literal {
     Literal::new_typed_literal(v, nn(model::XSD_BOOLEAN))
 }
 
 /// The graph term every fixture line ends in.
-pub(super) const GRAPH: &str = "<urn:dsp:project:0803>";
+pub(crate) const GRAPH: &str = "<urn:dsp:project:0803>";
 
-pub(super) fn plain(v: &str) -> Literal {
+pub(crate) fn plain(v: &str) -> Literal {
     Literal::new_simple_literal(v)
 }
 
-pub(super) fn integer(v: &str) -> Literal {
+pub(crate) fn integer(v: &str) -> Literal {
     Literal::new_typed_literal(v, nn(model::XSD_INTEGER))
 }
 
+/// The snapshot of the dump's selection, without the guard: fixtures carry no
+/// `kb:hasPermissions`, so every resource and representation is written public.
+pub(crate) fn build_public(dump: &Dump, stats: &mut Stats) -> Result<Snapshot, LiftError> {
+    let read = Read::of(dump)?;
+    let selection = crate::selection::select(&read.index, &read.subjects);
+    let rights = crate::guard::Rights::all_public(&selection);
+    build(read, &selection, &rights, stats)
+}
+
 /// The fixture's output and the stats the run gathered.
-pub(super) fn run(f: &Fixture) -> (String, Stats) {
+pub(crate) fn run(f: &Fixture) -> (String, Stats) {
     let mut stats = Stats::default();
-    let snapshot = build(&f.dump(), &mut stats).unwrap();
+    let snapshot = build_public(&f.dump(), &mut stats).unwrap();
     let mut bytes = Vec::new();
     snapshot.write_to(&mut bytes).unwrap();
     (String::from_utf8(bytes).unwrap(), stats)
 }
 
-pub(super) fn output(dump: &Dump) -> String {
-    let snapshot = build(dump, &mut Stats::default()).unwrap();
+pub(crate) fn output(dump: &Dump) -> String {
+    let snapshot = build_public(dump, &mut Stats::default()).unwrap();
     let mut bytes = Vec::new();
     snapshot.write_to(&mut bytes).unwrap();
     String::from_utf8(bytes).unwrap()
 }
 
-pub(super) fn report(dump: &Dump) -> Vec<(Rule, String, String)> {
-    match build(dump, &mut Stats::default()) {
-        Err(LiftError::Violations(report)) => report.iter().cloned().collect(),
+pub(crate) fn report(dump: &Dump) -> Vec<(Rule, String, String)> {
+    match build_public(dump, &mut Stats::default()) {
+        Err(LiftError::ClosedWorld(report)) => report.iter().cloned().collect(),
         Err(other) => panic!("not a violation report: {other}"),
         Ok(_) => panic!("fixture must fail"),
     }
 }
 
-pub(super) fn resource_lines(iri: &str, class: &str, label: &str) -> Vec<String> {
+pub(crate) fn resource_lines(iri: &str, class: &str, label: &str) -> Vec<String> {
     let g = "<urn:dsp:project:0803>";
-    vec![
+    let mut lines = vec![
         format!("<{iri}> <{}> \"{label}\" {g} .", model::RDFS_LABEL),
         format!("<{iri}> <{}> <{}> {g} .", model::RDF_TYPE, vocab::DAO_RESOURCE),
         format!("<{iri}> <{}> <{class}> {g} .", vocab::DAO_SOURCE_CLASS),
+    ];
+    lines.extend(rights_lines(iri, "public"));
+    lines
+}
+
+/// The `dao:accessRights` and `dao:dataClassification` lines of a resource or
+/// representation node.
+pub(crate) fn rights_lines(iri: &str, rights: &str) -> Vec<String> {
+    let g = "<urn:dsp:project:0803>";
+    vec![
+        format!("<{iri}> <{}> \"{rights}\" {g} .", vocab::DAO_ACCESS_RIGHTS),
+        format!("<{iri}> <{}> \"unclassified\" {g} .", vocab::DAO_DATA_CLASSIFICATION),
     ]
 }
 
@@ -217,7 +238,7 @@ fn the_graph_comes_from_the_data_graph_shortcode() {
     f.resource("http://rdfh.ch/0854/ZEBRA", "Page", "x");
 
     let out = output(&f.dump());
-    assert_eq!(out.lines().count(), 3);
+    assert_eq!(out.lines().count(), 5);
     assert!(out.lines().all(|l| l.ends_with(" <urn:dsp:project:0854> .")), "{out}");
 }
 
@@ -406,7 +427,7 @@ fn the_report_prints_a_count_per_rule_then_at_most_twenty_of_each() {
 }
 
 /// `f` written as an unzipped dump under `dir`: every quad in `data.nq`.
-fn write_dump(f: &Fixture, dir: &TempDir) {
+pub(crate) fn write_dump(f: &Fixture, dir: &TempDir) {
     let rdf = dir.path().join("data").join("rdf");
     std::fs::create_dir_all(&rdf).unwrap();
     let lines: String = f.quads.iter().map(|q| format!("{q} .\n")).collect();
@@ -414,38 +435,40 @@ fn write_dump(f: &Fixture, dir: &TempDir) {
 }
 
 #[test]
-fn snapshot_reads_the_dump_directory_and_keeps_the_runs_stats() {
+fn lift_reads_the_dump_directory_and_keeps_the_runs_stats() {
     let mut f = Fixture::new();
     f.resource(ZEBRA, "Page", "b7v");
+    f.add(ZEBRA, kb::HAS_PERMISSIONS, plain("V knora-admin:UnknownUser"));
     let dir = TempDir::new();
     write_dump(&f, &dir);
 
-    let snapshot = snapshot(dir.path()).unwrap();
+    let lifted = crate::lift(dir.path()).unwrap();
 
     let mut bytes = Vec::new();
-    snapshot.write_to(&mut bytes).unwrap();
+    lifted.snapshot.write_to(&mut bytes).unwrap();
     assert_eq!(String::from_utf8(bytes).unwrap(), output(&f.dump()));
-    assert_eq!(snapshot.stats().resources_by_class.get(&onto("Page")), Some(&1));
-    assert_eq!(snapshot.stats().lines, 3);
+    assert_eq!(lifted.stats.resources_by_class.get(&onto("Page")), Some(&1));
+    assert_eq!(lifted.stats.lines, 5);
 }
 
 #[test]
-fn snapshot_of_a_dump_that_breaks_the_format_is_its_violation_report() {
+fn lift_of_a_dump_that_breaks_the_format_is_its_violation_report() {
     let mut bad = Fixture::new();
     bad.add(ZEBRA, model::RDF_TYPE, nn(&onto("Page")));
+    bad.add(ZEBRA, kb::HAS_PERMISSIONS, plain("V knora-admin:UnknownUser"));
     let dir = TempDir::new();
     write_dump(&bad, &dir);
 
-    let err = snapshot(dir.path()).expect_err("a dump without a label must fail");
+    let err = crate::lift(dir.path()).expect_err("a dump without a label must fail");
 
-    assert!(matches!(err, LiftError::Violations(_)), "{err}");
+    assert!(matches!(err, LiftError::ClosedWorld(_)), "{err}");
 }
 
 #[test]
-fn snapshot_of_a_directory_without_rdf_files_is_a_dump_error() {
+fn lift_of_a_directory_without_rdf_files_is_a_dump_error() {
     let dir = TempDir::new();
 
-    let err = snapshot(dir.path()).expect_err("an empty directory must fail");
+    let err = crate::lift(dir.path()).expect_err("an empty directory must fail");
 
     assert!(matches!(err, LiftError::Dump(_)), "{err}");
 }
@@ -531,7 +554,7 @@ fn an_untyped_subject_and_a_twice_typed_resource_are_violations() {
 fn every_subject_kind_and_rule_classifies_without_a_violation() {
     let dump = every_rule_fixture().dump();
     let mut stats = Stats::default();
-    build(&dump, &mut stats).unwrap();
+    build_public(&dump, &mut stats).unwrap();
 
     assert_eq!(
         stats.subjects_by_kind.into_iter().collect::<Vec<_>>(),
@@ -559,7 +582,7 @@ fn a_link_value_companion_and_a_file_value_never_reach_the_value_path() {
     f.quads.retain(|q| q.predicate.as_str() != onto("hasDescription"));
     let dump = f.dump();
     let mut stats = Stats::default();
-    let snapshot = build(&dump, &mut stats).unwrap();
+    let snapshot = build_public(&dump, &mut stats).unwrap();
 
     let handled = |h| stats.resource_predicates.get(&h).copied().unwrap_or(0);
     assert_eq!(handled(Handling::LinkValueCompanion), 2);
@@ -609,13 +632,28 @@ fn a_uuid_that_is_not_base64url_mints_no_node() {
 }
 
 #[test]
+fn a_selected_resource_without_rights_from_the_guard_is_an_internal_error_not_public() {
+    let mut f = Fixture::new();
+    f.resource(ZEBRA, "Page", "b7v");
+    let dump = f.dump();
+    let read = Read::of(&dump).unwrap();
+    let selection = crate::selection::select(&read.index, &read.subjects);
+    let (no_rights, violations) = crate::guard::check(&read.index, &read.subjects, &selection);
+    assert_eq!(violations.len(), 1, "the fixture's resource has no permissions");
+
+    let err = build(read, &selection, &no_rights, &mut Stats::default()).expect_err("no rights");
+
+    assert!(matches!(err, LiftError::Internal { .. }), "{err}");
+}
+
+#[test]
 fn a_shortcode_that_forms_no_graph_iri_is_an_error_not_a_panic() {
     let mut f = Fixture::with_graphs(
         "http://www.knora.org/data/08 03/incunabula",
         "http://www.knora.org/ontology/0803/incunabula",
     );
     f.resource(ZEBRA, "Page", "b7v");
-    let err = build(&f.dump(), &mut Stats::default()).expect_err("no graph IRI");
+    let err = build_public(&f.dump(), &mut Stats::default()).expect_err("no graph IRI");
     assert!(err.to_string().contains("08 03"), "{err}");
 }
 

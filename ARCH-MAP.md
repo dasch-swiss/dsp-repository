@@ -634,19 +634,21 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Purpose:** The Deposit Area's VRE bridge (`areas/deposit/ADR-0005`): for each allowlisted project, take
   its dump from its VRE server, turn it into an interim snapshot and the project's media files, and write them
   as a new generation into the Access Area's `sync` and `media` subtrees, behind per-project Ready tokens.
-  `vre-bridge-lift` (`lift/`): dsp-incubator's `dao-lift` `snapshot` as a library, the dump's
-  `data.nq` and `ontology-*.nq` as the interim snapshot `lift/FORMAT.md` specifies, in memory, or every
-  violation of the format's closed world. Planned: `vre-bridge-core` (settings, refresh decisions, the
-  shipped-input digest), `vre-bridge-store` (generations, Ready tokens, recovery, the lock),
+  `vre-bridge-lift` (`lift/`): the selection of the dump's `data.nq`, the public guard on it, and
+  dsp-incubator's `dao-lift` `snapshot` as a library, giving the interim snapshot `lift/FORMAT.md` specifies,
+  with access rights, in memory, or every violation of the guard or of the format's closed world. Planned:
+  `vre-bridge-core` (settings, refresh decisions, the shipped-input digest), `vre-bridge-store` (generations, Ready tokens, recovery, the lock),
   `vre-bridge-client` (DSP-API with the service identity) and `vre-bridge-server` (the `VreBridge` facade, the
   nightly run, one refresh). Not yet in code: every crate but `vre-bridge-lift` (P-DEV-301).
-- **Key entities:** `snapshot`, `Snapshot`, `Stats`, `LiftError`, `ViolationReport`, `Kind`, `Handling`,
-  `ValueKind`; internal: `Dump`, `Index`, `Ontology`, `Violations`, `Rule`
-- **Public interface:** the `vre_bridge_lift` library: `snapshot(dump_dir) -> Result<Snapshot, LiftError>`,
-  `Snapshot::{write_to, stats}`, `Stats` and the key types of its counts, `LiftError::{Dump, Violations,
-  Internal}`. No routes, no binary.
+- **Key entities:** `lift`, `Lifted`, `Snapshot`, `Stats`, `LiftError`, `Violation`, `Problem`, `SubjectKind`,
+  `ViolationReport`, `Kind`, `Handling`, `ValueKind`, `INTERIM_FORMAT_VERSION`, `TRANSFORMATION_VERSION`; internal:
+  `Dump`, `Read`, `Index`, `Ontology`, `Selection`, `Rights`, `Violations`, `Rule`
+- **Public interface:** the `vre_bridge_lift` library: `lift(dump_dir) -> Result<Lifted, LiftError>`,
+  `Lifted { snapshot, stats }`, `Snapshot::write_to`, `Stats` and the key types of its counts,
+  `LiftError::{Dump, Refused, ClosedWorld, Internal}`, the two version constants. No routes, no binary.
 - **Local-context kit:** `areas/deposit/vre-bridge/CLAUDE.md`, `areas/deposit/vre-bridge/CONTEXT.md`,
-  `areas/deposit/vre-bridge/lift/FORMAT.md`, `areas/deposit/vre-bridge/lift/src/snapshot/mod.rs`
+  `areas/deposit/vre-bridge/lift/FORMAT.md`, `areas/deposit/vre-bridge/lift/src/lib.rs` (select, guard, build),
+  `areas/deposit/vre-bridge/lift/src/guard.rs`, `areas/deposit/vre-bridge/lift/src/snapshot/mod.rs`
 - **Depends on:** third-party: oxigraph (no default features) and thiserror (`vre-bridge-lift`)
 - **Used by:** nothing yet; `vre-bridge-lift` grants `vre-bridge-core` and `vre-bridge-server`, and
   `deposit-server` (planned) is to depend on `vre-bridge-server` alone

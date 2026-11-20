@@ -69,6 +69,15 @@ _Avoid_: Service Master, derivative, Access File (retired: what Vitrinli sends f
 A file a depositor uploaded in the Deposit Area in preparation for archiving: the candidate Preservation File, held by the Deposit Area's `media` capability until the archive accepts it. Not yet preserved, and not the archive's.
 _Avoid_: master, source file, Preservation File (it becomes one only on ingest).
 
+The two policy values below travel with what the Access Area serves (ADR-0013); the VRE bridge records them in the interim format (`areas/deposit/vre-bridge/lift/FORMAT.md`).
+
+**Access rights**:
+Who may see a resource or a file, recorded per Representation version and served with each resource and file, never per value (ADR-0013). Today's values are public and restricted view, written `"public"` and `"restricted-view"` in the interim format.
+_Avoid_: permission (DSP-API's per-group grants, from which the bridge derives the rights).
+
+**Data classification**:
+How sensitive the data is: a second value, independent of the Access rights, with their granularity and travelling with them. One value exists today, `unclassified`.
+
 ## Relationships
 
 - The **Deposit Area** reads the **Access Area**'s published project files (the corpus under `areas/access/dpe/server/data/`, baked into the editor image as `EDITOR_DATA_DIR`) and is meant to return approved records as a pull request against this repository; git is the source of truth today, the archive is designed to replace it.

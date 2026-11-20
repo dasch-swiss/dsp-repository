@@ -1237,7 +1237,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `base`, `projects`, and the doc-hidden `from_sql_folders`, which ends with DEV-7498), `ProjectSummary` and
   `MatchedRoute` (the route template a response carries in its extensions, for the host's request span)
 - **Public interface:** `cpe-server`'s `Cpe` and `CpeConfig`: the router, mounted by areas/access/server
-  at `Cpe::base()` on the area's origin beside DPE's routes, and `Cpe::activate`, which takes both ports. No `pub` item of
+  at `Cpe::base()` on the area's origin beside DPE's routes, and `Cpe::follow` and `Cpe::activate`, which take both ports. No `pub` item of
   `cpe-server` names a type of another CPE crate, `cpe-ports`' excepted. `cpe/ports` is not an interface CPE offers but the ports CPE
   consumes: `ArchiveProjection`, which `sync` implements, and `DepositedFiles`, which `media` implements. `pub` in `cpe-core` and in `cpe-components` means visible
   to CPE's other crates, not to a host: no crate of this repository outside the capability depends on either. The
@@ -1339,7 +1339,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   onto a directory (structural where a request is answered, since `AssetInventory::serve` and
   `static_files::serve` are given strings; **review** in `discovery`, the one module that reads the disk);
   the crate's own code cannot name either adapter (**structure**: `sync-store` and `media-store` grant
-  `cpe-server` only their `testonly` variants, which a library cannot depend on); that a host feeds a store through `Cpe::activate` and the
+  `cpe-server` only their `testonly` variants, which a library cannot depend on); that a host feeds a store through `Cpe::follow` or `Cpe::activate` and the
   ports, and not through the doc-hidden, legacy `Cpe::from_sql_folders` (a committed `data.sql`, with the
   configuration and narrative read from the folder, kept for the incubator's host and for tests until
   DEV-7498), is **review**; activation reads a project's configuration, narrative and curation through the
@@ -1368,8 +1368,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   No port pre-filters for the anonymous consumer: in the target the store keeps each row's rights and every
   handler filters on them with ADR-0013's decision, not yet in code; no asset's bytes reach the store; until `media` serves assets at request time, `cpe-server` reads a
   project's `assets/` from its folder at activation and serves them from memory, the one interim exception
-  (ADR-0007; **review**). A project is rebuilt when its port announces change, and
-  CPE grows no endpoint for it; not yet in code, a restart is the rebuild (ADR-0012, DEV-7622; **review**).
+  (ADR-0007; **review**). CPE re-activates when `sync`'s port announces change (`cpe-server`'s `follow.rs`,
+  thread `cpe-reactivate`, the one place that holds a re-activation back: `activation::held_back_by`), and
+  grows no endpoint for it; not yet in code, it re-activates every project, not the one named (ADR-0012, DEV-7989; **review**).
   Some tests read committed files past a crate's interface by relative path: `cpe-store-build`'s
   `test_tolerance_is_the_one_the_engine_checks_a_store_with` reads `cpe-core`'s `validate.rs` source to
   hold its `TOLERANCE` to `ANNOTATION_TOLERANCE`, its integration tests read
@@ -1382,8 +1383,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   against `media` (`DepositedFiles`),
   single writer CPE, rebuilt from empty from what the ports serve (ADR-0008, ADR-0012;
   the schema and the queries are in `cpe-store` and what builds a store from a snapshot in `cpe-store-build`).
-  The store is built at every start and kept nowhere: `cpe-server`'s `Cpe::activate` builds each project's in
-  memory, **single writer** that call (or, until DEV-7498, `Cpe::from_sql_folders` in its place, never both
+  The store is built at every start and re-activation and kept nowhere: `cpe-server`'s `Cpe::activate` builds each project's in
+  memory, **single writer** that call and `Cpe::follow`'s re-activations (or, until DEV-7498, `Cpe::from_sql_folders` in its place, never both
   in one host), and nothing is written to disk. `projects/incunabula/` is
   committed code and documents (`SHORTCODE`, `assets/` and the four documents about its data), **single writer**
   the project's developers (**review**); the process reads it at activation and never writes it. Its
@@ -1488,7 +1489,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Used by:** areas/access/cpe (through `cpe-ports`; CPE's store is rebuilt from what `sync`
   serves, ADR-0008; the tests of `cpe-store-build` and of `cpe-server` link `sync_store_for_tests`, a `testonly`
   library over the same sources, and read the `data` filegroup through a `copy_to_directory`, ADR-0008);
-  areas/access/server (constructs `LiveArchiveProjection` over `SYNC_DATA_DIR` and hands it to `Cpe::activate`; the only target `sync_store` grants); later
+  areas/access/server (constructs `LiveArchiveProjection` over `SYNC_DATA_DIR` and hands it to `Cpe::follow`; the only target `sync_store` grants); later
   areas/access/dpe and the SPARQL endpoint, each through its own port
 - **Boundary rules:** single writer of every projection graph and single consumer of the
   projection stream (ADR-0003, ADR-0008: the Access bucket is `media`'s channel, and `sync`
@@ -1571,7 +1572,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Used by:** areas/access/cpe (through `DepositedFiles` in `cpe-ports`; `cpe-server`'s tests link
   `media_store_for_tests`, a `testonly` library, and read the committed data through the `//areas/access/media:data`
   filegroup, which `cpe-store-build` and `sync-store`'s tests also read); areas/access/server (links `media_store`, the only target it grants,
-  constructs `LiveDepositedFiles` over `MEDIA_DATA_DIR` and hands it to `Cpe::activate`); expected later:
+  constructs `LiveDepositedFiles` over `MEDIA_DATA_DIR` and hands it to `Cpe::follow`); expected later:
   areas/access/datei (through `datei/ports`), areas/access/cpe and areas/access/dpe for IIIF and downloads
 - **Boundary rules:** reads only the Access bucket, and until it exists only the directory
   `MEDIA_DATA_DIR` names (its committed `data/` by default); never the sealed store, Preservation Files or Originals; never derives, because the archive
@@ -1593,7 +1594,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `media` announces, and until the bucket exists `media` owns the Ready-token poll (a poll of each project's
   Ready token in its subtree, triggered by the VRE bridge) that makes its adapter announce; a reader grows no
   endpoint of its own (ADR-0012; **review**). Not yet in code: the announcement and the Ready-token poll;
-  until they land, an edit under `MEDIA_DATA_DIR` needs a restart (DEV-7938). Not yet in code: rights on the
+  until they land, a change under `MEDIA_DATA_DIR` reaches CPE only with a replaced `sync` token (DEV-7938). Not yet in code: rights on the
   port (not scheduled).
 - **Durable state:** the tables that say what is servable and where, **single writer** `media`
   (target design). Until the Access bucket: the `media` stand-in subtree, one directory per project with its

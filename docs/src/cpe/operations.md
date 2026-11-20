@@ -14,10 +14,23 @@ to CPE.
   read from the generation the project's Ready token names in that directory. All
   three are in the image. Each project's store is built in memory from that data at every start; nothing is
   written to disk, and a restart leaves nothing behind.
-- **Refresh**: for now, a restart. A file edited under `MEDIA_DATA_DIR` or `SYNC_DATA_DIR` reaches CPE only
-  when `access-server` restarts, since activation runs once. `sync`'s port can announce a project whose Ready token
-  changed (`SYNC_POLL_SECS`), but CPE does not subscribe to it yet (DEV-7622). Not yet in code: `media`'s port
-  announces change (DEV-7938), and CPE rebuilds the one project named, with no endpoint of its own (ADR-0012).
+- **Refresh**: by a project's Ready token, with no restart (ADR-0012). `sync` polls its tokens every
+  `SYNC_POLL_SECS` and announces a project whose token appeared, changed or was removed. On an announcement for
+  a shortcode a project folder declares, CPE re-activates: it loads every project again, and serves the result
+  only if every project it served before loads again, or is no longer in `sync` (its token removed). Each
+  project's provenance is read from both ports before and after its store is built, and all four reads must be
+  equal. Otherwise CPE keeps serving what it served, logs at error level which projects held the re-activation
+  back (`CPE's re-activation is held back`), and tries once more after `RETRY_AFTER_POLLS` poll intervals (`access-server`);
+  beyond that, the next announcement or a restart refreshes it. A project whose token is gone while
+  `SYNC_DATA_DIR` is missing, unreadable or holds no project directory at all, as when a mount loses its target,
+  holds the re-activation back rather than being taken for removed; so does removing the last project, which
+  then takes a restart. A project whose `media` token was replaced and whose `sync` token was not yet is held
+  back until `sync`'s announces. An announcement for a shortcode without a
+  folder is ignored. A file edited in place without a new token is not seen until a restart. While a
+  re-activation builds, the stores it replaces are still in memory, so it needs about twice their memory.
+  Not yet in code: `media`'s
+  port announces nothing (DEV-7938), and CPE re-activates every project instead of rebuilding the one named
+  (DEV-7989).
 - **Static files**: CPE's stylesheets, scripts and logos are compiled into the binary and served at
   `/cpe/<project id>/_static/…`, and at `/cpe/_static/…` for the overview and CPE's not-found page; a
   project's own files at `/cpe/<project id>/_assets/…`.
@@ -56,7 +69,9 @@ a refused configuration answers, carries no `X-Robots-Tag`, since no project id 
 |-----------|--------------|--------|-----|
 | Projects are still loading | `503`, every path | `CPE is mounted and activates in the background` (info) | serves |
 | A project is loaded | its pages, and its entry in the overview, unless it is a Hidden project | `project loaded`, then `CPE's projects are loaded` with the counts (info) | serves |
-| `SYNC_DATA_DIR`, a project's Ready token in it, the generation the token names or its snapshot is missing, unreadable or a symlink, or the token names an interim format version `sync` does not read | `503` on that project's paths; the overview does not list it | `project does not load; its prefix answers 503`, with the reason (error); for a missing directory also `SYNC_DATA_DIR names no directory …` at start (warning) | serves |
+| A project's Ready token in `SYNC_DATA_DIR` is missing while its directory, or another project's, is there | `503` on that project's paths; the overview does not list it | `project is not in the archive projection; its prefix answers 503` (warning) | serves |
+| A re-activation is held back | what was served before | `CPE's re-activation is held back`, with the project ids (error), after each project's own line | serves |
+| `SYNC_DATA_DIR` is missing or holds no project directory; the project's Ready token is unreadable or a symlink; the generation the token names or its snapshot is missing, unreadable or a symlink; or the token names an interim format version `sync` does not read | `503` on that project's paths; the overview does not list it | `project does not load; its prefix answers 503`, with the reason (error); for a missing directory also `SYNC_DATA_DIR names no directory …` at start (warning) | serves |
 | `MEDIA_DATA_DIR`, a project's Ready token in it, the generation the token names, or a file the project needs from it is missing, unreadable or not UTF-8 | `503` on that project's paths; the overview does not list it | `project does not load; its prefix answers 503`, with the reason (error); for a missing directory also `MEDIA_DATA_DIR names no directory …` at start (warning) | serves |
 | A project folder has no `SHORTCODE` | the folder is no project: CPE's not-found, `404`, on its paths | nothing | serves |
 | A project folder's `SHORTCODE` is malformed or a symlink | the project is not served: CPE's not-found, `404`, on its paths | `a project folder is not served`, with the folder and the reason (warning) | serves |

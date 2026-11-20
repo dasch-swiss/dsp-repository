@@ -4,9 +4,9 @@
 //! the name is the project id and the URL segment. What else makes it one
 //! depends on the caller:
 //!
-//! - [`discover_for_activation`], for `Cpe::activate`: a regular `SHORTCODE` file naming the
-//!   project whose deposited files and snapshot the ports serve. Its config and narrative come
-//!   through the bytes port, never from the folder.
+//! - [`discover_for_activation`], for `Cpe::activate` and `Cpe::follow`: a regular `SHORTCODE` file
+//!   naming the project whose deposited files and snapshot the ports serve. Its config and
+//!   narrative come through the bytes port, never from the folder.
 //! - [`discover_sql_folders`], the legacy path of `Cpe::from_sql_folders`: a `config.kdl`, read
 //!   from the folder with its flat `narrative/` and its `data.sql`.
 //!
@@ -260,7 +260,7 @@ fn read_shortcode(dir: &Path) -> Result<String, SkipReason> {
     }
 }
 
-/// The projects under `root` that `Cpe::activate` loads: every folder with a
+/// The projects under `root` that `Cpe::activate` and `Cpe::follow` load: every folder with a
 /// regular `SHORTCODE` file that holds a shortcode, and whose name is a project
 /// id. Every other folder is skipped, with the reason.
 ///

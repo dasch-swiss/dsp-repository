@@ -45,6 +45,7 @@
 //! The port's provenance of a project is its token's, read on every call. `subscribe` reads every
 //! token as a baseline and then polls them on a thread of its own, announcing each project whose
 //! token appeared, changed or went (`poll.rs`); the thread ends when the adapter is dropped.
+//! `location_present` tells a project the subtree no longer holds from a subtree that is gone.
 //!
 //! `access-server` constructs the adapter, over the directory `SYNC_DATA_DIR` names, and hands
 //! it to CPE's activation. Nothing here writes to the subtree or watches it with file-system
@@ -172,6 +173,24 @@ impl ArchiveProjection for LiveArchiveProjection {
             Some(running) => running.add(listener),
             None => *poll = Some(poll::Poll::start(self.root.clone(), self.poll_interval, listener)),
         }
+    }
+
+    /// The project's directory is a real directory below the root, or, once the bridge has deleted
+    /// it a run after its token, another project's directory is. A root that holds no project
+    /// directory at all, or cannot be read, is a lost location, as a mount that lost its target is.
+    fn location_present(&self, shortcode: &str) -> bool {
+        let is_dir = |path: &Path| fs::symlink_metadata(path).is_ok_and(|kind| kind.is_dir());
+        if !is_shortcode(shortcode) {
+            return false;
+        }
+        if is_dir(&self.root.join(shortcode)) {
+            return true;
+        }
+        fs::read_dir(&self.root).is_ok_and(|entries| {
+            entries
+                .filter_map(Result::ok)
+                .any(|entry| entry.file_name().to_str().is_some_and(is_shortcode) && is_dir(&entry.path()))
+        })
     }
 }
 

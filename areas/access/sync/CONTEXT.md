@@ -48,7 +48,10 @@ How `sync` announces change before the projection stream exists (ADR-0012). The 
 `sync-ready-token-poll`, reads every token again each interval (`SYNC_POLL_SECS` in `access-server`, default 30 s)
 and tells each listener the shortcode of every project whose token appeared, changed or went. A token that cannot
 be read is skipped for the round and logged once when it starts and once when it stops failing. A poll, never a
-file-system notification: the subtree may be NFS. Dropping the adapter stops the thread.
+file-system notification: the subtree may be NFS. Dropping the adapter stops the thread. A project whose
+token went was removed while the subtree still holds its directory or another project's; `location_present`
+answers `false` for a subtree that holds no project directory or cannot be read, as when a mount loses its
+target, and CPE then keeps what it served.
 _Avoid_: watcher, inotify, reload, refresh (the bridge's; the poll only announces).
 
 **Committed fixture**:

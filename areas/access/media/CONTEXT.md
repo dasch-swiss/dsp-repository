@@ -80,10 +80,11 @@ _Avoid_: public user, guest (a request's viewer; a bytes port has no request).
   (ADR-0012). An image is an IIIF URL, served by the IIIF server CPE's store names.
 - **Render or derive.** Vitrinli is not here, and the Access Area's `media` never derives: the archive already
   did (`vitrinli/CONTEXT.md`).
-- **Announce change.** A file edited under `MEDIA_DATA_DIR` reaches CPE only when the Access binary restarts,
-  since activation runs once. `LiveDepositedFiles` serves a project's provenance from its Ready token, equal to
+- **Announce change.** A generation written under `MEDIA_DATA_DIR` reaches CPE when `sync` announces the
+  project, which the bridge triggers by replacing the `sync` token after the `media` one. `LiveDepositedFiles`
+  serves a project's provenance from its Ready token, equal to
   the `sync` token's when both subtrees hold the same generation. Not yet in code: `media` announces change on its bytes ports
-  (DEV-7938), and CPE follows `sync`'s announcements (DEV-7622); until the bucket exists `media` owns the
+  (DEV-7938); until the bucket exists `media` owns the
   Ready-token poll, which reads each project's Ready token in its subtree at a fixed interval and
   makes its adapter announce, and a reader rebuilds the one project named and grows no endpoint of its own
   (ADR-0012).

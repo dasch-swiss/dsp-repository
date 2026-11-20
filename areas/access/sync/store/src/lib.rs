@@ -1,9 +1,20 @@
 //! The Access Area's `sync` capability at its minimum: [`LiveArchiveProjection`] serves CPE's
-//! [`ArchiveProjection`] from a committed snapshot file per known project, re-read on every call.
+//! [`ArchiveProjection`] from the `sync` stand-in subtree, re-read on every call.
 //!
-//! The snapshot file is interim-DAO N-Quads written by `dao-lift`, in the format `FORMAT.md`
-//! defines at the `dao-lift` commit `areas/access/sync/data/PROVENANCE` pins; `vocab.rs` is
-//! transcribed from it. Only the shortcodes in `KNOWN` are served; any other is `UnknownProject`.
+//! A project is known exactly when its Ready token exists: `<root>/<shortcode>/.ready`, read
+//! through `shared_stand_in`. A shortcode `is_shortcode` refuses is `UnknownProject` before
+//! anything touches the file system, and so is a project without a token. A token that cannot be
+//! read or parsed, one naming an interim format version outside [`READABLE`], or one naming a
+//! generation that is not there makes the call `Unavailable`, never `UnknownProject`: a broken
+//! project is not a removed one. The snapshot is `<root>/<shortcode>/<generation>/snapshot.nq`, the
+//! Interim snapshot of the generation the token names, and nothing else is read. The generation
+//! directory must be a real directory and `snapshot.nq` a regular file, each checked without
+//! following a symlink, or the call is `Unavailable`. The window between that check and the read is
+//! accepted, since only the VRE bridge writes the subtree.
+//!
+//! The file is in the interim format `areas/deposit/vre-bridge/lift/FORMAT.md` defines; `vocab.rs`
+//! is transcribed from it. A new format version is added to [`READABLE`] before the bridge writes
+//! it.
 //!
 //! A `FORMAT.md` violation on a fact the port serves, or a resource IRI with no data ARK, makes the
 //! whole call `Unavailable`, naming the rule as an [`InvalidFact`], as do a missing, unreadable,
@@ -23,7 +34,8 @@
 //!
 //! Only what `FORMAT.md` lets a reader omit is omitted, never an error: a value whose `rdf:value`
 //! datatype the port has no kind for, a representation whose type it has no `File` for, and facts
-//! the port does not carry. Annotations (`oa:Annotation`) are served as resources.
+//! the port does not carry, such as the access rights, data classification and legal information.
+//! Annotations (`oa:Annotation`) are served as resources.
 //!
 //! One violation is accepted, by decision: an edge to a value node that lacks `rdf:type dao:Value`.
 //! Telling it from a link to an IRI outside the file, also a violation, would rest on the IRI's
@@ -31,14 +43,17 @@
 //! resource of the file is refused ([`InvalidFact::UnknownTarget`]).
 //!
 //! `access-server` constructs the adapter, over the directory `SYNC_DATA_DIR` names, and hands
-//! it to CPE's activation.
+//! it to CPE's activation. Nothing here writes to the subtree or watches it for changes: it may be
+//! NFS.
 
-use std::fs;
 use std::path::{Path, PathBuf};
+use std::{fs, io};
 
 use cpe_ports::{contract, ArchiveProjection, ProjectSnapshot, ProjectionError};
 use oxrdf::Quad;
 use oxttl::NQuadsParser;
+use shared_names::is_shortcode;
+use shared_stand_in::{generation_dir, read_token, ReadyToken, TOKEN_FILE};
 
 mod ark;
 mod error;
@@ -48,23 +63,30 @@ mod vocab;
 pub use ark::ArkError;
 pub use error::{InvalidFact, SnapshotError};
 
-/// The projects `sync` holds. A shortcode outside this set is `UnknownProject`, whatever the
-/// directory contains; one inside it whose files cannot be served is `Unavailable`.
-const KNOWN: &[&str] = &["0803"];
+/// The interim format versions `sync-store` reads: the current one and, once there is one, the
+/// version before it.
+const READABLE: &[u32] = &[1];
 
-/// `sync`'s adapter for CPE's port: the committed interim-DAO snapshot of each known project,
-/// read from `<dir>/<shortcode>.nq` on every call.
+/// The snapshot's file name in a generation's directory.
+const SNAPSHOT_FILE: &str = "snapshot.nq";
+
+/// `sync`'s adapter for CPE's port: the Interim snapshot of each project whose Ready token exists
+/// in the subtree at `root`, read from the generation the token names on every call.
 pub struct LiveArchiveProjection {
-    dir: PathBuf,
+    root: PathBuf,
 }
 
 impl LiveArchiveProjection {
-    pub fn new(dir: impl Into<PathBuf>) -> Self {
-        Self { dir: dir.into() }
+    pub fn new(root: impl Into<PathBuf>) -> Self {
+        Self { root: root.into() }
     }
 
-    fn serve(&self, shortcode: &str) -> Result<ProjectSnapshot, SnapshotError> {
-        let path = self.dir.join(format!("{shortcode}.nq"));
+    fn serve(&self, shortcode: &str, token: &ReadyToken, generation: &Path) -> Result<ProjectSnapshot, SnapshotError> {
+        let version = token.provenance.interim_format_version;
+        if !READABLE.contains(&version) {
+            return Err(SnapshotError::UnreadableFormat { path: self.root.join(shortcode).join(TOKEN_FILE), version });
+        }
+        let path = snapshot_file(generation)?;
         let quads = read_quads(&path)?;
         let snapshot = mapping::map(shortcode, &quads).map_err(|invalid| SnapshotError::Invalid {
             path: path.clone(),
@@ -85,12 +107,50 @@ impl LiveArchiveProjection {
 impl ArchiveProjection for LiveArchiveProjection {
     #[tracing::instrument(skip(self), fields(otel.kind = "internal"))]
     fn snapshot(&self, shortcode: &str) -> Result<ProjectSnapshot, ProjectionError> {
-        // The path and the served shortcode come from `KNOWN`, never from the argument, so no
-        // caller string reaches the filesystem.
-        let Some(known) = KNOWN.iter().copied().find(|known| *known == shortcode) else {
-            return Err(ProjectionError::UnknownProject { shortcode: shortcode.to_string() });
+        let unknown = || ProjectionError::UnknownProject { shortcode: shortcode.to_string() };
+        // No caller string reaches the file system unless it is a shortcode.
+        if !is_shortcode(shortcode) {
+            return Err(unknown());
+        }
+        let token = match read_token(&self.root, shortcode) {
+            Ok(Some(token)) => token,
+            Ok(None) => return Err(unknown()),
+            Err(source) => {
+                let path = self.root.join(shortcode).join(TOKEN_FILE);
+                return Err(ProjectionError::unavailable(SnapshotError::Token { path, source }));
+            }
         };
-        self.serve(known).map_err(ProjectionError::unavailable)
+        let Some(generation) = generation_dir(&self.root, shortcode, &token.provenance.generation) else {
+            return Err(unknown());
+        };
+        self.serve(shortcode, &token, &generation).map_err(ProjectionError::unavailable)
+    }
+}
+
+/// The snapshot's path in the directory `generation`, once the directory is found to be a real
+/// directory and the snapshot a regular file, a symlink at either refused unfollowed.
+fn snapshot_file(generation: &Path) -> Result<PathBuf, SnapshotError> {
+    match fs::symlink_metadata(generation) {
+        Ok(metadata) if metadata.is_dir() => {}
+        Ok(_) => return Err(not_a(generation, "a directory")),
+        Err(e) if e.kind() == io::ErrorKind::NotFound => {
+            return Err(SnapshotError::MissingGeneration { path: generation.to_path_buf() });
+        }
+        Err(source) => return Err(SnapshotError::Read { path: generation.to_path_buf(), source }),
+    }
+    let path = generation.join(SNAPSHOT_FILE);
+    match fs::symlink_metadata(&path) {
+        Ok(metadata) if metadata.is_file() => Ok(path),
+        Ok(_) => Err(not_a(&path, "a regular file")),
+        Err(source) => Err(SnapshotError::Read { path, source }),
+    }
+}
+
+/// A `Read` error for an entry of the wrong kind; a symlink is one.
+fn not_a(path: &Path, kind: &str) -> SnapshotError {
+    SnapshotError::Read {
+        path: path.to_path_buf(),
+        source: io::Error::new(io::ErrorKind::InvalidInput, format!("not {kind}, or a symlink")),
     }
 }
 

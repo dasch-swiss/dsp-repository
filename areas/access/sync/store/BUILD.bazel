@@ -1,12 +1,12 @@
 load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test", "rust_test_suite")
-
-# The tests read the committed projection through `CARGO_MANIFEST_DIR`.
-_RUSTC_ENV = {"CARGO_MANIFEST_DIR": "areas/access/sync/store"}
+load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 
 _SRCS = glob(["src/**/*.rs"])
 
 _DEPS = [
     "//areas/access/cpe/ports:cpe_ports",
+    "//shared/names:shared_names",
+    "//shared/stand-in:shared_stand_in",
     "@crates//:oxrdf",
     "@crates//:oxttl",
     "@crates//:thiserror",
@@ -19,7 +19,6 @@ rust_library(
     name = "sync_store",
     srcs = _SRCS,
     crate_name = "sync_store",
-    rustc_env = _RUSTC_ENV,
     visibility = ["//areas/access/server:__pkg__"],
     deps = _DEPS,
 )
@@ -32,7 +31,6 @@ rust_library(
     testonly = True,
     srcs = _SRCS,
     crate_name = "sync_store",
-    rustc_env = _RUSTC_ENV,
     visibility = [
         "//areas/access/cpe/server:__pkg__",
         "//areas/access/cpe/store-build:__pkg__",
@@ -43,18 +41,31 @@ rust_library(
 rust_test(
     name = "sync_store_test",
     crate = ":sync_store",
-    data = ["//areas/access/sync:data"],
     deps = ["@crates//:tempfile"],
+)
+
+# The adapter refuses a symlinked token or snapshot, and runfiles are symbolic links, so the
+# committed data is read from a copy at its repository paths, below `test_files/`, and the test runs
+# outside the local sandbox, which would link each copied file again.
+copy_to_directory(
+    name = "test_files",
+    testonly = True,
+    srcs = [
+        "//areas/access/media:data",
+        "//areas/access/sync:data",
+    ],
+    root_paths = [],
 )
 
 rust_test_suite(
     name = "sync_store_integration",
     srcs = glob(["tests/*.rs"]),
-    compile_data = ["src/vocab.rs"],
-    data = ["//areas/access/sync:data"],
-    rustc_env = _RUSTC_ENV,
+    data = [":test_files"],
+    rustc_env = {"CARGO_MANIFEST_DIR": "areas/access/sync/store"},
+    tags = ["no-sandbox"],
     deps = [
         ":sync_store",
         "//areas/access/cpe/ports:cpe_ports",
+        "//shared/stand-in:shared_stand_in",
     ],
 )

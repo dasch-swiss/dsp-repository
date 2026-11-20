@@ -2,44 +2,51 @@
 
 The Access Area's `sync` capability: the single writer of the archive projection (ADR-0003, ADR-0008) and
 the first Access-Area capability without a screen (ADR-0007). It exists so far at its minimum, the crate
-`sync-store` in `store/`, which serves CPE's archive projection port from one committed snapshot per known project in `data/`,
-with no Chischtli, replay or bus. `sync` is the single consumer of the archive's projection stream; the Access
+`sync-store` in `store/`, which serves CPE's archive projection port from the `sync` stand-in subtree, one
+Interim snapshot per known project, with no Chischtli, replay or bus. `sync` is the single consumer of the archive's projection stream; the Access
 bucket is `media`'s, and a deposited file such as a project's curation file reaches CPE through its bytes port
 against `media` (ADR-0012). `access-server`
-constructs it over the directory `SYNC_DATA_DIR` names (default `areas/access/sync/data`) and hands it to
-CPE's activation. ADR-0007 records why the committed projection is interim-DAO. The
+constructs it over the directory `SYNC_DATA_DIR` names (default `areas/access/sync/data`, the committed fixture) and
+hands it to CPE's activation. ADR-0007 records why the projection is interim-DAO. The
 port's terms (Archive projection port, Project snapshot, Source property, Archive-shaped fact, Annotation)
 are in
 [`../cpe/CONTEXT.md`](../cpe/CONTEXT.md), the Access Area's in [`../CONTEXT.md`](../CONTEXT.md), the
-contract terms (Project, Shortcode) in the root [`CONTEXT.md`](../../../CONTEXT.md) `## Shared`.
+contract terms (Project, Shortcode, Generation, Ready token) in the root [`CONTEXT.md`](../../../CONTEXT.md) `## Shared`,
+and the Interim format and Interim snapshot in [`../../deposit/vre-bridge/CONTEXT.md`](../../deposit/vre-bridge/CONTEXT.md).
 
 ## Language
 
 **Interim format**:
-The shape of a committed snapshot: N-Quads that follow DAO wherever its decisions have settled and deviate
-only where the port needs a fact DAO drops. `dao-lift` in `dasch-swiss/dsp-incubator` writes it, and its
-`FORMAT.md` there defines it and lists each deviation with its reason. The `dao-lift` commit in
-`data/PROVENANCE`, today `dasch-swiss/dsp-incubator@b2226ff4a987bf5f4b5cd0f33a8bf923a3033c7f`, pins the
-`FORMAT.md` the file follows; `store/src/vocab.rs` records the same commit, and the two move together. The
-format is temporary: it moves to DAO once DAO is published (ADR-0007).
+Defined by the VRE bridge, which writes it (Interim format, in
+[`../../deposit/vre-bridge/CONTEXT.md`](../../deposit/vre-bridge/CONTEXT.md)); `store/src/vocab.rs` is transcribed from
+its `FORMAT.md`. `sync-store` reads the format versions in its `READABLE` list, the current one and the one before
+it once there is one, today only `1`; a token naming any other is `Unavailable`. A version enters `READABLE` in an
+`access-server` release before the bridge writes it.
 _Avoid_: DAO (the format is DAO-shaped, not DAO), knora-base export, dump (the VRE export it is made from).
 
-**Committed snapshot**:
-One known project's file in the interim format, `data/<shortcode>.nq`, produced by `dao-lift` from a VRE
-dump and committed with its `PROVENANCE`. It is everything `sync` holds of a project today. The same dump and the same `dao-lift` commit give the same bytes.
-_Avoid_: Project snapshot (the port's DTO, what one call returns; the two files are its source), data
-product (what the archive will deliver in its place), the projection (the target design, held in Chischtli).
+**Known project by token**:
+A project whose Ready token, `<root>/<shortcode>/.ready`, exists in the `sync` subtree: `sync-store` serves it from
+`<root>/<shortcode>/<generation>/snapshot.nq`, the Interim snapshot of the generation the token names, and reads
+nothing else. A shortcode `is_shortcode` refuses, or one without a token, is `UnknownProject`, whatever the
+subtree holds. A known project whose token cannot be read or parsed, names an unread format version or a
+generation that is not there, or whose snapshot cannot be served is `Unavailable`, never `UnknownProject`: a
+broken project is not a removed one. A project becomes known when the VRE bridge writes its token; nothing in
+`sync-store` lists projects.
+_Avoid_: active project (CPE's activation is its own), known list, known by directory.
 
-**Known project**:
-A shortcode in `sync-store`'s `KNOWN` set, today only `0803`. A shortcode outside the set is
-`UnknownProject`, whatever `data/` holds; a known project whose committed snapshot cannot be served is
-`Unavailable`. A project becomes known by adding its shortcode and its committed snapshot together.
-_Avoid_: active project (CPE's activation is its own).
+**Committed fixture**:
+`data/`, project 0803 laid out as the VRE bridge writes it: its token and one generation, whose `snapshot.nq` is
+`dao-lift`'s output on a VRE dump, committed with its `PROVENANCE`. The tests read it, and
+`access-server`'s image carries it until the image stops carrying stand-in data.
+_Avoid_: Project snapshot (the port's DTO, what one call returns), committed snapshot (this directory's Committed fixture), data product
+(what the archive will deliver in its place), the projection (the target design, held in Chischtli).
 
 **`LiveArchiveProjection`**:
-`sync-store`'s adapter for CPE's archive projection port. Each call re-reads the known project's committed
-snapshot, parses it strictly and maps it to the port's DTOs. It serves the
-whole snapshot or refuses it: a snapshot file that is missing, unreadable, not valid N-Quads, without
+`sync-store`'s adapter for CPE's archive projection port. Each call reads the project's Ready token, then the
+Interim snapshot of the generation it names, parses it strictly and maps it to the port's DTOs. The generation
+directory must be a real directory and `snapshot.nq` a regular file, each checked without following a symlink;
+the window between that check and the read is accepted, since only the VRE bridge writes the subtree. It serves the
+whole snapshot or refuses it: a snapshot file that is missing, a symlink, unreadable, not valid N-Quads, without
 resources, or that breaks a fact the port serves makes the call `Unavailable`, as does a snapshot that fails
 the port's contract, run on every call.
 An annotation target that is not a resource of the file refuses the snapshot (`UnknownTarget`), unlike a

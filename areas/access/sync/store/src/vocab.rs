@@ -1,9 +1,10 @@
-//! Every IRI the mapping reads, transcribed from `FORMAT.md` §15 at
-//! `dasch-swiss/dsp-incubator@b2226ff4a987bf5f4b5cd0f33a8bf923a3033c7f`
-//! (`cpe/tools/dao-lift/FORMAT.md`), the commit `areas/access/sync/data/PROVENANCE` pins.
+//! Every IRI the mapping reads, transcribed from §15 of `areas/deposit/vre-bridge/lift/FORMAT.md`,
+//! interim format version 1. The terms of D14, D15 and D16 (`dao:authorship`,
+//! `dao:copyrightHolder`, `dao:accessRights`, `dao:dataClassification`) are left out on purpose:
+//! `sync` omits facts its port does not carry.
 //!
-//! No IRI is written anywhere else in the crate. When the pin moves, re-transcribe from the new
-//! commit's `FORMAT.md` and update the commit above.
+//! No IRI is written anywhere else in the crate. When `READABLE` gains a format version,
+//! re-transcribe from that version's `FORMAT.md`.
 
 use oxrdf::NamedNodeRef;
 

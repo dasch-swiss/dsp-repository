@@ -1073,11 +1073,12 @@ fn test_build_dropped_resource_stays_in_the_check_on_shared_files() {
 type ConfigOf = fn(&std::path::Path) -> Option<String>;
 
 /// The config a committed project deposited: the folder's `SHORTCODE` names its directory in
-/// `media`'s committed data, which holds its `config.kdl`.
+/// `media`'s committed data, whose generation `20261007T000000Z-00000000`, the one every committed
+/// fixture's token names, holds its `config.kdl`.
 fn deposited_config(dir: &std::path::Path) -> Option<String> {
     let shortcode = std::fs::read_to_string(dir.join("SHORTCODE")).ok()?;
     let media = concat!(env!("CARGO_MANIFEST_DIR"), "/../../media/data");
-    std::fs::read_to_string(format!("{media}/{}/config.kdl", shortcode.trim())).ok()
+    std::fs::read_to_string(format!("{media}/{}/20261007T000000Z-00000000/config.kdl", shortcode.trim())).ok()
 }
 
 /// The config of a fixture project, the `config.kdl` in its folder.

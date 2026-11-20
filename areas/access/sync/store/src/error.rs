@@ -2,13 +2,27 @@ use std::io;
 use std::path::PathBuf;
 
 use cpe_ports::contract::Violation;
+use shared_stand_in::TokenError;
 
 use crate::ArkError;
 
-/// Why a known project's snapshot file could not be served; `path` names the file.
-/// `LiveArchiveProjection` returns it as the source of `ProjectionError::Unavailable`.
+/// Why a known project's snapshot could not be served; `path` names the token, the generation
+/// directory or the snapshot file at fault. `LiveArchiveProjection` returns it as the source of
+/// `ProjectionError::Unavailable`.
 #[derive(Debug, thiserror::Error)]
 pub enum SnapshotError {
+    /// The Ready token exists but cannot be taken as one: unreadable, a symlink, or invalid.
+    #[error("cannot use the Ready token {}", path.display())]
+    Token {
+        path: PathBuf,
+        #[source]
+        source: TokenError,
+    },
+    #[error("the Ready token {} names interim format version {version}, which sync-store does not read", path.display())]
+    UnreadableFormat { path: PathBuf, version: u32 },
+    #[error("the generation {} the Ready token names does not exist", path.display())]
+    MissingGeneration { path: PathBuf },
+    /// The generation directory or the snapshot file cannot be read, or is of the wrong kind.
     #[error("cannot read {}", path.display())]
     Read {
         path: PathBuf,

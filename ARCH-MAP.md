@@ -21,7 +21,7 @@ dependency arrow is one-way: `services → shared, mosaic`, and a service never 
 another service. The shared root has moved to `shared/` at the repository root, the
 metadata editor to `areas/deposit/editor/` with its area's composition root `deposit-server` at `areas/deposit/server/`, and DPE to `areas/access/dpe/` (ADR-0002); Mosaic
 still lives under `modules/`; `areas/access/sync` exists at its minimum, the crate `sync-store` and
-the committed snapshot it serves; `areas/access/media` exists at its minimum, the crate `media-store` and the
+the committed 0803 fixture it serves; `areas/access/media` exists at its minimum, the crate `media-store` and the
 stand-in directory of deposited files it serves; `areas/access/cpe` holds its `CONTEXT.md`, the port crate
 `cpe-ports`, the domain crate `cpe-core`, the component library `cpe-components`, the interim image viewer
 `cpe-image-viewer`, the read-side store `cpe-store`, the store builder `cpe-store-build`, the page assembly `cpe-web`, the host crate `cpe-server`, Incunabula's project folder and CPE's shared static files, and `access-server` mounts it under its base; the four planned components
@@ -849,8 +849,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `areas/access/media/store/src/lib.rs` (a file-system reader that also refuses symlinks)
 - **Depends on:** nothing
 - **Used by:** areas/access/cpe (`cpe-ports`, re-exported), areas/access/media (`media-store`),
-  shared/stand-in; granted ahead of use to `sync-store` and the VRE bridge's `core`, `store` and
-  `server` crates (not yet in code, P-DEV-301)
+  areas/access/sync (`sync-store`), shared/stand-in; granted ahead of use to the VRE bridge's `core`,
+  `store` and `server` crates (not yet in code, P-DEV-301)
 - **Boundary rules:**
   - Depends on no service crate; holds no path into one (**structure** + **static-analysis**,
     as for `shared-metadata`).
@@ -907,8 +907,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   Ready token under Shared), `areas/deposit/docs/adr/0005-the-vre-bridge-feeds-the-access-areas-stand-ins.md`
 - **Depends on:** shared/names (`is_shortcode`); third-party `serde`, `serde_json`, `thiserror`;
   `tempfile` in tests only
-- **Used by:** nothing yet; granted to `sync-store`, `media-store` and the VRE bridge's `core`,
-  `store` and `server` crates (not yet in code, P-DEV-301)
+- **Used by:** areas/access/sync (`sync-store`) and areas/access/media (`media-store`), which resolve a
+  project through its token; granted to the VRE bridge's `core`, `store` and `server` crates (not yet in
+  code, P-DEV-301)
 - **Boundary rules:**
   - Depends on no service crate; holds no path into one (**structure** + **static-analysis**:
     `check-shared-paths.sh`, as for `shared-metadata`).
@@ -1372,9 +1373,10 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   Some tests read committed files past a crate's interface by relative path: `cpe-store-build`'s
   `test_tolerance_is_the_one_the_engine_checks_a_store_with` reads `cpe-core`'s `validate.rs` source to
   hold its `TOLERANCE` to `ANNOTATION_TOLERANCE`, its integration tests read
-  `areas/access/media/data/0803/config.kdl` and `curation.csv` and `docs/src/cpe/config-language.md`, and
-  `cpe-server`'s `activation` and `base_tests` read the committed `areas/access/sync/data/` and
-  `areas/access/media/data/`. A move of any of these files breaks
+  `areas/access/media/data/0803/20261007T000000Z-00000000/config.kdl` and `curation.csv` and
+  `docs/src/cpe/config-language.md`, and they and `cpe-server`'s `activation` and `base_tests` read the
+  committed `areas/access/sync/data/` (and `cpe-server`'s `areas/access/media/data/`) from a
+  `copy_to_directory`, since the readers refuse the symlinks runfiles are. A move of any of these files breaks
   those tests, not a build (**static-analysis**, by the failing test).
 - **Durable state:** a read model behind its port against `sync` (`ArchiveProjection`) and its bytes port
   against `media` (`DepositedFiles`),
@@ -1438,24 +1440,26 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 ### areas/access/sync
 
 - **Paths:** `:(glob)areas/access/sync/**` — today `store/` (crate `sync-store`), `data/` (the
-  committed snapshots, the test oracle `0803-arks.txt` and their `PROVENANCE`, the `//areas/access/sync:data`
-  filegroup) and `CONTEXT.md`
+  committed fixture of project 0803 in the stand-in layout, `0803/.ready` and
+  `0803/20261007T000000Z-00000000/snapshot.nq`, the test oracle `0803-arks.txt` and their `PROVENANCE`, the
+  `//areas/access/sync:data` filegroup) and `CONTEXT.md`
 - **Purpose:** The Access Area's `sync` capability: the single writer of the archive projection
   and the single consumer of the archive's projection stream, rebuilding the projection from
   snapshot plus replay (ADR-0003, ADR-0008); the first Access-Area capability without a screen
-  (ADR-0007). It exists at its minimum (DEV-7399): `sync-store` serves the committed snapshot of
-  one known project (0803, Incunabula) behind CPE's port, with no Chischtli, replay or bus;
-  `access-server` constructs it over `SYNC_DATA_DIR` and hands it to CPE's activation. The committed
-  snapshot is today's hand-fed stand-in for the projection stream; the target stand-in is the VRE bridge's
-  interim snapshots (ADR-0012, `areas/deposit/ADR-0005`). It serves no curation: a project's
+  (ADR-0007). It exists at its minimum (DEV-7399): `sync-store` serves the Interim snapshot of
+  each project whose Ready token exists in the `sync` stand-in subtree, from the generation the token names,
+  behind CPE's port, with no Chischtli, replay or bus; `access-server` constructs it over `SYNC_DATA_DIR` and
+  hands it to CPE's activation. The stand-in subtree, which the VRE bridge writes, stands in for the
+  projection stream (ADR-0012, `areas/deposit/ADR-0005`); the committed fixture holds project 0803 (Incunabula)
+  in its layout, and `access-server`'s image still carries it. It serves no curation: a project's
   curation is a deposited file, which `media` serves (ADR-0012). Annotations (Regions, LinkObjs) are served as resources
   with their geometry and color verbatim. Each resource's data ARK is derived from its IRI with
   dsp-api's algorithm (`ark.rs`), not read from the file, until DAO carries it; the incubator's
   ARKs for 0803 are committed as `data/0803-arks.txt` and pinned by the committed-file tests.
-  The snapshot is interim-DAO N-Quads written by `dao-lift`
-  (ADR-0007), read with a strict `oxttl` parse. DPE keeps reading its corpus
+  The snapshot is interim-DAO N-Quads in an interim format version `READABLE` lists
+  (ADR-0007, `areas/deposit/vre-bridge/lift/FORMAT.md`), read with a strict `oxttl` parse. DPE keeps reading its corpus
   directly; moving it onto `sync` is its own decision.
-- **Key entities:** `LiveArchiveProjection`, `KNOWN`, `SnapshotError`, `InvalidFact`,
+- **Key entities:** `LiveArchiveProjection`, `READABLE`, `SnapshotError`, `InvalidFact`,
   `ArkError` (in `sync-store`; a resource IRI with no data ARK is `InvalidFact::NoDataArk`);
   (design vocabulary) Projection (`chischtli/CONTEXT.md`), Data product
   (`areas/archive/CONTEXT.md`)
@@ -1463,9 +1467,10 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   implements: today `LiveArchiveProjection` for CPE's `ArchiveProjection`; later DPE's own port
   when DPE moves onto `sync`, and the query ports the SPARQL endpoint reads through.
 - **Local-context kit:** `areas/access/sync/CONTEXT.md`, `areas/access/sync/data/PROVENANCE`
-  (the `dao-lift` commit that pins `FORMAT.md`), `areas/access/sync/store/src/lib.rs`,
+  (the fixture's producer and its hand-written token), `areas/access/sync/store/src/lib.rs`,
   `areas/access/sync/store/src/ark.rs` (the one derivation of the data ARK),
-  `areas/access/sync/store/src/vocab.rs` (the format's IRIs and the same pin),
+  `areas/access/sync/store/src/vocab.rs` (the format's IRIs), `shared/stand-in/src/lib.rs` (the token),
+  `areas/deposit/vre-bridge/lift/FORMAT.md` (the interim format),
   `docs/adr/0012-build-time-inputs-come-through-two-channels-one-consumer-each.md`,
   `docs/adr/0013-authorisation-is-decided-centrally-and-enforced-locally.md`,
   `areas/access/cpe/ports/src/lib.rs` (the port it implements),
@@ -1478,11 +1483,12 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   permitted capability-to-capability edge, ADR-0003); chischtli (planned; not in the minimum);
   shared/metadata (expected). Never CPE's or DPE's domain, store or web crates. Third-party:
   `oxttl` (the strict N-Quads parser) and `oxrdf` (its terms), with no triplestore at the
-  minimum; `thiserror`, `tracing`; `tempfile` in tests only; planned: shared/stand-in (the layout and the
-  Ready token's types) and shared/names (ADR-0002; not yet in code, P-DEV-301)
+  minimum; `thiserror`, `tracing`; `tempfile` and areas/access/media's committed data in tests only; shared/stand-in (the layout and the
+  Ready token) and shared/names (`is_shortcode`)
 - **Used by:** areas/access/cpe (through `cpe-ports`; CPE's store is rebuilt from what `sync`
   serves, ADR-0008; the tests of `cpe-store-build` and of `cpe-server` link `sync_store_for_tests`, a `testonly`
-  library over the same sources, and read the `data` filegroup, ADR-0008); areas/access/server (constructs `LiveArchiveProjection` over `SYNC_DATA_DIR` and hands it to `Cpe::activate`; the only target `sync_store` grants); later
+  library over the same sources, and read the `data` filegroup through a `copy_to_directory`, ADR-0008);
+  areas/access/server (constructs `LiveArchiveProjection` over `SYNC_DATA_DIR` and hands it to `Cpe::activate`; the only target `sync_store` grants); later
   areas/access/dpe and the SPARQL endpoint, each through its own port
 - **Boundary rules:** single writer of every projection graph and single consumer of the
   projection stream (ADR-0003, ADR-0008: the Access bucket is `media`'s channel, and `sync`
@@ -1503,22 +1509,29 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   contract's cross-fact rules (inverted date, cycles, sibling positions) live only there, never
   in the mapping (**review**; the crate doc in `lib.rs` says where a check goes). A link to an IRI
   outside the file is omitted, but an annotation target that is not a resource of the file is
-  refused (`InvalidFact::UnknownTarget`).
+  refused (`InvalidFact::UnknownTarget`). A project is known exactly when its Ready token exists; a refused
+  shortcode is `UnknownProject` before the file system is touched, and a broken token, an unread format
+  version, a missing generation or a symlink at or below the generation directory is `Unavailable`
+  (**static-analysis**: `sync-store`'s tests). It never writes the subtree and uses no file-notification crate,
+  since the subtree may be NFS (**static-analysis**: `check-capability-deps.sh` bans `notify` and `inotify`
+  crates in a `store` role; writing, **review**; not yet in code: a `just check` grep for write calls, not
+  scheduled). The tests of `sync-store` read `media`'s committed data too, to hold the two fixture tokens to
+  equal provenance (`//areas/access/media:data` grants `sync/store`).
 - **Durable state:** the archive projection, **single writer** `sync`; disposable, rebuilt from
-  snapshot plus replay, never repaired in place (target design). Today the committed snapshots
-  under `areas/access/sync/data/` (`0803.nq`), **single writer** `dao-lift`, run on a VRE dump at
-  the commit `PROVENANCE` pins and committed unedited (**review**); `sync-store` only reads them,
-  on every call, and holds nothing in between. The test oracle `0803-arks.txt`, **single writer**
+  snapshot plus replay, never repaired in place (target design). Today the `sync` stand-in subtree: one directory per project with
+  its Ready token and its generations, **single writer** the VRE bridge (`areas/deposit/ADR-0005`; not yet in
+  code, P-DEV-301); `sync-store` only reads it, on every call, and holds nothing in between. The committed
+  fixture under `areas/access/sync/data/` is in that layout: its `snapshot.nq` was written by `dao-lift` on a
+  VRE dump and committed unedited, its token by hand (**review**). The test oracle `0803-arks.txt`, **single writer**
   the extraction `PROVENANCE` gives over the incubator's `data.sql`, never generated from `ark.rs`
-  (**review**), is read only by the committed-file tests. Target: one directory per project in the
-  `sync` subtree of the stand-in directory, with its Ready token, **single writer** the VRE bridge
-  (`areas/deposit/ADR-0005`); the committed snapshot becomes a test fixture (not yet in code, P-DEV-301).
+  (**review**), is read only by the committed-file tests.
 - **Fingerprint:** `f3c5a6c89453`
 
 ### areas/access/media
 
-- **Paths:** `:(glob)areas/access/media/**` — today `store/` (crate `media-store`), `data/` (the stand-in
-  directory: one directory per project shortcode, `0803/` so far, and its `PROVENANCE`), the package's
+- **Paths:** `:(glob)areas/access/media/**` — today `store/` (crate `media-store`), `data/` (the committed
+  fixture in the stand-in layout: one directory per project shortcode, `0803/` so far, with its Ready token
+  and one generation, and its `PROVENANCE`), the package's
   `BUILD.bazel` (the `data` filegroup) and `CONTEXT.md`
 - **Purpose:** The Access Area's `media` capability (`vitrinli/CONTEXT.md`): serves archive-made
   Service Files, whole or rendered through Vitrinli, and owns the tables that say what is servable
@@ -1528,9 +1541,10 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   contents), serving every file with its rights attached (not yet in code); an asset (an image, a download) is
   served at request time, through Vitrinli, after the authorisation check, which applies ADR-0013's
   decision. It exists at its minimum
-  (ADR-0009, DEV-7512): `media-store` serves CPE's bytes port from a hand-fed directory laid out as the bucket
-  will be, `MEDIA_DATA_DIR` (default `areas/access/media/data`), the same port the Access bucket will later
-  stand behind. Not built: Vitrinli, the tables, the routes (so CPE serves a project's `assets/` from its
+  (ADR-0009, DEV-7512): `media-store` serves CPE's bytes port from the `media` stand-in subtree,
+  `MEDIA_DATA_DIR` (default the committed fixture `areas/access/media/data`): a project known by its Ready
+  token, its files read from the generation the token names. The Access bucket will later stand behind the
+  same port. Not built: Vitrinli, the tables, the routes (so CPE serves a project's `assets/` from its
   folder until then), and the adapter of DaTEI's port `DateiFiles` (DEV-7574).
 - **Key entities:** `LiveDepositedFiles` (in `media-store`, CPE's `DepositedFiles` over the stand-in
   directory); (design vocabulary) Stand-in directory, Anonymous consumer (`areas/access/media/CONTEXT.md`),
@@ -1540,7 +1554,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   port; planned: its routes for Service Files (the IIIF and download surface that CPE's IIIF URLs and DPE's
   record files will resolve to) and the adapter of DaTEI's bytes port.
 - **Local-context kit:** `areas/access/media/CONTEXT.md`, `areas/access/media/store/src/lib.rs`,
-  `areas/access/media/data/PROVENANCE`, `areas/access/cpe/ports/src/lib.rs` (the port it implements),
+  `areas/access/media/data/PROVENANCE`, `shared/stand-in/src/lib.rs` (the token), `areas/access/cpe/ports/src/lib.rs` (the port it implements),
   `vitrinli/CONTEXT.md`, `areas/access/datei/CONTEXT.md` and `areas/access/cpe/CONTEXT.md` (its consumers),
   `docs/adr/0012-build-time-inputs-come-through-two-channels-one-consumer-each.md`,
   `docs/adr/0013-authorisation-is-decided-centrally-and-enforced-locally.md`,
@@ -1548,13 +1562,13 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `docs/adr/0003-one-modulith-per-area.md`, `areas/archive/CONTEXT.md` (where Service Files come
   from), `CONTEXT.md` (the file vocabulary under Shared), `areas/access/server/src/serve.rs`
 - **Depends on:** areas/access/cpe (`cpe-ports` only, to implement `DepositedFiles`: the one permitted
-  capability-to-capability edge, ADR-0003); shared/names (`is_shortcode`, `is_file_name`); third-party
-  `tracing`; planned: vitrinli, areas/access/datei (`datei/ports` only, once it exists), shared/telemetry
-  and shared/stand-in (ADR-0002; P-DEV-301). Never `sync`'s store, never Chischtli, never a
+  capability-to-capability edge, ADR-0003); shared/names (`is_shortcode`, `is_file_name`); shared/stand-in
+  (the layout and the Ready token); third-party `tracing`; planned: vitrinli, areas/access/datei
+  (`datei/ports` only, once it exists) and shared/telemetry (ADR-0002). Never `sync`'s store, never Chischtli, never a
   sibling's domain or web crate
 - **Used by:** areas/access/cpe (through `DepositedFiles` in `cpe-ports`; `cpe-server`'s tests link
   `media_store_for_tests`, a `testonly` library, and read the committed data through the `//areas/access/media:data`
-  filegroup, which `cpe-store-build` also reads); areas/access/server (links `media_store`, the only target it grants,
+  filegroup, which `cpe-store-build` and `sync-store`'s tests also read); areas/access/server (links `media_store`, the only target it grants,
   constructs `LiveDepositedFiles` over `MEDIA_DATA_DIR` and hands it to `Cpe::activate`); expected later:
   areas/access/datei (through `datei/ports`), areas/access/cpe and areas/access/dpe for IIIF and downloads
 - **Boundary rules:** reads only the Access bucket, and until it exists only the directory
@@ -1564,10 +1578,14 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `sync` or other sibling crate (**structure**: no other sibling target grants it). Only the composition root
   links `media_store` (**structure**: it grants `//areas/access/server` alone); another capability sees only
   `media_store_for_tests`, `testonly` and granted to `cpe-server` alone, so a reader names it in its tests
-  only (ADR-0008, ADR-0012). The `data` filegroup is visible to `cpe-server`, `cpe-store-build` and
-  `access-server` only (**structure**). A caller's shortcode and name reach the file system only after
-  `is_shortcode` and `is_file_name` accept them, and no component below the directory may be a symbolic
-  link (**static-analysis**: `media-store`'s tests). It is the Access bucket's only consumer and never reads
+  only (ADR-0008, ADR-0012). The `data` filegroup is visible to `cpe-server`, `cpe-store-build`,
+  `sync-store` and `access-server` only (**structure**). A caller's shortcode and name reach the file system
+  only after `is_shortcode` and `is_file_name` accept them; a project is known exactly when its Ready token
+  exists, only files of the generation it names are served, the token never, and no component at or below the
+  generation directory may be a symbolic link; a broken token or a missing or linked generation is
+  `Unavailable`, never `UnknownProject` (**static-analysis**: `media-store`'s tests). It never writes the
+  subtree and uses no file-notification crate (**static-analysis**: `check-capability-deps.sh`; writing,
+  **review**; not yet in code: a `just check` grep for write calls, not scheduled). It is the Access bucket's only consumer and never reads
   the projection stream (ADR-0003); a bytes port serves every file with its rights attached and never
   pre-filters (DaTEI's serves none for now, ADR-0009); change reaches a reader only through its port, which
   `media` announces, and until the bucket exists `media` owns the Ready-token poll (a poll of each project's
@@ -1576,19 +1594,18 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   until they land, an edit under `MEDIA_DATA_DIR` needs a restart (DEV-7938). Not yet in code: rights on the
   port (not scheduled).
 - **Durable state:** the tables that say what is servable and where, **single writer** `media`
-  (target design). Until the Access bucket: the hand-fed stand-in directory `areas/access/media/data/`, laid
-  out as the bucket will be (`0803/config.kdl`, `curation.csv`, `narrative/`), text in plain git with its
-  provenance in `data/PROVENANCE`, images not committed (ADR-0009, ADR-0012, DEV-7512); **single writer** a
-  person: hand-authored, edited in place and never generated (**review**). On a server, the directory
-  `MEDIA_DATA_DIR` names is to have one writer, the VRE bridge (ADR-0012). Not yet in code: the VRE bridge
-  (P-DEV-301). Since dsp-incubator#500 (DEV-7496)
+  (target design). Until the Access bucket: the `media` stand-in subtree, one directory per project with its
+  Ready token and its generations, **single writer** the VRE bridge (ADR-0012, `areas/deposit/ADR-0005`; not
+  yet in code, P-DEV-301). The committed fixture `areas/access/media/data/` is in that layout
+  (`0803/.ready`, `0803/20261007T000000Z-00000000/` with `config.kdl`, `curation.csv` and `narrative/`), text in
+  plain git with its provenance in `data/PROVENANCE`, images not committed (ADR-0009, ADR-0012, DEV-7512);
+  **single writer** a person: hand-authored, edited in place and never generated (**review**). Since dsp-incubator#500 (DEV-7496)
   the curation file is the only copy of Incunabula's curation; a change is made here and reaches the
   incubator when it re-vendors (**review**). `media-store` reads it on every call and holds nothing in
   between; an edit to the curation file changes the committed-data tests of `cpe-store-build` in the same
-  commit (**review**). Target: one directory per project in the `media` subtree of the stand-in directory,
-  with its Ready token, **single writer** the VRE bridge; the bridge's shipped inputs are the one
-  authoritative copy of a project's curation, narrative and configuration, and the committed directory
-  becomes a test fixture pinned to them (`areas/deposit/ADR-0005`; not yet in code, P-DEV-301).
+  commit (**review**). Target: the bridge's shipped inputs are the one authoritative copy of a project's curation, narrative
+  and configuration, and the committed fixture is pinned to them (`areas/deposit/ADR-0005`; not yet in code,
+  P-DEV-301).
 - **Fingerprint:** `02d68646f68e`
 
 ## Conventions

@@ -37,7 +37,7 @@ const PROJECT: &str = "incunabula";
 
 /// The project's mapping, lowered once from the config it deposited in `media`'s committed data.
 static MAPPING: LazyLock<Remodel> = LazyLock::new(|| {
-    let config = include_str!("../../../../media/data/0803/config.kdl");
+    let config = include_str!("../../../../media/data/0803/20261007T000000Z-00000000/config.kdl");
     support::lowered(config)
 });
 
@@ -54,8 +54,9 @@ fn build(snapshot: &Fixture) -> Result<Store, BuildErrors> {
     support::build_with(snapshot, &MAPPING, resolve(PROJECT))
 }
 
-/// `sync`'s committed data directory, which holds project 0803.
-const DATA_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../sync/data");
+/// `sync`'s committed data directory, which holds project 0803, from the copy `test_files` makes of
+/// it: the adapter refuses the symlinks the runfiles are.
+const DATA_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/test_files/areas/access/sync/data");
 
 static SNAPSHOT: LazyLock<ProjectSnapshot> = LazyLock::new(|| {
     LiveArchiveProjection::new(DATA_DIR)
@@ -65,7 +66,7 @@ static SNAPSHOT: LazyLock<ProjectSnapshot> = LazyLock::new(|| {
 
 /// The committed curation file of project 0803, read against [`SNAPSHOT`].
 static CURATION: LazyLock<CuratedValues> = LazyLock::new(|| {
-    let bytes = include_bytes!("../../../../media/data/0803/curation.csv");
+    let bytes = include_bytes!("../../../../media/data/0803/20261007T000000Z-00000000/curation.csv");
     CuratedValues::parse(bytes, &SNAPSHOT)
         .unwrap_or_else(|fault| panic!("the committed curation file is read: {fault}"))
 });

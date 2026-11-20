@@ -1,4 +1,18 @@
-0803.nq: the interim-DAO snapshot of project 0803 (incunabula) that sync-store serves.
+0803/: project 0803 (incunabula) in the stand-in layout the VRE bridge writes: the Ready token
+0803/.ready, and the generation it names, 0803/20261007T000000Z-00000000/, holding snapshot.nq, the
+interim-DAO snapshot sync-store serves. The fixture is a test input and, until access-server's image
+stops carrying it, the data the image serves; in a deployment with the VRE bridge, the bridge's output
+replaces it.
+
+The token is hand-written: generation 20261007T000000Z-00000000 and as_of 2026-10-07T00:00:00Z (the
+dump's bagging date below), server prod, interim format version 1, transformation version 1, no
+previous generation, and an inputs digest of 64 zeros, a placeholder no reader checks.
+media/data/0803/.ready holds the same bytes, so the two tokens hold equal provenance.
+
+snapshot.nq is the file that was 0803.nq here, moved with its bytes unchanged. It is dao-lift's output,
+not the VRE bridge's: it lacks the dao:accessRights and dao:dataClassification lines interim format
+version 1 has (sync omits them anyway). Its token names format version 1 nonetheless, since sync-store
+reads nothing it lacks.
 
 Dump
   server:          prod (api.dasch.swiss)
@@ -14,18 +28,18 @@ Producer
   dao-lift:        dasch-swiss/dsp-incubator@b2226ff4a987bf5f4b5cd0f33a8bf923a3033c7f
                    (cpe/tools/dao-lift)
 
-This commit pins the FORMAT.md the file follows (cpe/tools/dao-lift/FORMAT.md at that commit);
-areas/access/sync/store/src/vocab.rs records the same commit.
+That commit's cpe/tools/dao-lift/FORMAT.md is the format the file follows; interim format version 1,
+areas/deposit/vre-bridge/lift/FORMAT.md, adds the rights and classification lines to it.
 
 Regenerate from the incubator's cpe/ directory, at the commit above, on the unzipped dump:
 
   cargo run --locked --release --manifest-path tools/dao-lift/Cargo.toml -- snapshot <dump-dir> <out.nq>
 
-The output is byte-identical for the same dump. Moving the pin means moving it here and in vocab.rs
-together, regenerating, and keeping sync-store's committed-file tests green without changing their
-expectations: those come from the dump. Every row of areas/access/media/data/0803/curation.csv
-names a resource of this file. If a regenerated file drops one, CPE leaves Incunabula not ready until
-the row is removed or re-keyed by hand.
+The output is byte-identical for the same dump. A regenerated file keeps sync-store's committed-file
+tests green without changing their expectations: those come from the dump. Every row of
+areas/access/media/data/0803/20261007T000000Z-00000000/curation.csv names a resource of this file.
+If a regenerated file drops one, CPE leaves Incunabula not ready until the row is removed or re-keyed
+by hand.
 
 0803-arks.txt: the 0803 data ARKs Incunabula stores, which are dao-lift's output. One plain data ARK
 per line, sorted, 4,143 lines.
@@ -39,5 +53,5 @@ Extract it in the incubator checkout at that commit:
   grep -oE 'https://ark\.dasch\.swiss/ark:/72163/1/0803/[A-Za-z0-9_=]+' cpe/projects/incunabula/data.sql | LC_ALL=C sort -u
 
 It is a subset of the served resources: no LinkObj, 64 of 77 Regions, no calibration-scan Pages. The
-committed tests check each line against the served ARK. Like 0803.nq, it is a frozen copy and does not
+committed tests check each line against the served ARK. Like snapshot.nq, it is a frozen copy and does not
 follow the incubator.

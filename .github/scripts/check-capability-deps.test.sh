@@ -126,7 +126,13 @@ fails_with "the shell on a tower-* crate fails" "areas/deposit/shell/BUILD.bazel
 
 new_ws
 build areas/deposit/alpha/store 'rust_library(name = "x", deps = ["@crates//:hyper"])'
-check "a store crate, an unrestricted role, may use a web framework" 0 "$(rc)"
+check "a store crate may use a web framework" 0 "$(rc)"
+new_ws
+build areas/deposit/alpha/store 'rust_library(name = "x", deps = ["@crates//:notify"])'
+fails_with "a store crate on a file-notification crate fails" "areas/deposit/alpha/store/BUILD.bazel uses notify (third-party), a crate its role may not use"
+new_ws
+build areas/deposit/alpha/store 'rust_test(name = "t", deps = ["@crates//:inotify-sys"])'
+fails_with "a store crate on an inotify-* crate, in a test, fails" "areas/deposit/alpha/store/BUILD.bazel uses inotify-sys (third-party), a crate its role may not use"
 
 new_ws
 build areas/deposit/alpha/core '# no @crates//:axum here, only a comment' 'rust_library(name = "x") # @crates//:rusqlite'

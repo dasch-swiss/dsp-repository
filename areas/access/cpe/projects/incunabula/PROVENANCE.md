@@ -3,9 +3,9 @@
 Incunabula's store is built by the store builder, [`cpe-store-build`](../../store-build/README.md), from the
 `cpe-ports` snapshot of DSP project 0803, which `sync`'s archive projection serves, and from the project's curation
 file and the `remodel {}` block of its `config.kdl`, which `media` serves as deposited files from
-`areas/access/media/data/0803/` (whose `PROVENANCE`, `areas/access/media/data/PROVENANCE`, records where they came
-from). Nothing in this directory is an input to it: there is no `raw/` directory, no CSV and no `translate.py` any
-more.
+`areas/access/media/data/0803/`, a copy of the VRE bridge's shipped inputs (whose `PROVENANCE`,
+`areas/deposit/vre-bridge/inputs/PROVENANCE`, records where they came from).
+Nothing in this directory is an input to it: there is no `raw/` directory, no CSV and no `translate.py` any more.
 
 This repository commits no store file. `dsp-incubator`, where this document was written, commits the builder's
 output as `cpe/projects/incunabula/data.sql` and keeps the test that regenerates it and compares the two byte for
@@ -54,13 +54,15 @@ The store is never edited by hand, and neither is the incubator's `data.sql`.
 
 - **A curated value** (a Book's id, office, date display, title override, sort key, cover, teaser or catalogue
   override; a strip's id or name; whether an annotation or a link is kept, its language and its short name) is
-  edited in `areas/access/media/data/0803/20261007T000000Z-00000000/curation.csv`. The incubator holds a copy of it under `vendor/` and
-  nowhere else.
+  edited in the VRE bridge's shipped inputs, `areas/deposit/vre-bridge/inputs/0803/curation.csv`, and copied in
+  the same commit to `areas/access/media/data/0803/20261007T000000Z-00000000/curation.csv`, which
+  `just check-stand-in-fixture` holds equal. The incubator holds a copy of it under `vendor/` and nowhere else.
 - **The archive's facts** change with a new dump: the snapshot, `areas/access/sync/data/0803/20261007T000000Z-00000000/snapshot.nq`, was
   written with `dao-lift snapshot`, a tool of `dsp-incubator` (`cpe/tools/dao-lift`), as the `PROVENANCE` file
   of `areas/access/sync/data` describes; in a deployment the VRE bridge writes a new generation in its place.
 - **A constant** (an office's or a side's label, the image rights, the IIIF host) is edited in the `remodel {}`
-  block of `areas/access/media/data/0803/20261007T000000Z-00000000/config.kdl`.
+  block of `areas/deposit/vre-bridge/inputs/0803/config.kdl`, copied in the same commit to the `media` fixture's
+  `config.kdl`, as the curation file is.
 - **A rule** (how a value becomes a row) is changed in `store-build/`: in the block where a node says it, in the
   builder's generic code, or in Incunabula's hook.
 

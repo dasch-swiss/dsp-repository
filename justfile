@@ -108,6 +108,13 @@ check-adr-refs:
 check-live-tests-ignored:
     bash .github/scripts/check-live-tests-ignored.sh
 
+# The `media` fixture copies the VRE bridge's shipped inputs, which sit in
+# another area, and no Bazel target may name both (ADR-0002).
+
+# Verify the 0803 `media` fixture's generation holds the VRE bridge's shipped inputs byte for byte, and both fixture tokens their pinned digest. Run by `just check`. (DEV-7999, ADR-0002)
+check-stand-in-fixture:
+    bash .github/scripts/check-stand-in-fixture.sh
+
 # The pinned nightly rustfmt: `$RUSTFMT` when set (the Nix shell exports it), else rustup's. A bare `rustfmt` would be the stable one, which ignores .rustfmt.toml's nightly options. It formats files, so the edition is passed: 2024 for dsp-cli and vre-bridge-lift, 2021 for the rest of the tree.
 
 [private]
@@ -119,7 +126,7 @@ _rustfmt *ARGS:
     git ls-files -z 'dsp-cli/**.rs' 'areas/deposit/vre-bridge/lift/**.rs' | xargs -0 "$rustfmt" --edition 2024 {{ ARGS }}
 
 # Run every gate script, the format checks and clippy over every Bazel target, tests included, with `-Dwarnings` (set in .bazelrc). FLAGS: extra Bazel flags, such as CI's `--config=ci` and remote flags.
-check *FLAGS: verify-checksums check-shared-paths check-capability-deps check-views-no-axum check-datastar-attributes check-adr-refs check-live-tests-ignored
+check *FLAGS: verify-checksums check-shared-paths check-capability-deps check-views-no-axum check-datastar-attributes check-adr-refs check-live-tests-ignored check-stand-in-fixture
     #!/usr/bin/env bash
     set -euo pipefail
     just --check --fmt --unstable

@@ -28,9 +28,10 @@ shipped inputs are the one authoritative copy of the files the VRE does not hold
 token and the shipped inputs record provenance. The committed `data/` is a test fixture in the same layout, which
 `access-server`'s image still carries: `0803/.ready`, hand-written, and the generation
 `0803/20261007T000000Z-00000000/` holding Incunabula's `config.kdl`, `curation.csv` and
-`narrative/<name>.<lang>.md`, text only, in plain git; `data/PROVENANCE` records where each file came from. Not yet
-in code: a deployment that configures the VRE bridge (DEV-7514), and the fixture pinned to its shipped inputs
-(P-DEV-301).
+`narrative/<name>.<lang>.md`, text only, in plain git. Those files are a copy of the VRE bridge's shipped inputs of
+0803, `areas/deposit/vre-bridge/inputs/0803/`, the authoritative copy, whose `PROVENANCE` records where each came
+from; `just check-stand-in-fixture` fails while the generation differs from them by a byte or a file. Not yet in
+code: a deployment that configures the VRE bridge (DEV-7514).
 _Avoid_: the bucket (the stand-in is not it), project folder (CPE's, which holds code and the documents about
 the data), committed snapshot (`sync`'s file in a generation is its Interim snapshot).
 

@@ -9,6 +9,9 @@ Every allowlisted project needs its directory: without one the bridge refuses th
 `inputs-missing`). An empty directory is accepted, but Git keeps none, so a project that ships nothing still
 needs one file here.
 
+These files are the one authoritative copy and are edited here. `PROVENANCE` says where each came from, and which
+committed fixture follows them.
+
 The image places this directory at `/app/vre-bridge/inputs` (`EDITOR_VRE_BRIDGE_INPUTS_DIR`). This file keeps the
-directory in the image while no project ships inputs; it is not read, since only `<shortcode>/` directories are.
-See `docs/src/vre-bridge/operations.md`.
+directory in the image whichever projects ship inputs; it and `PROVENANCE` are not read, since only `<shortcode>/`
+directories are. See `docs/src/vre-bridge/operations.md`.

@@ -1659,7 +1659,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   port; planned: its routes for Service Files (the IIIF and download surface that CPE's IIIF URLs and DPE's
   record files will resolve to) and the adapter of DaTEI's bytes port.
 - **Local-context kit:** `areas/access/media/CONTEXT.md`, `areas/access/media/store/src/lib.rs`,
-  `areas/access/media/data/PROVENANCE`, `shared/stand-in/src/lib.rs` (the token), `areas/access/cpe/ports/src/lib.rs` (the port it implements),
+  `areas/access/media/data/PROVENANCE`, `areas/deposit/vre-bridge/inputs/PROVENANCE` (the fixture's authoritative
+  copy), `shared/stand-in/src/lib.rs` (the token), `areas/access/cpe/ports/src/lib.rs` (the port it implements),
   `vitrinli/CONTEXT.md`, `areas/access/datei/CONTEXT.md` and `areas/access/cpe/CONTEXT.md` (its consumers),
   `docs/adr/0012-build-time-inputs-come-through-two-channels-one-consumer-each.md`,
   `docs/adr/0013-authorisation-is-decided-centrally-and-enforced-locally.md`,
@@ -1703,14 +1704,15 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   Ready token and its generations, **single writer** the VRE bridge (ADR-0012, `areas/deposit/ADR-0005`; no
   deployment configures it, DEV-7514). The committed fixture `areas/access/media/data/` is in that layout
   (`0803/.ready`, `0803/20261007T000000Z-00000000/` with `config.kdl`, `curation.csv` and `narrative/`), text in
-  plain git with its provenance in `data/PROVENANCE`, images not committed (ADR-0009, ADR-0012, DEV-7512);
-  **single writer** a person: hand-authored, edited in place and never generated (**review**). Since dsp-incubator#500 (DEV-7496)
-  the curation file is the only copy of Incunabula's curation; a change is made here and reaches the
-  incubator when it re-vendors (**review**). `media-store` reads it on every call and holds nothing in
-  between; an edit to the curation file changes the committed-data tests of `cpe-store-build` in the same
-  commit (**review**). Target: the bridge's shipped inputs are the one authoritative copy of a project's curation, narrative
-  and configuration, and the committed fixture is pinned to them (`areas/deposit/ADR-0005`; not yet in code,
-  P-DEV-301).
+  plain git, images not committed (ADR-0009, ADR-0012, DEV-7512). The generation's files are a copy of the
+  bridge's shipped inputs, `areas/deposit/vre-bridge/inputs/0803/`, the one authoritative copy of a project's
+  curation, narrative and configuration (`areas/deposit/ADR-0005`), with their provenance in
+  `inputs/PROVENANCE`: **single writer** a person, hand-authored, edited there and never generated
+  (**review**), then copied here in the same commit; `check-stand-in-fixture.sh`, run by `just check`, fails
+  while the two differ by a byte or a file (**static-analysis**; ADR-0002). Since dsp-incubator#500 (DEV-7496)
+  the curation file is the only curation of Incunabula; it reaches the incubator when it re-vendors
+  (**review**). `media-store` reads it on every call and holds nothing in between; an edit to the curation
+  file changes the committed-data tests of `cpe-store-build` in the same commit (**review**).
 - **Fingerprint:** `02d68646f68e`
 
 ## Conventions
@@ -1840,7 +1842,7 @@ Not code components; they span the repo and are staleness-exempt here:
 - **CI:** `.github/**` — workflows, composite actions, the gate scripts
   (`check-shared-paths.sh`, `check-datastar-attributes.sh`, `check-commit-count.sh`,
   `verify-checksums.sh`, `check-adr-refs.sh`, `check-live-tests-ignored.sh`, `check-capability-deps.sh`, `check-views-no-axum.sh`,
-  `commit-advisory.sh`),
+  `check-stand-in-fixture.sh`, `commit-advisory.sh`),
   release-please config
 - **Documentation:** `docs/**` (the mdBook under `docs/src/`, ADRs under `docs/adr/`), an area's decision records under `areas/<area>/docs/adr/` (`areas/deposit/docs/**` today),
   `README.md`, `CLAUDE.md`, `CONVENTIONS.md`, `REVIEW.md`, `CHANGELOG.md`, `LICENSE`,

@@ -64,6 +64,13 @@ What an **Interim snapshot** is made from: the **Dump**'s resources that are not
 and file values included) that are neither deleted nor superseded through `knora-base:previousValue`. The values
 of a deleted resource are not selected, whatever their own flags say.
 
+**Formatted text**:
+A text value with markup: in the **Dump**, one with `knora-base:valueHasStandoff` or `knora-base:valueHasMapping`,
+or one whose `knora-base:hasTextValueType` is `FormattedText` or `CustomFormattedText`.
+The **Interim snapshot** carries its markup only as the XML DSP-API stores in `knora-base:valueHasXml`; a selected
+one without it refuses the project (`missing-text-xml`, `lift/FORMAT.md` §4.1).
+_Avoid_: rich text. Standoff is DSP-API's storage of the markup, which the lift never reads.
+
 **Public guard**:
 The check of every selected resource and value against its own `knora-base:hasPermissions` in `data.nq`. It
 refuses the whole project when anything selected is neither **Public** nor, on a raster still image's file

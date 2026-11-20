@@ -108,13 +108,20 @@ pub(crate) enum Rule {
     /// A resource whose class reaches both `kb:Region` and `kb:LinkObj`, so it has
     /// no one motivation (§10).
     AmbiguousAnnotationClass,
+    /// A text value with standoff, a mapping or a formatted `kb:hasTextValueType`
+    /// but no `kb:valueHasXml` (§4.1).
+    MissingTextXml,
+    /// A `kb:hasTextValueType` naming none of knora-base's four text types (§4.1).
+    UnknownTextType,
+    /// A text value typed `kb:UnformattedText` with XML, standoff or a mapping (§4.1).
+    TextTypeMismatch,
 }
 
 impl Rule {
     /// Every rule in declaration order, for the test that `FORMAT.md` names each
     /// one; a new variant is appended here too.
     #[cfg(test)]
-    pub(crate) const ALL: [Rule; 41] = [
+    pub(crate) const ALL: [Rule; 44] = [
         Rule::BlankNode,
         Rule::UntypedSubject,
         Rule::MultipleTypes,
@@ -156,6 +163,9 @@ impl Rule {
         Rule::ListNodeCycle,
         Rule::MissingAnnotationTarget,
         Rule::AmbiguousAnnotationClass,
+        Rule::MissingTextXml,
+        Rule::UnknownTextType,
+        Rule::TextTypeMismatch,
     ];
 
     /// Whether this is the enum's last variant. The `match` has no wildcard, so a
@@ -164,7 +174,7 @@ impl Rule {
     #[cfg(test)]
     pub(crate) fn is_last(self) -> bool {
         match self {
-            Rule::AmbiguousAnnotationClass => true,
+            Rule::TextTypeMismatch => true,
             Rule::BlankNode
             | Rule::UntypedSubject
             | Rule::MultipleTypes
@@ -204,7 +214,10 @@ impl Rule {
             | Rule::InvalidListPosition
             | Rule::DuplicateSiblingPosition
             | Rule::ListNodeCycle
-            | Rule::MissingAnnotationTarget => false,
+            | Rule::MissingAnnotationTarget
+            | Rule::AmbiguousAnnotationClass
+            | Rule::MissingTextXml
+            | Rule::UnknownTextType => false,
         }
     }
 
@@ -252,6 +265,9 @@ impl Rule {
             Rule::ListNodeCycle => "list-node-cycle",
             Rule::MissingAnnotationTarget => "missing-annotation-target",
             Rule::AmbiguousAnnotationClass => "ambiguous-annotation-class",
+            Rule::MissingTextXml => "missing-text-xml",
+            Rule::UnknownTextType => "unknown-text-type",
+            Rule::TextTypeMismatch => "text-type-mismatch",
         }
     }
 
@@ -262,6 +278,7 @@ impl Rule {
             Rule::UnknownClass | Rule::MissingLabel | Rule::RepeatedLabel | Rule::NonPlainLabel => "§2",
             Rule::InvalidUuid | Rule::DuplicateUuid => "§3",
             Rule::MissingSourceLiteral | Rule::RepeatedSourceLiteral | Rule::InvalidLiteral => "§3–§5, §7, §8",
+            Rule::MissingTextXml | Rule::UnknownTextType | Rule::TextTypeMismatch => "§4.1",
             Rule::UnknownCalendar | Rule::UnknownPrecision | Rule::InvertedDate => "§4.6",
             Rule::ListValueTarget => "§4.7",
             Rule::UnknownPredicate | Rule::MissingLinkValue | Rule::UnpairedLinkValue | Rule::InvalidLinkValue => "§6",

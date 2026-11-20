@@ -26,3 +26,4 @@
 <urn:dsp:value:TEXT2> <http://www.w3.org/1999/02/22-rdf-syntax-ns#value> "TEXT2" <urn:dsp:project:0803> .
 <urn:dsp:value:TEXT2> <https://ontology.dasch.swiss/dao#sourceProperty> <http://www.knora.org/ontology/0803/incunabula#hasDescription> <urn:dsp:project:0803> .
 <urn:dsp:value:TEXT2> <https://ontology.dasch.swiss/dao#valueHasUUID> "TEXT2" <urn:dsp:project:0803> .
+<urn:dsp:value:TEXT2> <https://ontology.dasch.swiss/dao#valueHasXml> "<text><p>TEXT2</p></text>" <urn:dsp:project:0803> .

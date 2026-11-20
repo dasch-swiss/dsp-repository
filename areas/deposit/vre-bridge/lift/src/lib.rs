@@ -40,7 +40,7 @@ pub const INTERIM_FORMAT_VERSION: u32 = 1;
 
 /// The version of the transformation from a dump to a snapshot. Raised with any
 /// change to the bytes written for the same dump; the golden test fails until it is.
-pub const TRANSFORMATION_VERSION: u32 = 1;
+pub const TRANSFORMATION_VERSION: u32 = 2;
 
 /// A lifted project: its snapshot, what the run counted, for the caller to log, and
 /// the current file values of the snapshot's resources, for a DaTEI file mapping.

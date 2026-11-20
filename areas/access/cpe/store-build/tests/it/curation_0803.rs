@@ -1,4 +1,4 @@
-//! The committed curation file of project 0803, read against the committed snapshot. The
+//! The committed curation file of project 0803, read against sync's committed 0803 snapshot. The
 //! expected values are facts of the file, which is edited by hand, so an expectation changes only
 //! together with it. These tests know Incunabula's keys; the reader itself names none.
 
@@ -308,7 +308,7 @@ fn test_committed_0803_curation_catalogue_uri_reads_the_cologne_record_on_its_th
 }
 
 /// `catalogue_uri` stands in for an address the archive holds dead, and only while the archive
-/// holds exactly that address. A regenerated `0803.nq` with the address mended fails here, and
+/// holds exactly that address. A regenerated snapshot with the address mended fails here, and
 /// the Book's two cells are then emptied.
 #[test]
 fn test_committed_0803_curation_catalogue_uri_replaces_reads_the_address_each_book_has() {
@@ -346,7 +346,7 @@ fn test_committed_0803_curation_teaser_reads_four_books_in_german_and_english() 
 #[test]
 fn test_committed_0803_curation_note_column_is_in_the_file_and_not_read() {
     let region = "http://rdfh.ch/0803/0JJDCMvsV_e8ZQ5C-icf3w";
-    let file = include_str!("../../../../media/data/0803/curation.csv");
+    let file = include_str!("../../../../media/data/0803/20261007T000000Z-00000000/curation.csv");
 
     let row = file
         .lines()

@@ -1,4 +1,5 @@
-# The committed deposited files, read by the tests that build CPE over them.
+# The committed deposited files of project 0803, in the stand-in layout: a fixture for the tests
+# that build CPE over them, and the data access-server's image carries.
 filegroup(
     name = "data",
     srcs = glob(["data/**"]),
@@ -6,5 +7,6 @@ filegroup(
         "//areas/access/cpe/server:__pkg__",
         "//areas/access/cpe/store-build:__pkg__",
         "//areas/access/server:__pkg__",
+        "//areas/access/sync/store:__pkg__",
     ],
 )

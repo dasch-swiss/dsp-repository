@@ -297,7 +297,7 @@ DEV-7498.
 A project's folder under `projects/` is named by its **Project id** and holds no code: the project's hook is
 a `HOOKS` row and its components are `PROJECT_RENDERERS` rows (ADR-0007). Its KDL, narrative, curation and
 assets are deposited files, the first three read through the **Bytes port**, which `media` serves from
-`areas/access/media/data/<shortcode>/` (ADR-0012). `projects/incunabula/` holds `SHORTCODE` (`0803`), the
+the generation a project's Ready token names in `areas/access/media/data/<shortcode>/` (ADR-0012). `projects/incunabula/` holds `SHORTCODE` (`0803`), the
 files under `assets/`, and four documents about the project's data (`SHAPE.md`, `CURATION.md`,
 `PROVENANCE.md`, `DATA_ISSUES.md`); its hook is a module of the builder. Those four were written in the
 incubator and still describe its pipeline in places: its

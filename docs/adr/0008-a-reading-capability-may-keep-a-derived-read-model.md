@@ -92,7 +92,7 @@ code:
   model behind its ports, single writer the capability, rebuilt from empty; or no store, reading live.
 
 Not yet in code: DPE reads its corpus from disk, not through a port against `sync` (not scheduled).
-Not yet in code: the tests build `LiveArchiveProjection` over the committed snapshot that `access-server` also
+Not yet in code: the tests build `LiveArchiveProjection` over the committed 0803 data that `access-server` also
 serves, not over a fixture of its own (P-DEV-301).
 Not yet in code: no `just check` script pins the `media` fixture to the bridge's shipped inputs (P-DEV-301).
 Not yet in code: the port against `sync` announces no change, and CPE rebuilds no single named project; a

@@ -10,7 +10,8 @@ to CPE.
   Incunabula, at `/cpe/incunabula/`. `/cpe` and `/cpe/` are CPE's overview: the projects it serves that are not
   hidden, each with a link to its start page. Any other path that names no project is CPE's own not-found page.
 - **From what**: the project folders in `CPE_PROJECTS_DIR` (`SHORTCODE`, assets), `sync`'s snapshots in
-  `SYNC_DATA_DIR` and `media`'s deposited files in `MEDIA_DATA_DIR` (configuration, curation, narrative). All
+  `SYNC_DATA_DIR` and `media`'s deposited files in `MEDIA_DATA_DIR` (configuration, curation, narrative), each
+  read from the generation the project's Ready token names in that directory. All
   three are in the image. Each project's store is built in memory from that data at every start; nothing is
   written to disk, and a restart leaves nothing behind.
 - **Refresh**: for now, a restart. A file edited under `MEDIA_DATA_DIR` or `SYNC_DATA_DIR` reaches CPE only
@@ -54,8 +55,8 @@ a refused configuration answers, carries no `X-Robots-Tag`, since no project id 
 |-----------|--------------|--------|-----|
 | Projects are still loading | `503`, every path | `CPE is mounted and activates in the background` (info) | serves |
 | A project is loaded | its pages, and its entry in the overview, unless it is a Hidden project | `project loaded`, then `CPE's projects are loaded` with the counts (info) | serves |
-| `SYNC_DATA_DIR` or a project's file in it is missing | `503` on that project's paths; the overview does not list it | `project does not load; its prefix answers 503`, with the reason (error); for a missing directory also `SYNC_DATA_DIR names no directory …` at start (warning) | serves |
-| `MEDIA_DATA_DIR`, a project's directory in it, or a file the project needs from it is missing, unreadable or not UTF-8 | `503` on that project's paths; the overview does not list it | `project does not load; its prefix answers 503`, with the reason (error); for a missing directory also `MEDIA_DATA_DIR names no directory …` at start (warning) | serves |
+| `SYNC_DATA_DIR`, a project's Ready token in it, the generation the token names or its snapshot is missing, unreadable or a symlink, or the token names an interim format version `sync` does not read | `503` on that project's paths; the overview does not list it | `project does not load; its prefix answers 503`, with the reason (error); for a missing directory also `SYNC_DATA_DIR names no directory …` at start (warning) | serves |
+| `MEDIA_DATA_DIR`, a project's Ready token in it, the generation the token names, or a file the project needs from it is missing, unreadable or not UTF-8 | `503` on that project's paths; the overview does not list it | `project does not load; its prefix answers 503`, with the reason (error); for a missing directory also `MEDIA_DATA_DIR names no directory …` at start (warning) | serves |
 | A project folder has no `SHORTCODE` | the folder is no project: CPE's not-found, `404`, on its paths | nothing | serves |
 | A project folder's `SHORTCODE` is malformed or a symlink | the project is not served: CPE's not-found, `404`, on its paths | `a project folder is not served`, with the folder and the reason (warning) | serves |
 | Two project folders declare the same `SHORTCODE` | `503` on both projects' paths | `project does not load; its prefix answers 503`, naming the other folder (error) | serves |

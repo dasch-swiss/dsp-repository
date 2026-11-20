@@ -871,6 +871,45 @@ fn test_mapping_file_of_other_kind_serves_resource_without_file() {
     assert_eq!(snapshot.resources[0].file, None);
 }
 
+// Interim format version 1: access rights, data classification and legal information, which the
+// port does not carry
+
+#[test]
+fn test_mapping_rights_classification_and_legal_information_serves_the_same_snapshot_as_without() {
+    let without = r#"
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/0803/incunabula#Page> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/2000/01/rdf-schema#label> "a1r" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <https://ontology.dasch.swiss/dao#hasRepresentation> <urn:dsp:representation:sdSI> <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Representation> <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#representationType> <https://ontology.dasch.swiss/dao#StillImageRepresentation> <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#internalFilename> "8F1KTUpKKra-CaFgCYlt8im.jp2" <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#dimX> "3297"^^<http://www.w3.org/2001/XMLSchema#integer> <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#dimY> "5141"^^<http://www.w3.org/2001/XMLSchema#integer> <urn:dsp:project:0803> .
+    "#;
+    let with = format!(
+        "{without}{}",
+        r#"
+        <http://rdfh.ch/0803/pG4w> <https://ontology.dasch.swiss/dao#accessRights> "public" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <https://ontology.dasch.swiss/dao#dataClassification> "unclassified" <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#accessRights> "restricted-view" <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#dataClassification> "unclassified" <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#authorship> "Universitätsbibliothek Basel" <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#authorship> "Lukas Rosenthaler" <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#copyrightHolder> "Universitätsbibliothek Basel" <urn:dsp:project:0803> .
+        "#
+    );
+    let served = |nquads: &str| {
+        let dir = tempfile::tempdir().expect("create a temp dir");
+        write_0803(&dir, nquads);
+        LiveArchiveProjection::new(dir.path())
+            .snapshot("0803")
+            .expect("a valid file is served")
+    };
+
+    assert_eq!(served(&with), served(without));
+}
+
 // Dates
 
 #[test]

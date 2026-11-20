@@ -1,9 +1,13 @@
 //! The Access Area's `media` capability at its minimum: [`LiveDepositedFiles`] serves CPE's bytes
-//! port, [`DepositedFiles`] (ADR-0012), from a directory, re-read on every call.
+//! port, [`DepositedFiles`] (ADR-0012), from the `media` stand-in subtree, re-read on every call.
 //!
-//! The directory stands in for the Access bucket. Each project is a subdirectory named by its
-//! shortcode, holding the files it deposited by name: `<dir>/<shortcode>/<name>`. There is no list
-//! of known projects: the directory is the list, as the bucket's prefixes will be.
+//! The subtree stands in for the Access bucket, and its only writer is the VRE bridge. A project is
+//! known exactly when its Ready token exists, `<root>/<shortcode>/.ready`, read through
+//! `shared_stand_in`; its files are those of the generation the token names,
+//! `<root>/<shortcode>/<generation>/<name>`, and nothing outside that generation is served, the
+//! token included. A project without a token is `UnknownProject`. A token that cannot be read or
+//! parsed, or one naming a generation that is not a real directory, is `Unavailable`, never
+//! `UnknownProject`: a broken project is not a removed one.
 //!
 //! The adapter serves every file it holds and refuses none for want of a right: in the target each
 //! file comes with its rights attached and the reader decides at request time with the shared
@@ -13,28 +17,31 @@
 //!
 //! The composition root constructs the adapter over the directory `MEDIA_DATA_DIR` names, once, at
 //! start: an edit to it reaches a reader only on a restart. Not yet in code: the port announces
-//! change (DEV-7622).
+//! change (DEV-7622). Nothing here writes to the subtree or watches it for changes: it may be NFS.
 
 use std::path::{Path, PathBuf};
 use std::{fs, io};
 
 use cpe_ports::{DepositedFiles, FilesError};
 use shared_names::{is_file_name, is_shortcode};
+use shared_stand_in::{generation_dir, read_token, TokenError, TOKEN_FILE};
 
-/// `media`'s adapter for CPE's bytes port: `<dir>/<shortcode>/<name>`, read whole on every call.
+/// `media`'s adapter for CPE's bytes port: `<root>/<shortcode>/<generation>/<name>`, the generation
+/// the project's Ready token names, read whole on every call.
 ///
 /// A caller's string reaches the file system only after [`is_shortcode`] and [`is_file_name`]
-/// accept it, and no component below `<dir>` may be a symlink: the project directory and every
-/// directory of the name must be real directories, and the file a regular file. The window between
-/// that check and the read is accepted, since only an operator writes the directory; the real
-/// bucket's adapter resolves without following symlinks instead (`openat2`, `cap-std`).
+/// accept it, and no component at or below the generation directory may be a symlink: the
+/// generation directory and every directory of the name must be real directories, and the file a
+/// regular file. The window between that check and the read is accepted, since only the VRE bridge
+/// writes the subtree; the real bucket's adapter resolves without following symlinks instead
+/// (`openat2`, `cap-std`).
 pub struct LiveDepositedFiles {
-    dir: PathBuf,
+    root: PathBuf,
 }
 
 impl LiveDepositedFiles {
-    pub fn new(dir: impl Into<PathBuf>) -> Self {
-        Self { dir: dir.into() }
+    pub fn new(root: impl Into<PathBuf>) -> Self {
+        Self { root: root.into() }
     }
 }
 
@@ -50,9 +57,26 @@ impl DepositedFiles for LiveDepositedFiles {
             return Err(unknown_file());
         }
 
-        let mut path = self.dir.join(shortcode);
-        if entry(&path)? != Entry::Directory {
+        let token = match read_token(&self.root, shortcode) {
+            Ok(Some(token)) => token,
+            Ok(None) => return Err(unknown_project()),
+            Err(error) => {
+                let kind = match error {
+                    TokenError::Unreadable(kind) => kind,
+                    TokenError::Invalid(_) => io::ErrorKind::InvalidData,
+                };
+                let path = self.root.join(shortcode).join(TOKEN_FILE);
+                return Err(unavailable(&path, io::Error::new(kind, error)));
+            }
+        };
+        let Some(mut path) = generation_dir(&self.root, shortcode, &token.provenance.generation) else {
             return Err(unknown_project());
+        };
+        if entry(&path)? != Entry::Directory {
+            return Err(unavailable(
+                &path,
+                io::Error::other("the generation the Ready token names is not a directory"),
+            ));
         }
         let mut segments = name.split('/');
         let file = segments.next_back().unwrap_or(name);
@@ -71,7 +95,7 @@ impl DepositedFiles for LiveDepositedFiles {
     }
 }
 
-/// What a path below `<dir>` is, read without following a symlink.
+/// What a path below `<root>` is, read without following a symlink.
 #[derive(PartialEq)]
 enum Entry {
     Directory,

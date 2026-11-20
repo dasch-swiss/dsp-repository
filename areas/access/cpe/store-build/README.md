@@ -98,9 +98,10 @@ ADR-0007 why the hook is in this crate and not in the project's folder.
 
 ## Adding a project
 
-Both ports must serve the project: `areas/access/sync/data` holds `<shortcode>.nq` (`areas/access/sync/CONTEXT.md`),
-and `areas/access/media/data/<shortcode>/` holds its `config.kdl`, its narrative and, when its block reads a curated
-key, its `curation.csv` (`areas/access/media/CONTEXT.md`). Its folder, `areas/access/cpe/projects/<project>/`, holds
+Both ports must serve the project: `areas/access/sync/data/<shortcode>/` holds its Ready token and, in the generation
+the token names, its `snapshot.nq` (`areas/access/sync/CONTEXT.md`), and `areas/access/media/data/<shortcode>/` holds
+its Ready token and, in the same generation, its `config.kdl`, its narrative and, when its block reads a curated key,
+its `curation.csv` (`areas/access/media/CONTEXT.md`). Its folder, `areas/access/cpe/projects/<project>/`, holds
 a `SHORTCODE` file with the shortcode.
 
 **A project without a hook** is configuration.
@@ -215,7 +216,7 @@ generic code (the file where one is worth naming), `H` is a hook rule and names 
 | Every Book text | `G` value steps 6 and 7 | written as served; one that is empty after a strip gives no row (`T:1521-1531`). Two departures from the old pipeline: it refused an empty value among several of `alt-title`, `creator` or `publisher` (`T:612-622`), and it cut a trailing U+001E with the whitespace around it from every Book text (`X:1189-1207`) and failed on one elsewhere in a text (`X:1655-1688`). Here the cut is made only where a title is compared with the label, and a U+001E is written as served | `T:1521-1531` |
 | Book `pub-place` | `M` `max=1 sentinel="absent"` | `inc:hasPubloc`, at most one (`X:1202`); exactly `[missing]` after a strip gives no row. The old validation compared the unstripped value (`T:701-712`) and so refused a padded sentinel; none exists | `T:1579-1583` |
 | Book `shelfmark`, `physical` | `M` `max=1` | `inc:hasLocation`, `inc:hasPhysicalDesc`, at most one of each (`X:1204`, `X:1206`), as served (N2 on `physical`) | `T:1551-1553` |
-| Book `catalogue-uri` | `H` `catalogue.rs`; `M` the `property` node, `hook › overrides` | `inc:hasUri` as text, at most one (`X:1205`). An override is two curated values of the Book, in `areas/access/media/data/0803/curation.csv`: `catalogue_uri`, the address to write, and `catalogue_uri_replaces`, the address it replaces. Both are read as served, since each is an address. The override wins while the archive has exactly the address it replaces; with any other address, or none, the Book is refused until the editors take both values out (`stale-catalogue-override`). One of the two without the other is refused (`unpaired-catalogue-override`, NEW), and so is more than one value under either (`curated-count`). `tests/it/committed_0803.rs` holds that the three overridden Books are written with the replacement | `T:550-599` |
+| Book `catalogue-uri` | `H` `catalogue.rs`; `M` the `property` node, `hook › overrides` | `inc:hasUri` as text, at most one (`X:1205`). An override is two curated values of the Book, in `areas/access/media/data/0803/20261007T000000Z-00000000/curation.csv`: `catalogue_uri`, the address to write, and `catalogue_uri_replaces`, the address it replaces. Both are read as served, since each is an address. The override wins while the archive has exactly the address it replaces; with any other address, or none, the Book is refused until the editors take both values out (`stale-catalogue-override`). One of the two without the other is refused (`unpaired-catalogue-override`, NEW), and so is more than one value under either (`curated-count`). `tests/it/committed_0803.rs` holds that the three overridden Books are written with the replacement | `T:550-599` |
 | Every Book value read, every curated value | `M` `sentinel`, `no-addresses`; `G` curated texts (`generic/curation.rs`) | none contains `[missing]` (apart from `pub-place`) and none contains `http` (apart from `catalogue-uri` and the curated `cover_page`, `catalogue_uri` and `catalogue_uri_replaces`) | `T:691-717` |
 | Book `sort-key` | `H` `sort_key.rs`; `M` `hook › key`, `provides` | the curated `sort_key`, else the display title; its first character after a strip is ASCII; one for every Book. A padded curated `sort_key` is refused, also one that is whitespace alone | `T:607-609`, `T:727-739` |
 | Book `teaser` | `M` `curated type="per-language"` | `teaser@de` at `seq` 0 and `teaser@en` at `seq` 1; both or neither, and in no other language | `T:741-746`, `T:1596-1600` |
@@ -279,7 +280,7 @@ Book's `inc:hasCitation`, `inc:hasNote`, `inc:hasComment` and `inc:hasDescriptio
 and `inc:hasOrigname`. The set is held by a guard test over the committed data,
 `test_snapshot_unmapped_properties_are_the_listed_six` in `tests/it/committed_0803.rs`, with its list `IGNORED`: it
 fails when the properties the snapshot serves on the block's classes and the block does not map are not exactly
-these six. A change of the committed snapshot that brings a property the block does not map therefore fails that test, and the choice is to
+these six. A change of the committed 0803 snapshot that brings a property the block does not map therefore fails that test, and the choice is to
 map it in the block or to list it in `IGNORED` and here. A second test of that file
 (`test_build_reads_every_declared_property`) takes each mapped property away in turn and fails when the store does
 not change. Only properties are dropped this way: a resource of a class the block does not declare is refused.

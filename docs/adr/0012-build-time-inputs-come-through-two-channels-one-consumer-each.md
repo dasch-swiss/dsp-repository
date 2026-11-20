@@ -117,9 +117,6 @@ Not yet in code: a project that fails to load, or whose provenance moved, keeps 
 every project, not only its own (DEV-7989).
 Not yet in code: the bytes port against `media` carries no change subscription and `media` polls no Ready
 token (DEV-7938).
-Not yet in code: the stand-ins are committed to this repository and fed by hand; no deployment configures
-the VRE bridge that is to write them (DEV-7514).
-Not yet in code: the stand-ins are carried in `access-server`'s image, not in a mounted directory (DEV-7514).
 Not yet in code: CPE's rebuild test runs against `FakeArchiveProjection` only, with curated values passed in by
 hand; no rebuild test runs against a fake of the bytes port (not scheduled).
 Not yet in code: CPE reads Incunabula's `assets/` from `areas/access/cpe/projects/incunabula/` at activation

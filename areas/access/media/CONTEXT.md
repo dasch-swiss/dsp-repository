@@ -3,7 +3,7 @@
 The Access Area's `media` capability: the Access bucket's only consumer, as `sync` is the projection stream's, and
 the implementer of the bytes ports through which a sibling capability reads a project's deposited files at build
 time (ADR-0012). It exists so far at its minimum, the crate `media-store` in `store/`, which serves CPE's bytes
-port from a **Stand-in directory**, today the committed fixture `data/`. `access-server` constructs it over the directory
+port from a **Stand-in directory**. `access-server` constructs it over the directory
 `MEDIA_DATA_DIR` names (default `areas/access/media/data`; an empty value is unset) and hands it to CPE's
 activation; a directory that does not exist is logged when the binary starts, and every CPE project then fails to
 load and answers 503. Its adapter of DaTEI's port, not yet in code, will read the same directory (*Serve DaTEI*,
@@ -26,12 +26,12 @@ manifest that names the VRE resource each came from (DaTEI's vocabulary, in
 DaTEI, `datei.toml`, `file-layout.xml` and the file mapping) and `access-rights.json`, the rights of its files. The
 shipped inputs are the one authoritative copy of the files the VRE does not hold. The File manifest, the Ready
 token and the shipped inputs record provenance. The committed `data/` is a test fixture in the same layout, which
-`access-server`'s image still carries: `0803/.ready`, hand-written, and the generation
+the tests and a run from the checkout read and `access-server`'s image cannot carry (its filegroup is
+`testonly`): `0803/.ready`, hand-written, and the generation
 `0803/20261007T000000Z-00000000/` holding Incunabula's `config.kdl`, `curation.csv` and
 `narrative/<name>.<lang>.md`, text only, in plain git. Those files are a copy of the VRE bridge's shipped inputs of
 0803, `areas/deposit/vre-bridge/inputs/0803/`, the authoritative copy, whose `PROVENANCE` records where each came
-from; `just check-stand-in-fixture` fails while the generation differs from them by a byte or a file. Not yet in
-code: a deployment that configures the VRE bridge (DEV-7514).
+from; `just check-stand-in-fixture` fails while the generation differs from them by a byte or a file.
 _Avoid_: the bucket (the stand-in is not it), project folder (CPE's, which holds code and the documents about
 the data), committed snapshot (`sync`'s file in a generation is its Interim snapshot).
 

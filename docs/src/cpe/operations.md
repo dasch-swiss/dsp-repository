@@ -11,8 +11,9 @@ to CPE.
   hidden, each with a link to its start page. Any other path that names no project is CPE's own not-found page.
 - **From what**: the project folders in `CPE_PROJECTS_DIR` (`SHORTCODE`, assets), `sync`'s snapshots in
   `SYNC_DATA_DIR` and `media`'s deposited files in `MEDIA_DATA_DIR` (configuration, curation, narrative), each
-  read from the generation the project's Ready token names in that directory. All
-  three are in the image. Each project's store is built in memory from that data at every start; nothing is
+  read from the generation the project's Ready token names in that directory. The
+  project folders are in the image; the other two are the locations the VRE bridge writes, which a deployment
+  mounts, and without them CPE serves no project. Each project's store is built in memory from that data at every start; nothing is
   written to disk, and a restart leaves nothing behind.
 - **Refresh**: by a project's Ready token, with no restart (ADR-0012). `sync` polls its tokens every
   `SYNC_POLL_SECS` and announces a project whose token appeared, changed or was removed. On an announcement for
@@ -38,8 +39,8 @@ to CPE.
 ## Configuration
 
 The five variables (`CPE_BASE`, `CPE_PROJECTS_DIR`, `CPE_PUBLIC_ORIGIN`, `SYNC_DATA_DIR`, `MEDIA_DATA_DIR`) are
-in the [environment table](../dpe/operations.md#environment-variables) of DPE Operations. The image sets all but
-`CPE_PUBLIC_ORIGIN`. The three `CPE_*` values can also come from a `cpe.toml` in the working directory; the
+in the [environment table](../dpe/operations.md#environment-variables) of DPE Operations. The image sets `CPE_BASE`
+and `CPE_PROJECTS_DIR`; the other three are the deployment's to set. The three `CPE_*` values can also come from a `cpe.toml` in the working directory; the
 environment wins. A sixth, `ACCESS_HIDDEN_PROJECTS`, is in the same table: `access-server` reads it and hands
 it to CPE, which honours it but never reads it, and it cannot come from `cpe.toml`. A seventh, `SYNC_POLL_SECS`,
 how often `sync` polls its Ready tokens, is there too; the image does not set it.
@@ -102,6 +103,9 @@ to `MEDIA_DATA_DIR`):
   Desktop on an Apple M5 Max.
 - **The host**: the release binary run on macOS on the same machine, from a directory laid out as the image.
 
+Note (2026-11-20): these measurements were taken with an image that carried the 0803 data. The current image
+carries none, so they cannot be reproduced with it without mounting the data.
+
 | | The image, 1 CPU, 512 MiB | The image, 2 CPUs, 1 GiB | The host |
 |---|---:|---:|---:|
 | Port bound, after process start | 0.06 to 0.07 s | 0.08 s | 0.21 s |
@@ -123,8 +127,9 @@ A PR preview on Cloud Run is deployed with `--no-cpu-throttling`. With throttlin
 while it handles a request, and `/cpe/incunabula/` answered `503` after a cold start until the sixth request.
 The load time on Cloud Run without throttling is not measured.
 
-CPE's data in the image, counted on 2026-10-21 as the sum of the files' sizes: `sync/data` 20,264,543 bytes
-(3 files), `media/data` 90,734 bytes (19 files) and `cpe/projects` 122,868 bytes (7 files).
+CPE's data, counted on 2026-10-21 as the sum of the files' sizes: `sync/data` 20,264,543 bytes (3 files) and
+`media/data` 90,734 bytes (19 files), which a deployment mounts and the image does not carry, and
+`cpe/projects` 122,868 bytes (7 files), which the image carries.
 
 ## Response times: the baseline for store reads on the request path
 

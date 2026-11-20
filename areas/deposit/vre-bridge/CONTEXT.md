@@ -114,6 +114,19 @@ nothing and removes nothing.
 A project's files that come with the bridge rather than from its **Dump** (`config.kdl`, `curation.csv`,
 `narrative/…`), below the inputs directory in `<shortcode>/`; copied into each `media` **Generation**. None may be
 named `access-rights.json` or `file-manifest.json`, in any case, file or directory: the bridge writes those itself.
+A DaTEI project's shipped inputs also hold `datei.toml`, `file-layout.xml` and its **File mapping**.
+
+**File mapping** and **File manifest** are DaTEI's terms (`areas/access/datei/CONTEXT.md`). The bridge reads the
+mapping from the **Shipped inputs** (`vre-bridge-core`'s `FileMapping`) and writes the manifest into the `media`
+**Generation**, its entries in the mapping's order (`manifest_bytes`).
+
+**Mapped file**:
+The one current file value of a resource a **File mapping** entry names, in the **Selection** the **Public
+guard** passed. A text file is downloaded without credentials and stored under its Stored name, the VRE's
+internal file name; a still image is recorded by its IIIF reference and stays in the VRE. Any other kind, a
+resource outside the selection or a Stored name that is not a file name or collides refuses the project.
+`vre-bridge-core`'s `FileValue`; a mapping entry is a `MappingEntry`.
+_Avoid_: asset, download link.
 
 **Inputs digest**:
 The SHA-256 of a project's **Shipped inputs**, recorded in its **Ready tokens**, so that a change to them refreshes
@@ -133,7 +146,8 @@ allowlisted or `deposit-server`'s configuration does not load, `75` when the loc
 
 **Refusal**:
 An **Outcome** the project's data causes: the **Public guard**, the format's closed world, the server refusing the
-**Service identity** (`401`, `403`).
+**Service identity** or an anonymous **Mapped file** download (`401`, `403`), a **File mapping** that does not
+resolve.
 _Avoid_: failure.
 
 **Failure**:

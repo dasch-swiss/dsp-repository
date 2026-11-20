@@ -444,3 +444,19 @@ fn test_debug_raw_settings_and_settings_contain_no_key() {
     assert!(!format!("{settings:?}").contains(KEY_PART));
     assert!(!format!("{settings:#?}").contains(KEY_PART));
 }
+
+#[test]
+fn test_check_iiif_bases_a_mapping_without_its_servers_base_is_an_error() {
+    let without = parse(raw());
+    let with = parse(RawSettings {
+        iiif_bases: Some("prod=https://iiif.dasch.swiss".to_owned()),
+        ..raw()
+    });
+
+    assert_eq!(
+        without.check_iiif_bases(|shortcode| shortcode == "0803"),
+        Err(SettingsError::NoIiifBase { server: server("prod"), shortcode: "0803".to_owned() })
+    );
+    assert_eq!(without.check_iiif_bases(|_| false), Ok(()));
+    assert_eq!(with.check_iiif_bases(|_| true), Ok(()));
+}

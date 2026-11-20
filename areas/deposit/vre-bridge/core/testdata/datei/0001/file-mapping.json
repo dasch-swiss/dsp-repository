@@ -1,0 +1,10 @@
+{
+  "format": "file-mapping",
+  "version": 1,
+  "files": [
+    {"key": "Briefe/Brief 1 an Hüni.xml", "iri": "http://rdfh.ch/0001/TEI"},
+    {"key": "odd/edition.odd", "iri": "http://rdfh.ch/0001/ODD"},
+    {"key": "css/edition.css", "iri": "http://rdfh.ch/0001/CSS"},
+    {"key": "Bilder/Faksimile 1.jpg", "iri": "http://rdfh.ch/0001/IMG"}
+  ]
+}

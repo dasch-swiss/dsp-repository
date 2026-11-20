@@ -9,7 +9,7 @@ use async_trait::async_trait;
 use chrono::{DateTime, TimeDelta, Utc};
 use shared_stand_in::{Generation, Provenance, ReadyToken, TOKEN_FILE};
 use tempfile::TempDir;
-use vre_bridge_client::{Changes, ClientError, DeleteOutcome, DumpZip, ExportStatus, ExportTrigger};
+use vre_bridge_client::{Changes, ClientError, DeleteOutcome, DumpZip, ExportStatus, ExportTrigger, FileError};
 use vre_bridge_core::{inputs_digest, RawSettings, ServerId, Settings};
 use vre_bridge_lift::{INTERIM_FORMAT_VERSION, TRANSFORMATION_VERSION};
 
@@ -333,5 +333,15 @@ impl Vre for FakeVre {
     async fn delete_export(&self, _server: &ServerId, iri: &str, _id: &str) -> Result<DeleteOutcome, ClientError> {
         self.record("delete", shortcode(iri));
         Ok(DeleteOutcome::Deleted)
+    }
+
+    async fn download_file(
+        &self,
+        _server: &ServerId,
+        _url: &str,
+        _into: &Path,
+        _max_bytes: u64,
+    ) -> Result<u64, FileError> {
+        Err(FileError::Failed(unavailable("file")))
     }
 }

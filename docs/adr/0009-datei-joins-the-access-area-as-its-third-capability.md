@@ -179,7 +179,6 @@ read-model directory (DEV-7935).
 Not yet in code: no model is kept across a restart, and none is served during its rebuild (DEV-7938).
 Not yet in code: `check-capability-deps.sh` bans no database crate in the `web` role, and no gate script refuses
 filesystem calls in `datei-ports`, `datei-core` and `datei-store-build` (DEV-7549).
-Not yet in code: the VRE bridge, which writes a DaTEI project's files into `media`'s stand-in (P-DEV-301).
 
 Enforced by: review. The target is Bazel `visibility` per ADR-0001 for the capability and port seams and the
 edges above (**structure**); `check-capability-deps.sh`'s ban on database crates in the `web` role, and a gate

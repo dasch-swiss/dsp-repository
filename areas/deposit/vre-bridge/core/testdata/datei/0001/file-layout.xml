@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- A synthetic project's DaTEI file layout; the bridge copies it and never reads it. -->
+<files>
+  <file path="Briefe/Brief 1 an Hüni.xml" role="edition"/>
+  <file path="odd/edition.odd" role="odd"/>
+  <file path="css/edition.css" role="css"/>
+  <file path="Bilder/Faksimile 1.jpg" role="edition"/>
+</files>

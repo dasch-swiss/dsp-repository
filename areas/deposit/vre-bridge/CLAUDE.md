@@ -10,11 +10,11 @@ Five crates, each in its own directory.
 
 | Crate | Directory | Role | Holds |
 |---|---|---|---|
-| `vre-bridge-lift` | `lift/` | `lift` | the lift (`lift`, `Lifted`, `LiftError`, `Violation`): the selection, the public guard and dsp-incubator's `dao-lift` `snapshot` as a library; `FORMAT.md`; the format and transformation versions |
-| `vre-bridge-core` | `core/` | `core` | settings (`RawSettings`, `Settings::parse`), the allowlist and server ids, refresh decisions (`decide`), the shipped-input digest (`inputs_digest`), outcomes and their exit status |
+| `vre-bridge-lift` | `lift/` | `lift` | the lift (`lift`, `Lifted`, `LiftError`, `Violation`, `SelectedFiles`): the selection, the selected file values, the public guard and dsp-incubator's `dao-lift` `snapshot` as a library; `FORMAT.md`; the format and transformation versions |
+| `vre-bridge-core` | `core/` | `core` | settings (`RawSettings`, `Settings::parse`), the allowlist and server ids, refresh decisions (`decide`), the shipped-input digest (`inputs_digest`), DaTEI's file mapping and file manifest (`FileMapping`, `plan_files`, `manifest_bytes`), outcomes and their exit status |
 | `vre-bridge-store` | `store/` | `store` | the subtrees: generations, Ready tokens, recovery, cleanup, the lock |
 | `vre-bridge-client` | `client/` | `client` | DSP-API with the service identity (`ServiceIdentity`, `Server`): project lookup, change check, export, the dump's download and private unpacking (`private_work_dir`, `unpack`), anonymous file downloads |
-| `vre-bridge-server` | `server/` | `server` | the `VreBridge` facade (`from_raw`, `start`, `operator_refresh`), the schedule and the nightly run, one refresh (`Refresher`) over the `Vre`, `Report` and `Clock` traits |
+| `vre-bridge-server` | `server/` | `server` | the `VreBridge` facade (`from_raw`, `start`, `operator_refresh`), the schedule and the nightly run, one refresh (`Refresher`) over the `Vre`, `Report` and `Clock` traits, a DaTEI project's mapped files |
 
 `vre-bridge-lift` grants its library to `vre-bridge-core` and `vre-bridge-server` alone (Bazel `visibility`). Its
 role bans web frameworks, Maud, database crates, HTTP clients and `tokio` (`.github/scripts/check-capability-deps.sh`,
@@ -41,7 +41,8 @@ tests and `deposit-server`'s `vre_bridge_test` read its private key too (`export
 `vre-bridge-server` is the only crate that links the other four. A refresh (`refresh.rs`) holds the lock its
 caller took and runs the steps in order: recovery of the project, its tokens and the decision, the project
 lookup, the change check, the export, the download into the private work directory, the export's deletion, the
-unpacking, the lift, the generation in both subtrees, the report. Three traits keep it testable:
+unpacking, the lift, a DaTEI project's mapped files, the generation in both subtrees, the report. Three traits
+keep it testable:
 
 - **`Vre`**: DSP-API, each call naming the allowlist entry's server; implemented for
   `BTreeMap<ServerId, vre_bridge_client::Server>`. The refresh's tests use that implementation against
@@ -161,6 +162,14 @@ refresh would release the lock while a blocking write goes on; a refresh that pa
   absolute path, `..`, a symlink or two entries of one name fail the dump) and never calls `ZipArchive::extract`;
   it is blocking, so an async caller runs it in `spawn_blocking`. `download` and `unpack` stop at the caps
   `EDITOR_VRE_BRIDGE_MAX_DUMP_BYTES` and `EDITOR_VRE_BRIDGE_MAX_UNPACKED_BYTES` (`ClientError::TooLarge`).
+
+- **A mapped file must be in the guarded selection.** The lift returns the selected files (`Lifted::files`):
+  the current file values of each resource the snapshot holds, taken from the same `Selection` the guard
+  checked. The refresh resolves a file mapping against them alone and reads nothing else of the dump.
+- **A file is downloaded only below the server's configured bases.** `Server::download_file` refuses any other
+  URL or scheme, and a URL with credentials, a query, a fragment or an encoded separator, before a request, follows no redirect, stops at
+  `EDITOR_VRE_BRIDGE_MAX_FILE_BYTES` and deletes what it wrote on failure. Every download lands in the private
+  work directory before the generation is begun; only `GenerationWriter::copy_file` takes it into `media`.
 
 ## Checking the lift on a real dump
 

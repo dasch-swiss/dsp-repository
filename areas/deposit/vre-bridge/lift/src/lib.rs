@@ -29,6 +29,7 @@ use std::path::Path;
 
 pub use error::LiftError;
 pub use guard::{Problem, SubjectKind, Violation};
+pub use selection::{SelectedFile, SelectedFiles};
 pub use snapshot::{Handling, Kind, Snapshot, Stats, ValueKind, ViolationReport};
 
 use crate::dump::Dump;
@@ -41,11 +42,13 @@ pub const INTERIM_FORMAT_VERSION: u32 = 1;
 /// change to the bytes written for the same dump; the golden test fails until it is.
 pub const TRANSFORMATION_VERSION: u32 = 1;
 
-/// A lifted project: its snapshot and what the run counted, for the caller to log.
+/// A lifted project: its snapshot, what the run counted, for the caller to log, and
+/// the current file values of the snapshot's resources, for a DaTEI file mapping.
 #[derive(Debug)]
 pub struct Lifted {
     pub snapshot: Snapshot,
     pub stats: Stats,
+    pub files: SelectedFiles,
 }
 
 /// The snapshot of the unzipped dump at `dump_dir`; reads only its `data.nq` and
@@ -63,7 +66,8 @@ fn lift_dump(dump: &Dump) -> Result<Lifted, LiftError> {
     if !violations.is_empty() {
         return Err(LiftError::Refused { violations });
     }
+    let files = selection::files(&read.index, &read.subjects, &selection);
     let mut stats = Stats::default();
     let snapshot = snapshot::build(read, &selection, &rights, &mut stats)?;
-    Ok(Lifted { snapshot, stats })
+    Ok(Lifted { snapshot, stats, files })
 }

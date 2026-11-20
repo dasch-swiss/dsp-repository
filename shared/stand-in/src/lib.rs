@@ -192,7 +192,10 @@ fn is_lower_hex(b: &u8) -> bool {
     matches!(b, b'0'..=b'9' | b'a'..=b'f')
 }
 
-fn is_server_id(s: &str) -> bool {
+/// Whether `s` is a server id a token may name: `[a-z0-9-]{1,32}`. The bridge's allowlist takes
+/// its server ids by the same rule, so every id it writes into a token is one a reader accepts.
+#[must_use]
+pub fn is_server_id(s: &str) -> bool {
     (1..=32).contains(&s.len()) && s.bytes().all(|b| matches!(b, b'a'..=b'z' | b'0'..=b'9' | b'-'))
 }
 

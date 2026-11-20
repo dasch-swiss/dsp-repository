@@ -12,8 +12,9 @@ media/data/0803/.ready holds the same bytes, so the two tokens hold equal proven
 
 snapshot.nq is the file that was 0803.nq here, moved with its bytes unchanged. It is dao-lift's output,
 not the VRE bridge's: it lacks the dao:accessRights and dao:dataClassification lines interim format
-version 1 has (sync omits them anyway). Its token names format version 1 nonetheless, since sync-store
-reads nothing it lacks.
+version 1 has, and any dao:valueHasXml line (sync-store reads none of them). Its token names format
+version 1 nonetheless, since sync-store reads nothing it lacks. The fixture's Ready tokens keep
+transformation version 1, that of the lift that produced snapshot.nq.
 
 Dump
   server:          prod (api.dasch.swiss)
@@ -30,7 +31,8 @@ Producer
                    (cpe/tools/dao-lift)
 
 That commit's cpe/tools/dao-lift/FORMAT.md is the format the file follows; interim format version 1,
-areas/deposit/vre-bridge/lift/FORMAT.md, adds the rights and classification lines to it.
+areas/deposit/vre-bridge/lift/FORMAT.md, adds the rights and classification lines and
+dao:valueHasXml to it.
 
 Regenerate from the incubator's cpe/ directory, at the commit above, on the unzipped dump:
 

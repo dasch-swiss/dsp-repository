@@ -27,6 +27,8 @@ pub(crate) const DAO_VALUE_HAS_UUID: &str = "https://ontology.dasch.swiss/dao#va
 pub(crate) const DAO_SOURCE_PROPERTY: &str = "https://ontology.dasch.swiss/dao#sourceProperty";
 /// §5: the dump's `kb:valueHasOrder`, only when it records one.
 pub(crate) const DAO_VALUE_HAS_ORDER: &str = "https://ontology.dasch.swiss/dao#valueHasOrder";
+/// §4.1: a formatted text's XML, from `kb:valueHasXml` (D12).
+pub(crate) const DAO_VALUE_HAS_XML: &str = "https://ontology.dasch.swiss/dao#valueHasXml";
 /// §4.6: the datatype of a date's DSP lexical.
 pub(crate) const DAO_DATE: &str = "https://ontology.dasch.swiss/dao#date";
 /// §4.6: `"GREGORIAN"` or `"JULIAN"`.
@@ -123,6 +125,7 @@ pub(crate) const TERMS: &[(&str, &str, &str)] = &[
     (DAO_VALUE_HAS_UUID, "§3", "DAO"),
     (DAO_SOURCE_PROPERTY, "§3", "DAO"),
     (DAO_VALUE_HAS_ORDER, "§5", "D4"),
+    (DAO_VALUE_HAS_XML, "§4.1", "D12"),
     (DAO_DATE, "§4.6", "DAO"),
     (DAO_DATE_CALENDAR, "§4.6", "D6"),
     (DAO_DATE_START_JDN, "§4.6", "D6"),

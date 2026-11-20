@@ -71,6 +71,7 @@ const TEXT_PREDICATES: &[&str] = &[
     kb::VALUE_HAS_MAPPING,
     kb::VALUE_HAS_MAX_STANDOFF_START_INDEX,
     kb::VALUE_HAS_STANDOFF,
+    kb::VALUE_HAS_XML,
 ];
 
 const INTEGER_PREDICATES: &[&str] = &[kb::VALUE_HAS_INTEGER, kb::VALUE_HAS_STRING];
@@ -115,7 +116,7 @@ pub(crate) fn emit(
     violations: &mut Violations,
 ) -> Option<NamedNode> {
     let (content, own_predicates): (Option<Content>, &[&str]) = match kind {
-        ValueKind::Text => (text(value, violations).map(Content::from), TEXT_PREDICATES),
+        ValueKind::Text => (text(value, violations), TEXT_PREDICATES),
         ValueKind::Integer => (
             typed(value, kb::VALUE_HAS_INTEGER, vocab::XSD_INTEGER, is_integer, violations).map(Content::from),
             INTEGER_PREDICATES,
@@ -204,14 +205,47 @@ fn check_predicates(value: &Entry, own: &[&str], violations: &mut Violations) {
     }
 }
 
-/// §4.1: `kb:valueHasString` without its U+001E, tagged when the dump records a language.
-fn text(value: &Entry, violations: &mut Violations) -> Option<Literal> {
+/// §4.1: `kb:valueHasString` without its U+001E, tagged when the dump records a
+/// language, and `dao:valueHasXml` when the dump records `kb:valueHasXml`.
+fn text(value: &Entry, violations: &mut Violations) -> Option<Content> {
     let text = one_literal(value, kb::VALUE_HAS_STRING, violations);
     let language = at_most_one_literal(value, kb::VALUE_HAS_LANGUAGE, violations);
-    let text = text?.value().replace('\u{1E}', "");
-    match language.ok()? {
-        None => Some(Literal::new_simple_literal(text)),
-        Some(tag) => mint::lang_literal(&text, tag.value(), value.node.as_str(), violations),
+    let xml = xml(value, violations);
+    let text = without_u001e(text?);
+    let rdf_value = match language.ok()? {
+        None => Literal::new_simple_literal(text),
+        Some(tag) => mint::lang_literal(&text, tag.value(), value.node.as_str(), violations)?,
+    };
+    let extra = match xml.ok()? {
+        Some(xml) => vec![(vocab::DAO_VALUE_HAS_XML, Literal::new_simple_literal(without_u001e(xml)).into())],
+        None => Vec::new(),
+    };
+    Some(Content { rdf_value: Some(rdf_value), extra })
+}
+
+/// §4.1, d.51: a text's lexical with every U+001E removed.
+fn without_u001e(literal: &Literal) -> String {
+    literal.value().replace('\u{1E}', "")
+}
+
+/// §4.1: the text value's one plain-string `kb:valueHasXml`, if any. Standoff is
+/// never read; that the value has some, or a mapping, only makes the XML required.
+fn xml<'a>(value: &'a Entry, violations: &mut Violations) -> Result<Option<&'a Literal>, ()> {
+    let s = value.node.as_str();
+    match at_most_one_literal(value, kb::VALUE_HAS_XML, violations)? {
+        Some(xml) if is_plain_string(xml) => Ok(Some(xml)),
+        Some(_) => {
+            violations.record(Rule::InvalidLiteral, s, kb::VALUE_HAS_XML);
+            Err(())
+        }
+        None => {
+            let markup = [kb::VALUE_HAS_STANDOFF, kb::VALUE_HAS_MAPPING];
+            if value.triples.iter().any(|(p, _)| markup.contains(&p.as_str())) {
+                violations.record(Rule::MissingTextXml, s, kb::VALUE_HAS_XML);
+                return Err(());
+            }
+            Ok(None)
+        }
     }
 }
 

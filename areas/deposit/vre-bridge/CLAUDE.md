@@ -176,6 +176,7 @@ refresh would release the lock while a blocking write goes on; a refresh that pa
 `bazel test //areas/deposit/vre-bridge/lift/...` runs the fixture tests. The real-dump tests are `#[ignore]`d;
 `just vre-bridge-lift-real-dump <dump dir> <reference snapshot>` runs them, with the reference written by
 dsp-incubator's `dao-lift snapshot` at the ported commit from the same dump, both as absolute paths.
-`real_dump_matches_the_incubator_lift` compares the two as sets of quads, apart from the access rights and data
-classification the incubator never wrote. When the public guard refuses the dump, every test fails after printing
-the guard's violations.
+`real_dump_matches_the_incubator_lift` compares the two as sets of quads, apart from the access rights, data
+classification and `dao:valueHasXml` the incubator never wrote; the incubator refuses a dump with
+`knora-base:valueHasXml`, so its reference is written from the dump with those quads removed. When the public
+guard refuses the dump, every test fails after printing the guard's violations.

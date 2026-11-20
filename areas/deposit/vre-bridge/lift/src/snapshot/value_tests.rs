@@ -93,33 +93,99 @@ fn a_text_value_with_a_language_emits_a_tagged_rdf_value() {
     assert!(out.lines().any(|l| l == rdf_value), "{out}");
 }
 
-#[test]
-fn a_text_value_with_standoff_emits_only_its_plain_string() {
-    let mut f = page();
-    let p = onto("hasComment");
-    let v = value(&mut f, ZEBRA, &p, "T", kb::TEXT_VALUE, "UUID-T");
+const MAPPING: &str = "http://rdfh.ch/standoff/mappings/StandardMapping";
+
+/// Give the text value `v` standoff as DSP-API stores it: a mapping, a start
+/// index and one root tag with a predicate the format does not know.
+fn standoff(f: &mut Fixture, v: &str) {
     let tag = format!("{v}/standoff/1");
-    let mapping = "http://rdfh.ch/standoff/mappings/StandardMapping";
-    f.add(&v, kb::VALUE_HAS_STRING, plain("plain text"));
-    f.add(&v, kb::VALUE_HAS_STANDOFF, nn(&tag));
-    f.add(&v, kb::VALUE_HAS_MAPPING, nn(mapping));
-    f.add(&v, kb::VALUE_HAS_MAX_STANDOFF_START_INDEX, typed("0", model::XSD_INTEGER));
+    f.add(v, kb::VALUE_HAS_STANDOFF, nn(&tag));
+    f.add(v, kb::VALUE_HAS_MAPPING, nn(MAPPING));
+    f.add(v, kb::VALUE_HAS_MAX_STANDOFF_START_INDEX, typed("0", model::XSD_INTEGER));
     f.add(
         &tag,
         model::RDF_TYPE,
         nn("http://www.knora.org/ontology/standoff#StandoffRootTag"),
     );
-    f.add(
-        &tag,
-        "http://www.knora.org/ontology/knora-base#standoffTagHasStart",
-        typed("0", model::XSD_INTEGER),
-    );
+    f.add(&tag, "http://example.org/unknown#standoffPredicate", plain("never read"));
+}
 
+#[test]
+fn a_formatted_text_value_carries_its_xml_without_u001e_beside_its_plain_string() {
+    let mut f = page();
+    let p = onto("hasComment");
+    let v = value(&mut f, ZEBRA, &p, "T", kb::TEXT_VALUE, "UUID-T");
+    standoff(&mut f, &v);
+    f.add(&v, kb::VALUE_HAS_STRING, plain("plain\u{1E} text"));
+    let xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<text><p>plain\u{1E} <strong>text</strong></p></text>";
+    f.add(&v, kb::VALUE_HAS_XML, plain(xml));
+
+    let carried = plain(&xml.replace('\u{1E}', "")).to_string();
     let expected = file(vec![
         resource_lines(ZEBRA, &onto("Page"), "b7v"),
         value_lines(ZEBRA, &p, "UUID-T", &plain("plain text").to_string()),
+        vec![line(&node("UUID-T"), vocab::DAO_VALUE_HAS_XML, &carried)],
     ]);
     assert_eq!(output(&f.dump()), expected);
+}
+
+#[test]
+fn a_text_value_with_standoff_or_a_mapping_but_no_xml_is_missing_text_xml() {
+    let mut f = page();
+    let p = onto("hasComment");
+    let with_standoff = value(&mut f, ZEBRA, &p, "S", kb::TEXT_VALUE, "S");
+    f.add(&with_standoff, kb::VALUE_HAS_STRING, plain("x"));
+    f.add(
+        &with_standoff,
+        kb::VALUE_HAS_STANDOFF,
+        nn(&format!("{with_standoff}/standoff/1")),
+    );
+    let with_mapping = value(&mut f, ZEBRA, &p, "M", kb::TEXT_VALUE, "M");
+    f.add(&with_mapping, kb::VALUE_HAS_STRING, plain("x"));
+    f.add(&with_mapping, kb::VALUE_HAS_MAPPING, nn(MAPPING));
+    // A superseded version is dropped before it is checked: only selected values need the XML.
+    let old = format!("{ZEBRA}/values/OLD");
+    f.add(&old, model::RDF_TYPE, nn(kb::TEXT_VALUE));
+    f.add(&old, kb::VALUE_HAS_STRING, plain("x"));
+    f.add(&old, kb::VALUE_HAS_MAPPING, nn(MAPPING));
+    f.add(&with_mapping, kb::PREVIOUS_VALUE, nn(&old));
+
+    assert_eq!(
+        report(&f.dump()),
+        vec![
+            (Rule::MissingTextXml, with_mapping, kb::VALUE_HAS_XML.to_string()),
+            (Rule::MissingTextXml, with_standoff, kb::VALUE_HAS_XML.to_string()),
+        ]
+    );
+}
+
+#[test]
+fn an_xml_that_is_not_one_plain_string_is_a_violation() {
+    let mut f = page();
+    let p = onto("hasComment");
+    let tagged = value(&mut f, ZEBRA, &p, "L", kb::TEXT_VALUE, "L");
+    f.add(&tagged, kb::VALUE_HAS_STRING, plain("x"));
+    f.add(
+        &tagged,
+        kb::VALUE_HAS_XML,
+        Literal::new_language_tagged_literal("<text>x</text>", "de").unwrap(),
+    );
+    let twice = value(&mut f, ZEBRA, &p, "R", kb::TEXT_VALUE, "R");
+    f.add(&twice, kb::VALUE_HAS_STRING, plain("x"));
+    f.add(&twice, kb::VALUE_HAS_XML, plain("<text>x</text>"));
+    f.add(&twice, kb::VALUE_HAS_XML, plain("<text>y</text>"));
+    let iri = value(&mut f, ZEBRA, &p, "I", kb::TEXT_VALUE, "I");
+    f.add(&iri, kb::VALUE_HAS_STRING, plain("x"));
+    f.add(&iri, kb::VALUE_HAS_XML, nn("http://example.org/x.xml"));
+
+    assert_eq!(
+        report(&f.dump()),
+        vec![
+            (Rule::RepeatedSourceLiteral, twice, kb::VALUE_HAS_XML.to_string()),
+            (Rule::InvalidLiteral, iri, kb::VALUE_HAS_XML.to_string()),
+            (Rule::InvalidLiteral, tagged, kb::VALUE_HAS_XML.to_string()),
+        ]
+    );
 }
 
 #[test]

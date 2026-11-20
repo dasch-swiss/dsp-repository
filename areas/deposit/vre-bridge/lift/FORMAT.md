@@ -25,7 +25,8 @@ thereby DAO-decided: §15 marks each term as DAO or names its §12 deviation.
   the earlier `dao-lift` commit that produced the committed 0803 fixture, not the ported source.
 - **Version.** This is interim format version 1 (`vre-bridge-lift`'s `INTERIM_FORMAT_VERSION`, recorded in each
   Ready token). The version is raised when a reader would read a snapshot differently. A reader may ignore
-  `dao:accessRights` and `dao:dataClassification` (§2, §8) until it carries rights itself.
+  `dao:accessRights` and `dao:dataClassification` (§2, §8) until it carries rights itself, and
+  `dao:valueHasXml` (§4.1) until it renders markup.
 - **Exit condition.** When DAO is published, `dao-lift` and this file move to it: every §12 row is resolved
   either way, and this document is retired.
 - **Provisional choices.** The owner decided the link predicate, the annotation marker, the default IRIs and
@@ -38,8 +39,8 @@ thereby DAO-decided: §15 marks each term as DAO or names its §12 deviation.
   and seqnum (§7), the predicate precedence (§6), link/LinkValue agreement (§6), annotations keeping their
   direct links (§10), identifying annotations by `oa:Annotation` (§10), `dao:valueHasOrder` only when
   recorded (§5), deviation terms in `dao:` (§12.1), canonical numeric and boolean lexicals (§1), legal
-  information on representations (§8, D14), and access rights and data classification as plain literals
-  (§2, §8, D15, D16).
+  information on representations (§8, D14), access rights and data classification as plain literals
+  (§2, §8, D15, D16), and a formatted text's XML as `dao:valueHasXml` beside its plain `rdf:value` (§4.1, D12).
 
 ## §1 File and graph
 
@@ -54,9 +55,9 @@ thereby DAO-decided: §15 marks each term as DAO or names its §12 deviation.
   `<urn:dsp:project:0803>`. A quad in the default graph or in any other graph is invalid.
 - **No blank nodes**, as subject or object. A blank node anywhere in the dump's data graph is a violation
   (`blank-node`).
-- **Literals are verbatim**, with two exceptions. A text value's `rdf:value` drops every U+001E (§4.1); labels
-  (`rdfs:label`, `skos:prefLabel`) keep it. And every `xsd:integer`, `xsd:decimal` and `xsd:boolean` literal, be
-  it a value, an order, a JDN, a seqnum, a dimension or a list position, is written in its XSD 1.1 canonical
+- **Literals are verbatim**, with two exceptions. A text value's `rdf:value` and `dao:valueHasXml` drop every
+  U+001E (§4.1); labels (`rdfs:label`, `skos:prefLabel`) keep it. And every `xsd:integer`, `xsd:decimal` and
+  `xsd:boolean` literal, be it a value, an order, a JDN, a seqnum, a dimension or a list position, is written in its XSD 1.1 canonical
   lexical form, whatever form the dump writes: `"1.50"` becomes `"1.5"`, `"2.0"` becomes `"2"`, `"+5"` and `"05"`
   become `"5"`, and a boolean `"1"` or `"0"` becomes `"true"` or `"false"`. Language tags are lowercase;
   a dump tag that is not valid BCP 47 is a violation (`invalid-language-tag`).
@@ -128,7 +129,7 @@ A value is attached by an edge and described by a node:
   - exactly one `dao:valueHasUUID "<uuid>"`, a plain string literal equal to the IRI's suffix;
   - exactly one `dao:sourceProperty <sourceProperty>`, equal to the edge predicate;
   - exactly one `rdf:value`, whose datatype names the kind (§4); list values have none (§4.7);
-  - at most one `dao:valueHasOrder` (§5), and the kind's extra triples (§4.6, §4.7).
+  - at most one `dao:valueHasOrder` (§5), and the kind's extra triples (§4.1, §4.6, §4.7).
 
 ### §3.1 Telling edges apart, positively
 
@@ -153,7 +154,7 @@ table is where `rdf:value`'s lexical comes from.
 
 | § | Kind | Dump value class | `rdf:value` from | Datatype | Reader | Violation when |
 |---|------|------------------|------------------|----------|--------|----------------|
-| 4.1 | text | `kb:TextValue` | `kb:valueHasString` | plain, or `rdf:langString` from `kb:valueHasLanguage` | must | source literal missing or repeated; `kb:valueHasLanguage` repeated or not a valid tag |
+| 4.1 | text | `kb:TextValue` | `kb:valueHasString` | plain, or `rdf:langString` from `kb:valueHasLanguage` | must | source literal missing or repeated; `kb:valueHasLanguage` repeated or not a valid tag; see §4.1 for the XML and the text type |
 | 4.2 | integer | `kb:IntValue` | `kb:valueHasInteger` | `xsd:integer` | must | source literal missing or repeated, or not an `xsd:integer` |
 | 4.3 | decimal | `kb:DecimalValue` | `kb:valueHasDecimal` | `xsd:decimal` | must | source literal missing or repeated, or not an `xsd:decimal` |
 | 4.4 | boolean | `kb:BooleanValue` | `kb:valueHasBoolean` | `xsd:boolean` | must | source literal missing or repeated, or not an `xsd:boolean` |
@@ -174,9 +175,32 @@ producer reports a missing source literal as `missing-source-literal`, a repeate
 
 `rdf:value` is `kb:valueHasString` with its whitespace kept and every U+001E (INFORMATION SEPARATOR TWO)
 removed, wherever it occurs (d.51). It is a plain literal, or, when the dump records `kb:valueHasLanguage`, a
-language-tagged literal with that tag, lowercased (`"x"@DE` in a dump is written `"x"@de`; §12, D5). Markup is never
-carried: a value with standoff keeps only its plain `kb:valueHasString` (§11, §12 D12). Every other control
-character is kept (and escaped, §1).
+language-tagged literal with that tag, lowercased (`"x"@DE` in a dump is written `"x"@de`; §12, D5). Every other
+control character is kept (and escaped, §1).
+
+**Markup** (§12, D12). A value whose dump records `kb:valueHasXml` also carries exactly one `dao:valueHasXml`: a
+plain string, that literal with every U+001E removed (d.51) and otherwise verbatim. It is the XML DSP-API renders
+from the value's standoff, prolog included (for example
+`"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<text><p>…</p></text>"`). `rdf:value` stays the plain text, so a
+reader that does not render markup reads the value as before. The standoff itself is never read: a selected
+(§11) value with `kb:valueHasStandoff` or `kb:valueHasMapping` but no `kb:valueHasXml` is a violation
+(`missing-text-xml`), and so is a `kb:valueHasXml` that is repeated (`repeated-source-literal`) or not a plain
+string (`invalid-literal`). The producer checks nothing inside the XML: it is not sanitised and not checked to be
+well-formed, and a link in it may name a resource that is not in the file. A reader that renders it treats it as
+untrusted input.
+DSP-API writes `kb:valueHasXml` when it creates or updates a formatted text value; values written before it did
+so get it from its backfill (`POST /admin/maintenance/backfill-value-has-xml`), which an operator runs before the
+project can be lifted.
+
+**Text type.** DSP-API writes `kb:hasTextValueType` on the text values it creates; older values have none. It is
+read and never emitted, and a value without it is read as above. When present it is exactly one IRI: a repeated
+one is `repeated-source-literal`, one that is not an IRI `invalid-literal`, and an IRI other than
+`kb:UnformattedText`, `kb:FormattedText`, `kb:CustomFormattedText` and `kb:UndefinedTextType` is a violation
+(`unknown-text-type`). `kb:FormattedText` and `kb:CustomFormattedText` require `kb:valueHasXml` like standoff
+does, so a value of either type without it is `missing-text-xml`. A `kb:UnformattedText` value with
+`kb:valueHasXml`, `kb:valueHasStandoff` or `kb:valueHasMapping` is a violation (`text-type-mismatch`): the type
+and the markup contradict each other, and the producer does not guess which one is right. `kb:UndefinedTextType`
+says nothing about the markup, so the value is read as one without a type.
 
 ### §4.2 Integer
 
@@ -424,7 +448,8 @@ The file carries current state only. No tombstone or marker of a dropped item re
   it) are dropped and counted.
 - A deleted list node is dropped with its subtree (§9).
 - **Never carried:** users, permissions, `kb:attachedToProject`, creation and modification dates, standoff nodes
-  and mappings, `kb:hasStandoffLinkTo`, `kb:valueHasComment`, `kb:listNodeName`, list comments, LinkValues.
+  and mappings, `kb:hasStandoffLinkTo`, `kb:hasTextValueType`, `kb:valueHasComment`, `kb:listNodeName`, list
+  comments, LinkValues.
 - The dump's admin and permission graphs are never read. The ontology graphs are read only for the closures of
   §6; nothing from them is emitted.
 
@@ -457,7 +482,8 @@ through the same rule when a project uses them directly.
 
 Standoff nodes are identified as the subtree reached from a text value by `kb:valueHasStandoff` and are omitted
 whole, whatever their predicates and types (0803: `kb:StandoffLinkTag` and the
-`http://www.knora.org/ontology/standoff#` tag classes).
+`http://www.knora.org/ontology/standoff#` tag classes). A text value's markup comes from `kb:valueHasXml` (§4.1),
+never from its standoff.
 
 Handling: **emitted** (as named), **read** (drives filtering or a check, never emitted itself), **omitted**.
 
@@ -495,7 +521,7 @@ Per value class, in addition:
 
 | Value class | Emitted | Read | Omitted |
 |-------------|---------|------|---------|
-| `kb:TextValue` | `kb:valueHasString` (§4.1) | `kb:valueHasLanguage` (the tag, §4.1) | `kb:valueHasMapping`, `kb:valueHasMaxStandoffStartIndex`, `kb:valueHasStandoff` (with its subtree) |
+| `kb:TextValue` | `kb:valueHasString`, `kb:valueHasXml` (as `dao:valueHasXml`) (§4.1) | `kb:valueHasLanguage` (the tag, §4.1); `kb:valueHasMapping`, `kb:valueHasStandoff`, only whether present (§4.1); `kb:hasTextValueType` (checked against the markup, never emitted, §4.1) | `kb:valueHasMaxStandoffStartIndex`; the objects of `kb:valueHasMapping` and `kb:valueHasStandoff` (the subtree) |
 | `kb:IntValue` | `kb:valueHasInteger` (§4.2, or `dao:seqnum` §7) | — | `kb:valueHasString` |
 | `kb:DecimalValue` | `kb:valueHasDecimal` (§4.3) | — | `kb:valueHasString` |
 | `kb:BooleanValue` | `kb:valueHasBoolean` (§4.4) | — | `kb:valueHasString` |
@@ -565,7 +591,7 @@ Ids are assigned in row order and never renumbered; a later deviation is appende
 | D9 | List values without a label `rdf:value` | d.70: the value carries all label variants in `rdf:value` plus `dao:sourceListNode` | `dao:sourceListNode` only (§4.7) | #455 treats a value node with two `rdf:value`s as invalid; the labels are on the node | when DAO's value reader supports multi-valued `rdf:value`, or d.70 changes |
 | D10 | `dao:color` and `dao:geometry` datatypes | d.48: self-contained custom datatypes for Color and Geom, unnamed; `dao:date` (d.73(a)) names only dates | `rdf:value` typed `dao:color` / `dao:geometry` (§4.8, §4.9) | a typed lexical lets a reader skip a kind it does not know instead of reading it as text | DAO's datatype names |
 | D11 | Minimal Web Annotation | d.71: selectors (`FragmentSelector`, `SvgSelector`), `styleClass`, motivations; WADM `linking` puts destinations in a body | `oa:Annotation`, `oa:motivatedBy`, `oa:hasTarget` only; geometry stays a value; LinkObj destinations in `oa:hasTarget`, not in a body (§10) | enough to identify and drop annotations; no consumer needs selectors yet | the full d.71 mapping, when a consumer needs selectors (CPE Incunabula Slice 6) |
-| D12 | Standoff dropped | d.51: standard-mapped standoff kept as one XML value, custom-mapped as XML plus XSLT | only the plain `kb:valueHasString` (§4.1); standoff nodes, mappings and `kb:hasStandoffLinkTo` omitted (§11) | the port renders plain text; a standoff reader is out of scope | when a consumer renders markup |
+| D12 | Markup as DSP-API's XML beside the plain text | d.51: standard-mapped standoff kept as one XML value with U+001E stripped, custom-mapped as XML plus XSLT | `rdf:value` stays the plain `kb:valueHasString`; the XML from `kb:valueHasXml`, U+001E removed, beside it as the plain string `dao:valueHasXml` (§4.1); standoff nodes, mappings, a custom mapping's XSLT and `kb:hasStandoffLinkTo` omitted (§11) | DSP-API stores the XML beside the standoff, so no standoff reader is needed; a plain `rdf:value` leaves every reader that renders no markup unchanged, and #455 reads one `rdf:value` per node | DAO's term for the XML value, and the XSLT of custom-mapped text (d.51) |
 | D13 | Interval, time and geoname values | d.48: time as an `xsd` literal, interval and geoname as self-contained custom datatypes | omitted with their edge and counted (§4.10) | the port has no kind for them, and 0803 has none | when the port gains these kinds |
 | D14 | Legal information on representations | none published: DAO has no rights terms yet | `dao:authorship` (0..n) and `dao:copyrightHolder` (0..1) plain strings on the representation node (§8); `kb:hasLicense` not carried | a presentation shows each file's authors and copyright holder (DEV-7630, project 0854) | DAO's rights terms |
 | D15 | Access rights | none published: DAO has no rights terms yet | `dao:accessRights`, the plain string `"public"` or `"restricted-view"`, on every resource and representation node (§2, §8) | the Access Area serves a resource or a file only with its rights | DAO's rights terms |
@@ -595,7 +621,8 @@ of INFORMATION SEPARATOR TWO from DAO's standoff XML (owner decision 2026-09-30)
 
 - No application profile: no `dao:PropertyUsage` and no `dao:ClassUsage` records (d.69, d.72). Labels for
   properties and classes come from CPE's KDL configuration.
-- No standoff markup (§12, D12).
+- No standoff: a formatted text's markup is carried only as DSP-API's XML (§4.1), and a custom mapping's XSLT not
+  at all (§12, D12).
 - No permissions (§11), only the access rights the public guard derives from them (§2, §8, D15), and no legal
   information beyond a file's authorship and copyright holder (§8, D14).
 - No change objects, events or tombstones: the file is one full current-state snapshot, not d.94's
@@ -690,6 +717,7 @@ every such id is a row of the §12 table; columns 2 and 4 are informational, and
 | `https://ontology.dasch.swiss/dao#valueHasUUID` | §3 | DAO | d.48 |
 | `https://ontology.dasch.swiss/dao#sourceProperty` | §3 | DAO | d.69, d.72 |
 | `https://ontology.dasch.swiss/dao#valueHasOrder` | §5 | D4 | |
+| `https://ontology.dasch.swiss/dao#valueHasXml` | §4.1 | D12 | d.51 keeps the XML; the term is the interim's |
 | `https://ontology.dasch.swiss/dao#date` | §4.6 | DAO | d.73(a) |
 | `https://ontology.dasch.swiss/dao#dateCalendar` | §4.6 | D6 | |
 | `https://ontology.dasch.swiss/dao#dateStartJDN` | §4.6 | D6 | |
@@ -774,3 +802,20 @@ every such id is a row of the §12 table; columns 2 and 4 are informational, and
   `kb:hasPermissions` is read, no longer only omitted. §0 states the version rule; §13 and §14 follow. A snapshot
   of the same dump gains two lines per resource and representation and is otherwise unchanged. D15 and D16 were
   chosen by the P-DEV-301 plan and stay provisional (§0).
+- 2026-11-20 — still interim format version 1, by the owner's decision, since no snapshot of it had been
+  published (DEV-8012). §0, §1, §3, §4.1, §11, §12, §13, §15: a text value carries `dao:valueHasXml`, DSP-API's
+  XML from `kb:valueHasXml` without U+001E, beside its plain `rdf:value` (D12, reworded). The standoff is never read; a selected text value
+  with standoff or a mapping but no `kb:valueHasXml` refuses the project (`missing-text-xml`). A dump with
+  `kb:valueHasXml`, refused before as `unknown-value-predicate`, now lifts; one with standoff and no XML, lifted
+  before as plain text, is now refused; any other dump's snapshot is unchanged. A reader that does not know
+  `dao:valueHasXml` reads the plain text as before. Carrying the XML and refusing a value without it are the
+  owner's decisions; the term, its plain-string literal and the rule's name were chosen by the DEV-8012 run and
+  stay provisional (§0).
+- 2026-11-23 — still interim format version 1, before any snapshot was published (DEV-8012). §4.1, §11: a text
+  value's `kb:hasTextValueType`, which DSP-API writes on new text values, is read and never emitted; a dump with
+  it, refused before as `unknown-value-predicate`, now lifts, and its snapshot equals that of the same dump
+  without it. A type other than DSP-API's four is `unknown-text-type`; `kb:FormattedText` or
+  `kb:CustomFormattedText` without `kb:valueHasXml` is `missing-text-xml`; `kb:UnformattedText` with XML, standoff
+  or a mapping is `text-type-mismatch`. A dump without the predicate, 0803's stage dump included, gives the same
+  snapshot as before. The two rules and refusing a contradicting type were chosen by the run that added them and
+  stay provisional (§0).

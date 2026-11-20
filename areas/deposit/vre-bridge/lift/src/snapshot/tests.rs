@@ -184,6 +184,7 @@ fn every_rule_fixture() -> Fixture {
     f.add(&text, kb::VALUE_HAS_UUID, Literal::new_simple_literal("TEXT"));
     f.add(&text, kb::VALUE_HAS_STRING, Literal::new_simple_literal("x"));
     f.add(&text, kb::VALUE_HAS_STANDOFF, nn(&tag));
+    f.add(&text, kb::VALUE_HAS_XML, Literal::new_simple_literal("<text>x</text>"));
     f.add(
         &tag,
         model::RDF_TYPE,

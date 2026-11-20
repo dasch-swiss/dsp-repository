@@ -143,7 +143,12 @@ One line per ended refresh, `refresh ended`, with `project`, `server`, `outcome`
 `refused`, `failed`), `reason` (for refused and failed), `duration_secs` and, when refreshed, `dump_bytes`,
 `snapshot_bytes` and `media_bytes`: at info level, warning for refused, error for failed. A withdrawn project logs
 `project withdrawn: it is no longer allowlisted` at warning level. A refusal by the public guard logs each
-violation (an IRI, a class, a reason; never a value), the first 50, then the total. No line holds a value of the
+violation (an IRI, a class, a reason; never a value), the first 50, then the total. A refusal by the format's
+closed world logs each rule with its count. `missing-text-xml` means formatted text values on the DSP server lack
+`knora-base:valueHasXml`: a DSP-API system administrator runs its backfill
+(`POST /admin/maintenance/backfill-value-has-xml`), and the project is then refreshed. `unknown-text-type` and
+`text-type-mismatch` mean a text value's `knora-base:hasTextValueType` is one the lift does not know or contradicts
+its markup (`lift/FORMAT.md` §4.1); no backfill fixes either, so a developer looks at the values. No line holds a value of the
 dump, a key or a token, and a panic in the bridge's work is logged without its message.
 
 ## Metrics

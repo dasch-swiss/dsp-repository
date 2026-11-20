@@ -1,4 +1,5 @@
-//! Assertions against the pinned 0803 stage dump (2026-07-19, DSP-API v37.1.0).
+//! Assertions against the pinned 0803 stage dump (2026-11-20, DSP-API v40.7.0,
+//! every formatted text value with its `kb:valueHasXml`).
 //! Every test is `#[ignore]`d, so CI never needs the dump; run them with
 //! `just vre-bridge-lift-real-dump <absolute dump dir> <reference snapshot>`, which
 //! sets `VRE_BRIDGE_LIFT_DUMP` and `VRE_BRIDGE_LIFT_REFERENCE`.
@@ -347,6 +348,7 @@ fn real_dump_matches_the_success_metrics() {
         put(format!("value nodes: {kind}"), n);
     }
     put("dao:valueHasOrder".into(), s.count(&iri(DAO, "valueHasOrder")));
+    put("dao:valueHasXml".into(), s.count(&iri(DAO, "valueHasXml")));
     put("representations".into(), s.typed(&iri(DAO, "Representation")).len());
     put("dao:isPartOf".into(), s.count(&iri(DAO, "isPartOf")));
     put("dao:seqnum".into(), s.count(&iri(DAO, "seqnum")));
@@ -369,6 +371,7 @@ fn real_dump_matches_the_success_metrics() {
         (format!("value nodes: {}", iri(DAO, "date")), 19),
         (format!("value nodes: {}", iri(XSD, "anyURI")), 18),
         ("dao:valueHasOrder".into(), 12_961),
+        ("dao:valueHasXml".into(), 47),
         ("representations".into(), 4_062),
         ("dao:isPartOf".into(), 4_024),
         ("dao:seqnum".into(), 4_024),
@@ -379,8 +382,10 @@ fn real_dump_matches_the_success_metrics() {
         (format!("links: {}", iri(KB, "isRegionOf")), 77),
         ("oa:hasTarget".into(), 156),
         ("list nodes".into(), 23),
-        ("skos:prefLabel".into(), 41),
-        ("quads".into(), 123_938),
+        ("skos:prefLabel".into(), 49),
+        // 123,946 facts the incubator also writes + 2 × (4,198 + 4,062) rights lines + 47 XML
+        // lines.
+        ("quads".into(), 140_513),
     ]
     .into_iter()
     .collect();
@@ -515,9 +520,11 @@ fn real_dump_emits_identical_bytes_twice() {
 
 /// On the same dump, the snapshot holds the same quads as the one dsp-incubator's
 /// dao-lift at 6106ee38166617cd8be5d58411d5bb14741ebc03 wrote
-/// (`VRE_BRIDGE_LIFT_REFERENCE`), apart from the access rights and data
-/// classification that producer did not write. Facts, not bytes: the two link
-/// different oxrdf versions, which render the lines.
+/// (`VRE_BRIDGE_LIFT_REFERENCE`), apart from the access rights, data
+/// classification and `dao:valueHasXml` that producer did not write. That
+/// producer refuses a dump with `kb:valueHasXml`, so its reference is written
+/// from the dump without those quads. Facts, not bytes: the two link different
+/// oxrdf versions, which render the lines.
 #[test]
 #[ignore = "needs VRE_BRIDGE_LIFT_DUMP and VRE_BRIDGE_LIFT_REFERENCE; run via `just vre-bridge-lift-real-dump`"]
 fn real_dump_matches_the_incubator_lift() {
@@ -529,11 +536,15 @@ fn real_dump_matches_the_incubator_lift() {
         .collect::<Result<_, _>>()
         .expect("the reference parses as N-Quads");
     assert!(!theirs.is_empty(), "the reference snapshot is empty");
-    let rights = [vocab::DAO_ACCESS_RIGHTS, vocab::DAO_DATA_CLASSIFICATION];
+    let not_theirs = [
+        vocab::DAO_ACCESS_RIGHTS,
+        vocab::DAO_DATA_CLASSIFICATION,
+        vocab::DAO_VALUE_HAS_XML,
+    ];
     let ours: HashSet<Quad> = snapshot()
         .quads
         .iter()
-        .filter(|q| !rights.contains(&q.predicate.as_str()))
+        .filter(|q| !not_theirs.contains(&q.predicate.as_str()))
         .cloned()
         .collect();
 

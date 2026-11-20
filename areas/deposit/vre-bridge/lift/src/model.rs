@@ -64,6 +64,14 @@ pub mod kb {
     pub const PREVIOUS_VALUE: &str = "http://www.knora.org/ontology/knora-base#previousValue";
     pub const VALUE_HAS_MAPPING: &str = "http://www.knora.org/ontology/knora-base#valueHasMapping";
     pub const VALUE_HAS_STANDOFF: &str = "http://www.knora.org/ontology/knora-base#valueHasStandoff";
+    /// The XML DSP-API renders from a text value's standoff and stores beside it.
+    pub const VALUE_HAS_XML: &str = "http://www.knora.org/ontology/knora-base#valueHasXml";
+    /// Whether a text value is formatted; DSP-API writes it on new text values.
+    pub const HAS_TEXT_VALUE_TYPE: &str = "http://www.knora.org/ontology/knora-base#hasTextValueType";
+    pub const UNFORMATTED_TEXT: &str = "http://www.knora.org/ontology/knora-base#UnformattedText";
+    pub const FORMATTED_TEXT: &str = "http://www.knora.org/ontology/knora-base#FormattedText";
+    pub const CUSTOM_FORMATTED_TEXT: &str = "http://www.knora.org/ontology/knora-base#CustomFormattedText";
+    pub const UNDEFINED_TEXT_TYPE: &str = "http://www.knora.org/ontology/knora-base#UndefinedTextType";
     pub const HAS_STILL_IMAGE_FILE_VALUE: &str = "http://www.knora.org/ontology/knora-base#hasStillImageFileValue";
     pub const STILL_IMAGE_FILE_VALUE: &str = "http://www.knora.org/ontology/knora-base#StillImageFileValue";
     pub const INTERNAL_FILENAME: &str = "http://www.knora.org/ontology/knora-base#internalFilename";

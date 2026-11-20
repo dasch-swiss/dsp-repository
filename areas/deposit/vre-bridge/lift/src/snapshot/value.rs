@@ -71,6 +71,8 @@ const TEXT_PREDICATES: &[&str] = &[
     kb::VALUE_HAS_MAPPING,
     kb::VALUE_HAS_MAX_STANDOFF_START_INDEX,
     kb::VALUE_HAS_STANDOFF,
+    kb::VALUE_HAS_XML,
+    kb::HAS_TEXT_VALUE_TYPE,
 ];
 
 const INTEGER_PREDICATES: &[&str] = &[kb::VALUE_HAS_INTEGER, kb::VALUE_HAS_STRING];
@@ -115,7 +117,7 @@ pub(crate) fn emit(
     violations: &mut Violations,
 ) -> Option<NamedNode> {
     let (content, own_predicates): (Option<Content>, &[&str]) = match kind {
-        ValueKind::Text => (text(value, violations).map(Content::from), TEXT_PREDICATES),
+        ValueKind::Text => (text(value, violations), TEXT_PREDICATES),
         ValueKind::Integer => (
             typed(value, kb::VALUE_HAS_INTEGER, vocab::XSD_INTEGER, is_integer, violations).map(Content::from),
             INTEGER_PREDICATES,
@@ -204,14 +206,90 @@ fn check_predicates(value: &Entry, own: &[&str], violations: &mut Violations) {
     }
 }
 
-/// §4.1: `kb:valueHasString` without its U+001E, tagged when the dump records a language.
-fn text(value: &Entry, violations: &mut Violations) -> Option<Literal> {
+/// §4.1: `kb:valueHasString` without its U+001E, tagged when the dump records a
+/// language, and `dao:valueHasXml` when the dump records `kb:valueHasXml`.
+fn text(value: &Entry, violations: &mut Violations) -> Option<Content> {
     let text = one_literal(value, kb::VALUE_HAS_STRING, violations);
     let language = at_most_one_literal(value, kb::VALUE_HAS_LANGUAGE, violations);
-    let text = text?.value().replace('\u{1E}', "");
-    match language.ok()? {
-        None => Some(Literal::new_simple_literal(text)),
-        Some(tag) => mint::lang_literal(&text, tag.value(), value.node.as_str(), violations),
+    let text_type = text_type(value, violations);
+    let xml = xml(value, text_type.ok().flatten(), violations);
+    text_type.ok()?;
+    let text = without_u001e(text?);
+    let rdf_value = match language.ok()? {
+        None => Literal::new_simple_literal(text),
+        Some(tag) => mint::lang_literal(&text, tag.value(), value.node.as_str(), violations)?,
+    };
+    let extra = match xml.ok()? {
+        Some(xml) => vec![(vocab::DAO_VALUE_HAS_XML, Literal::new_simple_literal(without_u001e(xml)).into())],
+        None => Vec::new(),
+    };
+    Some(Content { rdf_value: Some(rdf_value), extra })
+}
+
+/// §4.1, d.51: a text's lexical with every U+001E removed.
+fn without_u001e(literal: &Literal) -> String {
+    literal.value().replace('\u{1E}', "")
+}
+
+/// §4.1: what a text value's `kb:hasTextValueType` says about its markup.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum TextType {
+    /// `kb:UnformattedText`: no markup.
+    Unformatted,
+    /// `kb:FormattedText` or `kb:CustomFormattedText`: markup, so XML.
+    Formatted,
+}
+
+/// §4.1: the text value's one IRI `kb:hasTextValueType`, read and never emitted.
+/// `None` when it is absent or `kb:UndefinedTextType`, which say nothing about
+/// the markup; `Err` after recording any other object.
+fn text_type(value: &Entry, violations: &mut Violations) -> Result<Option<TextType>, ()> {
+    let (s, p) = (value.node.as_str(), kb::HAS_TEXT_VALUE_TYPE);
+    let rule = match kinds::objects(value, p).as_slice() {
+        [] => return Ok(None),
+        [Term::NamedNode(t)] => match t.as_str() {
+            kb::UNFORMATTED_TEXT => return Ok(Some(TextType::Unformatted)),
+            kb::FORMATTED_TEXT | kb::CUSTOM_FORMATTED_TEXT => return Ok(Some(TextType::Formatted)),
+            kb::UNDEFINED_TEXT_TYPE => return Ok(None),
+            other => {
+                violations.record(Rule::UnknownTextType, s, other);
+                return Err(());
+            }
+        },
+        [_] => Rule::InvalidLiteral,
+        _ => Rule::RepeatedSourceLiteral,
+    };
+    violations.record(rule, s, p);
+    Err(())
+}
+
+/// §4.1: the text value's one plain-string `kb:valueHasXml`, if any. Standoff is
+/// never read; that the value has some, a mapping or a formatted text type only
+/// makes the XML required, and an unformatted text type forbids all four.
+fn xml<'a>(
+    value: &'a Entry,
+    text_type: Option<TextType>,
+    violations: &mut Violations,
+) -> Result<Option<&'a Literal>, ()> {
+    let s = value.node.as_str();
+    let markup = [kb::VALUE_HAS_STANDOFF, kb::VALUE_HAS_MAPPING];
+    let has_markup = value.triples.iter().any(|(p, _)| markup.contains(&p.as_str()));
+    let xml = at_most_one_literal(value, kb::VALUE_HAS_XML, violations)?;
+    if text_type == Some(TextType::Unformatted) && (xml.is_some() || has_markup) {
+        violations.record(Rule::TextTypeMismatch, s, kb::HAS_TEXT_VALUE_TYPE);
+        return Err(());
+    }
+    match xml {
+        Some(xml) if is_plain_string(xml) => Ok(Some(xml)),
+        Some(_) => {
+            violations.record(Rule::InvalidLiteral, s, kb::VALUE_HAS_XML);
+            Err(())
+        }
+        None if has_markup || text_type == Some(TextType::Formatted) => {
+            violations.record(Rule::MissingTextXml, s, kb::VALUE_HAS_XML);
+            Err(())
+        }
+        None => Ok(None),
     }
 }
 

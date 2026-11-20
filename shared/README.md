@@ -77,7 +77,7 @@ The name rules every reader and writer of a project's stand-in data applies to a
 - **`is_shortcode`**: four hexadecimal digits, upper case. Stricter than `shared-metadata`'s `is_valid_shortcode`, so the five-character shortcodes `0801a`–`0801e` are refused: a metadata-only split of BEOL, with no bucket prefix of its own
 - **`is_file_name`**: one or more `/`-separated segments, each non-empty, of `[A-Za-z0-9._-]` and not starting with `.`, so no name climbs out of a project's subtree by its spelling. A file-system reader must still refuse symlinks, which the rule cannot see
 
-`cpe-ports` re-exports both, so CPE's callers name them as `cpe_ports::is_shortcode`; `media-store` and `shared-stand-in` use them directly. `sync-store` and the VRE bridge's crates are granted the crate for when they come to use it (ADR-0002). It is a permanent crate, part of the small closure CPE's crates may be copied with (ADR-0007).
+`cpe-ports` re-exports both, so CPE's callers name them as `cpe_ports::is_shortcode`; `media-store`, `sync-store` and `shared-stand-in` use them directly. The VRE bridge's crates are granted the crate for when they come to use it (ADR-0002). It is a permanent crate, part of the small closure CPE's crates may be copied with (ADR-0007).
 
 Dependencies: none.
 
@@ -99,7 +99,7 @@ The reading side of the stand-in contract: where a project's data lies in a stan
 - **`ReadyToken`** and **`Provenance`**: the token's fields, with `ReadyToken::to_bytes`, the canonical encoding (compact JSON, fields in a fixed order, one trailing newline), and `ReadyToken::parse`, which refuses another `token_version`, a generation of the wrong shape, a server id not `[a-z0-9-]{1,32}` and an inputs digest not `sha256:` plus 64 lowercase hex digits, and ignores fields it does not know; `previous_generation` is required, `null` for a first generation. Provenance is every field but `token_version` and `previous_generation`
 - **`read_token`**, **`generation_dir`**, **`known_projects`**: resolving a project through its token, and listing the shortcodes whose directory holds one. A shortcode that fails `is_shortcode` is unknown without touching the file system; a symlinked project directory or token is refused (`TokenError::Unreadable`), as is a malformed or oversized token (`TokenError::Invalid`). `generation_dir` is a path only: a reader refuses a symlink at and below it itself
 
-It assumes nothing of the file system beyond an atomic rename within one directory, so it works on NFS: no file-system notifications, no directory exchange. Writing a generation or a token, and replacing or removing one, is the VRE bridge's alone and lives only in `vre-bridge-*` (ADR-0002), so no reader holds the code to write the subtrees. The readers, `sync-store` and `media-store`, and the VRE bridge's `core`, `store` and `server` crates are granted it; none of them uses it yet (P-DEV-301). It ends with the stand-ins.
+It assumes nothing of the file system beyond an atomic rename within one directory, so it works on NFS: no file-system notifications, no directory exchange. Writing a generation or a token, and replacing or removing one, is the VRE bridge's alone and lives only in `vre-bridge-*` (ADR-0002), so no reader holds the code to write the subtrees. The readers, `sync-store` and `media-store`, use it; the VRE bridge's `core`, `store` and `server` crates are granted it (P-DEV-301). It ends with the stand-ins.
 
 Dependencies: `shared-names`, `serde`, `serde_json`, `thiserror`.
 

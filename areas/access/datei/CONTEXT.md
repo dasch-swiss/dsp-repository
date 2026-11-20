@@ -63,7 +63,7 @@ The document, made by hand with a DaTEI page and one of the VRE bridge's shipped
 _Avoid_: manifest, Driving file.
 
 **Ready token**:
-The file the VRE bridge replaces with one rename once a project's new generation is written, naming that generation and recording the project's provenance (`areas/deposit/ADR-0005`); its name and types are in `shared-stand-in`. A project without the token is not complete, and the port does not list the project; `media`'s adapter checks for it, and DaTEI does not read it. Not yet in code: `media`'s adapter does not read the token (P-DEV-301).
+The file the VRE bridge replaces with one rename once a project's new generation is written, naming that generation and recording the project's provenance (`areas/deposit/ADR-0005`); its name and types are in `shared-stand-in`. A project without the token is not complete, and the port does not list the project; `media`'s adapter reads it to find the generation it serves, and DaTEI does not read it.
 _Avoid_: ready, marker (DaTEI's own `<shortcode>.rebuilding`, below), lock.
 
 ### How it is served

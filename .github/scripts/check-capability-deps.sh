@@ -15,9 +15,10 @@
 #    or database crate; components and image-viewer no web framework or
 #    database crate; a web crate beside its capability's server crate, which
 #    holds the handlers, no web framework; a lift crate no web framework, Maud,
-#    database, HTTP client or tokio; the shell no web framework. Other
-#    roles, the composition root areas/<area>/server among them, are not
-#    restricted.
+#    database, HTTP client or tokio; a store crate no file-notification crate,
+#    since a store may sit on NFS (areas/deposit/ADR-0005); the shell no web
+#    framework. Other roles, the composition root areas/<area>/server
+#    among them, are not restricted.
 #
 # 2. No public first-party target: no `//visibility:public` in any BUILD.bazel
 #    under areas/, shared/, modules/ or dsp-cli/. Widening a target to public
@@ -31,6 +32,7 @@ PUBLIC_CHECKED_DIRS="areas shared modules dsp-cli"
 # Glob patterns, matched against a crate name.
 WEB_FRAMEWORK="axum axum-* hyper hyper-* tower tower-* tower_governor"
 DATABASE="rusqlite deadpool-sqlite libsqlite3-sys sqlx"
+FILE_NOTIFICATION="notify notify-* inotify inotify-*"
 
 # denied <crate name> <patterns>: true if the name matches one of the
 # space-separated glob patterns. `read -a` splits them without expanding a glob
@@ -58,6 +60,7 @@ third_party_allowed() {
       denied_patterns="$WEB_FRAMEWORK"
       ;;
     lift) denied_patterns="$WEB_FRAMEWORK maud $DATABASE reqwest reqwest-* ureq tokio" ;;
+    store) denied_patterns="$FILE_NOTIFICATION" ;;
     shell) denied_patterns="$WEB_FRAMEWORK" ;;
     *) return 0 ;;
   esac

@@ -1433,16 +1433,28 @@ remodel {
         assert_eq!(data_dir(Some("/data".to_owned()), "default"), "/data");
     }
 
-    /// Or a run from the checkout serves no project.
-    #[test]
-    fn the_default_sync_data_directory_is_the_committed_one() {
-        assert!(repository_root().join(DEFAULT_SYNC_DATA_DIR).join("0803.nq").is_file());
+    /// Whether `path` is a regular file, not followed if a symlink, as the stand-in readers check.
+    fn is_regular_file(path: &Path) -> bool {
+        std::fs::symlink_metadata(path).is_ok_and(|metadata| metadata.is_file())
     }
 
-    /// A run from the checkout finds the committed media data, or it serves no project.
+    /// Or a run from the checkout serves no project. `test_files` copies the `data` filegroup the
+    /// image's `image_data` layer copies too, so a token missing here is missing in the image, and
+    /// 0803 is unknown there.
     #[test]
-    fn the_default_media_data_directory_is_the_committed_one() {
-        assert!(repository_root().join(DEFAULT_MEDIA_DATA_DIR).join("0803/config.kdl").is_file());
+    fn the_default_sync_data_directory_is_the_committed_one_with_0803s_ready_token() {
+        assert!(is_regular_file(
+            &repository_root().join(DEFAULT_SYNC_DATA_DIR).join("0803/.ready")
+        ));
+    }
+
+    /// A run from the checkout finds the committed media data, or it serves no project; the image
+    /// carries the same copy.
+    #[test]
+    fn the_default_media_data_directory_is_the_committed_one_with_0803s_ready_token() {
+        assert!(is_regular_file(
+            &repository_root().join(DEFAULT_MEDIA_DATA_DIR).join("0803/.ready")
+        ));
     }
 
     /// Nothing of CPE's answers at the root either.

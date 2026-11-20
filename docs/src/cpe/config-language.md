@@ -613,7 +613,7 @@ not use it. For where Incunabula's data comes from, see
 The block is optional and top-level, at most once (see "Top-level
 structure"). A node or attribute that the grammar below does not list is
 refused as unknown. The worked example is Incunabula's block: the `remodel`
-node stands in `areas/access/media/data/0803/config.kdl` as written here, line for
+node stands in `areas/access/media/data/0803/20261007T000000Z-00000000/config.kdl` as written here, line for
 line, IRIs in full. A test of the store builder
 (`areas/access/cpe/store-build/tests/it/worked_example.rs`) lowers the example and the file
 and holds the two equal.

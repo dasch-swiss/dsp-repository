@@ -4,6 +4,7 @@
 
 use std::collections::BTreeMap;
 use std::fs;
+use std::path::Path;
 use std::sync::OnceLock;
 
 use cpe_ports::contract::violations;
@@ -11,9 +12,14 @@ use cpe_ports::{
     ArchiveProjection, Calendar, DateBound, DatePrecision, DateValue, File, Motivation, ProjectSnapshot, Resource,
     ResourceIri, ValueKind,
 };
+use shared_stand_in::{read_token, ReadyToken};
 use sync_store::LiveArchiveProjection;
 
-const DATA_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../data");
+/// `sync`'s committed data, from the copy `test_files` makes of it: the adapter refuses the
+/// symlinks the runfiles are.
+const DATA_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/test_files/areas/access/sync/data");
+/// `media`'s committed data, from the same copy.
+const MEDIA_DATA_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/test_files/areas/access/media/data");
 
 const BOOK: &str = "http://www.knora.org/ontology/0803/incunabula#Book";
 const PAGE: &str = "http://www.knora.org/ontology/0803/incunabula#Page";
@@ -391,18 +397,23 @@ fn test_committed_0803_pages_serves_each_one_book_parent_and_a_seqnum() {
     }
 }
 
+/// The two tokens of a project hold equal provenance (root `CONTEXT.md`, Ready token), as the
+/// bridge writes them.
 #[test]
-fn test_committed_0803_provenance_pin_matches_vocab_pin() {
-    let pin = |text: &str| {
-        let start = text.find("dsp-incubator@").expect("a dsp-incubator@<commit> pin") + "dsp-incubator@".len();
-        text[start..].chars().take_while(char::is_ascii_hexdigit).collect::<String>()
-    };
-    let provenance = fs::read_to_string(format!("{DATA_DIR}/PROVENANCE")).expect("read PROVENANCE");
-    let vocab = include_str!("../src/vocab.rs");
+fn test_committed_0803_sync_and_media_tokens_hold_equal_provenance() {
+    assert_eq!(token(DATA_DIR).provenance, token(MEDIA_DATA_DIR).provenance);
+}
 
-    assert_eq!(pin(&provenance).len(), 40);
-    assert_eq!(pin(vocab).len(), 40);
-    assert_eq!(pin(&provenance), pin(vocab));
+/// CPE's tests name this generation in their `include_str!` paths, which cannot read the token.
+#[test]
+fn test_committed_0803_token_names_the_generation_the_tests_name() {
+    assert_eq!(token(DATA_DIR).provenance.generation.as_str(), "20261007T000000Z-00000000");
+}
+
+fn token(root: &str) -> ReadyToken {
+    read_token(Path::new(root), "0803")
+        .unwrap_or_else(|e| panic!("{root}: {e}"))
+        .unwrap_or_else(|| panic!("{root} holds 0803's token"))
 }
 
 /// `0803-arks.txt` is the incubator's copy of `dao-lift`'s ARKs (`PROVENANCE`): never regenerate it

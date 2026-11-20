@@ -301,9 +301,6 @@ normaliser per process, so it changes when they do).
 
 Not yet in code: `sync` serves an on-disk snapshot, not Chischtli's projection stream or its replay (not
 scheduled).
-Not yet in code: `sync` reads one committed file, `areas/access/sync/data/0803.nq`, known by the constant
-`KNOWN` and pinned by `data/PROVENANCE` to an incubator commit of `dao-lift`, not per-project directories known
-by Ready token with the format version in the token (P-DEV-301).
 Not yet in code: the image carries `sync`'s data and `media`'s stand-in directory and sets `SYNC_DATA_DIR` and
 `MEDIA_DATA_DIR` to them, rather than naming mounted subtrees (DEV-7514).
 Not yet in code: the projection follows `dao-lift`'s interim format, not published DAO; value order and text
@@ -330,7 +327,7 @@ Not yet in code: `dsp-incubator/cpe` keeps its own engine (`engine/`, `store/`, 
 and vendors only `cpe-components`, `cpe-core`, `cpe-image-viewer`, `cpe-ports` and `sync-store`, not
 `shared-datastar`, which `cpe-components` depends on (DEV-7408).
 Not yet in code: `dsp-incubator/cpe` does not vendor `shared-names`, which `cpe-ports` depends on (DEV-7994).
-Not yet in code: `sync-store` reads one format version and its port serves no provenance (P-DEV-301).
+Not yet in code: `sync-store`'s port serves no provenance (P-DEV-301).
 Not yet in code: no test of `access-server`'s image holds that it carries no data subtree of `sync` or `media`
 (DEV-7514).
 

@@ -6,7 +6,7 @@ use std::collections::{BTreeMap, VecDeque};
 use std::io::Write as _;
 use std::path::Path;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use shared_stand_in::{Generation, Provenance, ReadyToken, TOKEN_FILE};
@@ -24,9 +24,9 @@ use zip::write::SimpleFileOptions;
 use zip::{CompressionMethod, ZipWriter};
 
 use crate::clock::FakeClock;
-use crate::{sweep_dump_dirs, Busy, LogReport, RefreshReport, Refresher, Report, SNAPSHOT_FILE};
+use crate::test_support::{display, lines_of, logs, temp, Recording, KEY};
+use crate::{sweep_dump_dirs, Busy, LogReport, Refresher, Report, SNAPSHOT_FILE};
 
-const KEY: &str = include_str!("../../client/testdata/ed25519-private.pem");
 const IRI: &str = "http://rdfh.ch/projects/0803";
 const ENCODED_IRI: &str = "http%3A%2F%2Frdfh%2Ech%2Fprojects%2F0803";
 const NOW: &str = "2026-11-20T01:00:00Z";
@@ -40,7 +40,7 @@ const OLD_GENERATION: &str = "20261119T010000Z-0000000a";
 
 const ONTO: &str = "http://www.knora.org/ontology/0803/incunabula";
 const DATA: &str = "http://www.knora.org/data/0803/incunabula";
-const PUBLIC: &str = "V knora-admin:UnknownUser";
+pub(crate) const PUBLIC: &str = "V knora-admin:UnknownUser";
 const MEMBERS_ONLY: &str = "CR knora-admin:Creator|V knora-admin:ProjectMember";
 /// In the dump's `admin.nq`, which never leaves the zip.
 const ADMIN_SECRET: &str = "ADMIN-SECRET-HASH";
@@ -48,7 +48,7 @@ const ADMIN_SECRET: &str = "ADMIN-SECRET-HASH";
 // ---------------------------------------------------------------- dumps
 
 /// A Page resource's lines in the data graph; every label holds `LITERAL`, which no log may show.
-fn page(iri: &str, label: &str, permissions: &str) -> String {
+pub(crate) fn page(iri: &str, label: &str, permissions: &str) -> String {
     format!(
         "<{iri}> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <{ONTO}#Page> <{DATA}> .\n\
          <{iri}> <http://www.w3.org/2000/01/rdf-schema#label> \"{label}-LITERAL\" <{DATA}> .\n\
@@ -58,7 +58,7 @@ fn page(iri: &str, label: &str, permissions: &str) -> String {
 }
 
 /// A dump zip as dsp-api builds it, with `data_nq` as its data and an `admin.nq` beside it.
-fn dump_zip(data_nq: &str) -> Vec<u8> {
+pub(crate) fn dump_zip(data_nq: &str) -> Vec<u8> {
     let ontology = format!(
         "<{ONTO}#Page> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Class> <{ONTO}> .\n"
     );
@@ -79,7 +79,7 @@ fn dump_zip(data_nq: &str) -> Vec<u8> {
     writer.finish().unwrap().into_inner()
 }
 
-fn public_dump() -> Vec<u8> {
+pub(crate) fn public_dump() -> Vec<u8> {
     dump_zip(&page("http://rdfh.ch/0803/ZEBRA", "PUBLIC", PUBLIC))
 }
 
@@ -237,21 +237,6 @@ async fn requests(dsp: &MockServer, http_method: &str, at: &str) -> usize {
 }
 
 // ---------------------------------------------------------------- the bridge
-
-#[derive(Default)]
-struct Recording(Mutex<Vec<RefreshReport>>);
-
-impl Report for Recording {
-    fn refresh(&self, report: &RefreshReport) {
-        self.0.lock().unwrap().push(report.clone());
-    }
-}
-
-impl Recording {
-    fn reports(&self) -> Vec<RefreshReport> {
-        self.0.lock().unwrap().clone()
-    }
-}
 
 /// The subtrees, inputs, work directory and lock of one test, and a VRE server per id.
 struct Env {
@@ -412,56 +397,6 @@ impl Env {
         self.seed(self.sync.path(), shortcode, OLD_GENERATION, OLD_AS_OF);
         self.seed(self.media.path(), shortcode, OLD_GENERATION, OLD_AS_OF);
     }
-}
-
-fn temp() -> TempDir {
-    tempfile::tempdir().unwrap()
-}
-
-fn display(path: &Path) -> String {
-    path.display().to_string()
-}
-
-// ---------------------------------------------------------------- logs
-
-/// Everything any test logs, from every thread: the subscriber is the process's global one.
-fn logs() -> Arc<Mutex<Vec<u8>>> {
-    static LOGS: OnceLock<Arc<Mutex<Vec<u8>>>> = OnceLock::new();
-    LOGS.get_or_init(|| {
-        let buffer = Arc::new(Mutex::new(Vec::new()));
-        let writer = {
-            let buffer = Arc::clone(&buffer);
-            move || Captured(Arc::clone(&buffer))
-        };
-        let subscriber = tracing_subscriber::fmt()
-            .with_writer(writer)
-            .with_ansi(false)
-            .with_max_level(tracing::Level::TRACE)
-            .finish();
-        tracing::subscriber::set_global_default(subscriber).unwrap();
-        buffer
-    })
-    .clone()
-}
-
-struct Captured(Arc<Mutex<Vec<u8>>>);
-
-impl std::io::Write for Captured {
-    fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
-        self.0.lock().unwrap().extend_from_slice(bytes);
-        Ok(bytes.len())
-    }
-
-    fn flush(&mut self) -> std::io::Result<()> {
-        Ok(())
-    }
-}
-
-/// The captured lines that name `project` in their span or fields.
-fn lines_of(project: &str) -> Vec<String> {
-    let text = String::from_utf8(logs().lock().unwrap().clone()).unwrap();
-    let marker = format!("project={project}");
-    text.lines().filter(|line| line.contains(&marker)).map(str::to_owned).collect()
 }
 
 // ---------------------------------------------------------------- change check

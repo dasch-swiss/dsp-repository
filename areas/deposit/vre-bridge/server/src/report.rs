@@ -4,11 +4,13 @@ use std::time::Duration;
 
 use vre_bridge_core::{Outcome, ServerId};
 
-/// One ended refresh. A busy dump slot is no outcome and is never reported.
+/// One ended refresh, or one removal. A busy dump slot is no outcome; only giving up on it is
+/// reported, as a failure.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RefreshReport {
     pub project: String,
-    pub server: ServerId,
+    /// The allowlist entry's server; `None` for [`Outcome::Removed`], whose entry is gone.
+    pub server: Option<ServerId>,
     pub outcome: Outcome,
     pub duration: Duration,
     /// Set for [`Outcome::Refreshed`] only.
@@ -39,24 +41,25 @@ impl Report for LogReport {
     fn refresh(&self, r: &RefreshReport) {
         // `tracing`'s level must be a constant, hence one call per level.
         macro_rules! outcome_line {
-            ($level:ident) => {
+            ($level:ident, $message:literal) => {
                 tracing::$level!(
                     project = %r.project,
-                    server = %r.server,
+                    server = r.server.as_ref().map(ServerId::as_str),
                     outcome = r.outcome.as_str(),
                     reason = r.outcome.reason(),
                     duration_secs = r.duration.as_secs_f64(),
                     dump_bytes = r.sizes.map(|s| s.dump),
                     snapshot_bytes = r.sizes.map(|s| s.snapshot),
                     media_bytes = r.sizes.map(|s| s.media),
-                    "refresh ended"
+                    $message
                 )
             };
         }
         match r.outcome {
-            Outcome::Unchanged | Outcome::Refreshed => outcome_line!(info),
-            Outcome::Refused(_) | Outcome::Removed => outcome_line!(warn),
-            Outcome::Failed(_) => outcome_line!(error),
+            Outcome::Unchanged | Outcome::Refreshed => outcome_line!(info, "refresh ended"),
+            Outcome::Refused(_) => outcome_line!(warn, "refresh ended"),
+            Outcome::Failed(_) => outcome_line!(error, "refresh ended"),
+            Outcome::Removed => outcome_line!(warn, "project withdrawn: it is no longer allowlisted"),
         }
     }
 }

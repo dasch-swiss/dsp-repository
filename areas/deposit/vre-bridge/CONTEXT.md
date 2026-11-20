@@ -20,7 +20,27 @@ The bridge's unit of work for one project: change check, dump, checks, transform
 _Avoid_: sync.
 
 **Nightly run**:
-One pass of the bridge over the **Allowlist**.
+One pass of the bridge over the **Allowlist**, at a configured local time (default 02:00 Europe/Zurich), at most
+once per local date across processes (the **Nightly-run record**); a missed one is not caught up. Under the
+**Lock file**'s lock for its whole length, it sweeps leftover **Private work directories**, recovers each
+allowlisted project, removes the projects no longer on the **Allowlist**, then refreshes each allowlisted
+project, retrying one whose slot is **Busy** later in the same run a bounded number of times.
+
+**Removal**:
+What the **Nightly run** does to a project no longer on a non-empty **Allowlist**: its **Ready tokens** go first,
+`sync`'s before `media`'s, reported as outcome removed; its directories go in a later run, once it had no token
+when that run began.
+_Avoid_: deletion (only the second step deletes).
+
+**Operator's refresh**:
+A **Forced refresh** of one allowlisted project that an operator starts in the bridge's process environment; it
+takes the **Lock file**'s lock without waiting and gives up on a **Busy** slot at once. Its exit statuses are
+listed under **Outcome**.
+
+**Inactive bridge**:
+A bridge that does nothing because no output location is set, or because its configuration is invalid; the reason
+names the variable. It never stops `deposit-server`.
+_Avoid_: disabled.
 
 **T**:
 The `asOf` of the change check a **Refresh** started with: the instant the project's data is from.
@@ -78,8 +98,8 @@ holds its provenance and marks the project known; replaced by one file rename.
 
 **Lock file**:
 The file on local disk, named by a setting of its own, whose lock every **Refresh** runs
-under: the **Nightly run** and the operator's refresh take it without waiting, so at most one refresh runs at a
-time across processes. It is never in a subtree; the subtrees themselves are never locked.
+under: the **Nightly run** waits for it; the **Operator's refresh**, and the bridge's start for its sweep and
+recovery, take it without waiting. So at most one refresh runs at a time across processes. It is never in a subtree; the subtrees themselves are never locked.
 _Avoid_: lock on the subtrees (there is none: they may be NFS).
 
 **Nightly-run record**:
@@ -108,8 +128,9 @@ or an operator asked. Otherwise the change check asks from **T** minus 60 second
 
 **Outcome**:
 How a **Refresh** ended: unchanged (the change check listed nothing), refreshed, refused or failed; and, from
-the **Nightly run**'s removal only, removed. The operator's refresh exits `0` for unchanged or refreshed, `2` for
-refused and `1` for failed. A refused or failed refresh leaves the project's tokens as they were.
+the **Nightly run**'s removal only, removed. The **Operator's refresh** exits `0` for unchanged or refreshed,
+`2` for refused and `1` for failed; before any refresh, `64` when the bridge is inactive or the project not
+allowlisted, `75` when the lock is held. A refused or failed refresh leaves the project's tokens as they were.
 
 **Refusal**:
 An **Outcome** the project causes: no **Shipped inputs** directory, the **Public guard**, the format's closed
@@ -140,8 +161,8 @@ _Avoid_: dump (the zip the export produces).
 **Busy**:
 Another caller's **Export** holds a server's slot, so a **Refresh** cannot start one (`vre-bridge-server`'s
 `Busy`). Not an **Outcome** in itself: the caller tries again or gives up, and only giving up is reported, as
-a **Failure** with the reason busy (`FailureReason::Busy`). Not yet in code: the nightly run's retries, and the
-operator's refresh, which gives up at once (P-DEV-301).
+a **Failure** with the reason busy (`FailureReason::Busy`): by the **Nightly run** after its retries, by the
+**Operator's refresh** at once.
 
 **Private work directory**:
 The directory `vre-bridge-dump-<random>`, mode `0700`, into which a **Dump** is downloaded and unpacked; deleted

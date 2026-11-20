@@ -42,3 +42,7 @@ reason = "core2 is unmaintained and yanked; informational, no vulnerability. Rea
 [[IgnoredVulns]]
 id = "RUSTSEC-2026-0441"
 reason = "pin-utils is unmaintained; informational, no vulnerability. Reached through hyper. cargo-audit reports it as a warning only."
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0555"
+reason = "chrono-tz is unmaintained; informational, no vulnerability and no fixed release. vre-bridge-server uses it only to parse the configured time zone and compute the nightly run's local time; the input is operator configuration. Replaced together with chrono in a change of its own. cargo-audit reports it as a warning only."

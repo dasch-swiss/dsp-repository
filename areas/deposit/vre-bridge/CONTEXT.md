@@ -87,7 +87,39 @@ _Avoid_: lock on the subtrees (there is none: they may be NFS).
 lock before the run does anything else, so a second process, or a restart that night, does not run it again.
 
 **Allowlist**:
-The deployment's list of projects the bridge refreshes, each with its VRE server.
+The deployment's list of projects the bridge refreshes, each with its VRE server. An empty allowlist refreshes
+nothing and removes nothing.
+
+**Shipped inputs**:
+A project's files that come with the bridge rather than from its **Dump** (`config.kdl`, `curation.csv`,
+`narrative/…`), below the inputs directory in `<shortcode>/`; copied into each `media` **Generation**. None may be
+named `access-rights.json` or `file-manifest.json`, in any case, file or directory: the bridge writes those itself.
+An allowlisted project needs its directory, empty if it ships nothing: without one it is refused.
+
+**Inputs digest**:
+The SHA-256 of a project's **Shipped inputs**, recorded in its **Ready tokens**, so that a change to them refreshes
+the project. `vre-bridge-core`'s `inputs_digest` defines what is hashed and in which order.
+
+**Forced refresh**:
+A **Refresh** that does not wait for the **Change check** to report a change: a token is missing or broken in a
+subtree, the `sync` token's **T** cannot be read, a token names another server than the **Allowlist** entry or
+records another interim format version, transformation version or **Inputs digest** than the running bridge's,
+or an operator asked. Otherwise the change check asks from **T** minus 60 seconds. `vre-bridge-core`'s `decide`.
+
+**Outcome**:
+How a **Refresh** ended: unchanged (the change check listed nothing), refreshed, refused or failed; and, from
+the **Nightly run**'s removal only, removed. The operator's refresh exits `0` for unchanged or refreshed, `2` for
+refused and `1` for failed. A refused or failed refresh leaves the project's tokens as they were.
+
+**Refusal**:
+An **Outcome** the project causes: no **Shipped inputs** directory, the **Public guard**, the format's closed
+world, the server refusing the **Service identity** (`401`, `403`).
+_Avoid_: failure.
+
+**Failure**:
+Every other unsuccessful **Outcome**: the transport, a time limit, a busy dump slot, any other answer of the
+server, unusable **Shipped inputs**, or the bridge itself.
+_Avoid_: refusal, error (the log's word for one step).
 
 **Service identity**:
 The bridge's identity on a VRE server's DSP-API: a service name, a key id and an Ed25519 signing key that the

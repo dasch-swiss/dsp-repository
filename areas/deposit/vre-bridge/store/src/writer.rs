@@ -10,7 +10,8 @@ use shared_stand_in::{read_token, Generation, ReadyToken, TOKEN_FILE};
 
 use crate::{delete_generations_except, io_error, set_dir_mode, sync_dir, Result, StoreError, Subtree, Subtrees};
 
-/// The rights record's name in every `media` generation; a shipped input may not take it.
+/// The rights record's name in every `media` generation; a shipped input may not take it, so
+/// `vre-bridge-core`'s `RESERVED_NAMES` must list the same name.
 pub const RIGHTS_RECORD_FILE: &str = "access-rights.json";
 
 /// The rights record's bytes: every file of the generation is public and unclassified.

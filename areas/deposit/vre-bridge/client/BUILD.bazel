@@ -1,0 +1,51 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+# The VRE bridge's DSP-API client. Only vre-bridge-server uses it (areas/deposit/ADR-0005).
+rust_library(
+    name = "vre_bridge_client",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "vre_bridge_client",
+    visibility = ["//areas/deposit/vre-bridge/server:__pkg__"],
+    deps = [
+        "@crates//:base64",
+        "@crates//:chrono",
+        "@crates//:jsonwebtoken",
+        "@crates//:percent-encoding",
+        "@crates//:reqwest",
+        "@crates//:rustls",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:tempfile",
+        "@crates//:thiserror",
+        "@crates//:tokio",
+        "@crates//:tracing",
+        "@crates//:url",
+        "@crates//:uuid",
+        "@crates//:zip",
+    ],
+)
+
+# The key pair under testdata/ is for tests only; no server trusts it.
+rust_test(
+    name = "vre_bridge_client_test",
+    compile_data = glob(["testdata/*"]),
+    crate = ":vre_bridge_client",
+)
+
+# Its own binary: it installs the rustls provider, which would mask a missing install elsewhere.
+rust_test(
+    name = "server_test",
+    srcs = ["tests/server.rs"],
+    compile_data = glob(["testdata/*"]),
+    deps = [
+        ":vre_bridge_client",
+        "@crates//:chrono",
+        "@crates//:jsonwebtoken",
+        "@crates//:rustls",
+        "@crates//:serde_json",
+        "@crates//:tempfile",
+        "@crates//:tokio",
+        "@crates//:url",
+        "@crates//:wiremock",
+    ],
+)

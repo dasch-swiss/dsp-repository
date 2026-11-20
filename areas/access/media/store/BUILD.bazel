@@ -6,6 +6,7 @@ _SRCS = glob(["src/**/*.rs"])
 
 _DEPS = [
     "//areas/access/cpe/ports:cpe_ports",
+    "//shared/names:shared_names",
     "@crates//:tracing",
 ]
 

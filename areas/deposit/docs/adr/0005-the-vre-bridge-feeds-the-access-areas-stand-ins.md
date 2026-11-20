@@ -129,7 +129,6 @@ DSP-API service identity's contract (DEV-7936) is provisional until dsp-api merg
 Not yet in code: of the VRE bridge's crates only `vre-bridge-lift` exists; `deposit-server` starts no bridge
 (P-DEV-301).
 Not yet in code: `shared-stand-in` does not exist (P-DEV-301).
-Not yet in code: `shared-names` does not exist; the name rules are in `cpe-ports` (P-DEV-301).
 Not yet in code: 0803's data is committed to this repository, not written by the bridge (P-DEV-301).
 Not yet in code: of the bridge's shared terms, the root `CONTEXT.md` has only Access rights and Data
 classification (P-DEV-301).

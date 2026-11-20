@@ -329,7 +329,7 @@ scheduled).
 Not yet in code: `dsp-incubator/cpe` keeps its own engine (`engine/`, `store/`, `store-build/`, `web/`, `bin/`)
 and vendors only `cpe-components`, `cpe-core`, `cpe-image-viewer`, `cpe-ports` and `sync-store`, not
 `shared-datastar`, which `cpe-components` depends on (DEV-7408).
-Not yet in code: `shared-names` does not exist and the name rules are in `cpe-ports` (P-DEV-301).
+Not yet in code: `dsp-incubator/cpe` does not vendor `shared-names`, which `cpe-ports` depends on (DEV-7994).
 Not yet in code: `sync-store` reads one format version and its port serves no provenance (P-DEV-301).
 Not yet in code: no test of `access-server`'s image holds that it carries no data subtree of `sync` or `media`
 (DEV-7514).

@@ -7,6 +7,7 @@ shared/
 ├── datastar/          # Typed builder for Datastar actions (crate: shared-datastar)
 ├── fair/              # FAIR exposure engine: resolved graphs + representation writers (crate: shared-fair)
 ├── metadata/          # Research-metadata wire contract (crate: shared-metadata)
+├── names/             # The shortcode and file-name rules of stand-in data (crate: shared-names)
 ├── rate-limit/        # Per-client-IP key extractor for the rate limiters (crate: shared-rate-limit)
 └── telemetry/         # Browser beacon contract + collector endpoint (crate: shared-telemetry)
 ```
@@ -67,6 +68,17 @@ No web framework, no Maud, no routes: a writer returns a `String` or a `serde_js
 Two consumers today: `dpe-api-oai` for the OAI writers, and `dpe-server` for the landing page's JSON-LD, meta tags and Signposting links. Unlike the other two crates here, `shared-fair` was shared from the start rather than on a second consumer's arrival, because ADR-0005 names the ones after those: DPE's record pages and CPE in the Access Area, and the Deposit Area, where a depositor assesses a project's FAIRness before submitting it.
 
 Dependencies: `shared-metadata`, and `serde_json` at runtime — the JSON-LD writer's output type is `serde_json::Value`, taken from the workspace so `preserve_order` holds. Nothing else.
+
+## `shared-names` (names/)
+
+The name rules every reader and writer of a project's stand-in data applies to a caller's string before it reaches storage:
+
+- **`is_shortcode`**: four hexadecimal digits, upper case. Stricter than `shared-metadata`'s `is_valid_shortcode`, so the five-character shortcodes `0801a`–`0801e` are refused: a metadata-only split of BEOL, with no bucket prefix of its own
+- **`is_file_name`**: one or more `/`-separated segments, each non-empty, of `[A-Za-z0-9._-]` and not starting with `.`, so no name climbs out of a project's subtree by its spelling. A file-system reader must still refuse symlinks, which the rule cannot see
+
+`cpe-ports` re-exports both, so CPE's callers name them as `cpe_ports::is_shortcode`; `media-store` uses them directly. `sync-store`, `shared-stand-in` and the VRE bridge's crates are granted the crate for when they come to use it (ADR-0002). It is a permanent crate, part of the small closure CPE's crates may be copied with (ADR-0007).
+
+Dependencies: none.
 
 ## `shared-rate-limit` (rate-limit/)
 

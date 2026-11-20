@@ -59,7 +59,7 @@ areas/
     │   ├── client/            # DSP-API with the service identity, the dump's private unpacking (crate: vre-bridge-client)
     │   ├── core/              # Settings, the allowlist, refresh decisions, the shipped-input digest, outcomes (crate: vre-bridge-core)
     │   ├── lift/              # The ported dao-lift snapshot and FORMAT.md (crate: vre-bridge-lift)
-    │   ├── server/            # One refresh of a project, from the change check to both Ready tokens (crate: vre-bridge-server)
+    │   ├── server/            # VreBridge: start, the nightly run, the operator's refresh, one refresh (crate: vre-bridge-server)
     │   └── store/             # Generations, Ready tokens, recovery, removal, the lock (crate: vre-bridge-store)
     └── editor/                # Metadata editor (authenticated; depositor authoring + RDU review)
         ├── core/              # Pure domain types (crate: editor-core)
@@ -121,7 +121,7 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 | `vre-bridge-core` | `areas/deposit/vre-bridge/core` | The VRE bridge's pure logic: its settings parsed from the `EDITOR_VRE_BRIDGE_*` strings, the allowlist and server ids, whether a refresh is forced or checks changes from T − 60 s, the shipped-input digest, and a refresh's outcome and exit status; no network, and no file read but the shipped inputs |
 | `vre-bridge-store` | `areas/deposit/vre-bridge/store` | The writing side of the stand-in contract, the only code that writes the `sync` and `media` subtrees: a new generation per refresh, the Ready tokens replaced by one rename each, `media` before `sync`, the rollback, recovery and removal, and the lock and nightly-run record; synchronous `std::fs`, linked by `vre-bridge-server` alone |
 | `vre-bridge-client` | `areas/deposit/vre-bridge/client` | The VRE bridge's DSP-API client: Ed25519 service-identity tokens, the project lookup, the change check, the export lifecycle, the dump's download and its unpacking into a private `0700` directory, anonymous file downloads; used by `vre-bridge-server` alone |
-| `vre-bridge-server` | `areas/deposit/vre-bridge/server` | The VRE bridge's entry crate: one refresh of a project, from recovery and the change check through the export, the dump's download, unpacking and lift to a new generation in both subtrees, and the outcome's report; behind the `Vre`, `Report` and `Clock` traits, so tests replace the network, the report and the time |
+| `vre-bridge-server` | `areas/deposit/vre-bridge/server` | The VRE bridge's entry crate: `VreBridge`, which `deposit-server` is to build and start, with start-time recovery, the nightly run's schedule, the nightly run and the operator's refresh; one refresh of a project, from recovery and the change check through the export, the dump's download, unpacking and lift to a new generation in both subtrees, and the outcome's report; behind the `Vre`, `Report` and `Clock` traits, so tests replace the network, the report and the time |
 | `editor-core` | `areas/deposit/editor/core` | Pure domain types for the editor (zero framework deps) |
 | `editor-ports` | `areas/deposit/editor/ports` | What the editor asks of identity: `Actor`, `Authenticator`, `UserDirectory`; `std` only |
 | `editor-store` | `areas/deposit/editor/store` | The editor's SQLite store (`editor.sqlite`) and `LiveOpenWork` behind `identity-ports` |

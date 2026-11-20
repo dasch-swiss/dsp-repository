@@ -312,8 +312,8 @@ Access Area's `media` over Vitrinli (not scheduled).
 Not yet in code: the bytes port and the port against `sync` serve no rights, and CPE's store and presenter
 neither store nor filter on them; the target is each file and resource with its rights attached and CPE
 deciding at request time (ADR-0012, ADR-0013; not scheduled).
-Not yet in code: `sync` announces no project whose Ready token changed, and CPE does not rebuild the one
-project a port names (ADR-0012, DEV-7622).
+Not yet in code: CPE subscribes to no announcement of `sync`'s port, reads neither port's provenance, and does
+not rebuild the one project a port names (ADR-0012, DEV-7622).
 Not yet in code: `media` announces no project whose Ready token changed (ADR-0012, DEV-7938).
 Not yet in code: CPE serves Incunabula alone; the incubator's `alice-in-daschland` and `hdm` have not moved in
 (not scheduled).
@@ -327,7 +327,6 @@ Not yet in code: `dsp-incubator/cpe` keeps its own engine (`engine/`, `store/`, 
 and vendors only `cpe-components`, `cpe-core`, `cpe-image-viewer`, `cpe-ports` and `sync-store`, not
 `shared-datastar`, which `cpe-components` depends on (DEV-7408).
 Not yet in code: `dsp-incubator/cpe` does not vendor `shared-names`, which `cpe-ports` depends on (DEV-7994).
-Not yet in code: `sync-store`'s port serves no provenance (P-DEV-301).
 Not yet in code: no test of `access-server`'s image holds that it carries no data subtree of `sync` or `media`
 (DEV-7514).
 

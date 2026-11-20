@@ -112,8 +112,8 @@ Not yet in code: a configuration carries no format identifier or schema version,
 version N and N-1 (not scheduled).
 Not yet in code: no port serves rights, no read model stores them per row, and no presenter filters on
 them; the port against `sync` and CPE's store carry no rights (not scheduled).
-Not yet in code: the port against `sync` carries no change subscription, `sync` polls no Ready token, and
-a restart is the rebuild (DEV-7622).
+Not yet in code: CPE subscribes to no change the port against `sync` announces, and a restart is the rebuild
+(DEV-7622).
 Not yet in code: CPE rebuilds no single named project; once `sync` announces, CPE re-activates every project
 (not scheduled).
 Not yet in code: the bytes port against `media` carries no change subscription and `media` polls no Ready
@@ -121,7 +121,7 @@ token (DEV-7938).
 Not yet in code: the stand-ins are committed to this repository and fed by hand, and no VRE bridge writes
 them (P-DEV-301).
 Not yet in code: the stand-ins are carried in `access-server`'s image, not in a mounted directory (DEV-7514).
-Not yet in code: neither port serves a project's provenance (P-DEV-301).
+Not yet in code: CPE compares neither port's provenance before it keeps a rebuild (DEV-7622).
 Not yet in code: CPE's rebuild test runs against `FakeArchiveProjection` only, with curated values passed in by
 hand; no rebuild test runs against a fake of the bytes port (not scheduled).
 Not yet in code: CPE reads Incunabula's `assets/` from `areas/access/cpe/projects/incunabula/` at activation

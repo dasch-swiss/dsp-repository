@@ -95,8 +95,8 @@ Not yet in code: DPE reads its corpus from disk, not through a port against `syn
 Not yet in code: the tests build `LiveArchiveProjection` over the committed 0803 data that `access-server` also
 serves, not over a fixture of its own (P-DEV-301).
 Not yet in code: no `just check` script pins the `media` fixture to the bridge's shipped inputs (P-DEV-301).
-Not yet in code: the port against `sync` announces no change, and CPE rebuilds no single named project; a
-restart is the only rebuild (DEV-7622).
+Not yet in code: CPE follows no change the port against `sync` announces, and rebuilds no single named
+project; a restart is the only rebuild (DEV-7622).
 Not yet in code: the bytes port against `media` announces no change, and DaTEI, which has no code yet, rebuilds
 nothing (DEV-7938).
 Not yet in code: no port serves rights, no read model stores them per row, and no presenter filters on

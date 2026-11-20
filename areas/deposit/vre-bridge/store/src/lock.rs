@@ -86,6 +86,21 @@ impl Lock {
     }
 }
 
+fn swept_name(name: &std::ffi::OsStr, prefix: &str) -> bool {
+    !prefix.is_empty() && name.as_encoded_bytes().starts_with(prefix.as_bytes())
+}
+
+/// Whether [`sweep_work_dir`]`(work_dir, prefix)` would delete `path`: it is, or lies below, an
+/// entry of `work_dir` whose name starts with `prefix`. Both paths are compared as given, so a
+/// caller passes canonical ones.
+#[must_use]
+pub fn is_swept(work_dir: &Path, prefix: &str, path: &Path) -> bool {
+    path.strip_prefix(work_dir)
+        .ok()
+        .and_then(|rest| rest.components().next())
+        .is_some_and(|first| swept_name(first.as_os_str(), prefix))
+}
+
 /// Deletes every entry directly below `work_dir` whose name starts with `prefix`, judged without
 /// following a symlink: a directory is removed recursively, anything else unlinked. Returns how
 /// many entries it deleted. The caller holds the [`Lock`], so no running refresh's directory goes.
@@ -106,7 +121,7 @@ pub fn sweep_work_dir(work_dir: &Path, prefix: &str) -> Result<usize> {
     let mut first_failure = None;
     for entry in fs::read_dir(work_dir).map_err(io_error(work_dir))? {
         let entry = entry.map_err(io_error(work_dir))?;
-        if !entry.file_name().as_encoded_bytes().starts_with(prefix.as_bytes()) {
+        if !swept_name(&entry.file_name(), prefix) {
             continue;
         }
         let path = entry.path();

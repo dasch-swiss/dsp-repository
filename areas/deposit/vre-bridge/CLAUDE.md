@@ -14,7 +14,7 @@ Five crates, each in its own directory.
 | `vre-bridge-core` | `core/` | `core` | settings (`RawSettings`, `Settings::parse`), the allowlist and server ids, refresh decisions (`decide`), the shipped-input digest (`inputs_digest`), outcomes and their exit status |
 | `vre-bridge-store` | `store/` | `store` | the subtrees: generations, Ready tokens, recovery, cleanup, the lock |
 | `vre-bridge-client` | `client/` | `client` | DSP-API with the service identity (`ServiceIdentity`, `Server`): project lookup, change check, export, the dump's download and private unpacking (`private_work_dir`, `unpack`), anonymous file downloads |
-| `vre-bridge-server` | `server/` | `server` | one refresh (`Refresher`) over the `Vre`, `Report` and `Clock` traits; to come: the `VreBridge` facade `deposit-server` starts, the nightly run, the operator's refresh |
+| `vre-bridge-server` | `server/` | `server` | the `VreBridge` facade (`from_raw`, `start`, `operator_refresh`), the schedule and the nightly run, one refresh (`Refresher`) over the `Vre`, `Report` and `Clock` traits |
 
 `vre-bridge-lift` grants its library to `vre-bridge-core` and `vre-bridge-server` alone (Bazel `visibility`). Its
 role bans web frameworks, Maud, database crates, HTTP clients and `tokio` (`.github/scripts/check-capability-deps.sh`,
@@ -49,7 +49,47 @@ unpacking, the lift, the generation in both subtrees, the report. Three traits k
   gives up on a busy slot reports `Failed(FailureReason::Busy)` (CONTEXT.md, **Busy**).
 - **`Clock`**: wall-clock time (`SystemClock`; `FakeClock` in tests). Poll intervals and time limits are
   `tokio::time`, so the refresh's tests run with real time and limits of a few hundred milliseconds: paused
-  tokio time would fire them at once while a task waits on a socket or a blocking thread.
+  tokio time would fire them at once while a task waits on a socket or a blocking thread. The schedule and
+  the nightly run's retry waits go through the `Clock` (the wait for the lock is a plain one-second
+  `tokio::time::sleep`); their tests use a gated `FakeClock`, which reports each sleep and returns when the
+  test releases it, over a fake `Vre` (`test_support.rs`).
+
+`VreBridge` (`bridge.rs`) is what `deposit-server` builds and starts; `vre-bridge-core` is visible to this crate
+alone, so `RawSettings` and `SigningKeys` are re-exported. `from_raw` makes the bridge inactive, with a reason
+naming the variable, when no output location is set (`Inactive::NotConfigured`: it then touches no file), or
+for a configuration error: `Settings::parse`'s, a `TIME_ZONE` `chrono-tz` does not know, a `WORK_DIR` or
+`LOCK_FILE` at or below an output location (compared after `canonicalize`, and kept canonical; either one a
+symlink is refused), an output location or `LOCK_FILE` the work directory's sweep would delete, or a signing key that does not
+sign a probe token. It reads the file system and builds each server's client, so the binary calls it before
+serving, after installing the rustls provider. `start` returns at once; its task takes the lock without waiting and, if it gets it,
+sweeps the leftover dump directories and recovers every allowlisted project, then runs the schedule.
+
+**The schedule** (`schedule.rs`) runs the next `NIGHTLY_AT` in `TIME_ZONE` strictly after now: a local time
+that occurs twice takes its first occurrence, one in a gap moves forward 15 minutes at a time until it
+occurs. A missed run is never caught up. Each nightly run is its own task, awaited, and is given the local
+date it was scheduled for.
+
+**A nightly run** (`nightly.rs`), in this order:
+
+1. Wait for the lock, trying again every second with an async sleep; a long wait is logged every 10 minutes.
+2. Stop if the nightly-run record holds the run's date; else write it, before anything else, so a run cut short
+   is not run again that night. A record that cannot be written skips the run.
+3. Note the shortcode directories without a token in either subtree.
+4. Sweep the `vre-bridge-dump-*` directories in `WORK_DIR`.
+5. Recover every allowlisted project.
+6. Remove the projects no longer allowlisted (nothing for an empty allowlist): each withdrawn one is reported
+   as outcome `removed`, at warning level; a directory noted in 3 that still has no token is deleted.
+7. Refresh each allowlisted project in order; a project's failure does not stop the others. A busy dump slot
+   queues the project with a not-before time `DUMP_RETRY_SECS` later; the run sleeps until the earliest is
+   due, retries those due, and gives up after `DUMP_RETRIES` retries with `Failed(Busy)`.
+
+The lock is held to the run's end, retry waits included, so an operator's refresh meanwhile exits `75` for up
+to the retries' length. **The operator's refresh** (`operator_refresh`) takes the lock without waiting:
+`64` (`EXIT_UNUSABLE`) for an inactive bridge or a project not on the allowlist, `75` (`EXIT_LOCKED`) for a
+held lock, else one forced refresh and the outcome's exit status; a busy slot fails it at once. Every refresh,
+the nightly run's and the operator's, runs in a spawned task that is awaited and never aborted, since a dropped
+refresh would release the lock while a blocking write goes on; a refresh that panics is reported as
+`Failed(Internal)` and the run goes on.
 
 ## Rules
 

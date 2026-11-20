@@ -18,7 +18,8 @@
 use std::path::{Path, PathBuf};
 use std::{fs, io};
 
-use cpe_ports::{is_file_name, is_shortcode, DepositedFiles, FilesError};
+use cpe_ports::{DepositedFiles, FilesError};
+use shared_names::{is_file_name, is_shortcode};
 
 /// `media`'s adapter for CPE's bytes port: `<dir>/<shortcode>/<name>`, read whole on every call.
 ///

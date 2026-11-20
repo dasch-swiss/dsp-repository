@@ -1,23 +1,25 @@
-/// Whether `s` is a shortcode the bytes port serves: four hexadecimal digits, upper case.
+//! The name rules every reader and writer of a project's stand-in data applies to a caller's
+//! string before it reaches storage: [`is_shortcode`] for a project, [`is_file_name`] for a file
+//! in it. One definition, so a name one side writes is a name the other side accepts.
+
+/// Whether `s` is a shortcode a project's data may be stored and served under: four hexadecimal
+/// digits, upper case.
 ///
-/// An adapter answers every other shortcode with
-/// [`FilesError::UnknownProject`](crate::FilesError::UnknownProject) before touching storage. The
-/// rule is stricter than `shared_metadata::is_valid_shortcode`, so the five five-character
-/// shortcodes (`0801a`–`0801e`, root `CONTEXT.md`) cannot be served through this port. They are
-/// refused on purpose: a metadata-only split of BEOL, one DSP project `0801`, so no bucket prefix
-/// exists under them.
+/// A caller answers every other shortcode as an unknown project before touching storage. The rule
+/// is stricter than `shared_metadata::is_valid_shortcode`, so the five five-character shortcodes
+/// (`0801a`–`0801e`, root `CONTEXT.md`) are refused. They are refused on purpose: a metadata-only
+/// split of BEOL, one DSP project `0801`, so no bucket prefix exists under them.
 #[must_use]
 pub fn is_shortcode(s: &str) -> bool {
     s.len() == 4 && s.bytes().all(|b| matches!(b, b'0'..=b'9' | b'A'..=b'F'))
 }
 
-/// Whether `name` is a file name the bytes port serves: one or more `/`-separated segments, each
-/// non-empty, of `[A-Za-z0-9._-]` and not starting with `.`.
+/// Whether `name` is a file name a project's data may hold: one or more `/`-separated segments,
+/// each non-empty, of `[A-Za-z0-9._-]` and not starting with `.`.
 ///
-/// An adapter answers every other name with
-/// [`FilesError::UnknownFile`](crate::FilesError::UnknownFile) before touching storage, so no name
-/// climbs out of the project's subtree by its spelling. A file-system adapter must also refuse
-/// symlinks, which this rule cannot see.
+/// A caller answers every other name as an unknown file before touching storage, so no name climbs
+/// out of the project's subtree by its spelling. A file-system reader must also refuse symlinks,
+/// which this rule cannot see.
 #[must_use]
 pub fn is_file_name(name: &str) -> bool {
     name.split('/').all(|segment| {

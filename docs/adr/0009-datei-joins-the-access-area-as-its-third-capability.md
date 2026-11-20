@@ -72,9 +72,10 @@ decision, phrased so a violation is describable in code:
 - **The file mapping is the contract between a DaTEI page and the VRE bridge.** The mapping, made by hand with a
   DaTEI page, maps each logical path to the IRI of the VRE resource that holds the file. The VRE bridge (P-DEV-301)
   resolves each IRI, writes the file under its stored name, and writes the manifest from the mapping; DaTEI does
-  not read the mapping. `datei.toml`, `file-layout.xml` and the mapping ship in the bridge's image, and the
-  bridge writes the first two into the project's directory, the Ready token last. The bridge also keeps a
-  project's files from changing while a reader reads them.
+  not read the mapping. `datei.toml`, `file-layout.xml` and the mapping are among the bridge's shipped inputs,
+  and the bridge writes them into the project's directory; DaTEI reads the first two. Each refresh is a new
+  generation of that directory, made current by replacing its Ready token with one file rename
+  (`areas/deposit/ADR-0005`), so a project's files do not change while a reader reads them.
 - **`media` starts at its minimum, as `sync` does (ADR-0007):** a stand-in for the Access bucket (ADR-0012),
   the directory `MEDIA_DATA_DIR` with one directory per shortcode, laid out as the bucket will be and behind the
   port the bucket will stand behind; a `Fake<Port>` in DaTEI's tests is the second adapter. An edition's files
@@ -116,14 +117,14 @@ Each of these is accepted for the first projects. Where its end is known, it is 
 
 - **No rights per file.** DaTEI's read model stores no rights and the presenter does not filter on them, against
   the rights clauses of ADR-0008, ADR-0012 and ADR-0013. The bridge downloads
-  only what the VRE serves publicly, so the anonymous consumer may see every file DaTEI reads. Ends when the port
-  carries the VRE's permissions.
+  only what the VRE serves publicly, so the anonymous consumer may see every file DaTEI reads. Ends when `media`'s
+  port serves the rights the VRE bridge records (ADR-0013).
 - **Only the current configuration format.** DaTEI reads `datei.toml` in the format the configurator writes
   today, not version N and N-1 as ADR-0012 asks. Ends with a second DaTEI project, or a configuration DaSCH does
   not maintain.
 - **Data refreshed by restart.** New or changed files reach DaTEI at the next restart, not through a change its
-  port announces (ADR-0012). Ends with DEV-7622; how DaTEI learns of a change through its port is left open to
-  DEV-7938.
+  port announces (ADR-0012). Ends with DEV-7938, which also decides how DaTEI learns of a change through its
+  port.
 - **Images served by the VRE's Sipi**, as IIIF URLs from the manifest, not by `media` (ADR-0012). Ends when
   `media` serves assets.
 - **Fragments as `text/html` responses**, with `datastar-selector` and `datastar-mode` headers, not server-sent

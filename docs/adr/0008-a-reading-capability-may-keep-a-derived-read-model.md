@@ -39,8 +39,8 @@ code:
   rights per row, and the presenter filters at request time, as the anonymous consumer until an authorisation
   mechanism exists (ADR-0012, ADR-0013).
 - **Change reaches a reader only through its port, and the port announces it.** The provider owns the
-  trigger; the reader rebuilds the one project the port named and grows no endpoint of its own. Until a port
-  carries change, a restart is the rebuild.
+  trigger; the reader rebuilds the one project the port named, and every project at start, and grows no
+  endpoint of its own. The binary is never restarted to refresh data (ADR-0012).
 - **Staleness is legitimate.** While `sync` has nothing new, or a port is unavailable, the read model serves
   what it has, exactly as the projection does while the archive is unavailable (`areas/archive/CONTEXT.md`,
   `chischtli/CONTEXT.md`).
@@ -48,8 +48,9 @@ code:
   `sync`'s store crate as a dependency of `testonly` targets, and only as one; the same holds for `media`'s,
   the adapter of its bytes port (ADR-0012). Bazel refuses a `testonly` target as a dependency of any other
   target, so a library or binary as built for use is still fed by its ports only. Such a test constructs
-  `LiveArchiveProjection` over the committed snapshot and hands the builder what the port serves; it never opens
-  `sync`'s data itself. The tests of `cpe-store-build` and `cpe-server` build Incunabula's store this way.
+  `LiveArchiveProjection` over a snapshot fixture and hands the builder what the port serves; it never opens
+  `sync`'s data itself. The tests of
+  `cpe-store-build` and `cpe-server` build Incunabula's store this way.
 
 ## Considered Options
 
@@ -71,7 +72,10 @@ code:
 - **A read model's tests in the composition root, so no capability crate names `sync`'s store** — rejected:
   `ARCH-MAP.md` holds the composition root to wiring only.
 - **A second committed copy of the snapshot, as a fixture of the capability** — rejected: two copies of one
-  file, and the tests would no longer read through the adapter that serves the capability in use.
+  file, and the tests would no longer read through the adapter that serves the capability in use. The `media`
+  fixture pinned byte for byte to the VRE bridge's shipped inputs (ADR-0002) is not such a copy: it has one
+  authoritative source, a `just check` script is to hold it equal, and the tests still read it through
+  `media`'s adapter.
 
 ## Consequences
 
@@ -81,15 +85,20 @@ code:
   serves is this record's baseline rebuild.
 - DPE's corpus caches, fields of `dpe_core::Corpus`, are DPE's read model, built from the corpus on disk. Read
   through a port against `sync`, they are a read model under this record with no change of shape.
-- A refresh between starts needs a port that announces change. `sync`'s minimum (ADR-0007) serves the
-  committed projection of one shortcode and announces nothing, so a full rebuild at start is the only refresh
-  until the ports carry change.
+- A refresh between starts needs a port that announces change. Before the archive exists, `sync` announces a
+  project when the VRE bridge has replaced its interim snapshot, which `sync` sees as a changed Ready token
+  (`areas/deposit/ADR-0005`), and `media` does the same for the files it serves.
 - `ARCH-MAP.md`'s "Durable state" line for a reading capability of the Access Area says which it is: a read
   model behind its ports, single writer the capability, rebuilt from empty; or no store, reading live.
 
 Not yet in code: DPE reads its corpus from disk, not through a port against `sync` (not scheduled).
-Not yet in code: neither the port against `sync` nor the bytes port against `media` announces change, and no
-reader rebuilds one named project (DEV-7622).
+Not yet in code: the tests build `LiveArchiveProjection` over the committed snapshot that `access-server` also
+serves, not over a fixture of its own (P-DEV-301).
+Not yet in code: no `just check` script pins the `media` fixture to the bridge's shipped inputs (P-DEV-301).
+Not yet in code: the port against `sync` announces no change, and CPE rebuilds no single named project; a
+restart is the only rebuild (DEV-7622).
+Not yet in code: the bytes port against `media` announces no change, and DaTEI, which has no code yet, rebuilds
+nothing (DEV-7938).
 Not yet in code: no port serves rights, no read model stores them per row, and no presenter filters on
 them (not scheduled).
 
@@ -99,5 +108,6 @@ grant only the composition root, which constructs the adapters; another capabili
 variants (`sync_store_for_tests`, `media_store_for_tests`), which no production target can depend on, and only
 the test packages they list. The grant reads no source,
 so what a test does with the adapter is review. One test per read model rebuilds it from empty against a
-`Fake<Port>` and asserts what the capability serves is unchanged (**static-analysis**; for CPE, `areas/access/cpe/store-build/tests/it/rebuild.rs`). Review for any
+`Fake<Port>` and asserts what the capability serves is unchanged (**static-analysis**; for CPE,
+`areas/access/cpe/store-build/tests/it/rebuild.rs`). Review for any
 other reading capability, for "the port speaks archive-shaped facts" and for "never repaired in place".

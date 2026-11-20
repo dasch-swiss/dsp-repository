@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.8.12](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.11...v0.8.12) (2026-11-20)
+
+
+### Features
+
+* **access-server,cpe-server,cpe-web:** Hide a project from crawlers and from the overview (DEV-7919) ([ddcdf1a](https://github.com/dasch-swiss/dsp-repository/commit/ddcdf1a2def6c7aa652c2a366bf05dcf819be868))
+
+
+### Bug Fixes
+
+* **access-server,deposit-server:** Read no baggage header from requests ([e26603a](https://github.com/dasch-swiss/dsp-repository/commit/e26603ac197ab3f2dd4aeed2d30b223dde79d4ff))
+* **cpe-web:** Line the overview's empty state up with its heading (DEV-7941) ([f6fb39a](https://github.com/dasch-swiss/dsp-repository/commit/f6fb39a8fbb4b944c5bba6ef1684537ed49f3b8e))
+* **dsp-cli:** Search all resources when resource list has --filter ([28dcdba](https://github.com/dasch-swiss/dsp-repository/commit/28dcdba77566ce7ba6a3984ff63a883e004a8a4b))
+
+
+### Documentation
+
+* **docs:** Bring DaTEI's documentation up to the incubator's current state ([9cf1d1c](https://github.com/dasch-swiss/dsp-repository/commit/9cf1d1cb0c8bc05f5a9eb50e8ac1bcd4fe9aa809))
+* **docs:** Plan the Bazel migration (DEV-7699) ([2bca585](https://github.com/dasch-swiss/dsp-repository/commit/2bca58529d30e27af796a430acbac104c178f727))
+* **docs:** Plan the DaTEI integration and rewrite its ADRs (DEV-7934) ([158ebb9](https://github.com/dasch-swiss/dsp-repository/commit/158ebb9e3afff53a8def4402b6f8acef775a7b76))
+
+
+### Build System
+
+* **ci:** Build dsp-cli and the Mosaic playground with Bazel ([682da73](https://github.com/dasch-swiss/dsp-repository/commit/682da73917a0598f86f912530f51614a8191f5a1))
+* **ci:** Build the Access Area crates with Bazel ([7bb293f](https://github.com/dasch-swiss/dsp-repository/commit/7bb293f4a90e27955ccdbfba8eb68be894066cc2))
+* **ci:** Build the Deposit Area crates with Bazel ([944c917](https://github.com/dasch-swiss/dsp-repository/commit/944c91743a922599908090a39bcac8f05800acce))
+* **ci:** Build the DPE fuzz targets with Bazel ([c141a29](https://github.com/dasch-swiss/dsp-repository/commit/c141a299bcefabd5e7627c57852c872482ac929f))
+* **ci:** Build the shared crates and mosaic-tiles with Bazel ([9cb7381](https://github.com/dasch-swiss/dsp-repository/commit/9cb73812355b543caaadc6d324940486e47a5348))
+* **ci:** Build the stylesheets and images with Bazel ([f927d1f](https://github.com/dasch-swiss/dsp-repository/commit/f927d1f6ff0aed3190d1adcb507ad6219ec6d72a))
+* **ci:** Publish, preview and scan the Bazel images ([0dd81b5](https://github.com/dasch-swiss/dsp-repository/commit/0dd81b5404a319119579df640afd2a0064b15d30))
+* **ci:** Remove the Cargo workspace ([65c3194](https://github.com/dasch-swiss/dsp-repository/commit/65c3194fef23ec5d3ca13bc34a8ff8b2a3c026de))
+* **ci:** Run the gates and the developer tooling on Bazel ([f6303a3](https://github.com/dasch-swiss/dsp-repository/commit/f6303a355007934e7d2d1a28621c3c39acaf0276))
+* **deps:** Bump crates with published security advisories ([f687ca4](https://github.com/dasch-swiss/dsp-repository/commit/f687ca465e8eca04c3bdf05fbe7caa918d5f7365))
+* **deps:** Bump rusqlite to 0.40 and Rust to 1.95 ([7d5eae0](https://github.com/dasch-swiss/dsp-repository/commit/7d5eae08808a08f830b215df4193f5524d557dca))
+* **deps:** Use ring as the one TLS crypto provider ([c791c59](https://github.com/dasch-swiss/dsp-repository/commit/c791c59c8fa4435ca4426bbad3d3d6db2974bd1e))
+
+
+### Miscellaneous Chores
+
+* **dpe-data:** Update the demo URL for 0854 (Alice in DaSCHland) ([a1897e6](https://github.com/dasch-swiss/dsp-repository/commit/a1897e61dad0b90df86df9f3b6d7d882a5a85c0f))
+
 ## [0.8.11](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.10...v0.8.11) (2026-11-13)
 
 

@@ -7,7 +7,8 @@
 //! `<root>/<shortcode>/<generation>/<name>`, and nothing outside that generation is served, the
 //! token included. A project without a token is `UnknownProject`. A token that cannot be read or
 //! parsed, or one naming a generation that is not a real directory, is `Unavailable`, never
-//! `UnknownProject`: a broken project is not a removed one.
+//! `UnknownProject`: a broken project is not a removed one. The port's provenance of a project is
+//! its token's.
 //!
 //! The adapter serves every file it holds and refuses none for want of a right: in the target each
 //! file comes with its rights attached and the reader decides at request time with the shared
@@ -17,14 +18,14 @@
 //!
 //! The composition root constructs the adapter over the directory `MEDIA_DATA_DIR` names, once, at
 //! start: an edit to it reaches a reader only on a restart. Not yet in code: the port announces
-//! change (DEV-7622). Nothing here writes to the subtree or watches it for changes: it may be NFS.
+//! change (DEV-7938). Nothing here writes to the subtree or watches it for changes: it may be NFS.
 
 use std::path::{Path, PathBuf};
 use std::{fs, io};
 
-use cpe_ports::{DepositedFiles, FilesError};
+use cpe_ports::{DepositedFiles, FilesError, Provenance};
 use shared_names::{is_file_name, is_shortcode};
-use shared_stand_in::{generation_dir, read_token, TokenError, TOKEN_FILE};
+use shared_stand_in::{generation_dir, read_token, ReadyToken, TokenError, TOKEN_FILE};
 
 /// `media`'s adapter for CPE's bytes port: `<root>/<shortcode>/<generation>/<name>`, the generation
 /// the project's Ready token names, read whole on every call.
@@ -43,6 +44,17 @@ impl LiveDepositedFiles {
     pub fn new(root: impl Into<PathBuf>) -> Self {
         Self { root: root.into() }
     }
+
+    /// The project's token; `Ok(None)` for an unknown project.
+    fn token(&self, shortcode: &str) -> Result<Option<ReadyToken>, FilesError> {
+        read_token(&self.root, shortcode).map_err(|error| {
+            let kind = match error {
+                TokenError::Unreadable(kind) => kind,
+                TokenError::Invalid(_) => io::ErrorKind::InvalidData,
+            };
+            unavailable(&self.root.join(shortcode).join(TOKEN_FILE), io::Error::new(kind, error))
+        })
+    }
 }
 
 impl DepositedFiles for LiveDepositedFiles {
@@ -57,17 +69,8 @@ impl DepositedFiles for LiveDepositedFiles {
             return Err(unknown_file());
         }
 
-        let token = match read_token(&self.root, shortcode) {
-            Ok(Some(token)) => token,
-            Ok(None) => return Err(unknown_project()),
-            Err(error) => {
-                let kind = match error {
-                    TokenError::Unreadable(kind) => kind,
-                    TokenError::Invalid(_) => io::ErrorKind::InvalidData,
-                };
-                let path = self.root.join(shortcode).join(TOKEN_FILE);
-                return Err(unavailable(&path, io::Error::new(kind, error)));
-            }
+        let Some(token) = self.token(shortcode)? else {
+            return Err(unknown_project());
         };
         let Some(mut path) = generation_dir(&self.root, shortcode, &token.provenance.generation) else {
             return Err(unknown_project());
@@ -92,6 +95,25 @@ impl DepositedFiles for LiveDepositedFiles {
             Entry::Directory => Err(unavailable(&path, io::ErrorKind::IsADirectory.into())),
             Entry::Neither => Err(unknown_file()),
         }
+    }
+
+    /// The token's provenance, `None` for an unknown project; a token that cannot be read or parsed
+    /// is `Unavailable`, as for `file`.
+    #[tracing::instrument(skip(self), fields(otel.kind = "internal"))]
+    fn provenance(&self, shortcode: &str) -> Result<Option<Provenance>, FilesError> {
+        Ok(self.token(shortcode)?.map(|token| port_provenance(token.provenance)))
+    }
+}
+
+/// The token's provenance as the port carries it.
+fn port_provenance(provenance: shared_stand_in::Provenance) -> Provenance {
+    Provenance {
+        generation: provenance.generation.to_string(),
+        as_of: provenance.as_of,
+        server: provenance.server,
+        interim_format_version: provenance.interim_format_version,
+        transformation_version: provenance.transformation_version,
+        inputs_digest: provenance.inputs_digest,
     }
 }
 

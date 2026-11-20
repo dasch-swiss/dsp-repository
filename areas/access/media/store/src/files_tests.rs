@@ -296,3 +296,54 @@ fn test_file_changed_file_served_changed() {
 
     assert_eq!(files.file("0803", "config.kdl").expect("served"), b"second");
 }
+
+// Provenance
+
+#[test]
+fn test_provenance_known_project_equals_its_tokens_provenance() {
+    let dir = TempDir::new().expect("a temporary directory");
+    deposit(dir.path(), "0803", "config.kdl", "remodel {\n}\n");
+
+    let provenance = LiveDepositedFiles::new(dir.path())
+        .provenance("0803")
+        .expect("a valid token is read")
+        .expect("0803 has a token");
+
+    assert_eq!(
+        provenance,
+        cpe_ports::Provenance {
+            generation: GENERATION.to_string(),
+            as_of: "2026-11-20T01:02:03Z".to_string(),
+            server: "prod".to_string(),
+            interim_format_version: 1,
+            transformation_version: 1,
+            inputs_digest: format!("sha256:{}", "0".repeat(64)),
+        }
+    );
+}
+
+#[test]
+fn test_provenance_project_without_token_is_none() {
+    let dir = TempDir::new().expect("a temporary directory");
+    write(&generation(dir.path(), "0803"), "config.kdl", "remodel {\n}\n");
+    let files = LiveDepositedFiles::new(dir.path());
+
+    for shortcode in ["0803", "0804", "../x"] {
+        assert_eq!(files.provenance(shortcode).expect(shortcode), None, "{shortcode}");
+    }
+}
+
+#[test]
+fn test_provenance_malformed_token_returns_unavailable() {
+    let dir = TempDir::new().expect("a temporary directory");
+    deposit(dir.path(), "0803", "config.kdl", "remodel {\n}\n");
+    write(dir.path(), "0803/.ready", "{}\n");
+
+    let result = LiveDepositedFiles::new(dir.path()).provenance("0803");
+
+    let Err(FilesError::Unavailable(source)) = result else {
+        panic!("expected Unavailable, got {result:?}")
+    };
+    let source = source.downcast::<io::Error>().expect("the source is an io::Error");
+    assert_eq!(source.kind(), io::ErrorKind::InvalidData);
+}

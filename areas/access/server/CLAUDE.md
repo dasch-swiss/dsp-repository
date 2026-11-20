@@ -39,9 +39,11 @@ itself untraced. A test pins it — do not reorder without checking `serve.rs`'s
   `LiveDepositedFiles` on `MEDIA_DATA_DIR` (default `areas/access/media/data`); `data_dir` takes an empty value
   for unset. Until it finishes, and for a project that failed, CPE answers 503; a missing data directory is
   such a failure, not a start-up error, and a missing `MEDIA_DATA_DIR` is logged as a warning. Do not `.await` the activation and do not `expect` anything of CPE's in `serve()`.
-  Activation runs once per start, so for now an edit under either data directory needs a restart. Not yet in
-  code: the ports announce change and CPE rebuilds the one project named; the Ready-token poll belongs to `sync`
-  and `media`, so add no reload endpoint or signal for CPE here (ADR-0012, DEV-7622, DEV-7938).
+  Activation runs once per start, so for now an edit under either data directory needs a restart. `serve()`
+  passes `SYNC_POLL_SECS` (`sync_poll_interval`) to `LiveArchiveProjection::with_poll_interval`, whose port
+  announces a changed project once subscribed. Not yet in code: CPE subscribes and rebuilds the one project
+  named, and `media`'s port announces; the Ready-token poll belongs to `sync` and `media`, so add no reload
+  endpoint or signal for CPE here (ADR-0012, DEV-7622, DEV-7938).
   `app` builds the router with CPE inside `catch_unwind`: if that build panics, it logs an error naming
   `CPE_BASE` and builds DPE alone. No base does that today: a route of DPE's or the binary's under the base
   (`/healthz`, `/dpe/projects`) keeps answering, and only a second any-method route for `<base>/` panics.
@@ -80,7 +82,7 @@ built from.
 `cpe-store`. This crate imports only `dpe-server`'s public surface (`DpeConfig`, `Dpe`, `validate`,
 `normalize_page_url`), `cpe-server`'s (`CpeConfig`, `Cpe`,
 `MatchedRoute`), the ports' traits and `is_shortcode` from `cpe-ports`, `sync-store`'s `LiveArchiveProjection` and
-`media-store`'s `LiveDepositedFiles`;
+`DEFAULT_POLL_INTERVAL`, and `media-store`'s `LiveDepositedFiles`;
 reaching past them into a capability's internals defeats the boundary the capability crate exists
 to hold. Bazel `visibility` enforces this: no `core`, `web` or `api-*` target and not `cpe-store` grants this
 package, so such an edge fails analysis (ADR-0003, ADR-0007).

@@ -2,6 +2,7 @@
 
 use std::collections::BTreeSet;
 use std::process::ExitCode;
+use std::time::Duration;
 
 use axum::Router;
 use cpe_server::Cpe;
@@ -19,6 +20,26 @@ const DEFAULT_MEDIA_DATA_DIR: &str = "areas/access/media/data";
 /// passes an empty value (a compose file's `${VAR}` of an unset variable) means "not set".
 fn data_dir(value: Option<String>, default: &str) -> String {
     value.filter(|value| !value.is_empty()).unwrap_or_else(|| default.to_owned())
+}
+
+/// The interval `SYNC_POLL_SECS` names in seconds. Unset or empty is `sync-store`'s default; `0` or
+/// a value that is not a whole number of seconds is logged and the default, never a stop.
+fn sync_poll_interval(value: Option<&str>) -> Duration {
+    let default = sync_store::DEFAULT_POLL_INTERVAL;
+    match value.filter(|value| !value.is_empty()) {
+        None => default,
+        Some(value) => match value.parse::<u64>() {
+            Ok(secs) if secs > 0 => Duration::from_secs(secs),
+            _ => {
+                tracing::warn!(
+                    value,
+                    default_secs = default.as_secs(),
+                    "SYNC_POLL_SECS is not a positive whole number of seconds: the default is used"
+                );
+                default
+            }
+        },
+    }
 }
 
 /// `ACCESS_HIDDEN_PROJECTS`, split, trimmed and upper-cased; the entries that are
@@ -272,6 +293,7 @@ pub(crate) async fn serve() -> ExitCode {
         .expect("invalid site address (DPE_SITE_ADDR)");
     let sync_data_dir = data_dir(std::env::var("SYNC_DATA_DIR").ok(), DEFAULT_SYNC_DATA_DIR);
     let media_data_dir = data_dir(std::env::var("MEDIA_DATA_DIR").ok(), DEFAULT_MEDIA_DATA_DIR);
+    let sync_poll = sync_poll_interval(std::env::var("SYNC_POLL_SECS").ok().as_deref());
 
     let (app, cpe_is_mounted) = app(dpe.router(), &cpe);
 
@@ -309,7 +331,7 @@ pub(crate) async fn serve() -> ExitCode {
         );
         activate_in_background(
             &cpe,
-            sync_store::LiveArchiveProjection::new(sync_data_dir),
+            sync_store::LiveArchiveProjection::new(sync_data_dir).with_poll_interval(sync_poll),
             media_store::LiveDepositedFiles::new(media_data_dir),
         );
     }
@@ -376,8 +398,8 @@ mod tests {
     use axum::extract::Request;
     use axum::http::{header, HeaderMap, StatusCode};
     use cpe_ports::{
-        ArchiveProjection, ClassIri, DataArk, FakeArchiveProjection, FakeDepositedFiles, ProjectSnapshot,
-        ProjectionError, PropertyIri, Resource, ResourceIri, Value, ValueKind, DATA_ARK_PREFIX,
+        ArchiveProjection, ClassIri, DataArk, DepositedFiles, FakeArchiveProjection, FakeDepositedFiles,
+        ProjectSnapshot, ProjectionError, PropertyIri, Resource, ResourceIri, Value, ValueKind, DATA_ARK_PREFIX,
     };
     use cpe_server::{Cpe, CpeConfig};
     use media_store::LiveDepositedFiles;
@@ -385,7 +407,8 @@ mod tests {
     use tower::ServiceExt;
 
     use super::{
-        activate_in_background, data_dir, parse_hidden_projects, DEFAULT_MEDIA_DATA_DIR, DEFAULT_SYNC_DATA_DIR,
+        activate_in_background, data_dir, parse_hidden_projects, sync_poll_interval, DEFAULT_MEDIA_DATA_DIR,
+        DEFAULT_SYNC_DATA_DIR,
     };
 
     const BASE: &str = "/cpe";
@@ -1433,6 +1456,20 @@ remodel {
         assert_eq!(data_dir(Some("/data".to_owned()), "default"), "/data");
     }
 
+    #[test]
+    fn a_sync_poll_interval_that_is_unset_zero_or_no_number_is_thirty_seconds() {
+        assert_eq!(sync_store::DEFAULT_POLL_INTERVAL, Duration::from_secs(30));
+        for value in [None, Some(""), Some("0"), Some("abc"), Some("-5"), Some("1.5")] {
+            assert_eq!(sync_poll_interval(value), Duration::from_secs(30), "{value:?}");
+        }
+    }
+
+    #[test]
+    fn a_sync_poll_interval_of_whole_seconds_is_taken() {
+        assert_eq!(sync_poll_interval(Some("1")), Duration::from_secs(1));
+        assert_eq!(sync_poll_interval(Some("120")), Duration::from_secs(120));
+    }
+
     /// Whether `path` is a regular file, not followed if a symlink, as the stand-in readers check.
     fn is_regular_file(path: &Path) -> bool {
         std::fs::symlink_metadata(path).is_ok_and(|metadata| metadata.is_file())
@@ -1455,6 +1492,22 @@ remodel {
         assert!(is_regular_file(
             &repository_root().join(DEFAULT_MEDIA_DATA_DIR).join("0803/.ready")
         ));
+    }
+
+    /// Each store maps its token to the port's provenance itself; equal tokens must give equal
+    /// provenance on both ports, or a reader takes one generation for two.
+    #[test]
+    fn both_ports_serve_0803s_committed_tokens_as_equal_provenance() {
+        let root = repository_root();
+        let sync = LiveArchiveProjection::new(root.join(DEFAULT_SYNC_DATA_DIR))
+            .provenance("0803")
+            .expect("the sync token is read");
+        let media = LiveDepositedFiles::new(root.join(DEFAULT_MEDIA_DATA_DIR))
+            .provenance("0803")
+            .expect("the media token is read");
+
+        assert!(sync.is_some());
+        assert_eq!(sync, media);
     }
 
     /// Nothing of CPE's answers at the root either.

@@ -42,14 +42,20 @@
 //! shape, so both are dropped. An annotation target is never a value node, so one that is not a
 //! resource of the file is refused ([`InvalidFact::UnknownTarget`]).
 //!
+//! The port's provenance of a project is its token's, read on every call. `subscribe` reads every
+//! token as a baseline and then polls them on a thread of its own, announcing each project whose
+//! token appeared, changed or went (`poll.rs`); the thread ends when the adapter is dropped.
+//!
 //! `access-server` constructs the adapter, over the directory `SYNC_DATA_DIR` names, and hands
-//! it to CPE's activation. Nothing here writes to the subtree or watches it for changes: it may be
-//! NFS.
+//! it to CPE's activation. Nothing here writes to the subtree or watches it with file-system
+//! notifications: it may be NFS.
 
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex, PoisonError};
+use std::time::Duration;
 use std::{fs, io};
 
-use cpe_ports::{contract, ArchiveProjection, ProjectSnapshot, ProjectionError};
+use cpe_ports::{contract, ArchiveProjection, ChangeListener, ProjectSnapshot, ProjectionError, Provenance};
 use oxrdf::Quad;
 use oxttl::NQuadsParser;
 use shared_names::is_shortcode;
@@ -58,6 +64,7 @@ use shared_stand_in::{generation_dir, read_token, ReadyToken, TOKEN_FILE};
 mod ark;
 mod error;
 mod mapping;
+mod poll;
 mod vocab;
 
 pub use ark::ArkError;
@@ -74,11 +81,40 @@ const SNAPSHOT_FILE: &str = "snapshot.nq";
 /// in the subtree at `root`, read from the generation the token names on every call.
 pub struct LiveArchiveProjection {
     root: PathBuf,
+    poll_interval: Duration,
+    poll: Mutex<Option<poll::Poll>>,
 }
+
+/// How often the tokens are polled unless [`LiveArchiveProjection::with_poll_interval`] says
+/// otherwise.
+pub const DEFAULT_POLL_INTERVAL: Duration = Duration::from_secs(30);
+
+/// The shortest interval [`LiveArchiveProjection::with_poll_interval`] takes, so the poll never
+/// spins on a subtree that may be NFS.
+const MIN_POLL_INTERVAL: Duration = Duration::from_millis(10);
 
 impl LiveArchiveProjection {
     pub fn new(root: impl Into<PathBuf>) -> Self {
-        Self { root: root.into() }
+        Self {
+            root: root.into(),
+            poll_interval: DEFAULT_POLL_INTERVAL,
+            poll: Mutex::new(None),
+        }
+    }
+
+    /// Poll the tokens every `interval`, but no more often than every 10 ms, once subscribed.
+    #[must_use]
+    pub fn with_poll_interval(mut self, interval: Duration) -> Self {
+        self.poll_interval = interval.max(MIN_POLL_INTERVAL);
+        self
+    }
+
+    /// The project's token; `Ok(None)` for an unknown project.
+    fn token(&self, shortcode: &str) -> Result<Option<ReadyToken>, ProjectionError> {
+        read_token(&self.root, shortcode).map_err(|source| {
+            let path = self.root.join(shortcode).join(TOKEN_FILE);
+            ProjectionError::unavailable(SnapshotError::Token { path, source })
+        })
     }
 
     fn serve(&self, shortcode: &str, token: &ReadyToken, generation: &Path) -> Result<ProjectSnapshot, SnapshotError> {
@@ -112,18 +148,42 @@ impl ArchiveProjection for LiveArchiveProjection {
         if !is_shortcode(shortcode) {
             return Err(unknown());
         }
-        let token = match read_token(&self.root, shortcode) {
-            Ok(Some(token)) => token,
-            Ok(None) => return Err(unknown()),
-            Err(source) => {
-                let path = self.root.join(shortcode).join(TOKEN_FILE);
-                return Err(ProjectionError::unavailable(SnapshotError::Token { path, source }));
-            }
+        let Some(token) = self.token(shortcode)? else {
+            return Err(unknown());
         };
         let Some(generation) = generation_dir(&self.root, shortcode, &token.provenance.generation) else {
             return Err(unknown());
         };
         self.serve(shortcode, &token, &generation).map_err(ProjectionError::unavailable)
+    }
+
+    /// The token's provenance, `None` for an unknown project; a token that cannot be read or parsed
+    /// is `Unavailable`, as for `snapshot`.
+    #[tracing::instrument(skip(self), fields(otel.kind = "internal"))]
+    fn provenance(&self, shortcode: &str) -> Result<Option<Provenance>, ProjectionError> {
+        Ok(self.token(shortcode)?.map(|token| port_provenance(token.provenance)))
+    }
+
+    /// The first call reads every token before it returns, and dropping the adapter waits for the
+    /// round in flight: call either off an async runtime's worker threads.
+    fn subscribe(&self, listener: Arc<dyn ChangeListener>) {
+        let mut poll = self.poll.lock().unwrap_or_else(PoisonError::into_inner);
+        match poll.as_ref() {
+            Some(running) => running.add(listener),
+            None => *poll = Some(poll::Poll::start(self.root.clone(), self.poll_interval, listener)),
+        }
+    }
+}
+
+/// The token's provenance as the port carries it.
+fn port_provenance(provenance: shared_stand_in::Provenance) -> Provenance {
+    Provenance {
+        generation: provenance.generation.to_string(),
+        as_of: provenance.as_of,
+        server: provenance.server,
+        interim_format_version: provenance.interim_format_version,
+        transformation_version: provenance.transformation_version,
+        inputs_digest: provenance.inputs_digest,
     }
 }
 
@@ -171,5 +231,7 @@ fn read_quads(path: &Path) -> Result<Vec<Quad>, SnapshotError> {
 mod ark_tests;
 #[cfg(test)]
 mod mapping_tests;
+#[cfg(test)]
+mod poll_tests;
 #[cfg(test)]
 mod snapshot_tests;

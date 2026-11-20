@@ -30,6 +30,7 @@ For any interaction or coding-related workflow, the justfile is the primary sour
 | `just check-views-no-axum` | Fail the build if a file of `editor-web`'s or `identity-web`'s `src/` outside `handlers/`, `routes.rs`, `shell.rs`, `lib.rs` and `fixtures.rs` names an `axum` or `axum_*` path: views are `fn -> Markup` (also run by `just check`) |
 | `just check-adr-refs` | Fail the build if a decision-record reference does not resolve to a record (also run by `just check`) |
 | `just check-live-tests-ignored` | Fail the build if a dsp-cli live test is not `#[ignore]`d (also run by `just check`) |
+| `just check-stand-in-fixture` | Fail the build if the generation of the 0803 `media` fixture (`areas/access/media/data/0803/`) differs by a byte, a missing or an extra file from the VRE bridge's shipped inputs (`areas/deposit/vre-bridge/inputs/0803/`), the authoritative copy, or if the fixture's two Ready tokens differ or record another inputs digest than the bridge's `refresh_0803` test pins (ADR-0002; also run by `just check`) |
 | `just dsp-cli-run <args>` | Run the `dsp` command-line client with the given arguments |
 | `just dsp-cli-test-live` | Run dsp-cli's live tests against a reachable DSP stack (never part of `just test`) |
 | `just dsp-cli-stack-up` | Start the containerized DSP stack used by dsp-cli's live tests |

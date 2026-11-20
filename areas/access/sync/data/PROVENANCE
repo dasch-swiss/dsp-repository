@@ -6,7 +6,8 @@ replaces it.
 
 The token is hand-written: generation 20261007T000000Z-00000000 and as_of 2026-10-07T00:00:00Z (the
 dump's bagging date below), server prod, interim format version 1, transformation version 1, no
-previous generation, and an inputs digest of 64 zeros, a placeholder no reader checks.
+previous generation, and the inputs digest of 0803's shipped inputs as the VRE bridge computes it
+(areas/deposit/vre-bridge/inputs/0803/, pinned by that bridge's refresh_0803 test; no reader checks it).
 media/data/0803/.ready holds the same bytes, so the two tokens hold equal provenance.
 
 snapshot.nq is the file that was 0803.nq here, moved with its bytes unchanged. It is dao-lift's output,

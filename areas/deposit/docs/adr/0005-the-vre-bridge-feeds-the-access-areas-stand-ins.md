@@ -145,4 +145,6 @@ writing no symlinks, for writing only below allowlisted shortcodes, for removing
 before its data, for a Ready token never naming an incomplete generation, and for refreshing on a format,
 transformation or shipped-input mismatch (**static-analysis**); an ignored test, run by hand on a real dump,
 that the ported `dao-lift` produces the incubator's facts from the same dump (**static-analysis**, manual);
-review for the bridge never deciding a right of its own and for the shipped inputs being the one copy.
+`check-stand-in-fixture.sh`, run by `just check`, for the committed 0803 `media` fixture holding the shipped
+inputs byte for byte and both fixture tokens recording their digest (**static-analysis**); review for the bridge
+never deciding a right of its own and for the shipped inputs being the one copy.

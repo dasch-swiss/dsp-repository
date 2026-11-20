@@ -5,6 +5,9 @@ project's `media` generations besides what it downloads: a CPE project's `config
 pages, or a DaTEI project's `datei.toml` and `file-layout.xml`. Their digest is part of the Ready token, so a change
 here refreshes the project on the next nightly run after the release that ships it.
 
+These files are the one authoritative copy and are edited here. `PROVENANCE` says where each came from, and which
+committed fixture follows them.
+
 The image places this directory at `/app/vre-bridge/inputs` (`EDITOR_VRE_BRIDGE_INPUTS_DIR`). This file keeps the
-directory in the image while no project ships inputs; it is not read, since only `<shortcode>/` directories are.
-See `docs/src/vre-bridge/operations.md`.
+directory in the image whichever projects ship inputs; it and `PROVENANCE` are not read, since only `<shortcode>/`
+directories are. See `docs/src/vre-bridge/operations.md`.

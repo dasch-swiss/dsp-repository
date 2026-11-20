@@ -4,7 +4,7 @@
 
 use cpe_core::validate::load_remodel;
 
-const CONFIG: &str = include_str!("../../../../media/data/0803/config.kdl");
+const CONFIG: &str = include_str!("../../../../media/data/0803/20261007T000000Z-00000000/config.kdl");
 
 /// The first fenced `kdl` block of `docs/src/cpe/config-language.md`'s "`remodel` block" section:
 /// the worked example, which opens with the minimal `site` block that `load_remodel` asks for.
@@ -27,8 +27,8 @@ fn the_worked_example_of_the_config_language_lowers_to_incunabulas_block() {
     assert_eq!(committed.classes.len(), 3);
     assert_eq!(
         example, committed,
-        "docs/src/cpe/config-language.md's worked example is not what media/data/0803/config.kdl \
-         lowers to: change the document and the block together"
+        "docs/src/cpe/config-language.md's worked example is not what 0803's config.kdl in \
+         media/data lowers to: change the document and the block together"
     );
 }
 

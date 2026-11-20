@@ -1,15 +1,53 @@
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use cpe_ports::contract::Violation;
 use cpe_ports::{ArchiveProjection, ListNodeIri, ProjectionError, PropertyIri, ResourceIri};
+use shared_stand_in::{Generation, Provenance, ReadyToken, TokenError};
 use tempfile::TempDir;
 
-use crate::{ArkError, InvalidFact, LiveArchiveProjection, SnapshotError, KNOWN};
+use crate::{ArkError, InvalidFact, LiveArchiveProjection, SnapshotError};
 
-/// Writes `nquads` as `<dir>/0803.nq`, the snapshot file of project 0803.
+/// The generation [`write_0803`] writes.
+const GENERATION: &str = "20261120T010203Z-9f3a1c2e";
+/// Another generation, for a project that holds two.
+const OLDER: &str = "20261119T010155Z-0b1d2e3f";
+
+/// Writes the Ready token of `shortcode` below `root`, naming `generation` in interim format
+/// `version`.
+fn write_token(root: &Path, shortcode: &str, generation: &str, version: u32) {
+    let token = ReadyToken {
+        provenance: Provenance {
+            generation: Generation::parse(generation).expect("a generation name"),
+            as_of: "2026-11-20T01:02:03Z".to_string(),
+            server: "prod".to_string(),
+            interim_format_version: version,
+            transformation_version: 1,
+            inputs_digest: format!("sha256:{}", "0".repeat(64)),
+        },
+        previous_generation: None,
+    };
+    let project = root.join(shortcode);
+    fs::create_dir_all(&project).expect("create the project directory");
+    fs::write(project.join(".ready"), token.to_bytes()).expect("write the token");
+}
+
+/// Writes `nquads` as the snapshot of `shortcode`'s `generation` below `root`, without a token.
+fn write_snapshot(root: &Path, shortcode: &str, generation: &str, nquads: &str) {
+    let dir = root.join(shortcode).join(generation);
+    fs::create_dir_all(&dir).expect("create the generation directory");
+    fs::write(dir.join("snapshot.nq"), nquads).expect("write the snapshot");
+}
+
+/// Writes `nquads` as the snapshot of project 0803 in [`GENERATION`], and a token naming it.
 pub(crate) fn write_0803(dir: &TempDir, nquads: &str) {
-    fs::write(dir.path().join("0803.nq"), nquads).expect("write the fixture");
+    write_snapshot(dir.path(), "0803", GENERATION, nquads);
+    write_token(dir.path(), "0803", GENERATION, 1);
+}
+
+/// The path of the snapshot [`write_0803`] writes.
+fn snapshot_0803(dir: &TempDir) -> PathBuf {
+    dir.path().join("0803").join(GENERATION).join("snapshot.nq")
 }
 
 /// The `SnapshotError` of a call refused as `Unavailable`; panics on any other error.
@@ -129,60 +167,209 @@ fn test_snapshot_file_changed_between_calls_serves_changed_content() {
     assert_eq!(second.resources[0].label, "Zweite Fassung");
 }
 
-#[test]
-fn test_snapshot_unknown_shortcode_with_file_present_returns_unknown_project() {
-    let dir = tempfile::tempdir().expect("create a temp dir");
-    fs::write(
-        dir.path().join("0804.nq"),
-        r#"
-        <http://rdfh.ch/0804/kP2s> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0804> .
-        <http://rdfh.ch/0804/kP2s> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/0804/dokubib#Bild> <urn:dsp:project:0804> .
-        <http://rdfh.ch/0804/kP2s> <http://www.w3.org/2000/01/rdf-schema#label> "Bild" <urn:dsp:project:0804> .
-        "#,
-    )
-    .expect("write the fixture");
+/// A snapshot every test of this section serves when its token lets it.
+const BOOK_0803: &str = r#"
+<http://rdfh.ch/0803/zR8c> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+<http://rdfh.ch/0803/zR8c> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/0803/incunabula#Book> <urn:dsp:project:0803> .
+<http://rdfh.ch/0803/zR8c> <http://www.w3.org/2000/01/rdf-schema#label> "Zeitglöcklein" <urn:dsp:project:0803> .
+"#;
 
-    let error = LiveArchiveProjection::new(dir.path())
-        .snapshot("0804")
-        .expect_err("0804 is not a known project");
-
+fn assert_unknown_project(error: &ProjectionError, expected: &str) {
     assert!(
-        matches!(&error, ProjectionError::UnknownProject { shortcode } if shortcode == "0804"),
+        matches!(error, ProjectionError::UnknownProject { shortcode } if shortcode == expected),
         "{error:?}"
     );
 }
 
 #[test]
-fn test_snapshot_every_known_shortcode_has_committed_file() {
-    let data = Path::new(env!("CARGO_MANIFEST_DIR")).join("../data");
+fn test_snapshot_project_without_token_returns_unknown_project() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_snapshot(dir.path(), "0803", GENERATION, BOOK_0803);
 
-    for shortcode in KNOWN {
-        let path = data.join(format!("{shortcode}.nq"));
-        assert!(path.is_file(), "{} is missing", path.display());
+    let error = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect_err("a project without a token is not known");
+
+    assert_unknown_project(&error, "0803");
+}
+
+#[test]
+fn test_snapshot_project_not_in_the_subtree_returns_unknown_project() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(&dir, BOOK_0803);
+
+    let error = LiveArchiveProjection::new(dir.path())
+        .snapshot("0804")
+        .expect_err("0804 is not a known project");
+
+    assert_unknown_project(&error, "0804");
+}
+
+/// The refused shortcodes name a project that would be served if the string were joined to the
+/// root: a lower-case one under it, and one beside it.
+#[test]
+fn test_snapshot_refused_shortcode_returns_unknown_project_even_when_its_project_exists() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    let root = dir.path().join("sync");
+    for (shortcode, below) in [("083c", root.as_path()), ("x", dir.path())] {
+        write_snapshot(below, shortcode, GENERATION, BOOK_0803);
+        write_token(below, shortcode, GENERATION, 1);
     }
+    let projection = LiveArchiveProjection::new(&root);
+
+    for shortcode in ["083c", "../x", ".."] {
+        let error = projection.snapshot(shortcode).expect_err("a refused shortcode is not served");
+        assert_unknown_project(&error, shortcode);
+    }
+}
+
+#[test]
+fn test_snapshot_malformed_token_returns_unavailable() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(&dir, BOOK_0803);
+    fs::write(dir.path().join("0803/.ready"), "{}\n").expect("overwrite the token");
+
+    let error = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect_err("a malformed token is not served");
+
+    let source = expect_unavailable(&error);
+    assert!(
+        matches!(source, SnapshotError::Token { source: TokenError::Invalid(_), .. }),
+        "{source:?}"
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn test_snapshot_symlinked_project_directory_returns_unavailable() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_snapshot(dir.path(), "elsewhere", GENERATION, BOOK_0803);
+    write_token(dir.path(), "elsewhere", GENERATION, 1);
+    std::os::unix::fs::symlink(dir.path().join("elsewhere"), dir.path().join("0803")).expect("symlink");
+
+    let error = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect_err("a symlinked project is not served");
+
+    let source = expect_unavailable(&error);
+    assert!(
+        matches!(source, SnapshotError::Token { source: TokenError::Unreadable(_), .. }),
+        "{source:?}"
+    );
+}
+
+#[test]
+fn test_snapshot_token_of_unread_format_version_returns_unavailable() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(&dir, BOOK_0803);
+    write_token(dir.path(), "0803", GENERATION, 2);
+
+    let error = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect_err("format version 2 is not read");
+
+    let source = expect_unavailable(&error);
+    assert!(
+        matches!(source, SnapshotError::UnreadableFormat { version: 2, .. }),
+        "{source:?}"
+    );
+}
+
+#[test]
+fn test_snapshot_token_naming_missing_generation_returns_unavailable() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_snapshot(dir.path(), "0803", OLDER, BOOK_0803);
+    write_token(dir.path(), "0803", GENERATION, 1);
+
+    let error = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect_err("a missing generation is not served");
+
+    let source = expect_unavailable(&error);
+    assert!(
+        matches!(source, SnapshotError::MissingGeneration { path } if path.ends_with(GENERATION)),
+        "{source:?}"
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn test_snapshot_symlinked_generation_directory_returns_unavailable() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_snapshot(dir.path(), "0803", OLDER, BOOK_0803);
+    write_token(dir.path(), "0803", GENERATION, 1);
+    std::os::unix::fs::symlink(dir.path().join("0803").join(OLDER), dir.path().join("0803").join(GENERATION))
+        .expect("symlink");
+
+    let error = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect_err("a symlinked generation is not served");
+
+    assert_unreadable(&error, GENERATION);
+}
+
+#[cfg(unix)]
+#[test]
+fn test_snapshot_symlinked_snapshot_file_returns_unavailable() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(&dir, BOOK_0803);
+    let snapshot = snapshot_0803(&dir);
+    let real = dir.path().join("real.nq");
+    fs::rename(&snapshot, &real).expect("move the snapshot away");
+    std::os::unix::fs::symlink(&real, &snapshot).expect("symlink");
+
+    let error = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect_err("a symlinked snapshot is not served");
+
+    assert_unreadable(&error, "snapshot.nq");
+}
+
+#[test]
+fn test_snapshot_two_generations_serves_the_one_the_token_names() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_snapshot(dir.path(), "0803", OLDER, BOOK_0803);
+    write_snapshot(
+        dir.path(),
+        "0803",
+        GENERATION,
+        &BOOK_0803.replace("Zeitglöcklein", "Neuere Fassung"),
+    );
+    write_token(dir.path(), "0803", OLDER, 1);
+
+    let snapshot = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect("the named generation is served");
+
+    assert_eq!(snapshot.resources[0].label, "Zeitglöcklein");
 }
 
 #[test]
 fn test_snapshot_missing_file_returns_unavailable() {
     let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(&dir, BOOK_0803);
+    fs::remove_file(snapshot_0803(&dir)).expect("remove the snapshot");
 
     let error = LiveArchiveProjection::new(dir.path())
         .snapshot("0803")
         .expect_err("a missing file is not served");
 
-    assert_unreadable(&error, "0803.nq");
+    assert_unreadable(&error, "snapshot.nq");
 }
 
 #[test]
 fn test_snapshot_directory_in_place_of_file_returns_unavailable() {
     let dir = tempfile::tempdir().expect("create a temp dir");
-    fs::create_dir(dir.path().join("0803.nq")).expect("create the directory");
+    write_0803(&dir, BOOK_0803);
+    fs::remove_file(snapshot_0803(&dir)).expect("remove the snapshot");
+    fs::create_dir(snapshot_0803(&dir)).expect("create the directory");
 
     let error = LiveArchiveProjection::new(dir.path())
         .snapshot("0803")
         .expect_err("a directory is not served");
 
-    assert_unreadable(&error, "0803.nq");
+    assert_unreadable(&error, "snapshot.nq");
 }
 
 #[test]
@@ -239,11 +426,11 @@ fn test_snapshot_quad_in_second_graph_returns_unavailable() {
         matches!(
             source,
             SnapshotError::Invalid { path, subject, reason: InvalidFact::ForeignGraph { graph } }
-                if *path == dir.path().join("0803.nq") && subject == "http://rdfh.ch/0803/a3Lm" && graph == "urn:dsp:project:0804"
+                if *path == snapshot_0803(&dir) && subject == "http://rdfh.ch/0803/a3Lm" && graph == "urn:dsp:project:0804"
         ),
         "{source:?}"
     );
-    assert!(error.to_string().contains("0803.nq"), "{error}");
+    assert!(error.to_string().contains("snapshot.nq"), "{error}");
 }
 
 #[test]
@@ -2944,7 +3131,7 @@ fn test_snapshot_annotation_with_third_type_returns_unavailable() {
 
 // The port's contract, run on every snapshot before it is served
 
-/// The violations of a snapshot refused as `Contract` from `<dir>/0803.nq`; panics on any other
+/// The violations of a snapshot refused as `Contract` from [`snapshot_0803`]; panics on any other
 /// result.
 fn expect_contract_refusal(error: &ProjectionError) -> &[Violation] {
     let ProjectionError::Unavailable(source) = error else {
@@ -2954,7 +3141,7 @@ fn expect_contract_refusal(error: &ProjectionError) -> &[Violation] {
     let SnapshotError::Contract { path, violations } = source else {
         panic!("expected Contract, got {source:?}")
     };
-    assert!(path.ends_with("0803.nq"), "{path:?}");
+    assert!(path.ends_with("snapshot.nq"), "{path:?}");
     violations
 }
 

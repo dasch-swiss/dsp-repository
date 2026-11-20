@@ -118,8 +118,8 @@ Not yet in code: CPE rebuilds no single named project; once `sync` announces, CP
 (not scheduled).
 Not yet in code: the bytes port against `media` carries no change subscription and `media` polls no Ready
 token (DEV-7938).
-Not yet in code: the stand-ins are committed to this repository and fed by hand, with no Ready token, and no
-VRE bridge writes them (P-DEV-301).
+Not yet in code: the stand-ins are committed to this repository and fed by hand, and no VRE bridge writes
+them (P-DEV-301).
 Not yet in code: the stand-ins are carried in `access-server`'s image, not in a mounted directory (DEV-7514).
 Not yet in code: neither port serves a project's provenance (P-DEV-301).
 Not yet in code: CPE's rebuild test runs against `FakeArchiveProjection` only, with curated values passed in by

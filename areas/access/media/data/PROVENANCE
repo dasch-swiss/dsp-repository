@@ -1,9 +1,17 @@
-The deposited files media holds, one directory per project shortcode. CPE reads them through its
-bytes port (LiveDepositedFiles in areas/access/media/store).
+The deposited files media holds, in the stand-in layout the VRE bridge writes: one directory per
+project shortcode, holding the Ready token .ready and the generation it names. CPE reads them through
+its bytes port (LiveDepositedFiles in areas/access/media/store). The fixture is a test input and, until
+access-server's image stops carrying it, the data the image serves; in a deployment with the VRE
+bridge, the bridge's output replaces it.
 
-0803/config.kdl: the CPE configuration of project 0803 (incunabula): its site, labels, pages and the
+0803/.ready is hand-written and holds the same bytes as areas/access/sync/data/0803/.ready, which
+describes its fields: the two tokens hold equal provenance. The files below are in its generation,
+0803/20261007T000000Z-00000000/, moved there with their bytes unchanged. The generation has no
+access-rights.json, which the bridge writes into every generation; no reader reads it yet.
+
+config.kdl: the CPE configuration of project 0803 (incunabula): its site, labels, pages and the
 remodel {} block the store builder reads, in the language docs/src/cpe/config-language.md defines.
-0803/narrative/: the editorial texts the configuration names, one Markdown file per text and language
+narrative/: the editorial texts the configuration names, one Markdown file per text and language
 (de, en).
 Both are hand-authored and edited in place, never generated.
 
@@ -18,7 +26,7 @@ incubator follows when it re-vendors. A change to the remodel {} block changes I
 cpe-server's Incunabula store pins hold; a narrative file the configuration names and media does not
 hold leaves the project not ready.
 
-0803/curation.csv: the curation of project 0803 (incunabula), which CPE reads against sync's snapshot
+curation.csv: the curation of project 0803 (incunabula), which CPE reads against sync's snapshot
 of the project: what the project's editors authored about single resources. One row per resource,
 138 lines with the header. Hand-authored: it is edited in place by a person and never regenerated.
 It was areas/access/sync/data/0803-curation.csv, served inside sync's snapshot, until DEV-7511 and
@@ -57,8 +65,9 @@ regenerated. Since dsp-incubator#500 (DEV-7496, merged 2026-10-10) it is the onl
 Incunabula's curation: the incubator deleted the source files above and builds its store from this
 file, which it vendors. A curation change is made here and reaches the incubator when it re-vendors.
 
-Every row names a resource of areas/access/sync/data/0803.nq. If a regenerated 0803.nq drops one, CPE
-leaves Incunabula not ready until the row is removed or re-keyed by hand.
+Every row names a resource of sync's 0803 snapshot,
+areas/access/sync/data/0803/20261007T000000Z-00000000/snapshot.nq. If a regenerated snapshot drops
+one, CPE leaves Incunabula not ready until the row is removed or re-keyed by hand.
 
 Edited by hand since
   2026-10-11 (DEV-7497)  catalogue_uri and catalogue_uri_replaces, on the three Books held in Cologne:
@@ -67,6 +76,6 @@ Edited by hand since
                          1cd5781f987ed860218462c086c77ce759185fcc, copied verbatim.
 
 catalogue_uri is written in place of a Book's catalogue address, which is dead in the archive.
-catalogue_uri_replaces is that dead address: the replacement holds only while 0803.nq has exactly it,
-and the committed tests check that. Once a regenerated 0803.nq has the mended address, the Book's two
+catalogue_uri_replaces is that dead address: the replacement holds only while the snapshot has exactly
+it, and the committed tests check that. Once a regenerated snapshot has the mended address, the Book's two
 cells are emptied.

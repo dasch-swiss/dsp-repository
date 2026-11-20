@@ -1,4 +1,5 @@
 load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 
 rust_library(
     name = "cpe_store_build",
@@ -36,6 +37,16 @@ _IT_FILES = [
     "//docs:src/cpe/config-language.md",
 ] + glob(["tests/fixtures/**"])
 
+# `sync-store` refuses a symlinked token or snapshot, and runfiles are symbolic links, so the tests
+# read `sync`'s committed data from a copy at its repository path, below `test_files/`, and run
+# outside the local sandbox, which would link each copied file again.
+copy_to_directory(
+    name = "test_files",
+    testonly = True,
+    srcs = ["//areas/access/sync:data"],
+    root_paths = [],
+)
+
 rust_test(
     name = "cpe_store_build_it_test",
     srcs = glob(["tests/it/*.rs"]),
@@ -43,8 +54,9 @@ rust_test(
     crate_name = "it",
     crate_root = "tests/it/main.rs",
     # `hygiene.rs` reads the crate's own sources.
-    data = _IT_FILES + glob(["src/**/*.rs"]),
+    data = _IT_FILES + glob(["src/**/*.rs"]) + [":test_files"],
     rustc_env = {"CARGO_MANIFEST_DIR": "areas/access/cpe/store-build"},
+    tags = ["no-sandbox"],
     deps = [
         ":cpe_store_build",
         "//areas/access/cpe/core:cpe_core",

@@ -1,4 +1,5 @@
-# The committed archive projection, read by sync-store and by the tests that build CPE over it.
+# The committed archive projection of project 0803, in the stand-in layout: a fixture for
+# sync-store's tests and the tests that build CPE over it, and the data access-server's image carries.
 filegroup(
     name = "data",
     srcs = glob(["data/**"]),

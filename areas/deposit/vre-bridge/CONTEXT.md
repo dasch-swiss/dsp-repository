@@ -31,13 +31,41 @@ As `dsp-cli`'s `CONTEXT.md` defines it: the BagIt zip of a project that DSP-API'
 
 **Interim format**:
 The shape of an **Interim snapshot**, defined by `lift/FORMAT.md`; this repository's copy is the authoritative one.
-Its version, an integer starting at `1`, is recorded in each **Ready token**.
+Its version, an integer starting at `1` (`INTERIM_FORMAT_VERSION`), is recorded in each **Ready token**.
 _Avoid_: DAO (the format follows DAO where DAO has decided and lists every deviation, but it is not DAO).
 
 **Interim snapshot**:
 One project's data in the **Interim format**: sorted N-Quads in one named graph, `urn:dsp:project:<shortcode>`.
-`vre-bridge-lift`'s `snapshot` builds it in memory as a `Snapshot` from a **Dump**, or refuses with every
-violation of the format's closed world.
+`vre-bridge-lift`'s `lift` builds it in memory (the `Snapshot` of a `Lifted`) from a **Dump**'s **Selection**, or
+refuses: with every **Violation** of the **Public guard**, or with every closed-world violation of the format.
+
+**Selection**:
+What an **Interim snapshot** is made from: the **Dump**'s resources that are not deleted, and their values (link
+and file values included) that are neither deleted nor superseded through `knora-base:previousValue`. The values
+of a deleted resource are not selected, whatever their own flags say.
+
+**Public guard**:
+The check of every selected resource and value against its own `knora-base:hasPermissions` in `data.nq`. It
+refuses the whole project when anything selected is neither **Public** nor, on a raster still image's file
+value, **Restricted view**, listing every **Violation**. It never drops an item (DEV-7990 would).
+_Avoid_: permission check (DSP-API's own), filter.
+
+**Violation**:
+One selected resource or value the **Public guard** refuses: its IRI, whether it is a resource or a value, its
+class and the reason. It never carries the value's content or the permission literal.
+_Avoid_: closed-world violation (the format's own breaches, `ViolationReport`).
+
+**Public**:
+The anonymous user may view the resource, value or file as a whole: DSP-API's view permission or better for
+`knora-admin:UnknownUser`, the only group that counts. Recorded as the **Access rights** "public".
+
+**Restricted view**:
+DSP-API's restricted-view permission for the anonymous user on a raster still image's file value
+(`knora-base:StillImageFileValue`), which the VRE's Sipi serves at a reduced size. Recorded as the **Access
+rights** "restricted-view" on that image's representation. On anything else it counts as not viewable, since
+the VRE serves other media in full under it (DEV-7244).
+
+**Access rights** and **Data classification** are shared terms of the root `CONTEXT.md`.
 
 **Generation**:
 One **Refresh**'s output for a project in one subtree: the directory `<subtree>/<shortcode>/<generation>/`, written

@@ -22,7 +22,10 @@ rust_library(
 
 rust_test(
     name = "vre_bridge_lift_test",
-    compile_data = ["FORMAT.md"],
+    compile_data = [
+        "FORMAT.md",
+        "testdata/golden.nq",
+    ],
     crate = ":vre_bridge_lift",
     edition = "2024",
     rustc_env = _RUSTC_ENV,

@@ -130,9 +130,9 @@ Not yet in code: of the VRE bridge's crates only `vre-bridge-lift` exists; `depo
 (P-DEV-301).
 Not yet in code: `shared-stand-in` does not exist (P-DEV-301).
 Not yet in code: `shared-names` does not exist; the name rules are in `cpe-ports` (P-DEV-301).
-Not yet in code: the interim format carries no access rights or data classification (P-DEV-301).
 Not yet in code: 0803's data is committed to this repository, not written by the bridge (P-DEV-301).
-Not yet in code: the root `CONTEXT.md` has none of the bridge's shared terms (P-DEV-301).
+Not yet in code: of the bridge's shared terms, the root `CONTEXT.md` has only Access rights and Data
+classification (P-DEV-301).
 Not yet in code: DSP-API has no service identity, so no dump can be taken without a person's account
 (DEV-7936).
 Not yet in code: no location is shared by `deposit-server` and `access-server` (DEV-7514).

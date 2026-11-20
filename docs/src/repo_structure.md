@@ -109,7 +109,7 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 | `identity-ports` | `areas/deposit/identity/ports` | What identity asks of the editor: `OpenWork`; `std` only |
 | `identity-store` | `areas/deposit/identity/store` | Identity's SQLite store (`identity.sqlite`), the mail transports, and `LiveAuthenticator` and `LiveUserDirectory` behind `editor-ports` |
 | `identity-web` | `areas/deposit/identity/web` | Identity's login and depositor pages, their handlers and routes, and the `Identity` facade `deposit-server` starts and mounts |
-| `vre-bridge-lift` | `areas/deposit/vre-bridge/lift` | A project dump as the interim snapshot `FORMAT.md` beside it specifies, in memory: dsp-incubator's `dao-lift` `snapshot` as a library; `oxigraph` and `thiserror` only, used by the VRE bridge's own crates alone |
+| `vre-bridge-lift` | `areas/deposit/vre-bridge/lift` | A project dump as the interim snapshot `FORMAT.md` beside it specifies, in memory: the selection, the public guard and access rights, and dsp-incubator's `dao-lift` `snapshot` as a library; `oxigraph` and `thiserror` only, used by the VRE bridge's own crates alone |
 | `editor-core` | `areas/deposit/editor/core` | Pure domain types for the editor (zero framework deps) |
 | `editor-ports` | `areas/deposit/editor/ports` | What the editor asks of identity: `Actor`, `Authenticator`, `UserDirectory`; `std` only |
 | `editor-store` | `areas/deposit/editor/store` | The editor's SQLite store (`editor.sqlite`) and `LiveOpenWork` behind `identity-ports` |

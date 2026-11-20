@@ -1,7 +1,7 @@
 # dao-lift interim project snapshot format
 
-The file format written by `dao-lift snapshot <dump-dir> <out.nq>`: one VRE project, current state only,
-as sorted N-Quads. `dsp-repository`'s `sync-store` (PR #455, DEV-7399) reads it and transcribes its
+The file format `vre-bridge-lift`'s `lift` returns: one VRE project, current state only, as sorted
+N-Quads. `dsp-repository`'s `sync-store` (PR #455, DEV-7399) reads it and transcribes its
 vocabulary from this document.
 
 Section numbers are stable. A later change may add a sub-section, but never renumbers one, so citations
@@ -23,6 +23,9 @@ thereby DAO-decided: §15 marks each term as DAO or names its §12 deviation.
 - **Pin.** The version that counts is this copy as committed beside the reader: a reader implements the
   `FORMAT.md` of its own `dsp-repository` commit, not a later one. `areas/access/sync/data/PROVENANCE` records
   the earlier `dao-lift` commit that produced the committed 0803 fixture, not the ported source.
+- **Version.** This is interim format version 1 (`vre-bridge-lift`'s `INTERIM_FORMAT_VERSION`, recorded in each
+  Ready token). The version is raised when a reader would read a snapshot differently. A reader may ignore
+  `dao:accessRights` and `dao:dataClassification` (§2, §8) until it carries rights itself.
 - **Exit condition.** When DAO is published, `dao-lift` and this file move to it: every §12 row is resolved
   either way, and this document is retired.
 - **Provisional choices.** The owner decided the link predicate, the annotation marker, the default IRIs and
@@ -34,8 +37,9 @@ thereby DAO-decided: §15 marks each term as DAO or names its §12 deviation.
   (§4), representations (§8), GREGORIAN and JULIAN as the only calendars (§4.6), the omissions (§11), membership
   and seqnum (§7), the predicate precedence (§6), link/LinkValue agreement (§6), annotations keeping their
   direct links (§10), identifying annotations by `oa:Annotation` (§10), `dao:valueHasOrder` only when
-  recorded (§5), deviation terms in `dao:` (§12.1), canonical numeric and boolean lexicals (§1), and legal
-  information on representations (§8, D14).
+  recorded (§5), deviation terms in `dao:` (§12.1), canonical numeric and boolean lexicals (§1), legal
+  information on representations (§8, D14), and access rights and data classification as plain literals
+  (§2, §8, D15, D16).
 
 ## §1 File and graph
 
@@ -98,6 +102,9 @@ or `kb:Region` or `kb:LinkObj`. A subject typed with a class that is neither one
   (`missing-label`), repeated (`repeated-label`) or not a plain string, a language-tagged one included
   (`non-plain-label`), is a violation.
 - No other `rdf:type`, except `oa:Annotation` (§10).
+- Exactly one `<resource> dao:accessRights "public"` (§12, D15): the public guard passes a resource only when
+  the anonymous user may view it (§11). And exactly one `<resource> dao:dataClassification "unclassified"`
+  (§12, D16).
 
 ## §3 Value nodes
 
@@ -348,6 +355,10 @@ each is read.
 - Archive, text and external still-image file values (`kb:ArchiveFileValue`, `kb:TextFileValue`,
   `kb:StillImageExternalFileValue`) are omitted and counted (§12, D1).
 - A deleted or superseded file value gives no representation.
+- **Access rights** (§12, D15, D16): exactly one `dao:accessRights`, `"restricted-view"` when the file value
+  grants the anonymous user restricted view only, which the public guard passes on a `kb:StillImageFileValue`
+  alone (§11), and `"public"` otherwise; and exactly one `dao:dataClassification "unclassified"`. Both are plain
+  strings.
 - A reader omits a representation whose `dao:representationType` it does not know.
 
 ## §9 List nodes
@@ -417,9 +428,22 @@ The file carries current state only. No tombstone or marker of a dropped item re
 - The dump's admin and permission graphs are never read. The ontology graphs are read only for the closures of
   §6; nothing from them is emitted.
 
+**The selection and the public guard.** The file is made from the selection: every resource that is not
+deleted, and every value, file value and LinkValue that is neither deleted nor superseded and belongs to a
+selected resource (one that names it as an object or, for a LinkValue, its `rdf:subject`). Before anything is
+written, every selected subject, kinds omitted whole included, is checked against its own `kb:hasPermissions`
+in the data graph: one plain string of `|`-separated entries `<token> <group>[,<group>…]`, tokens `RV` < `V` <
+`M` < `D` < `CR`, in any order. Only an entry naming `knora-admin:UnknownUser` (or its full IRI) counts, and the
+anonymous user's grant is the highest token among them. `V` or better is public. `RV` passes only on a
+`kb:StillImageFileValue` and makes its representation `"restricted-view"` (§8). Anything else refuses the whole
+project, giving no snapshot and listing every case by subject, kind (resource or value) and class: no grant, `RV`
+on any other subject, no `kb:hasPermissions`, or one that is not one plain string of known tokens and non-empty
+groups. Unselected subjects are never checked. List nodes (§9) are not checked and carry no rights: a dump
+records no `kb:hasPermissions` on them, and every live one is written. Permissions themselves are never carried.
+
 **The closed list.** Every subject of the data graph has exactly one known kind, and every predicate and
 `rdf:type` on it is one the emitter handles for that kind. Anything outside the list is a violation, and a run
-with violations fails with all of them listed at once, writing no file. Deleted and superseded subjects are
+with violations fails with all of them listed at once, giving no snapshot. Deleted and superseded subjects are
 dropped before their predicates are checked, but still need a known kind. The producer names a predicate
 outside the list by its subject's kind: `unknown-predicate` (resource, §6), `unknown-value-predicate`,
 `unknown-file-value-predicate`, `unknown-link-value-predicate` and `unknown-list-node-predicate`. A subject with
@@ -444,7 +468,8 @@ Handling: **emitted** (as named), **read** (drives filtering or a check, never e
 | `rdf:type` | read: `dao:Resource`, `dao:sourceClass` (§2), `oa:Annotation` (§10); exactly one per subject |
 | `rdfs:label` | emitted (§2) |
 | `kb:isDeleted` | read (filter) |
-| `kb:attachedToProject`, `kb:attachedToUser`, `kb:creationDate`, `kb:lastModificationDate`, `kb:hasPermissions` | omitted |
+| `kb:attachedToProject`, `kb:attachedToUser`, `kb:creationDate`, `kb:lastModificationDate` | omitted |
+| `kb:hasPermissions` | read (the public guard) |
 | `kb:isPartOf` | §6 rule 1, membership (§7) |
 | `kb:seqnum` | §6 rule 2, seqnum (§7) |
 | `kb:hasStandoffLinkTo` | §6 rule 3, omitted |
@@ -463,7 +488,8 @@ Handling: **emitted** (as named), **read** (drives filtering or a check, never e
 | `kb:valueHasUUID` | emitted as the node IRI and `dao:valueHasUUID` (§3) |
 | `kb:valueHasOrder` | emitted as `dao:valueHasOrder` (§5) |
 | `kb:isDeleted`, `kb:previousValue` | read (filter) |
-| `kb:valueHasComment`, `kb:valueCreationDate`, `kb:attachedToUser`, `kb:hasPermissions` | omitted |
+| `kb:valueHasComment`, `kb:valueCreationDate`, `kb:attachedToUser` | omitted |
+| `kb:hasPermissions` | read (the public guard) |
 
 Per value class, in addition:
 
@@ -493,7 +519,8 @@ are not checked.
 | `kb:dimX`, `kb:dimY` | emitted as `dao:dimX`, `dao:dimY` for a still image; accepted and not emitted on the other file-value classes |
 | `kb:hasAuthorship`, `kb:hasCopyrightHolder` | emitted as `dao:authorship`, `dao:copyrightHolder` (§8, D14) |
 | `kb:isDeleted`, `kb:previousValue` | read (filter) |
-| `kb:internalMimeType`, `kb:originalFilename`, `kb:originalMimeType`, `kb:valueHasString`, `kb:valueHasOrder`, `kb:valueCreationDate`, `kb:attachedToUser`, `kb:hasPermissions` | omitted |
+| `kb:internalMimeType`, `kb:originalFilename`, `kb:originalMimeType`, `kb:valueHasString`, `kb:valueHasOrder`, `kb:valueCreationDate`, `kb:attachedToUser` | omitted |
+| `kb:hasPermissions` | read (the public guard; `dao:accessRights` of the representation) |
 
 `kb:ArchiveFileValue`, `kb:TextFileValue` and `kb:StillImageExternalFileValue` are known kinds omitted whole
 (§8); their predicates are not checked.
@@ -505,7 +532,8 @@ are not checked.
 | `rdf:type` | read |
 | `rdf:subject`, `rdf:predicate`, `rdf:object` | read (link agreement, §6) |
 | `kb:isDeleted`, `kb:previousValue` | read (filter) |
-| `kb:valueHasUUID`, `kb:valueHasOrder`, `kb:valueHasString`, `kb:valueHasRefCount`, `kb:valueHasComment`, `kb:valueCreationDate`, `kb:attachedToUser`, `kb:hasPermissions` | omitted |
+| `kb:valueHasUUID`, `kb:valueHasOrder`, `kb:valueHasString`, `kb:valueHasRefCount`, `kb:valueHasComment`, `kb:valueCreationDate`, `kb:attachedToUser` | omitted |
+| `kb:hasPermissions` | read (the public guard) |
 
 **List node** (`kb:ListNode`):
 
@@ -540,6 +568,8 @@ Ids are assigned in row order and never renumbered; a later deviation is appende
 | D12 | Standoff dropped | d.51: standard-mapped standoff kept as one XML value, custom-mapped as XML plus XSLT | only the plain `kb:valueHasString` (§4.1); standoff nodes, mappings and `kb:hasStandoffLinkTo` omitted (§11) | the port renders plain text; a standoff reader is out of scope | when a consumer renders markup |
 | D13 | Interval, time and geoname values | d.48: time as an `xsd` literal, interval and geoname as self-contained custom datatypes | omitted with their edge and counted (§4.10) | the port has no kind for them, and 0803 has none | when the port gains these kinds |
 | D14 | Legal information on representations | none published: DAO has no rights terms yet | `dao:authorship` (0..n) and `dao:copyrightHolder` (0..1) plain strings on the representation node (§8); `kb:hasLicense` not carried | a presentation shows each file's authors and copyright holder (DEV-7630, project 0854) | DAO's rights terms |
+| D15 | Access rights | none published: DAO has no rights terms yet | `dao:accessRights`, the plain string `"public"` or `"restricted-view"`, on every resource and representation node (§2, §8) | the Access Area serves a resource or a file only with its rights | DAO's rights terms |
+| D16 | Data classification | none published | `dao:dataClassification`, the plain string `"unclassified"`, wherever `dao:accessRights` is written (§2, §8) | a second value with the rights' granularity; one value exists today | DAO's classification terms |
 
 **Alignment note (not a deviation).** Text values drop every U+001E from `rdf:value`, following d.51's stripping
 of INFORMATION SEPARATOR TWO from DAO's standoff XML (owner decision 2026-09-30). Labels keep it (§1).
@@ -566,7 +596,8 @@ of INFORMATION SEPARATOR TWO from DAO's standoff XML (owner decision 2026-09-30)
 - No application profile: no `dao:PropertyUsage` and no `dao:ClassUsage` records (d.69, d.72). Labels for
   properties and classes come from CPE's KDL configuration.
 - No standoff markup (§12, D12).
-- No permissions (§11), and no legal information beyond a file's authorship and copyright holder (§8, D14).
+- No permissions (§11), only the access rights the public guard derives from them (§2, §8, D15), and no legal
+  information beyond a file's authorship and copyright holder (§8, D14).
 - No change objects, events or tombstones: the file is one full current-state snapshot, not d.94's
   per-resource change stream.
 
@@ -574,7 +605,8 @@ of INFORMATION SEPARATOR TWO from DAO's standoff XML (owner decision 2026-09-30)
 
 An excerpt of the 0803 snapshot: book `70aWaB2kWsuiN6ujYgM0ZQ`'s `incunabula:hasPubdate` date node, Page `b7v`
 (`_Y6g7jY_WTqi9N-ofH9xEg`) with its membership, seqnum, one link and its representation, and the Region on that
-page with its colour value and the comment that makes it `oa:commenting`. Other lines of those subjects, and the
+page with its colour value and the comment that makes it `oa:commenting`, each with its access rights and data
+classification. Other lines of those subjects, and the
 target resources, are left out; the lines shown are valid, sorted and unique N-Quads, exactly as the file writes
 them.
 
@@ -588,15 +620,21 @@ them.
 <http://rdfh.ch/0803/FMz9WIT5XYOOGtQG8Bi38w> <http://www.w3.org/2000/01/rdf-schema#label> "Seitenbezeichnung : b7v" <urn:dsp:project:0803> .
 <http://rdfh.ch/0803/FMz9WIT5XYOOGtQG8Bi38w> <http://www.w3.org/ns/oa#hasTarget> <http://rdfh.ch/0803/_Y6g7jY_WTqi9N-ofH9xEg> <urn:dsp:project:0803> .
 <http://rdfh.ch/0803/FMz9WIT5XYOOGtQG8Bi38w> <http://www.w3.org/ns/oa#motivatedBy> <http://www.w3.org/ns/oa#commenting> <urn:dsp:project:0803> .
+<http://rdfh.ch/0803/FMz9WIT5XYOOGtQG8Bi38w> <https://ontology.dasch.swiss/dao#accessRights> "public" <urn:dsp:project:0803> .
+<http://rdfh.ch/0803/FMz9WIT5XYOOGtQG8Bi38w> <https://ontology.dasch.swiss/dao#dataClassification> "unclassified" <urn:dsp:project:0803> .
 <http://rdfh.ch/0803/FMz9WIT5XYOOGtQG8Bi38w> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/knora-base#Region> <urn:dsp:project:0803> .
 <http://rdfh.ch/0803/_Y6g7jY_WTqi9N-ofH9xEg> <http://www.knora.org/ontology/0803/incunabula#hasBandTypeL> <http://rdfh.ch/0803/VNdAPbnOXgqJv1PlcMPj6g> <urn:dsp:project:0803> .
 <http://rdfh.ch/0803/_Y6g7jY_WTqi9N-ofH9xEg> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
 <http://rdfh.ch/0803/_Y6g7jY_WTqi9N-ofH9xEg> <http://www.w3.org/2000/01/rdf-schema#label> "b7v" <urn:dsp:project:0803> .
+<http://rdfh.ch/0803/_Y6g7jY_WTqi9N-ofH9xEg> <https://ontology.dasch.swiss/dao#accessRights> "public" <urn:dsp:project:0803> .
+<http://rdfh.ch/0803/_Y6g7jY_WTqi9N-ofH9xEg> <https://ontology.dasch.swiss/dao#dataClassification> "unclassified" <urn:dsp:project:0803> .
 <http://rdfh.ch/0803/_Y6g7jY_WTqi9N-ofH9xEg> <https://ontology.dasch.swiss/dao#hasRepresentation> <urn:dsp:representation:sdSIAoxiS4-7ONN-oeHxjA> <urn:dsp:project:0803> .
 <http://rdfh.ch/0803/_Y6g7jY_WTqi9N-ofH9xEg> <https://ontology.dasch.swiss/dao#isPartOf> <http://rdfh.ch/0803/cpQ3-JfqVZOkd7hUQ26kTg> <urn:dsp:project:0803> .
 <http://rdfh.ch/0803/_Y6g7jY_WTqi9N-ofH9xEg> <https://ontology.dasch.swiss/dao#seqnum> "32"^^<http://www.w3.org/2001/XMLSchema#integer> <urn:dsp:project:0803> .
 <http://rdfh.ch/0803/_Y6g7jY_WTqi9N-ofH9xEg> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/0803/incunabula#Page> <urn:dsp:project:0803> .
 <urn:dsp:representation:sdSIAoxiS4-7ONN-oeHxjA> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Representation> <urn:dsp:project:0803> .
+<urn:dsp:representation:sdSIAoxiS4-7ONN-oeHxjA> <https://ontology.dasch.swiss/dao#accessRights> "public" <urn:dsp:project:0803> .
+<urn:dsp:representation:sdSIAoxiS4-7ONN-oeHxjA> <https://ontology.dasch.swiss/dao#dataClassification> "unclassified" <urn:dsp:project:0803> .
 <urn:dsp:representation:sdSIAoxiS4-7ONN-oeHxjA> <https://ontology.dasch.swiss/dao#dimX> "3297"^^<http://www.w3.org/2001/XMLSchema#integer> <urn:dsp:project:0803> .
 <urn:dsp:representation:sdSIAoxiS4-7ONN-oeHxjA> <https://ontology.dasch.swiss/dao#dimY> "5141"^^<http://www.w3.org/2001/XMLSchema#integer> <urn:dsp:project:0803> .
 <urn:dsp:representation:sdSIAoxiS4-7ONN-oeHxjA> <https://ontology.dasch.swiss/dao#internalFilename> "8F1KTUpKKra-CaFgCYlt8im.jp2" <urn:dsp:project:0803> .
@@ -646,6 +684,8 @@ every such id is a row of the §12 table; columns 2 and 4 are informational, and
 | `http://www.w3.org/2001/XMLSchema#anyURI` | §4.5 | DAO | d.48 |
 | `https://ontology.dasch.swiss/dao#Resource` | §2 | DAO | d.9, d.15 |
 | `https://ontology.dasch.swiss/dao#sourceClass` | §2 | DAO | d.72 |
+| `https://ontology.dasch.swiss/dao#accessRights` | §2 | D15 | |
+| `https://ontology.dasch.swiss/dao#dataClassification` | §2 | D16 | |
 | `https://ontology.dasch.swiss/dao#Value` | §3 | DAO | d.48; class name of the d.69 spike |
 | `https://ontology.dasch.swiss/dao#valueHasUUID` | §3 | DAO | d.48 |
 | `https://ontology.dasch.swiss/dao#sourceProperty` | §3 | DAO | d.69, d.72 |
@@ -727,3 +767,10 @@ every such id is a row of the §12 table; columns 2 and 4 are informational, and
   this copy is authoritative (DEV-7980). §1: the pinned serialiser is `oxrdf` 0.3.4 via `oxigraph` 0.5.11, no
   longer 0.3.3 via 0.5.8; `real_dump_matches_the_incubator_lift` compares the facts with `dao-lift`'s on a real
   dump.
+- 2026-11-20 — interim format version 1 (DEV-7982). §2, §8, §12, §15: every resource and representation node
+  carries `dao:accessRights` (`"public"`, or `"restricted-view"` on a raster still image's representation) and
+  `dao:dataClassification "unclassified"`, deviations **D15** and **D16**. §11: the file is made from the
+  selection, and the public guard refuses a project with anything in it the anonymous user may not view;
+  `kb:hasPermissions` is read, no longer only omitted. §0 states the version rule; §13 and §14 follow. A snapshot
+  of the same dump gains two lines per resource and representation and is otherwise unchanged. D15 and D16 were
+  chosen by the P-DEV-301 plan and stay provisional (§0).

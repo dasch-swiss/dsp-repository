@@ -38,11 +38,9 @@ pub(crate) struct Subject {
     pub(crate) class: Option<NamedNode>,
 }
 
-/// The kind of every data-graph subject that has one, and which are superseded.
+/// The kind of every data-graph subject that has one.
 pub(crate) struct Subjects {
     kinds: BTreeMap<String, Subject>,
-    /// Every object of `kb:previousValue`: a version a newer one replaced (§11).
-    superseded: BTreeSet<String>,
 }
 
 impl Subjects {
@@ -53,51 +51,11 @@ impl Subjects {
     pub(crate) fn kind(&self, iri: &str) -> Option<Kind> {
         self.kinds.get(iri).map(|s| s.kind)
     }
-
-    /// Why a versioned subject (a value, file value or LinkValue) is not current
-    /// state (§11), or `None` when it is live. Every reader of a versioned subject
-    /// (values, seqnums, file values, LinkValues) calls this before checking its
-    /// predicates: `is_deleted` alone misses superseded versions. A deleted head leaves
-    /// nothing of its chain: every older version is an object of
-    /// `kb:previousValue`, so no chain walk is needed.
-    pub(crate) fn dropped(&self, entry: &Entry) -> Option<Dropped> {
-        if is_deleted(entry) {
-            Some(Dropped::Deleted)
-        } else if self.superseded.contains(entry.node.as_str()) {
-            Some(Dropped::Superseded)
-        } else {
-            None
-        }
-    }
 }
 
-/// Why a subject is dropped before its predicates are checked (§11).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum Dropped {
-    Deleted,
-    Superseded,
-}
-
-impl Dropped {
-    /// The stats line a dropped value is counted under.
-    pub(crate) fn value_reason(self) -> &'static str {
-        match self {
-            Dropped::Deleted => "deleted value",
-            Dropped::Superseded => "superseded value",
-        }
-    }
-
-    /// The stats line a dropped file value is counted under.
-    pub(crate) fn file_value_reason(self) -> &'static str {
-        match self {
-            Dropped::Deleted => "deleted file value (§8)",
-            Dropped::Superseded => "superseded file value (§8)",
-        }
-    }
-}
-
-/// §11's deleted filter: `kb:isDeleted` with an `xsd:boolean` true. Resources
-/// use it directly; a versioned subject goes through [`Subjects::dropped`].
+/// §11's deleted filter: `kb:isDeleted` with an `xsd:boolean` true. The
+/// selection reads it for resources and values (`crate::selection`), and list
+/// nodes for their subtree (§9).
 pub(crate) fn is_deleted(entry: &Entry) -> bool {
     is_true(entry, kb::IS_DELETED)
 }
@@ -135,7 +93,6 @@ fn objects_of<'i>(index: &'i Index, p: &str) -> BTreeSet<&'i str> {
 /// a nested tag would fail as an unknown class, never be dropped silently.
 pub(crate) fn classify_subjects(index: &Index, ontology: &Ontology, violations: &mut Violations) -> Subjects {
     let standoff = objects_of(index, kb::VALUE_HAS_STANDOFF);
-    let superseded = objects_of(index, kb::PREVIOUS_VALUE).into_iter().map(str::to_string).collect();
 
     let mut subjects = BTreeMap::new();
     for entry in index.entries() {
@@ -173,7 +130,7 @@ pub(crate) fn classify_subjects(index: &Index, ontology: &Ontology, violations: 
             None => violations.record(Rule::UnknownClass, s, class.as_str()),
         }
     }
-    Subjects { kinds: subjects, superseded }
+    Subjects { kinds: subjects }
 }
 
 fn kind_of_class(class: &str, ontology: &Ontology) -> Option<Kind> {

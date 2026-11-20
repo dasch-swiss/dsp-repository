@@ -65,8 +65,7 @@ from and where it is applied. The decision, phrased so a violation is describabl
 
 Not yet in code: the shared crate and its function, rights on any port, a rights column in any read model,
 the predicate in any query layer, `media`'s check and the Access Area's identity port (not scheduled).
-Not yet in code: the interim format carries no rights and no data classification, and no VRE bridge writes them
-(P-DEV-301).
+Not yet in code: no VRE bridge writes the interim format's rights and data classification (P-DEV-301).
 
 Enforced by: review until the crate exists; then the crate graph, Bazel `visibility` per ADR-0001, for "the
 decision lives in one `shared-*` crate" (**structure**), and its BUILD file's `deps` for "with no I/O

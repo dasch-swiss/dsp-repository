@@ -6,13 +6,12 @@ Vocabulary: `areas/deposit/vre-bridge/CONTEXT.md`. The decision: `areas/deposit/
 
 ## Where the bridge lives
 
-Five crates, each in its own directory; only `vre-bridge-lift`, `vre-bridge-store` and `vre-bridge-client` exist so
-far.
+Five crates, each in its own directory; all but `vre-bridge-server` exist so far.
 
 | Crate | Directory | Role | Holds | Exists |
 |---|---|---|---|---|
 | `vre-bridge-lift` | `lift/` | `lift` | the lift (`lift`, `Lifted`, `LiftError`, `Violation`): the selection, the public guard and dsp-incubator's `dao-lift` `snapshot` as a library; `FORMAT.md`; the format and transformation versions | yes |
-| `vre-bridge-core` | `core/` | `core` | settings, the allowlist, refresh decisions, the shipped-input digest, outcomes | no |
+| `vre-bridge-core` | `core/` | `core` | settings (`RawSettings`, `Settings::parse`), the allowlist and server ids, refresh decisions (`decide`), the shipped-input digest (`inputs_digest`), outcomes and their exit status | yes |
 | `vre-bridge-store` | `store/` | `store` | the subtrees: generations, Ready tokens, recovery, cleanup, the lock | yes |
 | `vre-bridge-client` | `client/` | `client` | DSP-API with the service identity (`ServiceIdentity`, `Server`): project lookup, change check, export, the dump's download and private unpacking (`private_work_dir`, `unpack`), anonymous file downloads | yes |
 | `vre-bridge-server` | `server/` | `server` | the `VreBridge` facade `deposit-server` starts: the nightly run, one refresh, the operator's refresh | no |
@@ -22,6 +21,14 @@ role bans web frameworks, Maud, database crates, HTTP clients and `tokio` (`.git
 `just check`): it reads an unzipped dump from a directory it is given and returns the snapshot in memory; the
 caller writes it. `vre-bridge-store` grants its library to `vre-bridge-server` alone; every call is synchronous
 `std::fs`, for `spawn_blocking`.
+
+`vre-bridge-core` grants its library to `vre-bridge-server` alone. Its role bans web frameworks, Maud and database
+crates; it has no network code and reads no file but the shipped inputs, in `inputs_digest`, which blocks. It parses
+the settings from the strings `deposit-server`'s loader reads (`Settings::parse` answers `None` when no output
+location is set: the bridge then does nothing), and takes the format and transformation versions from
+`vre-bridge-lift`. The loader hands every `EDITOR_VRE_BRIDGE_*` value over as read, `None` when unset; the defaults
+are applied in `Settings::parse` alone. A new variable is a name constant, a `RawSettings` field, a line in `parse`
+and a test in `settings_tests.rs`.
 
 `vre-bridge-client` grants its library to `vre-bridge-server` alone. Its role bans web frameworks, Maud and database
 crates. It never installs a rustls crypto provider: the binary does, before the first `Server::new`, which returns
@@ -60,6 +67,12 @@ against `wiremock` with the test-only key pair in `client/testdata/`, which no s
   `reqwest::Error` goes through `without_url()`, a JSON parse error is dropped (serde quotes the input), and
   `ServiceIdentity` and `Server` write their `Debug` by hand, without key or token (`Server` shows its base URL,
   which may not carry credentials). A new variant keeps to that.
+- **No configuration error and no settings `Debug` shows a signing key.** `SigningKeys` and `SigningKey` write their
+  `Debug` by hand; a `SettingsError` names an entry of `EDITOR_VRE_BRIDGE_SIGNING_KEYS` by its position, never by its
+  text, since a bare key split on its first `=` reads as a server id. It quotes no value and no key longer than a
+  server id, so a key pasted into another variable is not quoted either. A new variant keeps to that.
+- **The shipped-input digest's definition is fixed.** Changing what `inputs_digest` hashes, or in which order,
+  changes every project's digest and so refreshes every project once.
 - **`unpack` reads the zip by name only.** It checks every central-directory entry before writing anything (an
   absolute path, `..`, a symlink or two entries of one name fail the dump) and never calls `ZipArchive::extract`;
   it is blocking, so an async caller runs it in `spawn_blocking`.

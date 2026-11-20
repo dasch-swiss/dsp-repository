@@ -38,5 +38,6 @@ fn main() -> ExitCode {
         }
         Some(cli::Commands::Serve) => serve::serve(),
         Some(cli::Commands::Healthcheck { url }) => cli::healthcheck(&url),
+        Some(cli::Commands::VreBridgeRefresh { shortcode }) => cli::vre_bridge_refresh(&shortcode),
     }
 }

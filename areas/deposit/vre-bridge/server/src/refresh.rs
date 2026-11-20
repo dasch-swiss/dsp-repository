@@ -19,6 +19,7 @@ use vre_bridge_core::{
 use vre_bridge_lift::{LiftError, Lifted, Violation};
 use vre_bridge_store::{new_generation_name, Lock, StoreError, Subtree, Subtrees, TokenState};
 
+use crate::withhold::withheld;
 use crate::{Clock, RefreshReport, RefreshSizes, Report, Vre};
 
 /// The interim snapshot's name in a `sync` generation. `sync-store` reads the same name, its own
@@ -617,8 +618,8 @@ fn is_transient(e: &ClientError) -> bool {
 }
 
 /// `tokio::task::spawn_blocking` inside the caller's span, so what the store logs there names the
-/// project and server.
+/// project and server, with its panics' payloads withheld.
 pub(crate) fn spawn_blocking<T: Send + 'static>(f: impl FnOnce() -> T + Send + 'static) -> tokio::task::JoinHandle<T> {
     let span = tracing::Span::current();
-    tokio::task::spawn_blocking(move || span.in_scope(f))
+    tokio::task::spawn_blocking(move || withheld(|| span.in_scope(f)))
 }

@@ -249,9 +249,10 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   writes an approved record, which the pull-request run publishes as a pull request. The Deposit
   Area is three capabilities, `identity`, `editor` and the VRE bridge, under the composition root
   `deposit-server` (`areas/deposit/server`, below; `areas/deposit/ADR-0004`), with identity's four crates in
-  `areas/deposit/identity` and the area shell in `areas/deposit/shell`. Not yet in code: of the VRE bridge
-  (`areas/deposit/vre-bridge/`, below; `areas/deposit/ADR-0005`), only `vre-bridge-lift`, `vre-bridge-core`,
-  `vre-bridge-store` and `vre-bridge-client` exist (P-DEV-301).
+  `areas/deposit/identity` and the area shell in `areas/deposit/shell`. Not yet in code: `deposit-server` does
+  not start the VRE bridge (`areas/deposit/vre-bridge/`, below; `areas/deposit/ADR-0005`), and
+  `vre-bridge-server` refreshes one project but has no `VreBridge` facade, nightly run or operator's refresh
+  (P-DEV-301).
 - **Key entities:** `ProjectDraft`, `ProjectState`, `SubmissionState`, `ReviewState`,
   `FieldReview`, `Decision`, `ProposalDecision`, `EntityProposal`, `Transition`, `PublishedProjects`, `Agents`,
   `EditorRepositories` (behind `EditorState.editor`), `ReviewRoundRepository`, `RecordClassification`, `classify_record`,
@@ -647,8 +648,11 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   the lock and the nightly-run record, the sweep of leftover dump directories.
   `vre-bridge-client` (`client/`): DSP-API with the service identity: Ed25519 service tokens, the project
   lookup, the change check, the export lifecycle, the dump's download and its unpacking into a private
-  `0700` directory (`data.nq` and the ontologies only), anonymous file downloads. Not yet in code:
-  `vre-bridge-server` (the `VreBridge` facade, the nightly run, one refresh) (P-DEV-301).
+  `0700` directory (`data.nq` and the ontologies only, both within a size cap), anonymous file downloads.
+  `vre-bridge-server` (`server/`): one refresh of a project (`Refresher`), from recovery and the change check
+  through the export, the lift and both subtrees' new generation to the outcome's report, over the `Vre`,
+  `Report` and `Clock` traits. Not yet in code: the `VreBridge` facade, the nightly run and the operator's
+  refresh (P-DEV-301).
 - **Key entities:** `lift`, `Lifted`, `Snapshot`, `Stats`, `LiftError`, `Violation`, `Problem`, `SubjectKind`,
   `ViolationReport`, `Kind`, `Handling`, `ValueKind`, `INTERIM_FORMAT_VERSION`, `TRANSFORMATION_VERSION`; internal:
   `Dump`, `Read`, `Index`, `Ontology`, `Selection`, `Rights`, `Violations`, `Rule` (`vre-bridge-lift`);
@@ -658,10 +662,12 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `Subtrees`, `Subtree`, `GenerationWriter`, `Sizes`, `TokenState`, `Broken`, `Lock`, `RecoveryReport`,
   `RemovalReport`, `StoreError` (`vre-bridge-store`); `ServiceIdentity`, `Server`, `Timeouts`, `ExportTrigger`,
   `ExportStatus`, `DeleteOutcome`, `Changes`, `DumpZip`, `DumpDir`, `ClientError`, `FileError`
-  (`vre-bridge-client`)
+  (`vre-bridge-client`); `Refresher`, `Busy`, `Vre`, `Report`, `LogReport`, `RefreshReport`, `RefreshSizes`,
+  `Clock`, `SystemClock` (`vre-bridge-server`)
 - **Public interface:** the `vre_bridge_lift` library: `lift(dump_dir) -> Result<Lifted, LiftError>`,
   `Lifted { snapshot, stats }`, `Snapshot::write_to`, `Stats` and the key types of its counts,
-  `LiftError::{Dump, Refused, ClosedWorld, Internal}`, the two version constants. The `vre_bridge_core`
+  `LiftError::{Dump, Refused, ClosedWorld, Internal}`, `ViolationReport::counts`, the two version constants.
+  The `vre_bridge_core`
   library: `Settings::parse(RawSettings) -> Result<Option<Settings>, SettingsError>` (`None`: no output
   location, the bridge does nothing), `Allowlist::entries`, `ServerId::parse`, `SigningKey::expose`,
   `inputs_digest(dir) -> Result<String, DigestError>`, `RESERVED_NAMES`, `Running::new`,
@@ -671,20 +677,27 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   sizes, commit, abort}`, `Lock::{try_acquire, nightly_done_on, record_nightly}`, `sweep_work_dir`,
   `RIGHTS_RECORD`, `RIGHTS_RECORD_FILE`, `Result`; synchronous `std::fs`. The `vre_bridge_client` library:
   `ServiceIdentity::{new, token}`; `Server::{new, project_iri, changes, export, export_status, wait_completed,
-  wait_finished, download, delete_export, download_file}`; `private_work_dir`, `unpack`, `DUMP_DIR_PREFIX`. No
-  routes, no binary.
+  wait_finished, download, delete_export, download_file}` (`download` with a byte cap); `private_work_dir`,
+  `unpack` (with a byte cap), `DUMP_DIR_PREFIX`. The
+  `vre_bridge_server` library: `Refresher::{new, refresh}` (`refresh(&Lock, &AllowlistEntry, operator) ->
+  Result<Outcome, Busy>`), the `Vre` trait (implemented for `BTreeMap<ServerId, Server>`), `Report` with
+  `LogReport`, `Clock` with `SystemClock`, `sweep_dump_dirs`, `SNAPSHOT_FILE`. No routes, no binary.
 - **Local-context kit:** `areas/deposit/vre-bridge/CLAUDE.md`, `areas/deposit/vre-bridge/CONTEXT.md`,
   `areas/deposit/vre-bridge/lift/FORMAT.md`, `areas/deposit/vre-bridge/lift/src/lib.rs` (select, guard, build),
   `areas/deposit/vre-bridge/lift/src/guard.rs`, `areas/deposit/vre-bridge/lift/src/snapshot/mod.rs`,
   `areas/deposit/vre-bridge/core/src/lib.rs`, `areas/deposit/vre-bridge/store/src/lib.rs`,
-  `shared/stand-in/src/lib.rs`, `areas/deposit/vre-bridge/client/src/lib.rs`
-- **Depends on:** shared/names, shared/stand-in (`vre-bridge-core`, `vre-bridge-store`); third-party: oxigraph
+  `shared/stand-in/src/lib.rs`, `areas/deposit/vre-bridge/client/src/lib.rs`,
+  `areas/deposit/vre-bridge/server/src/lib.rs` (the blocking rule, the three traits),
+  `areas/deposit/vre-bridge/server/src/refresh.rs` (one refresh, step by step)
+- **Depends on:** shared/names (`vre-bridge-core`, `vre-bridge-store`), shared/stand-in (`vre-bridge-core`,
+  `vre-bridge-store`, `vre-bridge-server`); third-party: oxigraph
   (no default features) and thiserror (`vre-bridge-lift`); chrono, sha2, thiserror (`vre-bridge-core`, which
   also takes the two version constants from `vre-bridge-lift`); chrono, rand, thiserror, tracing
   (`vre-bridge-store`); `tempfile` in tests only; reqwest, jsonwebtoken, zip (reading only), tempfile, tokio,
   serde, serde_json, url, percent-encoding, base64, chrono, uuid, thiserror, tracing and rustls, for the provider check
-  (`vre-bridge-client`)
-- **Used by:** nothing outside the bridge yet. `vre-bridge-lift` grants `vre-bridge-core`, which takes its
+  (`vre-bridge-client`); the other four bridge crates, async-trait, chrono, tempfile, tokio and tracing
+  (`vre-bridge-server`)
+- **Used by:** nothing outside the bridge yet; `vre-bridge-server` grants no one yet. `vre-bridge-lift` grants `vre-bridge-core`, which takes its
   version constants, and `vre-bridge-server`. `vre-bridge-core`, `vre-bridge-store` and `vre-bridge-client`
   each grant `vre-bridge-server` alone. `deposit-server` (planned) is to depend on `vre-bridge-server` alone
 - **Boundary rules:**
@@ -718,9 +731,14 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     (**static-analysis** — the store's tests; **review** for NFS).
   - The store writes only below `<root>/<shortcode>/` and the lock file and its record, and deletes below a
     shortcode not on the allowlist only by removal (**static-analysis** — the confinement and removal tests).
+  - A refused or failed refresh leaves the project's tokens as they were, deletes its export and leaves the
+    work directory empty; its logs hold no literal of the dump, no key and no token (**static-analysis** —
+    `vre-bridge-server`'s tests).
+  - A refresh runs every store call, the unpacking, the lift, the digest and the work directory's removal in
+    `spawn_blocking` (**review**).
 - **Durable state:** the `sync` and `media` subtrees, of which `vre-bridge-store` is the single writer, and the
-  lock file and its nightly-run record; the lift and core hold nothing between calls; the client only the
-  private work directory of a refresh in progress.
+  lock file and its nightly-run record; the lift and core hold nothing between calls; the private work directory
+  of a refresh in progress, which the server creates and removes through the client's `private_work_dir`.
 
 ### modules/mosaic
 
@@ -908,7 +926,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Depends on:** nothing
 - **Used by:** areas/access/cpe (`cpe-ports`, re-exported), areas/access/media (`media-store`),
   areas/access/sync (`sync-store`), shared/stand-in, areas/deposit/vre-bridge (`vre-bridge-store`,
-  `vre-bridge-core`); granted ahead of use to the VRE bridge's `server` crate (not yet in code, P-DEV-301)
+  `vre-bridge-core`); granted ahead of use to `vre-bridge-server`, which does not use it yet (P-DEV-301)
 - **Boundary rules:**
   - Depends on no service crate; holds no path into one (**structure** + **static-analysis**,
     as for `shared-metadata`).
@@ -968,8 +986,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `tempfile` in tests only
 - **Used by:** areas/access/sync (`sync-store`) and areas/access/media (`media-store`), which resolve a
   project through its token; areas/deposit/vre-bridge (`vre-bridge-store`, the writing side;
-  `vre-bridge-core`, the token's type and `is_server_id`); granted to the VRE bridge's `server` crate (not
-  yet in code, P-DEV-301)
+  `vre-bridge-core`, the token's type and `is_server_id`; `vre-bridge-server`, the token it builds)
 - **Boundary rules:**
   - Depends on no service crate; holds no path into one (**structure** + **static-analysis**:
     `check-shared-paths.sh`, as for `shared-metadata`).

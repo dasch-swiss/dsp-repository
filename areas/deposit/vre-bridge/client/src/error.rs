@@ -46,6 +46,11 @@ pub enum ClientError {
     DuplicateEntry,
     #[error("the dump's zip holds no data/rdf/data.nq")]
     MissingData,
+    #[error("{what} is larger than the cap of {limit} bytes")]
+    TooLarge { what: &'static str, limit: u64 },
+    /// The caller has no `Server` for the server id it asked for.
+    #[error("no client is configured for the server")]
+    NoServer,
 }
 
 impl ClientError {

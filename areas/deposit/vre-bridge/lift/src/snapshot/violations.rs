@@ -330,6 +330,15 @@ impl ViolationReport {
         self.0.0.iter()
     }
 
+    /// The number of violations per rule, in rule order, each rule as its name and `FORMAT.md`
+    /// section. Unlike the report's text, it names no subject, so it may be logged.
+    pub fn counts(&self) -> Vec<(String, usize)> {
+        self.per_rule()
+            .into_iter()
+            .map(|(rule, items)| (rule.to_string(), items.len()))
+            .collect()
+    }
+
     fn per_rule(&self) -> Vec<(Rule, Vec<&Violation>)> {
         let mut groups: Vec<(Rule, Vec<&Violation>)> = Vec::new();
         for v in &self.0.0 {

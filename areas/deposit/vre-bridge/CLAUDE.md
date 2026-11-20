@@ -6,15 +6,15 @@ Vocabulary: `areas/deposit/vre-bridge/CONTEXT.md`. The decision: `areas/deposit/
 
 ## Where the bridge lives
 
-Five crates, each in its own directory; all but `vre-bridge-server` exist so far.
+Five crates, each in its own directory.
 
-| Crate | Directory | Role | Holds | Exists |
-|---|---|---|---|---|
-| `vre-bridge-lift` | `lift/` | `lift` | the lift (`lift`, `Lifted`, `LiftError`, `Violation`): the selection, the public guard and dsp-incubator's `dao-lift` `snapshot` as a library; `FORMAT.md`; the format and transformation versions | yes |
-| `vre-bridge-core` | `core/` | `core` | settings (`RawSettings`, `Settings::parse`), the allowlist and server ids, refresh decisions (`decide`), the shipped-input digest (`inputs_digest`), outcomes and their exit status | yes |
-| `vre-bridge-store` | `store/` | `store` | the subtrees: generations, Ready tokens, recovery, cleanup, the lock | yes |
-| `vre-bridge-client` | `client/` | `client` | DSP-API with the service identity (`ServiceIdentity`, `Server`): project lookup, change check, export, the dump's download and private unpacking (`private_work_dir`, `unpack`), anonymous file downloads | yes |
-| `vre-bridge-server` | `server/` | `server` | the `VreBridge` facade `deposit-server` starts: the nightly run, one refresh, the operator's refresh | no |
+| Crate | Directory | Role | Holds |
+|---|---|---|---|
+| `vre-bridge-lift` | `lift/` | `lift` | the lift (`lift`, `Lifted`, `LiftError`, `Violation`): the selection, the public guard and dsp-incubator's `dao-lift` `snapshot` as a library; `FORMAT.md`; the format and transformation versions |
+| `vre-bridge-core` | `core/` | `core` | settings (`RawSettings`, `Settings::parse`), the allowlist and server ids, refresh decisions (`decide`), the shipped-input digest (`inputs_digest`), outcomes and their exit status |
+| `vre-bridge-store` | `store/` | `store` | the subtrees: generations, Ready tokens, recovery, cleanup, the lock |
+| `vre-bridge-client` | `client/` | `client` | DSP-API with the service identity (`ServiceIdentity`, `Server`): project lookup, change check, export, the dump's download and private unpacking (`private_work_dir`, `unpack`), anonymous file downloads |
+| `vre-bridge-server` | `server/` | `server` | one refresh (`Refresher`) over the `Vre`, `Report` and `Clock` traits; to come: the `VreBridge` facade `deposit-server` starts, the nightly run, the operator's refresh |
 
 `vre-bridge-lift` grants its library to `vre-bridge-core` and `vre-bridge-server` alone (Bazel `visibility`). Its
 role bans web frameworks, Maud, database crates, HTTP clients and `tokio` (`.github/scripts/check-capability-deps.sh`,
@@ -33,7 +33,23 @@ and a test in `settings_tests.rs`.
 `vre-bridge-client` grants its library to `vre-bridge-server` alone. Its role bans web frameworks, Maud and database
 crates. It never installs a rustls crypto provider: the binary does, before the first `Server::new`, which returns
 `ClientError::NoCryptoProvider` without one. Its tests run
-against `wiremock` with the test-only key pair in `client/testdata/`, which no server trusts.
+against `wiremock` with the test-only key pair in `client/testdata/`, which no server trusts; `vre-bridge-server`'s
+tests read its private key too (`exports_files` in `client/BUILD.bazel`).
+
+`vre-bridge-server` is the only crate that links the other four. A refresh (`refresh.rs`) holds the lock its
+caller took and runs the steps in order: recovery of the project, its tokens and the decision, the project
+lookup, the change check, the export, the download into the private work directory, the export's deletion, the
+unpacking, the lift, the generation in both subtrees, the report. Three traits keep it testable:
+
+- **`Vre`**: DSP-API, each call naming the allowlist entry's server; implemented for
+  `BTreeMap<ServerId, vre_bridge_client::Server>`. The refresh's tests use that implementation against
+  `wiremock`; a fake `Vre` is for the nightly run's scheduling tests.
+- **`Report`**: where an outcome goes. `LogReport` writes the outcome line; the metrics adapter is
+  `deposit-server`'s concern. A test records the reports. `refresh` never reports `Busy`; a caller that
+  gives up on a busy slot reports `Failed(FailureReason::Busy)` (CONTEXT.md, **Busy**).
+- **`Clock`**: wall-clock time (`SystemClock`; `FakeClock` in tests). Poll intervals and time limits are
+  `tokio::time`, so the refresh's tests run with real time and limits of a few hundred milliseconds: paused
+  tokio time would fire them at once while a task waits on a socket or a blocking thread.
 
 ## Rules
 
@@ -42,8 +58,8 @@ against `wiremock` with the test-only key pair in `client/testdata/`, which no s
   `vre-bridge-store`.
 - **A dump is unpacked only into the private work directory**: a directory of its own, mode `0700`, under the
   configured work directory, which is never inside an output location. Only `data/rdf/data.nq` and
-  `data/rdf/ontology-<n>.nq` are extracted, never `admin.nq` or `permission.nq`, and the directory is deleted on
-  every outcome.
+  `data/rdf/ontology-<n>.nq` are extracted, never `admin.nq` or `permission.nq`, the zip is deleted as soon as
+  it is unpacked, and the directory is deleted on every outcome.
 - **`lift/FORMAT.md` is normative.** Where the code and `FORMAT.md` disagree, the code is wrong. An output change
   updates `FORMAT.md` and adds a §16 line; sections are never renumbered (`format_doc_tests.rs` checks both).
 - **The guard sees every resource and value that is written.** `lift` reads the dump (`snapshot::Read`), selects
@@ -73,9 +89,18 @@ against `wiremock` with the test-only key pair in `client/testdata/`, which no s
   server id, so a key pasted into another variable is not quoted either. A new variant keeps to that.
 - **The shipped-input digest's definition is fixed.** Changing what `inputs_digest` hashes, or in which order,
   changes every project's digest and so refreshes every project once.
+- **A refresh blocks no runtime thread.** Every `vre-bridge-store` call, `unpack`, `lift`, `inputs_digest` and
+  the work directory's removal run in `spawn_blocking` with owned arguments; no `GenerationWriter` is held
+  across an `.await`. A panic there ends the refresh as `Failed(Internal)`; its payload is not logged.
+- **Once an export id is known, the export is deleted on every path**, the outcome unchanged; a running export
+  is waited for once more. A refused or failed refresh leaves the tokens as they were.
+- **A refresh logs no value of the dump.** A guard violation is logged as its IRI, class and reason (the first
+  50, then the total), a closed-world refusal as its rules and counts, a load error as its kind and line;
+  `LiftError`'s text is logged only for `Dump` and `Internal`, which name no literal.
 - **`unpack` reads the zip by name only.** It checks every central-directory entry before writing anything (an
   absolute path, `..`, a symlink or two entries of one name fail the dump) and never calls `ZipArchive::extract`;
-  it is blocking, so an async caller runs it in `spawn_blocking`.
+  it is blocking, so an async caller runs it in `spawn_blocking`. `download` and `unpack` stop at the caps
+  `EDITOR_VRE_BRIDGE_MAX_DUMP_BYTES` and `EDITOR_VRE_BRIDGE_MAX_UNPACKED_BYTES` (`ClientError::TooLarge`).
 
 ## Checking the lift on a real dump
 

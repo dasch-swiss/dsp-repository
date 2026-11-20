@@ -9,9 +9,9 @@ use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
 
-use oxigraph::io::RdfFormat;
+use oxigraph::io::{RdfFormat, RdfParseError};
 use oxigraph::model::{NamedNode, NamedOrBlankNode};
-use oxigraph::store::Store;
+use oxigraph::store::{LoaderError, Store};
 
 pub struct Dump {
     pub store: Store,
@@ -36,7 +36,7 @@ impl Dump {
                 let reader = BufReader::new(File::open(&path)?);
                 store
                     .load_from_reader(RdfFormat::NQuads, reader)
-                    .map_err(|e| format!("loading {}: {e}", path.display()))?;
+                    .map_err(|e| format!("loading {}: {}", path.display(), load_error(&e)))?;
                 loaded += 1;
             }
         }
@@ -77,6 +77,20 @@ impl Dump {
     }
 }
 
+/// A load error as its kind and, for a syntax error, its line: oxigraph's own text can quote
+/// the dump's content, which may not reach a log.
+fn load_error(e: &LoaderError) -> String {
+    match e {
+        LoaderError::Parsing(RdfParseError::Syntax(syntax)) => match syntax.location() {
+            Some(at) => format!("syntax error at line {}", at.start.line + 1),
+            None => "syntax error".to_owned(),
+        },
+        LoaderError::Parsing(RdfParseError::Io(io)) => format!("read error: {}", io.kind()),
+        LoaderError::Storage(_) => "storage error".to_owned(),
+        _ => "load error".to_owned(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use oxigraph::model::{GraphName, Literal, Quad};
@@ -111,6 +125,20 @@ mod tests {
                 .is_none()
         );
         assert_eq!(dump.data_graph.as_str(), "http://www.knora.org/data/0803/incunabula");
+    }
+
+    #[test]
+    fn a_syntax_error_names_its_line_but_quotes_no_content() {
+        let dir = TempDir::new();
+        let rdf = dir.path().join("data").join("rdf");
+        std::fs::create_dir_all(&rdf).unwrap();
+        let broken = format!("{DATA_NQ}<http://rdfh.ch/0803/B> \"SECRET-LITERAL\" broken .\n");
+        std::fs::write(rdf.join("data.nq"), broken).unwrap();
+
+        let msg = Dump::load(dir.path()).err().expect("a broken line must fail").to_string();
+
+        assert!(msg.contains("syntax error at line 2"), "{msg}");
+        assert!(!msg.contains("SECRET"), "{msg}");
     }
 
     #[test]

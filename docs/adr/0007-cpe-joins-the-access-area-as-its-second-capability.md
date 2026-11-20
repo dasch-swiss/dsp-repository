@@ -304,7 +304,6 @@ scheduled).
 Not yet in code: `sync` reads one committed file, `areas/access/sync/data/0803.nq`, known by the constant
 `KNOWN` and pinned by `data/PROVENANCE` to an incubator commit of `dao-lift`, not per-project directories known
 by Ready token with the format version in the token (P-DEV-301).
-Not yet in code: `dao-lift` and `FORMAT.md` are in the incubator, not in the VRE bridge (P-DEV-301).
 Not yet in code: the image carries `sync`'s data and `media`'s stand-in directory and sets `SYNC_DATA_DIR` and
 `MEDIA_DATA_DIR` to them, rather than naming mounted subtrees (DEV-7514).
 Not yet in code: the projection follows `dao-lift`'s interim format, not published DAO; value order and text

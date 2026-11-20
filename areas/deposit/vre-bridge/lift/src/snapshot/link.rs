@@ -11,6 +11,7 @@ use super::index::{Entry, Index};
 use super::kinds::{self, Kind, Subjects};
 use super::violations::{Rule, Violations};
 use crate::model::{self, kb};
+use crate::selection::Selection;
 
 /// §11: the predicates a LinkValue may carry.
 const PREDICATES: &[&str] = &[
@@ -60,7 +61,12 @@ pub(crate) struct Links {
 impl Links {
     /// Read every LinkValue, checking the live ones against §11's list and their
     /// direct triple against the dump, and every live resource.
-    pub(crate) fn read(index: &Index, subjects: &Subjects, violations: &mut Violations) -> Links {
+    pub(crate) fn read(
+        index: &Index,
+        subjects: &Subjects,
+        selection: &Selection,
+        violations: &mut Violations,
+    ) -> Links {
         let mut links = Links {
             live: BTreeSet::new(),
             dropped: BTreeSet::new(),
@@ -75,24 +81,24 @@ impl Links {
                     links.unclassified.insert(entry.node.as_str().to_string());
                 }
                 Some(Kind::Resource) => {
-                    let set = if kinds::is_deleted(entry) {
-                        &mut links.deleted
-                    } else {
+                    let set = if selection.has_resource(entry.node.as_str()) {
                         &mut links.resources
+                    } else {
+                        &mut links.deleted
                     };
                     set.insert(entry.node.as_str().to_string());
                 }
-                Some(Kind::LinkValue) => links.read_link_value(entry, index, subjects, violations),
+                Some(Kind::LinkValue) => links.read_link_value(entry, index, selection, violations),
                 _ => {}
             }
         }
         links
     }
 
-    fn read_link_value(&mut self, entry: &Entry, index: &Index, subjects: &Subjects, violations: &mut Violations) {
+    fn read_link_value(&mut self, entry: &Entry, index: &Index, selection: &Selection, violations: &mut Violations) {
         let lv = entry.node.as_str();
-        // A dropped LinkValue's predicates are not checked (§11).
-        let dropped = subjects.dropped(entry).is_some();
+        // An unselected LinkValue's predicates are not checked (§11).
+        let dropped = !selection.has_value(lv);
         if !dropped {
             for (p, _) in &entry.triples {
                 if !PREDICATES.contains(&p.as_str()) {

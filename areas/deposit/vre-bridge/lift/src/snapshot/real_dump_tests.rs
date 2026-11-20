@@ -16,8 +16,8 @@ use std::sync::OnceLock;
 use oxigraph::io::{RdfFormat, RdfParser};
 use oxigraph::model::{Literal, NamedNode, NamedOrBlankNode, Quad, Term};
 
-use super::{Stats, build};
-use crate::dump::Dump;
+use super::vocab;
+use crate::LiftError;
 
 const DAO: &str = "https://ontology.dasch.swiss/dao#";
 const OA: &str = "http://www.w3.org/ns/oa#";
@@ -35,14 +35,21 @@ fn iri(prefix: &str, local: &str) -> String {
     format!("{prefix}{local}")
 }
 
-/// The dump's snapshot bytes, built in this process from `VRE_BRIDGE_LIFT_DUMP`.
+/// The dump's snapshot bytes, lifted in this process from `VRE_BRIDGE_LIFT_DUMP`.
+/// A refusal prints every violation of the public guard before failing.
 fn emit() -> Vec<u8> {
     let dir = std::env::var("VRE_BRIDGE_LIFT_DUMP")
         .expect("VRE_BRIDGE_LIFT_DUMP must name an unzipped dump directory (absolute path)");
-    let dump = Dump::load(Path::new(&dir)).expect("the dump loads");
-    let snapshot = build(&dump, &mut Stats::default()).expect("the dump gives a snapshot");
+    let lifted = match crate::lift(Path::new(&dir)) {
+        Ok(lifted) => lifted,
+        Err(err @ LiftError::Refused { .. }) => {
+            println!("{err}");
+            panic!("the public guard refused the dump; its violations are printed above");
+        }
+        Err(err) => panic!("the dump gives no snapshot: {err}"),
+    };
     let mut bytes = Vec::new();
-    snapshot.write_to(&mut bytes).expect("writing to memory");
+    lifted.snapshot.write_to(&mut bytes).expect("writing to memory");
     bytes
 }
 
@@ -508,8 +515,9 @@ fn real_dump_emits_identical_bytes_twice() {
 
 /// On the same dump, the snapshot holds the same quads as the one dsp-incubator's
 /// dao-lift at 6106ee38166617cd8be5d58411d5bb14741ebc03 wrote
-/// (`VRE_BRIDGE_LIFT_REFERENCE`). Facts, not bytes: the two link different
-/// oxrdf versions, which render the lines.
+/// (`VRE_BRIDGE_LIFT_REFERENCE`), apart from the access rights and data
+/// classification that producer did not write. Facts, not bytes: the two link
+/// different oxrdf versions, which render the lines.
 #[test]
 #[ignore = "needs VRE_BRIDGE_LIFT_DUMP and VRE_BRIDGE_LIFT_REFERENCE; run via `just vre-bridge-lift-real-dump`"]
 fn real_dump_matches_the_incubator_lift() {
@@ -521,7 +529,13 @@ fn real_dump_matches_the_incubator_lift() {
         .collect::<Result<_, _>>()
         .expect("the reference parses as N-Quads");
     assert!(!theirs.is_empty(), "the reference snapshot is empty");
-    let ours: HashSet<Quad> = snapshot().quads.iter().cloned().collect();
+    let rights = [vocab::DAO_ACCESS_RIGHTS, vocab::DAO_DATA_CLASSIFICATION];
+    let ours: HashSet<Quad> = snapshot()
+        .quads
+        .iter()
+        .filter(|q| !rights.contains(&q.predicate.as_str()))
+        .cloned()
+        .collect();
 
     let mut only_ours: Vec<String> = ours.difference(&theirs).map(Quad::to_string).collect();
     let mut only_theirs: Vec<String> = theirs.difference(&ours).map(Quad::to_string).collect();

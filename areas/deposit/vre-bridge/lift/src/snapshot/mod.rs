@@ -1,11 +1,11 @@
-//! [`snapshot`]: one project's current state as sorted N-Quads, in the interim,
+//! The snapshot: one project's current state as sorted N-Quads, in the interim,
 //! not-DAO format specified by `FORMAT.md` beside this crate's `BUILD.bazel`.
 //! Every `§N` in this module tree is a section of that file, which is normative:
 //! where code and `FORMAT.md` disagree, the code is wrong.
 //!
-//! The run reads the store once into an [`index::Index`], classifies every
-//! subject and predicate against the closed list (§11), and fails once with every
-//! violation before any line is returned.
+//! [`Read::of`] reads the store once into an [`index::Index`] and classifies every
+//! subject; [`build`] writes the selection, checking every predicate against the
+//! closed list (§11), and fails once with every violation before any line is returned.
 //!
 //! `bazel test` does not run the real-dump tests (`real_dump_tests`,
 //! `#[ignore]`d); after a change to the output, run
@@ -16,8 +16,8 @@ mod annotation;
 mod annotation_tests;
 #[cfg(test)]
 mod format_doc_tests;
-mod index;
-mod kinds;
+pub(crate) mod index;
+pub(crate) mod kinds;
 mod link;
 #[cfg(test)]
 mod link_tests;
@@ -34,19 +34,20 @@ mod representation;
 mod representation_tests;
 mod resource;
 #[cfg(test)]
-mod tests;
+pub(crate) mod tests;
 mod value;
 #[cfg(test)]
 mod value_tests;
 mod violations;
-mod vocab;
+pub(crate) mod vocab;
 mod writer;
 
 use std::collections::BTreeMap;
-use std::path::Path;
 
 use index::{Index, Ontology};
+use kinds::Subjects;
 pub use kinds::{Handling, Kind};
+use oxigraph::model::NamedNode;
 pub use value::ValueKind;
 pub use violations::ViolationReport;
 use violations::Violations;
@@ -54,25 +55,39 @@ pub use writer::Snapshot;
 
 use crate::LiftError;
 use crate::dump::Dump;
+use crate::guard::Rights;
+use crate::selection::Selection;
 
-/// The snapshot of the unzipped dump at `dump_dir`; reads only its `data.nq` and
-/// `ontology-*.nq`.
-pub fn snapshot(dump_dir: &Path) -> Result<Snapshot, LiftError> {
-    let dump = Dump::load(dump_dir).map_err(|e| LiftError::Dump(e.to_string()))?;
-    let mut stats = Stats::default();
-    let mut snapshot = build(&dump, &mut stats)?;
-    snapshot.stats = stats;
-    Ok(snapshot)
+/// The data graph read once and every subject classified, with the closed-world
+/// violations found so far. The selection and the guard read it; [`build`] consumes it.
+pub(crate) struct Read {
+    graph: NamedNode,
+    ontology: Ontology,
+    pub(crate) index: Index,
+    pub(crate) subjects: Subjects,
+    violations: Violations,
 }
 
-/// The whole snapshot in memory, or a [`violations::ViolationReport`] listing
-/// every closed-world breach.
-fn build(dump: &Dump, stats: &mut Stats) -> Result<Snapshot, LiftError> {
-    let graph = mint::project_graph(&dump.data_graph).map_err(LiftError::Dump)?;
-    let mut violations = Violations::default();
-    let ontology = Ontology::build(dump).map_err(|e| LiftError::Dump(e.to_string()))?;
-    let index = Index::build(dump, &mut violations).map_err(|e| LiftError::Dump(e.to_string()))?;
-    let subjects = kinds::classify_subjects(&index, &ontology, &mut violations);
+impl Read {
+    pub(crate) fn of(dump: &Dump) -> Result<Read, LiftError> {
+        let graph = mint::project_graph(&dump.data_graph).map_err(LiftError::Dump)?;
+        let mut violations = Violations::default();
+        let ontology = Ontology::build(dump).map_err(|e| LiftError::Dump(e.to_string()))?;
+        let index = Index::build(dump, &mut violations).map_err(|e| LiftError::Dump(e.to_string()))?;
+        let subjects = kinds::classify_subjects(&index, &ontology, &mut violations);
+        Ok(Read { graph, ontology, index, subjects, violations })
+    }
+}
+
+/// The whole snapshot of `selection` in memory, with `rights` on its resources and
+/// representations, or a [`violations::ViolationReport`] listing every closed-world breach.
+pub(crate) fn build(
+    read: Read,
+    selection: &Selection,
+    rights: &Rights,
+    stats: &mut Stats,
+) -> Result<Snapshot, LiftError> {
+    let Read { graph, ontology, index, subjects, mut violations } = read;
     for entry in index.entries() {
         if let Some(kind) = subjects.kind(entry.node.as_str()) {
             *stats.subjects_by_kind.entry(kind).or_default() += 1;
@@ -81,10 +96,12 @@ fn build(dump: &Dump, stats: &mut Stats) -> Result<Snapshot, LiftError> {
 
     let mut snapshot = Snapshot::new(graph);
     let lists = list::emit(&index, &subjects, &mut snapshot, stats, &mut violations);
-    let links = link::Links::read(&index, &subjects, &mut violations);
+    let links = link::Links::read(&index, &subjects, selection, &mut violations);
     resource::emit(
         &index,
         &subjects,
+        selection,
+        rights,
         &ontology,
         &lists,
         &links,

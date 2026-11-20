@@ -4,9 +4,9 @@
 use oxigraph::model::Literal;
 
 use super::list::DELETED_LIST_NODE;
-use super::tests::{Fixture, ZEBRA, boolean, onto, output, report, resource_lines};
+use super::tests::{Fixture, ZEBRA, boolean, build_public, onto, output, report, resource_lines};
 use super::violations::Rule;
-use super::{Stats, build, vocab};
+use super::{Stats, vocab};
 use crate::model::{self, kb, nn};
 
 const GRAPH: &str = "<urn:dsp:project:0803>";
@@ -113,7 +113,7 @@ fn a_three_level_list_emits_every_node_as_a_concept_with_labels_broader_and_posi
     let dump = f.dump();
     assert_eq!(output(&dump), expected);
     let mut stats = Stats::default();
-    build(&dump, &mut stats).unwrap();
+    build_public(&dump, &mut stats).unwrap();
     assert_eq!(stats.list_nodes, 4);
 }
 
@@ -172,7 +172,7 @@ fn a_deleted_list_node_is_dropped_with_its_subtree() {
         file(vec![concept(&r), concept(&kept), broader(&kept, &r), position(&kept, "1"),])
     );
     let mut stats = Stats::default();
-    build(&dump, &mut stats).unwrap();
+    build_public(&dump, &mut stats).unwrap();
     assert_eq!(stats.omitted.get(DELETED_LIST_NODE), Some(&2));
     assert_eq!(stats.list_nodes, 2);
 }
@@ -346,7 +346,7 @@ fn a_cycle_through_a_deleted_node_is_dropped_with_it_and_not_reported() {
     let dump = f.dump();
     assert_eq!(output(&dump), file(vec![concept(&r)]));
     let mut stats = Stats::default();
-    build(&dump, &mut stats).unwrap();
+    build_public(&dump, &mut stats).unwrap();
     assert_eq!(stats.omitted.get(DELETED_LIST_NODE), Some(&2));
 }
 

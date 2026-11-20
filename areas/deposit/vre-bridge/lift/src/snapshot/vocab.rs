@@ -12,6 +12,10 @@ pub(crate) const RDFS_LABEL: &str = model::RDFS_LABEL;
 pub(crate) const DAO_RESOURCE: &str = "https://ontology.dasch.swiss/dao#Resource";
 /// §2: a resource's class, the full IRI the dump records.
 pub(crate) const DAO_SOURCE_CLASS: &str = "https://ontology.dasch.swiss/dao#sourceClass";
+/// §2, §8: `"public"` or `"restricted-view"` on every resource and representation node (D15).
+pub(crate) const DAO_ACCESS_RIGHTS: &str = "https://ontology.dasch.swiss/dao#accessRights";
+/// §2, §8: `"unclassified"` wherever `dao:accessRights` is written (D16).
+pub(crate) const DAO_DATA_CLASSIFICATION: &str = "https://ontology.dasch.swiss/dao#dataClassification";
 
 /// §3: a value node's one value.
 pub(crate) const RDF_VALUE: &str = model::RDF_VALUE;
@@ -112,6 +116,8 @@ pub(crate) const TERMS: &[(&str, &str, &str)] = &[
     (RDFS_LABEL, "§2", "DAO"),
     (DAO_RESOURCE, "§2", "DAO"),
     (DAO_SOURCE_CLASS, "§2", "DAO"),
+    (DAO_ACCESS_RIGHTS, "§2", "D15"),
+    (DAO_DATA_CLASSIFICATION, "§2", "D16"),
     (RDF_VALUE, "§3", "DAO"),
     (DAO_VALUE, "§3", "DAO"),
     (DAO_VALUE_HAS_UUID, "§3", "DAO"),

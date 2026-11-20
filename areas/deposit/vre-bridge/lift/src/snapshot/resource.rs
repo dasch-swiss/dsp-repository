@@ -1,6 +1,6 @@
 //! Resources (§2), their edges (§3–§8) and their annotation structure (§10),
-//! after §11's filters: deleted resources, deleted or superseded values and file
-//! values, and links no live LinkValue or live target backs.
+//! for the selected resources and values only, and without links no live
+//! LinkValue or live target backs (§11).
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -16,15 +16,19 @@ use super::violations::{Rule, Violations};
 use super::writer::Snapshot;
 use super::{Stats, representation, vocab};
 use crate::LiftError;
+use crate::guard::{AccessRights, Rights};
 use crate::model::{self, nn};
+use crate::selection::{Dropped, Selection};
 
-/// Emit `a dao:Resource`, `dao:sourceClass` and the plain `rdfs:label` of every
-/// live resource, its edges and, for an annotation, its §10 structure, and check
-/// each of its predicates against §6 and §11. `lists` holds the live list nodes
-/// (§4.7), `links` what decides which links are carried (§6).
+/// Emit `a dao:Resource`, `dao:sourceClass`, the plain `rdfs:label` and the
+/// rights of every selected resource, its edges and, for an annotation, its §10
+/// structure, and check each of its predicates against §6 and §11. `lists` holds
+/// the live list nodes (§4.7), `links` what decides which links are carried (§6).
 pub(crate) fn emit(
     index: &Index,
     subjects: &Subjects,
+    selection: &Selection,
+    rights: &Rights,
     ontology: &Ontology,
     lists: &LiveLists,
     links: &Links,
@@ -35,6 +39,8 @@ pub(crate) fn emit(
     let mut run = Run {
         index,
         subjects,
+        selection,
+        rights,
         ontology,
         lists,
         links,
@@ -55,7 +61,7 @@ pub(crate) fn emit(
             .class
             .as_ref()
             .ok_or_else(|| internal("a resource is classified by its one rdf:type", entry.node.as_str()))?;
-        if kinds::is_deleted(entry) {
+        if !selection.has_resource(entry.node.as_str()) {
             run.omit("deleted resource");
             continue;
         }
@@ -70,6 +76,8 @@ pub(crate) fn emit(
 struct Run<'i, 'o> {
     index: &'i Index,
     subjects: &'i Subjects,
+    selection: &'i Selection,
+    rights: &'i Rights,
     ontology: &'i Ontology,
     lists: &'i LiveLists,
     links: &'i Links,
@@ -118,7 +126,7 @@ impl<'i> Run<'i, '_> {
                 Handling::Value => self.value(s, p, iri(s, o)?, &mut pending)?,
                 Handling::Link => self.link(s, p, iri(s, o)?, &mut pending),
                 Handling::Membership => self.membership(s, p, iri(s, o)?),
-                Handling::Seqnum => pending.seqnums.extend(self.seqnum(s.as_str(), iri(s, o)?)),
+                Handling::Seqnum => pending.seqnums.extend(self.seqnum(s.as_str(), iri(s, o)?)?),
                 Handling::FileValue => self.file_value(iri(s, o)?, &mut pending)?,
                 // §2 structure is emitted below; §11's filter and omitted predicates,
                 // standoff links and LinkValue companions are never emitted.
@@ -130,11 +138,10 @@ impl<'i> Run<'i, '_> {
                 | Handling::LinkValueCompanion => {}
             }
         }
-        self.finish_resource(entry, class, pending);
-        Ok(())
+        self.finish_resource(entry, class, pending)
     }
 
-    /// §3: the value's node and the edge to it, unless the value is dropped (§11).
+    /// §3: the value's node and the edge to it, when the value is selected.
     fn value(
         &mut self,
         s: NamedNodeRef<'_>,
@@ -143,7 +150,7 @@ impl<'i> Run<'i, '_> {
         pending: &mut Pending<'i>,
     ) -> Result<(), LiftError> {
         let (value, kind) = value_subject(o, self.index, self.subjects)?;
-        if let Some(dropped) = self.subjects.dropped(value) {
+        if let Some(dropped) = self.unselected(value)? {
             self.omit(dropped.value_reason());
             return Ok(());
         }
@@ -182,45 +189,49 @@ impl<'i> Run<'i, '_> {
 
     /// §7: the value of the seqnum edge `<s> … <o>`, or `None` when it is a
     /// deleted or superseded value (counted, and not one of the resource's seqnums).
-    fn seqnum(&mut self, s: &str, o: NamedNodeRef<'_>) -> Option<Seqnum> {
+    fn seqnum(&mut self, s: &str, o: NamedNodeRef<'_>) -> Result<Option<Seqnum>, LiftError> {
         let Some(value) = self.index.get(o.as_str()) else {
             self.violations.record(Rule::InvalidSeqnum, s, o.as_str());
-            return Some(Seqnum::Invalid);
+            return Ok(Some(Seqnum::Invalid));
         };
         // A dump subject without a kind is already a violation (§11).
-        let subject = self.subjects.get(o.as_str())?;
-        let dropped = (subject.kind == Kind::Value).then(|| self.subjects.dropped(value)).flatten();
-        if let Some(dropped) = dropped {
-            self.omit(dropped.value_reason());
-            return None;
+        let Some(subject) = self.subjects.get(o.as_str()) else {
+            return Ok(None);
+        };
+        if subject.kind == Kind::Value {
+            if let Some(dropped) = self.unselected(value)? {
+                self.omit(dropped.value_reason());
+                return Ok(None);
+            }
         }
         let class = subject.class.as_ref().map(|c| c.as_str());
         if class.and_then(ValueKind::of_class) != Some(ValueKind::Integer) {
             self.violations.record(Rule::InvalidSeqnum, s, o.as_str());
-            return Some(Seqnum::Invalid);
+            return Ok(Some(Seqnum::Invalid));
         }
-        Some(match value::seqnum(value, self.violations) {
+        Ok(Some(match value::seqnum(value, self.violations) {
             Some(n) => Seqnum::Integer(n),
             None => Seqnum::Invalid,
-        })
+        }))
     }
 
-    /// §8: the representation node of a live file value, into `pending`.
+    /// §8: the representation node of a selected file value, into `pending`.
     fn file_value(&mut self, o: NamedNodeRef<'_>, pending: &mut Pending<'i>) -> Result<(), LiftError> {
         let (file, class) = file_value_subject(o, self.index, self.subjects)?;
-        if let Some(dropped) = self.subjects.dropped(file) {
+        if let Some(dropped) = self.unselected(file)? {
             self.omit(dropped.file_value_reason());
             return Ok(());
         }
         pending.live_files += 1;
-        let emitted = representation::emit(file, class, self.snapshot, self.stats, self.violations);
+        let rights = rights_of(self.rights, file.node.as_str())?;
+        let emitted = representation::emit(file, class, rights, self.snapshot, self.stats, self.violations);
         pending.representation = emitted.map(|node| (node, file.node.as_str()));
         Ok(())
     }
 
     /// The resource's seqnum, representation and annotation structure, then its
     /// §2 structure.
-    fn finish_resource(&mut self, entry: &'i Entry, class: &NamedNode, pending: Pending<'i>) {
+    fn finish_resource(&mut self, entry: &'i Entry, class: &NamedNode, pending: Pending<'i>) -> Result<(), LiftError> {
         let s = entry.node.as_ref();
         match pending.seqnums.as_slice() {
             [Seqnum::Integer(n)] => {
@@ -251,7 +262,22 @@ impl<'i> Run<'i, '_> {
         self.snapshot
             .put(s, nn(vocab::RDF_TYPE).as_ref(), nn(vocab::DAO_RESOURCE).as_ref());
         self.snapshot.put(s, nn(vocab::DAO_SOURCE_CLASS).as_ref(), class.as_ref());
+        self.snapshot.put_rights(s, rights_of(self.rights, s.as_str())?);
         *self.stats.resources_by_class.entry(class.as_str().to_string()).or_default() += 1;
+        Ok(())
+    }
+
+    /// `None` for a selected value, else why it is not selected. A value a
+    /// selected resource names is selected unless it is deleted or superseded.
+    fn unselected(&self, value: &Entry) -> Result<Option<Dropped>, LiftError> {
+        let iri = value.node.as_str();
+        if self.selection.has_value(iri) {
+            return Ok(None);
+        }
+        match self.selection.dropped(iri) {
+            Some(dropped) => Ok(Some(dropped)),
+            None => Err(internal("a value of a selected resource is selected or dropped", iri)),
+        }
     }
 
     fn omit(&mut self, reason: &'static str) {
@@ -283,6 +309,13 @@ fn iri<'o>(s: NamedNodeRef<'_>, o: &'o Term) -> Result<NamedNodeRef<'o>, LiftErr
         return Err(internal("the §6 classifier assigns a rule only to an IRI object", s.as_str()));
     };
     Ok(o.as_ref())
+}
+
+/// The rights the guard gave `iri`, a selected subject.
+fn rights_of(rights: &Rights, iri: &str) -> Result<AccessRights, LiftError> {
+    rights
+        .of(iri)
+        .ok_or_else(|| internal("the guard gave every selected subject its rights", iri))
 }
 
 /// A classifier guarantee that did not hold for `subject`, an IRI.

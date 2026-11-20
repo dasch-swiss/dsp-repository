@@ -9,6 +9,7 @@ shared/
 ├── metadata/          # Research-metadata wire contract (crate: shared-metadata)
 ├── names/             # The shortcode and file-name rules of stand-in data (crate: shared-names)
 ├── rate-limit/        # Per-client-IP key extractor for the rate limiters (crate: shared-rate-limit)
+├── stand-in/          # The stand-in layout and the Ready token, reading side (crate: shared-stand-in)
 └── telemetry/         # Browser beacon contract + collector endpoint (crate: shared-telemetry)
 ```
 
@@ -76,7 +77,7 @@ The name rules every reader and writer of a project's stand-in data applies to a
 - **`is_shortcode`**: four hexadecimal digits, upper case. Stricter than `shared-metadata`'s `is_valid_shortcode`, so the five-character shortcodes `0801a`–`0801e` are refused: a metadata-only split of BEOL, with no bucket prefix of its own
 - **`is_file_name`**: one or more `/`-separated segments, each non-empty, of `[A-Za-z0-9._-]` and not starting with `.`, so no name climbs out of a project's subtree by its spelling. A file-system reader must still refuse symlinks, which the rule cannot see
 
-`cpe-ports` re-exports both, so CPE's callers name them as `cpe_ports::is_shortcode`; `media-store` uses them directly. `sync-store`, `shared-stand-in` and the VRE bridge's crates are granted the crate for when they come to use it (ADR-0002). It is a permanent crate, part of the small closure CPE's crates may be copied with (ADR-0007).
+`cpe-ports` re-exports both, so CPE's callers name them as `cpe_ports::is_shortcode`; `media-store` and `shared-stand-in` use them directly. `sync-store` and the VRE bridge's crates are granted the crate for when they come to use it (ADR-0002). It is a permanent crate, part of the small closure CPE's crates may be copied with (ADR-0007).
 
 Dependencies: none.
 
@@ -89,6 +90,18 @@ The rightmost entry is the one Traefik appends, so it is proxy-authored; the lef
 It is shared because the Access and Deposit Areas both rate-limit by client IP: `dpe-server` (the OAI-PMH endpoint), `access-server` (its `/telemetry/collect`), `editor-web` and `identity-web` (their rate-limited routes) and `deposit-server` (its `/telemetry/collect`). Each service keeps its own limiter configuration: the `per_ip_limit!` macros and the quotas stay where they are, and only the extractor is shared.
 
 Dependencies: `axum` and `tower_governor`.
+
+## `shared-stand-in` (stand-in/)
+
+The reading side of the stand-in contract: where a project's data lies in a stand-in subtree (`sync`'s or `media`'s), and the Ready token that says which generation is current. Each subtree root holds `<root>/<shortcode>/`, with the token `.ready` and one directory per generation in it; a reader reads the token, then only below `<root>/<shortcode>/<generation>/`. Contains:
+
+- **`Generation`**: a generation's directory name, `YYYYMMDDTHHMMSSZ-xxxxxxxx` (a UTC time, then 8 lowercase hex digits). `Generation::parse` checks the shape only; generations are never compared for order, and making a new name is the writer's
+- **`ReadyToken`** and **`Provenance`**: the token's fields, with `ReadyToken::to_bytes`, the canonical encoding (compact JSON, fields in a fixed order, one trailing newline), and `ReadyToken::parse`, which refuses another `token_version`, a generation of the wrong shape, a server id not `[a-z0-9-]{1,32}` and an inputs digest not `sha256:` plus 64 lowercase hex digits, and ignores fields it does not know; `previous_generation` is required, `null` for a first generation. Provenance is every field but `token_version` and `previous_generation`
+- **`read_token`**, **`generation_dir`**, **`known_projects`**: resolving a project through its token, and listing the shortcodes whose directory holds one. A shortcode that fails `is_shortcode` is unknown without touching the file system; a symlinked project directory or token is refused (`TokenError::Unreadable`), as is a malformed or oversized token (`TokenError::Invalid`). `generation_dir` is a path only: a reader refuses a symlink at and below it itself
+
+It assumes nothing of the file system beyond an atomic rename within one directory, so it works on NFS: no file-system notifications, no directory exchange. Writing a generation or a token, and replacing or removing one, is the VRE bridge's alone and lives only in `vre-bridge-*` (ADR-0002), so no reader holds the code to write the subtrees. The readers, `sync-store` and `media-store`, and the VRE bridge's `core`, `store` and `server` crates are granted it; none of them uses it yet (P-DEV-301). It ends with the stand-ins.
+
+Dependencies: `shared-names`, `serde`, `serde_json`, `thiserror`.
 
 ## `shared-telemetry` (telemetry/)
 

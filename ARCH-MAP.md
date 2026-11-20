@@ -14,7 +14,7 @@ Two deployables exist, one per area composition root, each on its own origin: `a
 (`areas/access/server`) serves **DPE**, the public read-only Discovery and Presentation
 Environment, and **CPE**, the project-specific presentations under `/cpe` (ADR-0007);
 `deposit-server` (`areas/deposit/server`) serves the authenticated **metadata editor** and
-**identity** (`areas/deposit/ADR-0004`). The capabilities share `shared-metadata` (the research-metadata contract), `shared-names` (the shortcode and file-name rules), `shared-rate-limit` (the rate
+**identity** (`areas/deposit/ADR-0004`). The capabilities share `shared-metadata` (the research-metadata contract), `shared-names` (the shortcode and file-name rules), `shared-stand-in` (the stand-in layout and the Ready token, reading side), `shared-rate-limit` (the rate
 limiters' client-IP key), `shared-telemetry` (the
 browser-beacon collector), `shared-datastar` (typed Datastar actions) and `mosaic-tiles` (the design system), and nothing else. The
 dependency arrow is one-way: `services → shared, mosaic`, and a service never imports
@@ -848,8 +848,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `areas/access/cpe/ports/src/lib.rs` (the bytes port's use of the rules),
   `areas/access/media/store/src/lib.rs` (a file-system reader that also refuses symlinks)
 - **Depends on:** nothing
-- **Used by:** areas/access/cpe (`cpe-ports`, re-exported), areas/access/media (`media-store`);
-  granted ahead of use to `sync-store`, `shared-stand-in` and the VRE bridge's `core`, `store` and
+- **Used by:** areas/access/cpe (`cpe-ports`, re-exported), areas/access/media (`media-store`),
+  shared/stand-in; granted ahead of use to `sync-store` and the VRE bridge's `core`, `store` and
   `server` crates (not yet in code, P-DEV-301)
 - **Boundary rules:**
   - Depends on no service crate; holds no path into one (**structure** + **static-analysis**,
@@ -858,7 +858,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     or file name applies these, never a copy (**review**). The rule cannot see a symbolic link; a
     file-system reader refuses those itself (**review**).
 - **Durable state:** none.
-- **Fingerprint:** `227d9145410a`
+- **Fingerprint:** `c203d97450de`
 
 ### shared/rate-limit
 
@@ -887,6 +887,41 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     appends to `X-Forwarded-For` shifts the trusted entry (**review**).
 - **Durable state:** none.
 - **Fingerprint:** `d32b8f246482`
+
+### shared/stand-in
+
+- **Paths:** `:(glob)shared/stand-in/**`
+- **Purpose:** `shared-stand-in` — the reading side of the stand-in contract between the VRE bridge
+  and `sync` and `media` (ADR-0002, `areas/deposit/ADR-0005`): a subtree root holds
+  `<root>/<shortcode>/`, with the Ready token `.ready` and one directory per generation in it; a
+  reader resolves a project through its token and reads only below the generation it names. Ends
+  with the stand-ins.
+- **Key entities:** `Generation`, `ReadyToken`, `Provenance`, `TokenError`, `InvalidToken`
+- **Public interface:** `TOKEN_FILE`, `TOKEN_VERSION`; `Generation::parse(&str) -> Option<Generation>`;
+  `ReadyToken::to_bytes` (the canonical encoding: compact JSON, fixed field order, one trailing
+  newline) and `ReadyToken::parse(&[u8]) -> Result<ReadyToken, TokenError>`;
+  `read_token(root, shortcode) -> Result<Option<ReadyToken>, TokenError>`,
+  `generation_dir(root, shortcode, &Generation) -> Option<PathBuf>`,
+  `known_projects(root) -> io::Result<Vec<String>>`.
+- **Local-context kit:** `shared/stand-in/src/lib.rs`, `shared/README.md`, `CONTEXT.md` (Generation,
+  Ready token under Shared), `areas/deposit/docs/adr/0005-the-vre-bridge-feeds-the-access-areas-stand-ins.md`
+- **Depends on:** shared/names (`is_shortcode`); third-party `serde`, `serde_json`, `thiserror`;
+  `tempfile` in tests only
+- **Used by:** nothing yet; granted to `sync-store`, `media-store` and the VRE bridge's `core`,
+  `store` and `server` crates (not yet in code, P-DEV-301)
+- **Boundary rules:**
+  - Depends on no service crate; holds no path into one (**structure** + **static-analysis**:
+    `check-shared-paths.sh`, as for `shared-metadata`).
+  - Reading side only: writing a generation or a token, replacing or removing one, lives only in
+    `vre-bridge-*`, so no reader holds the code to write the subtrees (**review**; not yet in code:
+    a `just check` grep for write calls on the subtrees outside `vre-bridge-*`, not scheduled).
+  - A symlinked project directory or token is refused (**static-analysis**: the crate's tests);
+    `generation_dir` is a path only, so a reader refuses a symlink at and below it itself
+    (**review**).
+  - Nothing assumes more of the file system than an atomic rename within one directory: no
+    file-system notifications, no directory exchange, since the subtrees may be NFS (**review**).
+- **Durable state:** none; it reads the stand-in subtrees, which the VRE bridge owns.
+- **Fingerprint:** `f98b59a7b536`
 
 ### shared/telemetry
 

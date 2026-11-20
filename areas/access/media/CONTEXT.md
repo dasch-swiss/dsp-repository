@@ -83,5 +83,5 @@ but `cpe_ports`, and `datei_ports` once it exists, grants `media-store`.
 
 A new consumer of `media` declares its own bytes port in its own ports crate, as DaTEI does with `datei-ports`,
 and `media-store` implements it beside `LiveDepositedFiles`. `is_shortcode` and `is_file_name` live in
-`shared-names` (ADR-0002), which `media-store` and `cpe-ports` use; `sync-store` and the VRE bridge are
+`shared-names` (ADR-0002), which `media-store`, `cpe-ports` and `shared-stand-in` use; `sync-store` and the VRE bridge are
 granted it in `shared/names/BUILD.bazel`.

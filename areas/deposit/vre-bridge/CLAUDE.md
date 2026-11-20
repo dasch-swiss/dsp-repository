@@ -6,20 +6,21 @@ Vocabulary: `areas/deposit/vre-bridge/CONTEXT.md`. The decision: `areas/deposit/
 
 ## Where the bridge lives
 
-Five crates, each in its own directory; only `vre-bridge-lift` exists so far.
+Five crates, each in its own directory; only `vre-bridge-lift` and `vre-bridge-store` exist so far.
 
 | Crate | Directory | Role | Holds | Exists |
 |---|---|---|---|---|
 | `vre-bridge-lift` | `lift/` | `lift` | the lift (`lift`, `Lifted`, `LiftError`, `Violation`): the selection, the public guard and dsp-incubator's `dao-lift` `snapshot` as a library; `FORMAT.md`; the format and transformation versions | yes |
 | `vre-bridge-core` | `core/` | `core` | settings, the allowlist, refresh decisions, the shipped-input digest, outcomes | no |
-| `vre-bridge-store` | `store/` | `store` | the subtrees: generations, Ready tokens, recovery, cleanup, the lock | no |
+| `vre-bridge-store` | `store/` | `store` | the subtrees: generations, Ready tokens, recovery, cleanup, the lock | yes |
 | `vre-bridge-client` | `client/` | `client` | DSP-API with the service identity: change check, export, the dump's download and unpacking | no |
 | `vre-bridge-server` | `server/` | `server` | the `VreBridge` facade `deposit-server` starts: the nightly run, one refresh, the operator's refresh | no |
 
 `vre-bridge-lift` grants its library to `vre-bridge-core` and `vre-bridge-server` alone (Bazel `visibility`). Its
 role bans web frameworks, Maud, database crates, HTTP clients and `tokio` (`.github/scripts/check-capability-deps.sh`,
 `just check`): it reads an unzipped dump from a directory it is given and returns the snapshot in memory; the
-caller writes it.
+caller writes it. `vre-bridge-store` grants its library to `vre-bridge-server` alone; every call is synchronous
+`std::fs`, for `spawn_blocking`.
 
 ## Rules
 

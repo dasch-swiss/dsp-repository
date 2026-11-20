@@ -1,0 +1,35 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+# The only code that writes the stand-in subtrees; only the bridge's server crate links it
+# (areas/deposit/ADR-0005).
+rust_library(
+    name = "vre_bridge_store",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "vre_bridge_store",
+    visibility = ["//areas/deposit/vre-bridge/server:__pkg__"],
+    deps = [
+        "//shared/names:shared_names",
+        "//shared/stand-in:shared_stand_in",
+        "@crates//:chrono",
+        "@crates//:rand",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ],
+)
+
+rust_test(
+    name = "vre_bridge_store_test",
+    crate = ":vre_bridge_store",
+    deps = ["@crates//:tempfile"],
+)
+
+# One test in a binary of its own: it re-runs that binary under `umask 077`.
+rust_test(
+    name = "vre_bridge_store_modes_test",
+    srcs = ["tests/modes.rs"],
+    deps = [
+        ":vre_bridge_store",
+        "//shared/stand-in:shared_stand_in",
+        "@crates//:tempfile",
+    ],
+)

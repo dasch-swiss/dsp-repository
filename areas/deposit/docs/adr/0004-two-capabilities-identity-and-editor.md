@@ -61,7 +61,7 @@ Configuration is loaded once at the root, and each capability receives the part 
 - **Shared metadata (persons, organisations) as a third capability beside project metadata** — *deferred*: the only shared-entity writes today are entity proposals, and their decisions are applied inside the approve transaction (`areas/deposit/editor/store/src/review_rounds.rs`); it becomes a candidate when shared entities get a lifecycle of their own outside a project's submission.
 - **The SMTP transport in `identity-web` or in `deposit-server`** — rejected: a `lettre` dependency in a views-and-routes crate, or adapter logic at the composition root.
 
-Not yet in code: of the VRE bridge's crates only `vre-bridge-lift` exists, and `deposit-server` neither depends on `vre-bridge-server` nor starts `VreBridge` (P-DEV-301).
+Not yet in code: of the VRE bridge's crates only `vre-bridge-lift` and `vre-bridge-store` exist, and `deposit-server` neither depends on `vre-bridge-server` nor starts `VreBridge` (P-DEV-301).
 Not yet in code: data modelling and upload are to arrive as capabilities of their own (not scheduled).
 
 Enforced by: the two database files, each opened by one store crate (**structure**); Bazel `visibility` (ADR-0001) for every edge between the area's crates, the root's included: no `core` crate grants `deposit-server`, and of the VRE bridge's crates only `vre-bridge-server` does (**structure**); `.github/scripts/check-capability-deps.sh`, run by `just check`, for the third-party bans of each role, read from its `BUILD.bazel` (**static-analysis**).

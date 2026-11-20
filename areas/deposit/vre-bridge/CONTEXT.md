@@ -5,8 +5,8 @@ an interim snapshot and the project's media files, and writes them into the Acce
 `sync` and `media` subtrees (`areas/deposit/ADR-0005`). Five crates are planned: `vre-bridge-lift` (`lift/`), the
 transformation of a dump into an interim snapshot, with `FORMAT.md` beside it; `vre-bridge-core` (`core/`),
 `vre-bridge-store` (`store/`), `vre-bridge-client` (`client/`) and `vre-bridge-server` (`server/`). Only
-`vre-bridge-lift` exists; `CLAUDE.md` beside this file lists what each crate holds. Terms both areas use, such as
-**Shortcode**, are in the root [`CONTEXT.md`](../../../CONTEXT.md).
+`vre-bridge-lift` and `vre-bridge-store` exist; `CLAUDE.md` beside this file lists what each crate holds. Terms
+both areas use, such as **Shortcode**, are in the root [`CONTEXT.md`](../../../CONTEXT.md).
 
 ## Language
 
@@ -75,6 +75,16 @@ subtrees.
 **Ready token**:
 The per-project, per-subtree file `<subtree>/<shortcode>/.ready` that names the project's current **Generation**,
 holds its provenance and marks the project known; replaced by one file rename.
+
+**Lock file**:
+The file on local disk, named by a setting of its own, whose lock every **Refresh** runs
+under: the **Nightly run** and the operator's refresh take it without waiting, so at most one refresh runs at a
+time across processes. It is never in a subtree; the subtrees themselves are never locked.
+_Avoid_: lock on the subtrees (there is none: they may be NFS).
+
+**Nightly-run record**:
+`<lock file>.nightly`: the local date of the last **Nightly run** that started, written under the **Lock file**'s
+lock before the run does anything else, so a second process, or a restart that night, does not run it again.
 
 **Allowlist**:
 The deployment's list of projects the bridge refreshes, each with its VRE server.

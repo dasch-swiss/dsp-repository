@@ -1,7 +1,9 @@
 # The committed archive projection of project 0803, in the stand-in layout: a fixture for
-# sync-store's tests and the tests that build CPE over it, and the data access-server's image carries.
+# sync-store's tests and the tests that build CPE over it. Keep it `testonly`, or
+# access-server's image, which reads the VRE bridge's location instead, could carry it.
 filegroup(
     name = "data",
+    testonly = True,
     srcs = glob(["data/**"]),
     visibility = [
         "//areas/access/cpe/server:__pkg__",

@@ -1,8 +1,7 @@
 The deposited files media holds, in the stand-in layout the VRE bridge writes: one directory per
 project shortcode, holding the Ready token .ready and the generation it names. CPE reads them through
-its bytes port (LiveDepositedFiles in areas/access/media/store). The fixture is a test input and, until
-access-server's image stops carrying it, the data the image serves; in a deployment with the VRE
-bridge, the bridge's output replaces it.
+its bytes port (LiveDepositedFiles in areas/access/media/store). The fixture is a test input; the image
+does not carry it; a deployment's data is the bridge's output.
 
 0803/.ready is hand-written and holds the same bytes as areas/access/sync/data/0803/.ready, which
 describes its fields: the two tokens hold equal provenance. The files below are in its generation,

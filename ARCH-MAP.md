@@ -187,10 +187,13 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     metadata record is public by design; each such capability keeps the four obligations of a Hidden project
     (`areas/access/CONTEXT.md`). CPE's are pinned by `serve.rs`'s and `cpe-server`'s tests; a new
     capability's are **review** until it has tests of its own (DaTEI: `datei/CONTEXT.md`, DEV-7549).
-  - The image carries each capability's data (`sync/data`, `cpe/projects`, `media/data`): the `image_data`
-    layer in `BUILD.bazel` and the `env` of `app_image` (`SYNC_DATA_DIR`, `CPE_PROJECTS_DIR`,
-    `MEDIA_DATA_DIR`) have to agree (**review**; see `areas/access/server/CLAUDE.md`; `just image-smoke` only
-    checks that the image starts and answers).
+  - The image carries DPE's corpus and CPE's project folders (`server/data`, `cpe/projects`): the `image_data`
+    layer in `BUILD.bazel` and the `env` of `app_image` (`DPE_DATA_DIR`, `CPE_PROJECTS_DIR`) have to agree
+    (**review**; see `areas/access/server/CLAUDE.md`; `just image-smoke` only checks that the image starts and
+    answers).
+  - The image carries no data of `sync`'s or `media`'s and sets neither `SYNC_DATA_DIR` nor `MEDIA_DATA_DIR`;
+    the deployment mounts the VRE bridge's locations (**structure**: both `data` filegroups are `testonly`, so
+    the non-`testonly` `image_data` fails analysis if it lists one; the `env`, **review**, as no test reads it).
   - Depends on each capability's `server` crate only, never a capability's `core`, `web` or
     `api-*` crate (**structure**: none of those targets lists this package in its `visibility`).
   - Depends on no crate of another area (ADR-0002; **structure**: no target of `areas/deposit` grants it).
@@ -1562,8 +1565,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   behind CPE's port, with no Chischtli, replay or bus; `access-server` constructs it over `SYNC_DATA_DIR` and
   hands it to CPE's activation. The stand-in subtree, which the VRE bridge writes, stands in for the
   projection stream (ADR-0012, `areas/deposit/ADR-0005`); the committed fixture holds project 0803 (Incunabula)
-  in its layout, and `access-server`'s image still carries it. It serves no curation: a project's
-  curation is a deposited file, which `media` serves (ADR-0012). Annotations (Regions, LinkObjs) are served as resources
+  in its layout, for the tests and a run from the checkout; it is `testonly`, so no image carries it. It
+  serves no curation: a project's curation is a deposited file, which `media` serves (ADR-0012). Annotations (Regions, LinkObjs) are served as resources
   with their geometry and color verbatim. Each resource's data ARK is derived from its IRI with
   dsp-api's algorithm (`ark.rs`), not read from the file, until DAO carries it; the incubator's
   ARKs for 0803 are committed as `data/0803-arks.txt` and pinned by the committed-file tests.
@@ -1631,8 +1634,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   equal provenance (`//areas/access/media:data` grants `sync/store`).
 - **Durable state:** the archive projection, **single writer** `sync`; disposable, rebuilt from
   snapshot plus replay, never repaired in place (target design). Today the `sync` stand-in subtree: one directory per project with
-  its Ready token and its generations, **single writer** the VRE bridge (`areas/deposit/ADR-0005`; no deployment
-  configures it, DEV-7514); `sync-store` only reads it, on every call, and holds nothing in between but the poll's
+  its Ready token and its generations, **single writer** the VRE bridge (`areas/deposit/ADR-0005`), mounted read-only
+  into `access-server` by the deployment; `sync-store` only reads it, on every call, and holds nothing in between but the poll's
   last-seen tokens, in memory. The committed
   fixture under `areas/access/sync/data/` is in that layout: its `snapshot.nq` was written by `dao-lift` on a
   VRE dump and committed unedited, its token by hand (**review**). The test oracle `0803-arks.txt`, **single writer**
@@ -1693,7 +1696,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   links `media_store` (**structure**: it grants `//areas/access/server` alone); another capability sees only
   `media_store_for_tests`, `testonly` and granted to `cpe-server` alone, so a reader names it in its tests
   only (ADR-0008, ADR-0012). The `data` filegroup is visible to `cpe-server`, `cpe-store-build`,
-  `sync-store` and `access-server` only (**structure**). A caller's shortcode and name reach the file system
+  `sync-store` and `access-server` only, and `testonly`, so no image carries it (**structure**). A caller's shortcode and name reach the file system
   only after `is_shortcode` and `is_file_name` accept them; a project is known exactly when its Ready token
   exists, only files of the generation it names are served, the token never, and no component at or below the
   generation directory may be a symbolic link; a broken token or a missing or linked generation is
@@ -1709,8 +1712,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   port (not scheduled).
 - **Durable state:** the tables that say what is servable and where, **single writer** `media`
   (target design). Until the Access bucket: the `media` stand-in subtree, one directory per project with its
-  Ready token and its generations, **single writer** the VRE bridge (ADR-0012, `areas/deposit/ADR-0005`; no
-  deployment configures it, DEV-7514). The committed fixture `areas/access/media/data/` is in that layout
+  Ready token and its generations, **single writer** the VRE bridge (ADR-0012, `areas/deposit/ADR-0005`), mounted
+  read-only into `access-server` by the deployment. The committed fixture `areas/access/media/data/` is in that layout
   (`0803/.ready`, `0803/20261007T000000Z-00000000/` with `config.kdl`, `curation.csv` and `narrative/`), text in
   plain git, images not committed (ADR-0009, ADR-0012, DEV-7512). The generation's files are a copy of the
   bridge's shipped inputs, `areas/deposit/vre-bridge/inputs/0803/`, the one authoritative copy of a project's

@@ -198,7 +198,6 @@ names (ADR-0012), with no routes and no authorisation check (not scheduled).
 Not yet in code: Vitrinli is not in this repository (not scheduled).
 Not yet in code: `sync` serves an on-disk snapshot through `sync-store`, not a Chischtli projection rebuilt from
 snapshot plus replay (not scheduled).
-Not yet in code: `sync-store` and `media-store` read files committed to this repository (P-DEV-301).
 Not yet in code: DPE reads its own data directory (`areas/access/dpe/server/data`) through `dpe-core`, not
 through a port against `sync` (not scheduled).
 

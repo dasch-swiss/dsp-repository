@@ -116,7 +116,7 @@ Defined in `cloud-run-dpe-pull-request.yml`.
 
 When a pull request modifies files under `areas/access/dpe/`, `areas/access/server/`, `areas/access/cpe/`, `areas/access/sync/`, `areas/access/media/`, `shared/`, `modules/mosaic/tiles/` or the Bazel build, a preview of the DPE is automatically deployed to Google Cloud Run. Works the same way as the Mosaic preview: ephemeral service per PR, cleaned up on close/merge.
 
-The preview is the whole image, so it serves CPE under `/cpe` too, from the data the image carries; a change to a presentation's code or files gets a preview of its own. It runs without CPU throttling, because CPE loads its projects after the port is bound.
+The preview is the whole image, so it mounts CPE under `/cpe` too, but it has no location of the VRE bridge's and the image carries no data of `sync`'s or `media`'s, so CPE serves no project there: its overview lists none and a project's paths answer `503`. It runs without CPU throttling, because CPE loads its projects after the port is bound.
 
 #### Continuous Deployment (Docker Hub + Jenkins)
 

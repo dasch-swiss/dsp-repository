@@ -5,7 +5,10 @@ filegroup(
     name = "inputs",
     srcs = glob(
         ["**"],
-        exclude = ["BUILD.bazel"],
+        exclude = [
+            "BUILD.bazel",
+            "**/.DS_Store",
+        ],
     ),
     visibility = [
         "//areas/deposit/server:__pkg__",

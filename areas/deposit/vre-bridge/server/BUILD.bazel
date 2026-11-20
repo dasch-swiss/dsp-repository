@@ -1,3 +1,4 @@
+load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
 # The VRE bridge's entry crate (areas/deposit/ADR-0005): the bridge deposit-server starts, its
@@ -35,6 +36,37 @@ rust_test(
         "@crates//:rustls",
         "@crates//:serde_json",
         "@crates//:tracing-subscriber",
+        "@crates//:wiremock",
+        "@crates//:zip",
+    ],
+)
+
+# The inputs digest refuses a symbolic link, and runfiles are symbolic links, so the shipped inputs
+# are read from a copy at their repository paths, below `test_inputs/`, and the test runs outside
+# the local sandbox, which would link each copied file again.
+copy_to_directory(
+    name = "test_inputs",
+    testonly = True,
+    srcs = ["//areas/deposit/vre-bridge/inputs"],
+    root_paths = [],
+)
+
+# A refresh of 0803 over its committed shipped inputs, through the public `VreBridge`.
+rust_test(
+    name = "refresh_0803_test",
+    srcs = ["tests/refresh_0803.rs"],
+    compile_data = ["//areas/deposit/vre-bridge/client:testdata/ed25519-private.pem"],
+    data = [":test_inputs"],
+    rustc_env = {"CARGO_MANIFEST_DIR": "areas/deposit/vre-bridge/server"},
+    tags = ["no-sandbox"],
+    deps = [
+        ":vre_bridge_server",
+        "//shared/stand-in:shared_stand_in",
+        "@crates//:opentelemetry",
+        "@crates//:rustls",
+        "@crates//:serde_json",
+        "@crates//:tempfile",
+        "@crates//:tokio",
         "@crates//:wiremock",
         "@crates//:zip",
     ],

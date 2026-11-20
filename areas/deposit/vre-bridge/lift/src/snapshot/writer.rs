@@ -4,9 +4,11 @@
 use std::collections::BTreeSet;
 use std::io::{self, Write};
 
-use oxigraph::model::{GraphNameRef, NamedNode, NamedNodeRef, NamedOrBlankNodeRef, QuadRef, TermRef};
+use oxigraph::model::{GraphNameRef, Literal, NamedNode, NamedNodeRef, NamedOrBlankNodeRef, QuadRef, TermRef};
 
-use super::Stats;
+use super::vocab;
+use crate::guard::AccessRights;
+use crate::model::nn;
 
 /// The snapshot under construction: every quad as its N-Quads line, so the set
 /// is sorted bytewise and deduplicated by construction (§1). The line bytes are
@@ -15,12 +17,14 @@ use super::Stats;
 pub struct Snapshot {
     graph: NamedNode,
     lines: BTreeSet<String>,
-    pub(crate) stats: Stats,
 }
+
+/// The one data classification the bridge writes.
+const UNCLASSIFIED: &str = "unclassified";
 
 impl Snapshot {
     pub(crate) fn new(graph: NamedNode) -> Snapshot {
-        Snapshot { graph, lines: BTreeSet::new(), stats: Stats::default() }
+        Snapshot { graph, lines: BTreeSet::new() }
     }
 
     pub(crate) fn put<'a>(&mut self, s: NamedNodeRef<'a>, p: NamedNodeRef<'a>, o: impl Into<TermRef<'a>>) {
@@ -35,6 +39,15 @@ impl Snapshot {
         self.lines.insert(format!("{q} ."));
     }
 
+    /// `dao:accessRights` and `dao:dataClassification` of a resource or
+    /// representation node (§2, §8).
+    pub(crate) fn put_rights(&mut self, s: NamedNodeRef<'_>, rights: AccessRights) {
+        let access = Literal::new_simple_literal(rights.as_str());
+        let classification = Literal::new_simple_literal(UNCLASSIFIED);
+        self.put(s, nn(vocab::DAO_ACCESS_RIGHTS).as_ref(), &access);
+        self.put(s, nn(vocab::DAO_DATA_CLASSIFICATION).as_ref(), &classification);
+    }
+
     pub(crate) fn len(&self) -> usize {
         self.lines.len()
     }
@@ -42,10 +55,5 @@ impl Snapshot {
     /// Every line, sorted, each ended by `\n`.
     pub fn write_to(&self, w: &mut dyn Write) -> io::Result<()> {
         self.lines.iter().try_for_each(|l| writeln!(w, "{l}"))
-    }
-
-    /// What the run that built this snapshot counted.
-    pub fn stats(&self) -> &Stats {
-        &self.stats
     }
 }

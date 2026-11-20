@@ -8,6 +8,7 @@ use super::value::{self, one_literal};
 use super::violations::{Rule, Violations};
 use super::writer::Snapshot;
 use super::{Stats, kinds, mint, vocab};
+use crate::guard::AccessRights;
 use crate::model::{self, kb, nn};
 
 /// §11: the predicates a carried file value may carry.
@@ -46,13 +47,15 @@ fn representation_type(class: &str) -> Option<(&'static str, bool)> {
     })
 }
 
-/// Emit the representation node of a live file value of `class` and return it,
+/// Emit the representation node of a selected file value of `class`, with its
+/// access `rights`, and return it,
 /// or `None` for a class omitted whole (counted) or after recording every reason
 /// it cannot be emitted. The caller writes `<resource> dao:hasRepresentation <node>`.
 #[must_use = "the caller writes the edge from the resource to the returned node"]
 pub(crate) fn emit(
     file: &Entry,
     class: &str,
+    rights: AccessRights,
     snapshot: &mut Snapshot,
     stats: &mut Stats,
     violations: &mut Violations,
@@ -97,6 +100,7 @@ pub(crate) fn emit(
     if let Some(holder) = &legal.copyright_holder {
         snapshot.put(n, nn(vocab::DAO_COPYRIGHT_HOLDER).as_ref(), holder);
     }
+    snapshot.put_rights(n, rights);
     *stats.representations_by_type.entry(representation_type).or_default() += 1;
     Some(node)
 }

@@ -10,7 +10,7 @@ Five crates, each in its own directory; only `vre-bridge-lift` exists so far.
 
 | Crate | Directory | Role | Holds | Exists |
 |---|---|---|---|---|
-| `vre-bridge-lift` | `lift/` | `lift` | dsp-incubator's `dao-lift` `snapshot` as a library (`snapshot`, `Snapshot`, `Stats`, `LiftError`), `FORMAT.md` | yes |
+| `vre-bridge-lift` | `lift/` | `lift` | the lift (`lift`, `Lifted`, `LiftError`, `Violation`): the selection, the public guard and dsp-incubator's `dao-lift` `snapshot` as a library; `FORMAT.md`; the format and transformation versions | yes |
 | `vre-bridge-core` | `core/` | `core` | settings, the allowlist, refresh decisions, the shipped-input digest, outcomes | no |
 | `vre-bridge-store` | `store/` | `store` | the subtrees: generations, Ready tokens, recovery, cleanup, the lock | no |
 | `vre-bridge-client` | `client/` | `client` | DSP-API with the service identity: change check, export, the dump's download and unpacking | no |
@@ -32,14 +32,29 @@ caller writes it.
   every outcome.
 - **`lift/FORMAT.md` is normative.** Where the code and `FORMAT.md` disagree, the code is wrong. An output change
   updates `FORMAT.md` and adds a §16 line; sections are never renumbered (`format_doc_tests.rs` checks both).
-- **A bad dump is an error, not a panic.** A dump that breaks the format is `LiftError::Violations`, listing every
-  violation; production code calls no `expect`, `unwrap`, `panic!` or `unreachable!` (denied in `lift/src/lib.rs`).
-  `snapshot` blocks and holds the whole dump in memory: an async caller runs it in `spawn_blocking`.
-- **`LiftError` goes to the log only.** Its text names paths, graph IRIs and resource IRIs of the dump.
+- **The guard sees every resource and value that is written.** `lift` reads the dump (`snapshot::Read`), selects
+  (`selection.rs`), checks the selection (`guard.rs`), then builds from that same `Selection` with the guard's
+  `Rights`; nothing in the snapshot code re-derives what is current, and a subject without rights from the guard is
+  `LiftError::Internal`, never public. List nodes are outside the selection: they carry no permissions and no
+  rights (`FORMAT.md` §11). The guard refuses on any violation and fails closed: a missing or unreadable
+  `knora-base:hasPermissions` refuses, and only `knora-admin:UnknownUser` counts.
+- **A bad dump is an error, not a panic.** A refused project is `LiftError::Refused`, a dump that breaks the format
+  `LiftError::ClosedWorld`, each listing every case; production code calls no `expect`, `unwrap`, `panic!` or
+  `unreachable!` (denied in `lift/src/lib.rs`). `lift` blocks and holds the whole dump in memory: an async caller
+  runs it in `spawn_blocking`.
+- **`TRANSFORMATION_VERSION` rises with any change to the bytes `lift` writes for the same dump**, in the commit that
+  changes them; `the_rich_fixture_lifts_to_the_pinned_golden_bytes` fails until `lift/testdata/golden.nq` is
+  replaced, so the change is noticed.
+- **`INTERIM_FORMAT_VERSION` rises when a reader would read a snapshot differently** (`FORMAT.md` §0). Raising it to
+  n needs an `access-server` release whose `sync-store` reads versions n-1 and n first.
+- **`LiftError` goes to the log only.** Its text names paths, graph IRIs and resource and value IRIs of the dump; a
+  closed-world violation of a label names the label's text.
 
 ## Checking the lift on a real dump
 
 `bazel test //areas/deposit/vre-bridge/lift/...` runs the fixture tests. The real-dump tests are `#[ignore]`d;
 `just vre-bridge-lift-real-dump <dump dir> <reference snapshot>` runs them, with the reference written by
 dsp-incubator's `dao-lift snapshot` at the ported commit from the same dump, both as absolute paths.
-`real_dump_matches_the_incubator_lift` compares the two as sets of quads.
+`real_dump_matches_the_incubator_lift` compares the two as sets of quads, apart from the access rights and data
+classification the incubator never wrote. When the public guard refuses the dump, every test fails after printing
+the guard's violations.

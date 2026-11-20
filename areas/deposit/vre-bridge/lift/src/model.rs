@@ -64,6 +64,8 @@ pub mod kb {
     pub const PREVIOUS_VALUE: &str = "http://www.knora.org/ontology/knora-base#previousValue";
     pub const VALUE_HAS_MAPPING: &str = "http://www.knora.org/ontology/knora-base#valueHasMapping";
     pub const VALUE_HAS_STANDOFF: &str = "http://www.knora.org/ontology/knora-base#valueHasStandoff";
+    /// The XML DSP-API renders from a text value's standoff and stores beside it.
+    pub const VALUE_HAS_XML: &str = "http://www.knora.org/ontology/knora-base#valueHasXml";
     pub const HAS_STILL_IMAGE_FILE_VALUE: &str = "http://www.knora.org/ontology/knora-base#hasStillImageFileValue";
     pub const STILL_IMAGE_FILE_VALUE: &str = "http://www.knora.org/ontology/knora-base#StillImageFileValue";
     pub const INTERNAL_FILENAME: &str = "http://www.knora.org/ontology/knora-base#internalFilename";

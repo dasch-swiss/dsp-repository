@@ -96,6 +96,18 @@ fn rich_fixture() -> Fixture {
     let current = text(&mut f, ZEBRA, "TEXT2", Some(PUBLIC));
     let old = text(&mut f, ZEBRA, "TEXT1", Some(MEMBERS_ONLY));
     f.add(&current, kb::PREVIOUS_VALUE, nn(&old));
+    // Markup: the current version carries its XML; the superseded one, never written, needs none.
+    for v in [&current, &old] {
+        let tag = format!("{v}/standoff/1");
+        f.add(v, kb::VALUE_HAS_STANDOFF, nn(&tag));
+        f.add(v, kb::VALUE_HAS_MAPPING, nn("http://rdfh.ch/standoff/mappings/StandardMapping"));
+        f.add(
+            &tag,
+            model::RDF_TYPE,
+            nn("http://www.knora.org/ontology/standoff#StandoffRootTag"),
+        );
+    }
+    f.add(&current, kb::VALUE_HAS_XML, plain("<text><p>TEXT2</p></text>"));
     let deleted = text(&mut f, ZEBRA, "GONE", Some(MEMBERS_ONLY));
     f.add(&deleted, kb::IS_DELETED, boolean("true"));
     file(&mut f, ZEBRA, "IMAGE", kb::STILL_IMAGE_FILE_VALUE, RESTRICTED);

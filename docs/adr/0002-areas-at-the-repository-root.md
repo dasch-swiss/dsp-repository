@@ -146,8 +146,6 @@ Not yet in code: dsp-cli calls DSP-API only; no area modulith serves it (not sch
 Not yet in code: no stand-in directory is shared by mount; `sync`'s and `media`'s data is carried in
 `access-server`'s image (DEV-7514).
 Not yet in code: no deployment configures the VRE bridge, so it writes no stand-in (DEV-7514).
-Not yet in code: no `just check` script pins the 0803 `media` fixture to the bridge's shipped inputs
-(P-DEV-301).
 
 Enforced by: Bazel `visibility` under ADR-0001 for crate edges (structure): every first-party target lists its
 consumers, no grant crosses `areas/access` and `areas/deposit` except the published corpus
@@ -160,6 +158,8 @@ the write and replace code living only in `vre-bridge-*` crates, so that no othe
 by no other code writing the directory with `std::fs` (review); `access-server` mounting the directory
 read-only is deployment-level, in
 ops-deploy, and not checked in this repository; `check-shared-paths.sh` for paths from a shared crate into an
-area, which no dependency edge shows (static-analysis); `cargo publish --dry-run --locked --manifest-path
+area, which no dependency edge shows (static-analysis); `check-stand-in-fixture.sh`, run by `just check`,
+for the 0803 `media` fixture holding the bridge's shipped inputs byte for byte, the only code that reads
+both areas' trees (static-analysis); `cargo publish --dry-run --locked --manifest-path
 dsp-cli/Cargo.toml` in `check.yml` for dsp-cli's publishing manifest (static-analysis); review for state
 ownership, shared concepts and the archive's storage.

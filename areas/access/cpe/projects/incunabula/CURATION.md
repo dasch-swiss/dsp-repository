@@ -124,7 +124,8 @@ and is **never committed**: its admin graph carries user records with password h
 `attachedToUser` and every other knora-base admin predicate, and checked to contain no
 `rdfh.ch/users/` IRI. *(As built since DEV-7496: this directory holds no `raw/`, and in this repository no `data.sql`. The derived
 artefacts are the snapshot `areas/access/sync/data/0803/20261007T000000Z-00000000/snapshot.nq` and the hand-edited curation file
-`areas/access/media/data/0803/20261007T000000Z-00000000/curation.csv`, of which the incubator's `vendor/` holds a copy; a curated value is edited in this repository, see
+`areas/access/media/data/0803/20261007T000000Z-00000000/curation.csv`, of which the incubator's `vendor/` holds a copy; a curated value is edited in this
+repository, in the VRE bridge's shipped inputs (`areas/deposit/vre-bridge/inputs/0803/curation.csv`), see
 [`PROVENANCE.md`](./PROVENANCE.md).)* The project's content itself is open (CC BY 4.0, every resource and
 file value viewable by unknown users), so committing derived data raises no access question
 for Incunabula; HdM and Solec need the same check before anything of theirs is committed.

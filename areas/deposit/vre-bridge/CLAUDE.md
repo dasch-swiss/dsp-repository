@@ -144,6 +144,11 @@ refresh would release the lock while a blocking write goes on; a refresh that pa
   server id, so a key pasted into another variable is not quoted either. A new variant keeps to that.
 - **The shipped-input digest's definition is fixed.** Changing what `inputs_digest` hashes, or in which order,
   changes every project's digest and so refreshes every project once.
+- **`inputs/<shortcode>/` is the one authoritative copy of a project's shipped inputs.** A change to
+  `inputs/0803/` is copied in the same commit into the generation of `areas/access/media/data/0803/`, which
+  `just check-stand-in-fixture` holds equal byte for byte, and changes the digest that
+  `server/tests/refresh_0803.rs` pins and both 0803 fixture tokens (`media` and `sync`) record: the three are
+  updated together, and the test and `just check-stand-in-fixture` fail until they agree.
 - **A refresh blocks no runtime thread.** Every `vre-bridge-store` call, `unpack`, `lift`, `inputs_digest` and
   the work directory's removal run in `spawn_blocking` with owned arguments; no `GenerationWriter` is held
   across an `.await`. A panic there ends the refresh as `Failed(Internal)`; its payload is not logged.

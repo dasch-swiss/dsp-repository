@@ -102,7 +102,9 @@ Both ports must serve the project: `areas/access/sync/data/<shortcode>/` holds i
 the token names, its `snapshot.nq` (`areas/access/sync/CONTEXT.md`), and `areas/access/media/data/<shortcode>/` holds
 its Ready token and, in the same generation, its `config.kdl`, its narrative and, when its block reads a curated key,
 its `curation.csv` (`areas/access/media/CONTEXT.md`). Its folder, `areas/access/cpe/projects/<project>/`, holds
-a `SHORTCODE` file with the shortcode.
+a `SHORTCODE` file with the shortcode. The `media` files of a project the VRE bridge refreshes are authored in its
+shipped inputs, `areas/deposit/vre-bridge/inputs/<shortcode>/`, and the fixture holds a copy; for 0803,
+`just check-stand-in-fixture` holds the two equal.
 
 **A project without a hook** is configuration.
 

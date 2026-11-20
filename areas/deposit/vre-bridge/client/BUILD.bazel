@@ -24,6 +24,12 @@ rust_library(
     ],
 )
 
+# The server crate's tests sign with the same test key.
+exports_files(
+    ["testdata/ed25519-private.pem"],
+    visibility = ["//areas/deposit/vre-bridge/server:__pkg__"],
+)
+
 # The key pair under testdata/ is for tests only; no server trusts it.
 rust_test(
     name = "vre_bridge_client_test",

@@ -4,7 +4,6 @@ rust_library(
     name = "shared_stand_in",
     srcs = glob(["src/**/*.rs"]),
     crate_name = "shared_stand_in",
-    # The VRE bridge is granted ahead of use (P-DEV-301).
     visibility = [
         "//areas/access/media/store:__pkg__",
         "//areas/access/sync/store:__pkg__",

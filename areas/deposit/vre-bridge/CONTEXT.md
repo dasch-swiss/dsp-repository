@@ -117,7 +117,7 @@ world, the server refusing the **Service identity** (`401`, `403`).
 _Avoid_: failure.
 
 **Failure**:
-Every other unsuccessful **Outcome**: the transport, a time limit, a busy dump slot, any other answer of the
+Every other unsuccessful **Outcome**: the transport, a time limit, a dump slot still busy when the caller gives up (**Busy**), any other answer of the
 server, unusable **Shipped inputs**, or the bridge itself.
 _Avoid_: refusal, error (the log's word for one step).
 
@@ -136,6 +136,12 @@ DSP-API's public `GET /v2/resources/info` together with the server's `asOf`, whi
 DSP-API's task that produces a **Dump** (`/v3/projects/{iri}/exports`). The slot is server-wide: a finished export
 blocks the next until it is deleted, so the bridge deletes its own on every outcome.
 _Avoid_: dump (the zip the export produces).
+
+**Busy**:
+Another caller's **Export** holds a server's slot, so a **Refresh** cannot start one (`vre-bridge-server`'s
+`Busy`). Not an **Outcome** in itself: the caller tries again or gives up, and only giving up is reported, as
+a **Failure** with the reason busy (`FailureReason::Busy`). Not yet in code: the nightly run's retries, and the
+operator's refresh, which gives up at once (P-DEV-301).
 
 **Private work directory**:
 The directory `vre-bridge-dump-<random>`, mode `0700`, into which a **Dump** is downloaded and unpacked; deleted

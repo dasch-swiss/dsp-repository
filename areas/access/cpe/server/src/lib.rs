@@ -1,7 +1,8 @@
 //! `cpe-server`: CPE's configuration, its router and the activation of its projects.
 //!
 //! This crate is a library only; a composition root owns `main`, the listener
-//! and the tracing layers, mounts [`Cpe::router`] and calls [`Cpe::activate`].
+//! and the tracing layers, mounts [`Cpe::router`] and calls [`Cpe::follow`], or
+//! [`Cpe::activate`] to load once.
 //! Nothing here may name a type of `cpe-core`, `cpe-store`, `cpe-store-build`,
 //! `cpe-web`, `cpe-components` or `cpe-image-viewer` in a `pub` signature:
 //! that boundary is what lets a host depend on this crate and `cpe-ports`
@@ -15,13 +16,14 @@
 //!
 //! A project's store comes from the two ports and from nowhere else (ADR-0008, ADR-0012): the
 //! archive projection's snapshot, and the config, narrative and curation the project deposited,
-//! read through the bytes port. `activation` is where it is built, and [`Cpe::activate`] is the
-//! one way in that a host is meant to use.
+//! read through the bytes port. `activation` is where it is built, and [`Cpe::follow`] and
+//! [`Cpe::activate`] are the ways in that a host is meant to use.
 
 mod activation;
 mod assets;
 mod config;
 mod discovery;
+mod follow;
 mod request;
 mod router;
 mod static_files;
@@ -58,7 +60,7 @@ impl MatchedRoute {
 }
 
 /// CPE, built from its config. Cheap to clone, and every clone and every
-/// router taken from one shares what [`Cpe::activate`] stores.
+/// router taken from one shares what [`Cpe::activate`] and [`Cpe::follow`] store.
 #[derive(Clone)]
 pub struct Cpe {
     config: Arc<CpeConfig>,
@@ -70,9 +72,9 @@ pub struct Cpe {
 
 impl Cpe {
     /// CPE with no project loaded: every path is answered 503 until
-    /// [`Cpe::activate`] has run. Does no I/O and cannot fail. A
-    /// configuration that is refused is logged here, and then `activate`
-    /// loads nothing.
+    /// [`Cpe::activate`] or [`Cpe::follow`] has run. Does no I/O and cannot fail. A
+    /// configuration that is refused is logged here, and then neither loads
+    /// anything.
     #[must_use]
     pub fn new(config: &CpeConfig) -> Self {
         if let Some(reason) = config.refusal() {
@@ -105,8 +107,10 @@ impl Cpe {
     /// that does not load is logged with its id and answers 503 on its
     /// prefix, and the others are served and, unless hidden, listed at the base; any other
     /// path that names no project is CPE's not-found. A later call loads
-    /// everything again and replaces what is served; if it panics outside a
-    /// project's own load, what was served before stays.
+    /// everything again and replaces what is served, whatever failed; if it
+    /// panics outside a project's own load, what was served before stays. Only
+    /// [`Cpe::follow`] holds a re-activation back, and a host that follows does
+    /// not call this on the same `Cpe` as well.
     ///
     /// "Never panics" rests on unwinding: a binary built with
     /// `panic = "abort"` loses it.
@@ -123,6 +127,37 @@ impl Cpe {
                 panic = activation::panic_message(payload.as_ref()),
                 "CPE's activation panicked; what was served before is still served"
             ),
+        }
+    }
+
+    /// [`Cpe::activate`], and again on every announcement `projection` makes for a shortcode a
+    /// project folder declares (ADR-0012). Blocking until the first activation is done; the later
+    /// ones run on a thread of their own, `cpe-reactivate`, which holds both ports and so lives,
+    /// with `projection`'s own announcing, for as long as the process does.
+    ///
+    /// It subscribes before the first activation, so a change made while that runs is followed.
+    /// A re-activation replaces what is served only if every project served before is served
+    /// again or is no longer in the archive projection. Otherwise what was served stays, the
+    /// projects that held it back are logged, and it is tried once more after `retry_after`
+    /// (`docs/src/cpe/operations.md`, *Refresh*).
+    pub fn follow(
+        &self,
+        projection: Arc<dyn cpe_ports::ArchiveProjection>,
+        files: Arc<dyn cpe_ports::DepositedFiles>,
+        retry_after: std::time::Duration,
+    ) {
+        if self.config.refusal().is_some() {
+            return;
+        }
+        let (announce, announced) = std::sync::mpsc::channel();
+        projection.subscribe(Arc::new(follow::Announcements(announce)));
+        self.activate(projection.as_ref(), files.as_ref());
+        let cpe = self.clone();
+        let spawned = std::thread::Builder::new()
+            .name("cpe-reactivate".to_owned())
+            .spawn(move || follow::run(&cpe, &announced, projection.as_ref(), files.as_ref(), retry_after));
+        if let Err(error) = spawned {
+            tracing::error!(%error, "CPE cannot follow the archive projection's announcements: a restart refreshes it");
         }
     }
 

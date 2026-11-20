@@ -34,16 +34,17 @@ itself untraced. A test pins it — do not reorder without checking `serve.rs`'s
   `MEDIA_DATA_DIR` and `CPE_PROJECTS_DIR` to the copies it carries; `CPE_PUBLIC_ORIGIN` is the deployment's to
   set.
 - **CPE never stops or delays DPE.** `CpeConfig::load` and `Cpe::new` cannot fail and read nothing.
-  `Cpe::activate` runs in `spawn_blocking` after the listener is bound, over `sync-store`'s
+  `activate_in_background` calls `Cpe::follow` in `spawn_blocking` after the listener is bound, over `sync-store`'s
   `LiveArchiveProjection` on `SYNC_DATA_DIR` (default `areas/access/sync/data`) and `media-store`'s
   `LiveDepositedFiles` on `MEDIA_DATA_DIR` (default `areas/access/media/data`); `data_dir` takes an empty value
-  for unset. Until it finishes, and for a project that failed, CPE answers 503; a missing data directory is
+  for unset. Until the first activation finishes, and for a project that failed, CPE answers 503; a missing data directory is
   such a failure, not a start-up error, and a missing `MEDIA_DATA_DIR` is logged as a warning. Do not `.await` the activation and do not `expect` anything of CPE's in `serve()`.
-  Activation runs once per start, so for now an edit under either data directory needs a restart. `serve()`
-  passes `SYNC_POLL_SECS` (`sync_poll_interval`) to `LiveArchiveProjection::with_poll_interval`, whose port
-  announces a changed project once subscribed. Not yet in code: CPE subscribes and rebuilds the one project
-  named, and `media`'s port announces; the Ready-token poll belongs to `sync` and `media`, so add no reload
-  endpoint or signal for CPE here (ADR-0012, DEV-7622, DEV-7938).
+  `serve()` passes `SYNC_POLL_SECS` (`sync_poll_interval`) to `LiveArchiveProjection::with_poll_interval`, and
+  `RETRY_AFTER_POLLS` poll intervals to `follow` as the wait before it retries a held-back re-activation; CPE re-activates on
+  `sync`'s announcements on a thread of its own (`docs/src/cpe/operations.md`, *Refresh*). The Ready-token poll
+  belongs to `sync` and `media`, so add no reload endpoint or signal for CPE here (ADR-0012). Not yet in code:
+  `media`'s port announces nothing (DEV-7938), and CPE re-activates every project instead of rebuilding the
+  one named (DEV-7989).
   `app` builds the router with CPE inside `catch_unwind`: if that build panics, it logs an error naming
   `CPE_BASE` and builds DPE alone. No base does that today: a route of DPE's or the binary's under the base
   (`/healthz`, `/dpe/projects`) keeps answering, and only a second any-method route for `<base>/` panics.

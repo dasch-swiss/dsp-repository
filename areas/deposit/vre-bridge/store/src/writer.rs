@@ -194,6 +194,25 @@ impl GenerationWriter {
         Ok(())
     }
 
+    /// Copies the regular file `src` into the generation as `name`, streaming it.
+    ///
+    /// # Errors
+    ///
+    /// [`StoreError::NotRegular`] when `src` is a symlink or not a regular file, or was replaced
+    /// by one between the check and the opening; as [`write`](Self::write).
+    pub fn copy_file(&mut self, subtree: Subtree, name: &str, src: &Path) -> Result<()> {
+        let checked = fs::symlink_metadata(src).map_err(io_error(src))?;
+        if !checked.is_file() {
+            return Err(StoreError::NotRegular(src.to_owned()));
+        }
+        let mut source = File::open(src).map_err(io_error(src))?;
+        let opened = source.metadata().map_err(io_error(src))?;
+        if !opened.is_file() || (opened.dev(), opened.ino()) != (checked.dev(), checked.ino()) {
+            return Err(StoreError::NotRegular(src.to_owned()));
+        }
+        self.add_file(subtree, name, &mut source)
+    }
+
     /// Writes [`RIGHTS_RECORD`] as [`RIGHTS_RECORD_FILE`] into the `media` generation.
     ///
     /// # Errors

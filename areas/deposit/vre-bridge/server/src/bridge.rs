@@ -13,7 +13,7 @@ use opentelemetry::metrics::Meter;
 use tokio::time::Instant;
 use tracing::{error, info, warn};
 use vre_bridge_client::{Server, ServiceIdentity, Timeouts, DUMP_DIR_PREFIX};
-use vre_bridge_core::{AllowlistEntry, FailureReason, Outcome, RawSettings, ServerId, Settings};
+use vre_bridge_core::{AllowlistEntry, FailureReason, Outcome, RawSettings, ServerId, Settings, FILE_MAPPING};
 use vre_bridge_store::{is_swept, Lock, RecoveryReport, Subtrees};
 
 use crate::refresh::spawn_blocking;
@@ -368,16 +368,21 @@ fn invalid(reason: String) -> Inactive {
     Inactive::Invalid(reason)
 }
 
-/// The checks `Settings::parse` leaves to the bridge: the time zone, which it returns, and the
-/// work directory and lock file outside both output locations, neither a symlink, and no output
-/// location where the sweep of the work directory would delete it. Paths are compared after
-/// `canonicalize`, so both output locations and the work directory must exist; the settings keep
-/// the canonical work directory and lock file, so a symlink placed later changes neither.
+/// The checks `Settings::parse` leaves to the bridge: the time zone, which it returns; an IIIF
+/// base for each server from which a project ships a file mapping; and the work directory and lock
+/// file outside both output locations, neither a symlink, and no output location where the sweep
+/// of the work directory would delete it. Paths are compared after `canonicalize`, so both output
+/// locations and the work directory must exist; the settings keep the canonical work directory and
+/// lock file, so a symlink placed later changes neither.
 fn check(settings: &mut Settings) -> Result<Tz, Inactive> {
     let time_zone = settings
         .time_zone
         .parse::<Tz>()
         .map_err(|_| invalid(format!("{TIME_ZONE} is not an IANA time zone name")))?;
+    let inputs = settings.inputs_dir.clone();
+    settings
+        .check_iiif_bases(|shortcode| std::fs::symlink_metadata(inputs.join(shortcode).join(FILE_MAPPING)).is_ok())
+        .map_err(|e| invalid(e.to_string()))?;
 
     let resolve = |var: &str, path: &Path| {
         path.canonicalize()
@@ -470,8 +475,11 @@ fn servers(settings: &Settings) -> Result<BTreeMap<ServerId, Server>, Inactive> 
             let key = read_signing_key(id, &server.signing_key_file, settings)?;
             let identity = ServiceIdentity::new(&settings.service_name, &server.key_id, &key)
                 .map_err(|e| invalid(format!("{SIGNING_KEY_FILES}: the key of server `{id}`: {e}")))?;
-            let client = Server::new(&server.base_url, identity, timeouts)
-                .map_err(|e| invalid(format!("the client of server `{id}`: {e}")))?;
+            let client_error = |e| invalid(format!("the client of server `{id}`: {e}"));
+            let mut client = Server::new(&server.base_url, identity, timeouts).map_err(client_error)?;
+            if let Some(iiif_base) = &server.iiif_base {
+                client = client.with_file_base(iiif_base).map_err(client_error)?;
+            }
             Ok((id.clone(), client))
         })
         .collect()

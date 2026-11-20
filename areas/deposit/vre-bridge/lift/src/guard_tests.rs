@@ -8,7 +8,7 @@ use crate::model::{self, kb, nn};
 use crate::snapshot::tests::{APPLE, Fixture, ZEBRA, boolean, onto, plain, rights_lines, write_dump};
 use crate::snapshot::vocab;
 use crate::test_support::TempDir;
-use crate::{LiftError, Lifted};
+use crate::{LiftError, Lifted, SelectedFile};
 
 /// The anonymous user may view; written in the order DSP-API usually writes it.
 const PUBLIC: &str =
@@ -452,4 +452,65 @@ fn the_rich_fixture_lifts_to_the_pinned_golden_bytes() {
          with the output below in the same commit\n{out}",
         crate::TRANSFORMATION_VERSION
     );
+}
+
+// ---------------------------------------------------------------- the selected files
+
+#[test]
+fn a_superseded_file_value_is_not_a_selected_file() {
+    let mut f = Fixture::new();
+    page(&mut f, ZEBRA, Some(PUBLIC));
+    let current = file(&mut f, ZEBRA, "NEW", kb::STILL_IMAGE_FILE_VALUE, PUBLIC);
+    let old = file(&mut f, ZEBRA, "OLD", kb::STILL_IMAGE_FILE_VALUE, PUBLIC);
+    f.add(&current, kb::PREVIOUS_VALUE, nn(&old));
+
+    let files = lift(&f).unwrap().files;
+
+    let expected = SelectedFile {
+        class: kb::STILL_IMAGE_FILE_VALUE.to_string(),
+        internal_filename: Some("NEW.jp2".to_string()),
+    };
+    assert_eq!(files.of(ZEBRA), Some([expected].as_slice()));
+}
+
+#[test]
+fn a_deleted_file_value_is_not_a_selected_file() {
+    let mut f = Fixture::new();
+    page(&mut f, ZEBRA, Some(PUBLIC));
+    let gone = file(&mut f, ZEBRA, "GONE", kb::STILL_IMAGE_FILE_VALUE, PUBLIC);
+    f.add(&gone, kb::IS_DELETED, boolean("true"));
+
+    let files = lift(&f).unwrap().files;
+
+    assert_eq!(files.of(ZEBRA), Some([].as_slice()));
+}
+
+#[test]
+fn a_deleted_resource_has_no_selected_files() {
+    let mut f = Fixture::new();
+    page(&mut f, ZEBRA, Some(PUBLIC));
+    f.add(ZEBRA, kb::IS_DELETED, boolean("true"));
+    file(&mut f, ZEBRA, "ORPHANED", kb::STILL_IMAGE_FILE_VALUE, PUBLIC);
+    page(&mut f, APPLE, Some(PUBLIC));
+
+    let files = lift(&f).unwrap().files;
+
+    assert_eq!(files.of(ZEBRA), None);
+    assert_eq!(files.of(APPLE), Some([].as_slice()));
+}
+
+#[test]
+fn a_file_value_with_two_file_names_has_none() {
+    let mut f = Fixture::new();
+    page(&mut f, ZEBRA, Some(PUBLIC));
+    let text = file(&mut f, ZEBRA, "TEI", kb::TEXT_FILE_VALUE, PUBLIC);
+    f.add(&text, kb::INTERNAL_FILENAME, plain("other.xml"));
+
+    let files = lift(&f).unwrap().files;
+
+    let expected = SelectedFile {
+        class: kb::TEXT_FILE_VALUE.to_string(),
+        internal_filename: None,
+    };
+    assert_eq!(files.of(ZEBRA), Some([expected].as_slice()));
 }

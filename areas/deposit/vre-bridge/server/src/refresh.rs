@@ -1,5 +1,6 @@
 //! One refresh of one project: recovery, the decision, the change check, the export, the dump's
-//! download and unpacking, the lift, the new generation in both subtrees, the report.
+//! download and unpacking, the lift, the mapped files of a project that ships a file mapping, the
+//! new generation in both subtrees, the report.
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -11,12 +12,14 @@ use tokio::task::JoinError;
 use tokio::time::Instant;
 use tracing::{error, info, warn};
 use vre_bridge_client::{
-    private_work_dir, unpack, ClientError, DeleteOutcome, ExportStatus, ExportTrigger, DUMP_DIR_PREFIX,
+    private_work_dir, unpack, ClientError, DeleteOutcome, ExportStatus, ExportTrigger, FileError, DUMP_DIR_PREFIX,
 };
 use vre_bridge_core::{
-    decide, inputs_digest, AllowlistEntry, Decision, FailureReason, Outcome, RefusalReason, Running, ServerId, Settings,
+    decide, inputs_digest, manifest_bytes, plan_files, shipped_names, AllowlistEntry, Decision, Download,
+    FailureReason, FileMapping, FileValue, Outcome, RefusalReason, Running, ServerId, Settings, FILE_MANIFEST,
+    FILE_MAPPING,
 };
-use vre_bridge_lift::{LiftError, Lifted, Violation};
+use vre_bridge_lift::{LiftError, Lifted, SelectedFiles, Violation};
 use vre_bridge_store::{new_generation_name, Lock, StoreError, Subtree, Subtrees, TokenState};
 
 use crate::withhold::withheld;
@@ -40,6 +43,10 @@ const STATUS_POLL_ATTEMPTS: u32 = 3;
 
 /// A fresh generation name collides with an existing directory only by chance; drawn this often.
 const GENERATION_ATTEMPTS: u32 = 3;
+
+/// The directory in the private work directory the mapped text files are downloaded into, each
+/// under its position among the downloads.
+const DOWNLOADS_DIR: &str = "files";
 
 /// Another caller's export holds the server's dump slot. Not an outcome: never reported or
 /// counted; the caller retries, and once it gives up reports `Failed(FailureReason::Busy)`.
@@ -272,7 +279,8 @@ impl Refresher {
                 }
             })
             .await?;
-        let snapshot = self.lift(dump_dir).await?;
+        let (snapshot, selected) = self.lift(dump_dir).await?;
+        let files = self.files(entry, &selected, work).await?;
 
         let token = Token {
             as_of: t.format("%Y-%m-%dT%H:%M:%S%.fZ").to_string(),
@@ -285,13 +293,90 @@ impl Refresher {
                 let subtrees = self.subtrees.clone();
                 let shortcode = entry.shortcode.clone();
                 let inputs = self.settings.inputs_dir.join(&entry.shortcode);
-                move || write_generation(&subtrees, &shortcode, t, &snapshot, &inputs, token)
+                move || write_generation(&subtrees, &shortcode, t, &snapshot, &inputs, files.as_ref(), token)
             })
             .await?;
         Ok(Done {
             outcome: Outcome::Refreshed,
             sizes: Some(RefreshSizes { dump: zip.size, snapshot: sizes.sync, media: sizes.media }),
         })
+    }
+
+    /// Resolves the project's file mapping, if it ships one, against the file values the lift
+    /// selected, and downloads its text files anonymously into `work`, all before the generation
+    /// is begun.
+    async fn files(
+        &self,
+        entry: &AllowlistEntry,
+        selected: &SelectedFiles,
+        work: &Arc<TempDir>,
+    ) -> Result<Option<Files>, Stop> {
+        let inputs = self.settings.inputs_dir.join(&entry.shortcode);
+        let Some((mapping, shipped)) = self
+            .blocking("reading the file mapping", FailureReason::Inputs, move || read_mapping(&inputs))
+            .await?
+        else {
+            return Ok(None);
+        };
+        // `from_raw` refuses a mapping without its server's IIIF base.
+        let Some(iiif_base) = self.settings.servers.get(&entry.server).and_then(|s| s.iiif_base.clone()) else {
+            error!("the project ships a file mapping, but its server has no IIIF base");
+            return Err(Outcome::Failed(FailureReason::Internal).into());
+        };
+        let plan = plan_files(&mapping, &entry.shortcode, &iiif_base, &shipped, |iri| {
+            let files = selected.of(iri)?.iter();
+            Some(
+                files
+                    .map(|f| FileValue {
+                        class: f.class.clone(),
+                        internal_filename: f.internal_filename.clone(),
+                    })
+                    .collect(),
+            )
+        })
+        .map_err(|e| {
+            warn!(error = %e, "the file mapping refused the project");
+            Outcome::Refused(RefusalReason::FileMapping)
+        })?;
+
+        let manifest = manifest_bytes(&plan.entries).map_err(|_| {
+            error!("the file manifest cannot be serialized");
+            Outcome::Failed(FailureReason::Internal)
+        })?;
+        let downloads = self.download_all(&entry.server, plan.downloads, work).await?;
+        Ok(Some(Files { manifest, downloads }))
+    }
+
+    /// Downloads each text file anonymously into the private work directory, under its position.
+    async fn download_all(
+        &self,
+        server: &ServerId,
+        planned: Vec<Download>,
+        work: &TempDir,
+    ) -> Result<Vec<(String, PathBuf)>, Stop> {
+        let dir = work.path().join(DOWNLOADS_DIR);
+        self.blocking("creating the download directory", FailureReason::Internal, {
+            let dir = dir.clone();
+            move || std::fs::create_dir(&dir)
+        })
+        .await?;
+        let mut downloads = Vec::with_capacity(planned.len());
+        for (index, download) in planned.into_iter().enumerate() {
+            let into = dir.join(index.to_string());
+            match self
+                .vre
+                .download_file(server, &download.url, &into, self.settings.max_file_bytes)
+                .await
+            {
+                Ok(_) => downloads.push((download.stored, into)),
+                Err(FileError::Refused(status)) => {
+                    warn!(status, "an anonymous file download was refused: the file is not public");
+                    return Err(Outcome::Refused(RefusalReason::Unauthorized).into());
+                }
+                Err(FileError::Failed(e)) => return Err(client_failure("a file download", &e)),
+            }
+        }
+        Ok(downloads)
     }
 
     /// Triggers the export. The bridge's own leftover export in the slot is waited for, deleted
@@ -413,10 +498,10 @@ impl Refresher {
         }
     }
 
-    /// Lifts the unpacked dump and renders the snapshot. A refusal is logged without a value:
-    /// each guard violation names an IRI, a class and a reason, a closed-world refusal only its
-    /// rules and counts.
-    async fn lift(&self, dump_dir: PathBuf) -> Result<Vec<u8>, Stop> {
+    /// Lifts the unpacked dump and renders the snapshot; returns it with the lift's selected file
+    /// values. A refusal is logged without a value: each guard violation names an IRI, a class and
+    /// a reason, a closed-world refusal only its rules and counts.
+    async fn lift(&self, dump_dir: PathBuf) -> Result<(Vec<u8>, SelectedFiles), Stop> {
         let lift = self.lift;
         let lifted = spawn_blocking(move || {
             let lifted = lift(&dump_dir)?;
@@ -425,11 +510,11 @@ impl Refresher {
                 .snapshot
                 .write_to(&mut bytes)
                 .map_err(|_| LiftError::Internal { what: "rendering the snapshot", subject: String::new() })?;
-            Ok::<_, LiftError>(bytes)
+            Ok::<_, LiftError>((bytes, lifted.files))
         })
         .await;
         match lifted {
-            Ok(Ok(bytes)) => Ok(bytes),
+            Ok(Ok(lifted)) => Ok(lifted),
             Ok(Err(LiftError::Refused { violations })) => {
                 log_violations(&violations);
                 Err(Outcome::Refused(RefusalReason::PublicGuard).into())
@@ -487,14 +572,36 @@ struct Token {
     previous: Option<Generation>,
 }
 
-/// Writes the new generation into both subtrees and makes it current: shipped inputs and the
-/// rights record into `media`, the snapshot into `sync`.
+/// A project's mapped files, ready to be written: the manifest's bytes, and each downloaded text
+/// file's stored name and path in the private work directory.
+struct Files {
+    manifest: Vec<u8>,
+    downloads: Vec<(String, PathBuf)>,
+}
+
+/// The project's file mapping and the names of its shipped inputs; `None` when it ships no
+/// mapping. Blocking.
+fn read_mapping(inputs: &Path) -> Result<Option<(FileMapping, Vec<String>)>, String> {
+    let bytes = match std::fs::read(inputs.join(FILE_MAPPING)) {
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(e) => return Err(format!("{FILE_MAPPING} cannot be read: {}", e.kind())),
+        Ok(bytes) => bytes,
+    };
+    let mapping = FileMapping::parse(&bytes).map_err(|e| e.to_string())?;
+    let shipped = shipped_names(inputs).map_err(|e| e.to_string())?;
+    Ok(Some((mapping, shipped)))
+}
+
+/// Writes the new generation into both subtrees and makes it current: shipped inputs, the
+/// rights record, the downloaded files and the file manifest into `media`, the snapshot into
+/// `sync`.
 fn write_generation(
     subtrees: &Subtrees,
     shortcode: &str,
     t: DateTime<Utc>,
     snapshot: &[u8],
     inputs: &Path,
+    files: Option<&Files>,
     token: Token,
 ) -> Result<vre_bridge_store::Sizes, StoreError> {
     let mut attempt = 1;
@@ -508,6 +615,12 @@ fn write_generation(
         writer.copy_tree(Subtree::Media, inputs)?;
     }
     writer.write_rights_record()?;
+    if let Some(files) = files {
+        for (stored, path) in &files.downloads {
+            writer.copy_file(Subtree::Media, stored, path)?;
+        }
+        writer.write(Subtree::Media, FILE_MANIFEST, &files.manifest)?;
+    }
     writer.write(Subtree::Sync, SNAPSHOT_FILE, snapshot)?;
     let sizes = writer.sizes();
     let ready = ReadyToken {
@@ -602,6 +715,7 @@ fn client_outcome(e: &ClientError) -> Outcome {
         | ClientError::TooLarge { .. } => Outcome::Failed(F::Dump),
         ClientError::Identity(_)
         | ClientError::BaseUrl
+        | ClientError::FileUrl
         | ClientError::NoCryptoProvider
         | ClientError::NoServer
         | ClientError::WorkDirMode => Outcome::Failed(F::Internal),

@@ -2,7 +2,8 @@
 
 One directory per project, named by its shortcode (`0803/`), holding the files the bridge copies into each of the
 project's `media` generations besides what it downloads: a CPE project's `config.kdl`, `curation.csv` and narrative
-pages, or a DaTEI project's `datei.toml` and `file-layout.xml`. Their digest is part of the Ready token, so a change
+pages, or a DaTEI project's `datei.toml`, `file-layout.xml` and `file-mapping.json` (which the
+bridge also reads, and which needs an `EDITOR_VRE_BRIDGE_IIIF_BASES` entry for the project's server). Their digest is part of the Ready token, so a change
 here refreshes the project on the next nightly run after the release that ships it.
 
 Every allowlisted project needs its directory: without one the bridge refuses the project (reason

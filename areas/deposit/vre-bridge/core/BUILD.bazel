@@ -12,6 +12,8 @@ rust_library(
         "//shared/names:shared_names",
         "//shared/stand-in:shared_stand_in",
         "@crates//:chrono",
+        "@crates//:serde",
+        "@crates//:serde_json",
         "@crates//:sha2",
         "@crates//:thiserror",
     ],
@@ -19,6 +21,15 @@ rust_library(
 
 rust_test(
     name = "vre_bridge_core_test",
+    compile_data = glob(["testdata/datei/**"]),
     crate = ":vre_bridge_core",
     deps = ["@crates//:tempfile"],
+)
+
+# The synthetic DaTEI project `0001`'s shipped inputs, for vre-bridge-server's refresh tests.
+filegroup(
+    name = "datei_0001",
+    testonly = True,
+    srcs = glob(["testdata/datei/0001/**"]),
+    visibility = ["//areas/deposit/vre-bridge/server:__pkg__"],
 )

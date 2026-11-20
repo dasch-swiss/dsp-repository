@@ -652,47 +652,54 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   with access rights, in memory, or every violation of the guard or of the format's closed world.
   `vre-bridge-core` (`core/`): the pure logic: the settings parsed from `EDITOR_VRE_BRIDGE_*` strings, the
   allowlist and server ids, whether a refresh is forced or checks changes from T − 60 s, the shipped-input
-  digest, and a refresh's outcome with its exit status.
+  digest, DaTEI's file mapping resolved into stored names and IIIF URLs and the file manifest's bytes, and a
+  refresh's outcome with its exit status.
   `vre-bridge-store` (`store/`): the writing side of the stand-in contract, the only code that writes the
   `sync` and `media` subtrees: a generation per refresh written whole, the Ready tokens replaced by one rename
   each, `media` before `sync`, the rollback of a failed `sync` rename, recovery, removal of unlisted projects,
   the lock and the nightly-run record, the sweep of leftover dump directories.
   `vre-bridge-client` (`client/`): DSP-API with the service identity: Ed25519 service tokens, the project
   lookup, the change check, the export lifecycle, the dump's download and its unpacking into a private
-  `0700` directory (`data.nq` and the ontologies only, both within a size cap), anonymous file downloads.
+  `0700` directory (`data.nq` and the ontologies only, both within a size cap), anonymous file downloads
+  (only below the server's configured base and IIIF base, no redirect followed, within a size cap).
   `vre-bridge-server` (`server/`): the `VreBridge` facade `deposit-server` builds from its configuration
   and starts (inactive, with a named reason, when unconfigured or misconfigured); start-time sweep and
   recovery under the lock; the schedule of the nightly run in its time zone; the nightly run (record, sweep,
   recovery, removal, then each project, a busy one retried); the operator's refresh with its exit status; and
-  one refresh of a project (`Refresher`), from recovery and the change check through the export, the lift and
-  both subtrees' new generation to the outcome's report, over the `Vre`, `Report` and `Clock` traits; the
+  one refresh of a project (`Refresher`), from recovery and the change check through the export, the lift,
+  a DaTEI project's mapped files (their file values read from `data.nq` for the resources the snapshot
+  holds, the texts downloaded anonymously) and both subtrees' new generation to the outcome's report, over the `Vre`, `Report` and `Clock` traits; the
   outcome line and the metrics (meter scope `vre_bridge`); which panics' payloads a panic hook withholds.
 - **Key entities:** `lift`, `Lifted`, `Snapshot`, `Stats`, `LiftError`, `Violation`, `Problem`, `SubjectKind`,
   `ViolationReport`, `Kind`, `Handling`, `ValueKind`, `INTERIM_FORMAT_VERSION`, `TRANSFORMATION_VERSION`; internal:
   `Dump`, `Read`, `Index`, `Ontology`, `Selection`, `Rights`, `Violations`, `Rule` (`vre-bridge-lift`);
   `RawSettings`, `SigningKeyFiles`, `Settings`, `ServerSettings`, `SettingsError`, `EntryRef`,
   `ServerId`, `Allowlist`, `AllowlistEntry`, `Running`, `RefreshReason`, `Decision`, `DigestError`, `Outcome`,
-  `RefusalReason`, `FailureReason` (`vre-bridge-core`);
+  `RefusalReason`, `FailureReason`, `FileMapping`, `MappingEntry`, `MappingError`, `FileValue`, `FilePlan`,
+  `ManifestEntry`, `Target`, `Download`, `FileRefusal` (`vre-bridge-core`);
   `Subtrees`, `Subtree`, `GenerationWriter`, `Sizes`, `TokenState`, `Broken`, `Lock`, `RecoveryReport`,
   `RemovalReport`, `StoreError` (`vre-bridge-store`); `ServiceIdentity`, `Server`, `Timeouts`, `ExportTrigger`,
   `ExportStatus`, `DeleteOutcome`, `Changes`, `DumpZip`, `DumpDir`, `ClientError`, `FileError`
   (`vre-bridge-client`); `VreBridge`, `Inactive`, `Refresher`, `Busy`, `Vre`, `Report`, `LogReport`,
-  `RefreshReport`, `RefreshSizes`, `Clock`, `SystemClock`; internal: `Active`, `OtelReport`
+  `RefreshReport`, `RefreshSizes`, `Clock`, `SystemClock`; internal: `Active`, `OtelReport`, `Files`
   (`vre-bridge-server`)
 - **Public interface:** the `vre_bridge_lift` library: `lift(dump_dir) -> Result<Lifted, LiftError>`,
-  `Lifted { snapshot, stats }`, `Snapshot::write_to`, `Stats` and the key types of its counts,
+  `Lifted { snapshot, stats, files }`, `SelectedFiles::of`, `SelectedFile`, `Snapshot::write_to`, `Stats` and the key types of its counts,
   `LiftError::{Dump, Refused, ClosedWorld, Internal}`, `ViolationReport::counts`, the two version constants.
   The `vre_bridge_core`
   library: `Settings::parse(RawSettings) -> Result<Option<Settings>, SettingsError>` (`None`: no output
   location, the bridge does nothing), `Allowlist::entries`, `ServerId::parse`,
-  `inputs_digest(dir) -> Result<String, DigestError>`, `RESERVED_NAMES`, `Running::new`,
-  `decide(sync, media, entry, running, operator) -> Decision`, `Outcome::{exit_code, as_str, reason}`.
+  `Settings::check_iiif_bases`, `inputs_digest(dir) -> Result<String, DigestError>`, `shipped_names`,
+  `RESERVED_NAMES`, `Running::new`, `decide(sync, media, entry, running, operator) -> Decision`,
+  `Outcome::{exit_code, as_str, reason}`, `FileMapping::{parse, entries, iris}`, `plan_files`, `manifest_bytes`,
+  `FILE_MAPPING`, `FILE_MANIFEST`.
   The `vre_bridge_store` library: `new_generation_name`, `Subtrees::{new, root, begin, read_tokens, recover, recover_project,
-  remove_unlisted, tokenless_projects}`, `GenerationWriter::{generation, write, copy_tree, write_rights_record,
-  sizes, commit, abort}`, `Lock::{try_acquire, nightly_done_on, record_nightly}`, `sweep_work_dir`, `is_swept`,
+  remove_unlisted, tokenless_projects}`, `GenerationWriter::{generation, write, copy_tree, copy_file,
+  write_rights_record, sizes, commit, abort}`, `Lock::{try_acquire, nightly_done_on, record_nightly}`, `sweep_work_dir`, `is_swept`,
   `RIGHTS_RECORD`, `RIGHTS_RECORD_FILE`, `Result`; synchronous `std::fs`. The `vre_bridge_client` library:
-  `ServiceIdentity::{new, token}`; `Server::{new, project_iri, changes, export, export_status, wait_completed,
-  wait_finished, download, delete_export, download_file}` (`download` with a byte cap); `private_work_dir`,
+  `ServiceIdentity::{new, token}`; `Server::{new, with_file_base, project_iri, changes, export, export_status,
+  wait_completed, wait_finished, download, delete_export, download_file}` (`download` and `download_file` with
+  a byte cap); `private_work_dir`,
   `unpack` (with a byte cap), `DUMP_DIR_PREFIX`. The
   `vre_bridge_server` library: `VreBridge::{from_raw, start, operator_refresh, is_active, inactive_reason}`
   (`from_raw(RawSettings, &Meter) -> VreBridge`; `start(&self)` returns at once and never panics;
@@ -709,11 +716,12 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `shared/stand-in/src/lib.rs`, `areas/deposit/vre-bridge/client/src/lib.rs`,
   `areas/deposit/vre-bridge/server/src/lib.rs` (the blocking rule, the three traits),
   `areas/deposit/vre-bridge/server/src/refresh.rs` (one refresh, step by step),
+  `areas/deposit/vre-bridge/core/src/datei.rs` (the file mapping and manifest),
   `areas/deposit/vre-bridge/server/src/nightly.rs` (the nightly run's order),
   `areas/deposit/vre-bridge/server/src/report.rs` (the outcome line and the metrics)
 - **Depends on:** shared/names (`vre-bridge-core`, `vre-bridge-store`), shared/stand-in (`vre-bridge-core`,
   `vre-bridge-store`, `vre-bridge-server`); third-party: oxigraph
-  (no default features) and thiserror (`vre-bridge-lift`); chrono, sha2, thiserror (`vre-bridge-core`, which
+  (no default features) and thiserror (`vre-bridge-lift`); chrono, serde, serde_json, sha2, thiserror (`vre-bridge-core`, which
   also takes the two version constants from `vre-bridge-lift`); chrono, rand, thiserror, tracing
   (`vre-bridge-store`); `tempfile` in tests only; reqwest, jsonwebtoken, zip (reading only), tempfile, tokio,
   serde, serde_json, url, percent-encoding, chrono, uuid, thiserror, tracing and rustls, for the provider check
@@ -726,7 +734,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Boundary rules:**
   - `vre-bridge-core` uses no web framework, Maud or database crate (**static-analysis** —
     `check-capability-deps.sh`, the `core` role), and only `vre-bridge-server` links it (**structure** —
-    `visibility`). It has no network code and reads no file but the shipped inputs it digests (**review**).
+    `visibility`). It has no network code and reads no file but the shipped inputs it digests and lists (**review**).
   - No `SettingsError`, and no `Debug` of `RawSettings` or `Settings`, holds a signing key; an entry of
     `EDITOR_VRE_BRIDGE_SIGNING_KEY_FILES` is named by its position only, so a key pasted where its path belongs is
     not quoted (**static-analysis** — `vre-bridge-core`'s tests; **review** for new variants).

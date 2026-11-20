@@ -250,7 +250,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   Area is three capabilities, `identity`, `editor` and the VRE bridge, under the composition root
   `deposit-server` (`areas/deposit/server`, below; `areas/deposit/ADR-0004`), with identity's four crates in
   `areas/deposit/identity` and the area shell in `areas/deposit/shell`. Not yet in code: of the VRE bridge
-  (`areas/deposit/vre-bridge/`, below; `areas/deposit/ADR-0005`), only `vre-bridge-lift` exists (P-DEV-301).
+  (`areas/deposit/vre-bridge/`, below; `areas/deposit/ADR-0005`), only `vre-bridge-lift` and `vre-bridge-store` exist
+  (P-DEV-301).
 - **Key entities:** `ProjectDraft`, `ProjectState`, `SubmissionState`, `ReviewState`,
   `FieldReview`, `Decision`, `ProposalDecision`, `EntityProposal`, `Transition`, `PublishedProjects`, `Agents`,
   `EditorRepositories` (behind `EditorState.editor`), `ReviewRoundRepository`, `RecordClassification`, `classify_record`,
@@ -636,22 +637,36 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   as a new generation into the Access Area's `sync` and `media` subtrees, behind per-project Ready tokens.
   `vre-bridge-lift` (`lift/`): the selection of the dump's `data.nq`, the public guard on it, and
   dsp-incubator's `dao-lift` `snapshot` as a library, giving the interim snapshot `lift/FORMAT.md` specifies,
-  with access rights, in memory, or every violation of the guard or of the format's closed world. Planned:
-  `vre-bridge-core` (settings, refresh decisions, the shipped-input digest), `vre-bridge-store` (generations, Ready tokens, recovery, the lock),
-  `vre-bridge-client` (DSP-API with the service identity) and `vre-bridge-server` (the `VreBridge` facade, the
-  nightly run, one refresh). Not yet in code: every crate but `vre-bridge-lift` (P-DEV-301).
+  with access rights, in memory, or every violation of the guard or of the format's closed world.
+  `vre-bridge-store` (`store/`): the writing side of the stand-in contract, the only code that writes the
+  `sync` and `media` subtrees: a generation per refresh written whole, the Ready tokens replaced by one rename
+  each, `media` before `sync`, the rollback of a failed `sync` rename, recovery, removal of unlisted projects,
+  the lock and the nightly-run record, the sweep of leftover dump directories. Planned: `vre-bridge-core`
+  (settings, refresh decisions, the shipped-input digest), `vre-bridge-client` (DSP-API with the service
+  identity) and `vre-bridge-server` (the `VreBridge` facade, the nightly run, one refresh). Not yet in code:
+  every crate but `vre-bridge-lift` and `vre-bridge-store` (P-DEV-301).
 - **Key entities:** `lift`, `Lifted`, `Snapshot`, `Stats`, `LiftError`, `Violation`, `Problem`, `SubjectKind`,
   `ViolationReport`, `Kind`, `Handling`, `ValueKind`, `INTERIM_FORMAT_VERSION`, `TRANSFORMATION_VERSION`; internal:
-  `Dump`, `Read`, `Index`, `Ontology`, `Selection`, `Rights`, `Violations`, `Rule`
+  `Dump`, `Read`, `Index`, `Ontology`, `Selection`, `Rights`, `Violations`, `Rule` (`vre-bridge-lift`);
+  `Subtrees`, `Subtree`, `GenerationWriter`, `Sizes`, `TokenState`, `Broken`, `Lock`, `RecoveryReport`,
+  `RemovalReport`, `StoreError` (`vre-bridge-store`)
 - **Public interface:** the `vre_bridge_lift` library: `lift(dump_dir) -> Result<Lifted, LiftError>`,
   `Lifted { snapshot, stats }`, `Snapshot::write_to`, `Stats` and the key types of its counts,
-  `LiftError::{Dump, Refused, ClosedWorld, Internal}`, the two version constants. No routes, no binary.
+  `LiftError::{Dump, Refused, ClosedWorld, Internal}`, the two version constants. The `vre_bridge_store`
+  library: `new_generation_name`, `Subtrees::{new, root, begin, read_tokens, recover, recover_project,
+  remove_unlisted, tokenless_projects}`, `GenerationWriter::{generation, write, copy_tree, write_rights_record,
+  sizes, commit, abort}`, `Lock::{try_acquire, nightly_done_on, record_nightly}`, `sweep_work_dir`,
+  `RIGHTS_RECORD`, `RIGHTS_RECORD_FILE`, `Result`; synchronous `std::fs`. No routes, no binary.
 - **Local-context kit:** `areas/deposit/vre-bridge/CLAUDE.md`, `areas/deposit/vre-bridge/CONTEXT.md`,
   `areas/deposit/vre-bridge/lift/FORMAT.md`, `areas/deposit/vre-bridge/lift/src/lib.rs` (select, guard, build),
-  `areas/deposit/vre-bridge/lift/src/guard.rs`, `areas/deposit/vre-bridge/lift/src/snapshot/mod.rs`
-- **Depends on:** third-party: oxigraph (no default features) and thiserror (`vre-bridge-lift`)
-- **Used by:** nothing yet; `vre-bridge-lift` grants `vre-bridge-core` and `vre-bridge-server`, and
-  `deposit-server` (planned) is to depend on `vre-bridge-server` alone
+  `areas/deposit/vre-bridge/lift/src/guard.rs`, `areas/deposit/vre-bridge/lift/src/snapshot/mod.rs`,
+  `areas/deposit/vre-bridge/store/src/lib.rs`, `shared/stand-in/src/lib.rs`
+- **Depends on:** shared/names, shared/stand-in (`vre-bridge-store`); third-party: oxigraph (no default
+  features) and thiserror (`vre-bridge-lift`); chrono, rand, thiserror, tracing (`vre-bridge-store`), `tempfile`
+  in tests only
+- **Used by:** nothing yet; `vre-bridge-lift` grants `vre-bridge-core` and `vre-bridge-server`,
+  `vre-bridge-store` grants `vre-bridge-server` alone, and `deposit-server` (planned) is to depend on
+  `vre-bridge-server` alone
 - **Boundary rules:**
   - `vre-bridge-lift` uses no web framework, Maud, database crate, HTTP client or `tokio` (**static-analysis** —
     `check-capability-deps.sh`, the `lift` role).
@@ -660,9 +675,15 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     table and its §15 vocabulary match the code (**static-analysis** — `format_doc_tests.rs`).
   - The lift's production code calls no `expect`, `unwrap`, `panic!` or `unreachable!` (**static-analysis** —
     the four clippy lints denied outside tests).
-  - Only `vre-bridge-store` writes the subtrees (**review** until the crate exists).
-- **Durable state:** none but the `sync` and `media` subtrees it is to write and its lock file (planned); the
-  lift holds nothing between calls.
+  - Only `vre-bridge-server` links `vre-bridge-store` (**structure** — `visibility`).
+  - Only `vre-bridge-store` writes the subtrees (**review**).
+  - A token names only a generation written whole and flushed, and is replaced by one rename within the
+    project's directory, `media` before `sync`; nothing else is assumed atomic, and no symlink is created
+    (**static-analysis** — the store's tests; **review** for NFS).
+  - The store writes only below `<root>/<shortcode>/` and the lock file and its record, and deletes below a
+    shortcode not on the allowlist only by removal (**static-analysis** — the confinement and removal tests).
+- **Durable state:** the `sync` and `media` subtrees, of which `vre-bridge-store` is the single writer, and the
+  lock file and its nightly-run record; the lift holds nothing between calls.
 
 ### modules/mosaic
 
@@ -849,8 +870,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `areas/access/media/store/src/lib.rs` (a file-system reader that also refuses symlinks)
 - **Depends on:** nothing
 - **Used by:** areas/access/cpe (`cpe-ports`, re-exported), areas/access/media (`media-store`),
-  areas/access/sync (`sync-store`), shared/stand-in; granted ahead of use to the VRE bridge's `core`,
-  `store` and `server` crates (not yet in code, P-DEV-301)
+  areas/access/sync (`sync-store`), shared/stand-in, areas/deposit/vre-bridge (`vre-bridge-store`);
+  granted ahead of use to the VRE bridge's `core` and `server` crates (not yet in code, P-DEV-301)
 - **Boundary rules:**
   - Depends on no service crate; holds no path into one (**structure** + **static-analysis**,
     as for `shared-metadata`).
@@ -908,8 +929,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Depends on:** shared/names (`is_shortcode`); third-party `serde`, `serde_json`, `thiserror`;
   `tempfile` in tests only
 - **Used by:** areas/access/sync (`sync-store`) and areas/access/media (`media-store`), which resolve a
-  project through its token; granted to the VRE bridge's `core`, `store` and `server` crates (not yet in
-  code, P-DEV-301)
+  project through its token; areas/deposit/vre-bridge (`vre-bridge-store`, the writing side); granted
+  to the VRE bridge's `core` and `server` crates (not yet in code, P-DEV-301)
 - **Boundary rules:**
   - Depends on no service crate; holds no path into one (**structure** + **static-analysis**:
     `check-shared-paths.sh`, as for `shared-metadata`).

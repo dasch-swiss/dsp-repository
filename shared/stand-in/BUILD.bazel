@@ -1,0 +1,27 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+rust_library(
+    name = "shared_stand_in",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "shared_stand_in",
+    # The readers (sync-store, media-store) and the VRE bridge are granted ahead of use (P-DEV-301).
+    visibility = [
+        "//areas/access/media/store:__pkg__",
+        "//areas/access/sync/store:__pkg__",
+        "//areas/deposit/vre-bridge/core:__pkg__",
+        "//areas/deposit/vre-bridge/server:__pkg__",
+        "//areas/deposit/vre-bridge/store:__pkg__",
+    ],
+    deps = [
+        "//shared/names:shared_names",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+    ],
+)
+
+rust_test(
+    name = "shared_stand_in_test",
+    crate = ":shared_stand_in",
+    deps = ["@crates//:tempfile"],
+)

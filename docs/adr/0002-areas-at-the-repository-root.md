@@ -145,7 +145,7 @@ scheduled).
 Not yet in code: dsp-cli calls DSP-API only; no area modulith serves it (not scheduled).
 Not yet in code: no stand-in directory is shared by mount; `sync`'s and `media`'s data is carried in
 `access-server`'s image (DEV-7514).
-Not yet in code: `shared-stand-in` and the VRE bridge do not exist (P-DEV-301).
+Not yet in code: the VRE bridge does not exist, and `sync` and `media` do not read through `shared-stand-in` (P-DEV-301).
 Not yet in code: no `just check` script pins the 0803 `media` fixture to the bridge's shipped inputs
 (P-DEV-301).
 

@@ -1,6 +1,6 @@
 # DSP Repository — Bounded Contexts
 
-Index of the bounded contexts in this monorepo and the rules that govern how they relate. Each context keeps its own vocabulary in its own `CONTEXT.md`; this file is an index, not a glossary — do not add a context's vocabulary here. The one exception is `## Shared`, which holds the research-metadata contract both areas speak.
+Index of the bounded contexts in this monorepo and the rules that govern how they relate. Each context keeps its own vocabulary in its own `CONTEXT.md`; this file is an index, not a glossary — do not add a context's vocabulary here. The one exception is `## Shared`, which holds the research-metadata contract both areas speak and the stand-in contract the Deposit Area writes and the Access Area reads.
 
 `dsp-repository` is DaSCH's Research Data Repository: the **Trusted Repository**, long-term preservation and trustworthy dissemination of humanities research data, framed by the OAIS reference model (CCSDS 650.0-M-3). OAIS separates the producer who submits data, the archive that preserves it, and the consumer who reads it; the platform follows that separation with three **areas**, which are its bounded contexts, and brings the producer side under the repository roof. The decisions that bind the code are in `docs/adr/`.
 
@@ -20,6 +20,7 @@ Index of the bounded contexts in this monorepo and the rules that govern how the
 - **`shared-datastar`** (`shared/datastar/`) — the typed builder for Datastar actions (`get`, `post`): the path is percent-encoded into the JS string and the option objects are fixed, so no view crate writes an action as a string. Mechanism, not domain: it has no terms of its own.
 - **`shared-fair`** (`shared/fair/`) — the FAIR exposure engine of ADR-0005: one resolved graph per published object (`ProjectGraph`, `RecordGraph`) and one writer per representation reading it, so no two representations disagree. Mechanism, not domain: its few terms (Resolved graph, Writer, Part, Resolve context) are documented in `shared/README.md`; the facts a graph carries are the contract terms below.
 - **`shared-names`** (`shared/names/`) — the name rules `is_shortcode` and `is_file_name`, applied to a caller's string before it reaches a project's stand-in data, so a name one side writes is one the other side accepts. Mechanism, not domain: it has no terms of its own.
+- **`shared-stand-in`** (`shared/stand-in/`) — the reading side of the stand-in contract: the layout of a stand-in subtree and the Ready token's type, encoding and parser. Its terms, Generation and Ready token, are in `## Shared`; the writing side lives only in the VRE bridge.
 - **Vitrinli** — the media engine (IIIF rendering, range-served downloads, Service File derivation), sipi under its new name, maintained separately today and being rewritten from C++ to Rust. Moves into this monorepo as a root-level library (`vitrinli/`, ADR-0002), like Mosaic: no routes, no tables, no authentication of its own. A **media** capability in the Deposit Area and one in the Access Area depend on it and give it their area's rules through its traits (ADR-0003). Its `CONTEXT.md` holds the engine's own vocabulary (its roles and traits); each area's rules for media live with that area's `media` capability. → [`vitrinli/CONTEXT.md`](vitrinli/CONTEXT.md) (a seed; the code brings its own vocabulary when it moves in).
   _Avoid_: sipi (the old name, kept only for the existing codebase), IIIF server (one of its roles), asset server (absorbed into it).
 - **Chischtli** — the triplestore engine (embedded RDF store with graph-granular write dispatch, exact update deltas, full-text search, optional SHACL on update), the in-house replacement for Fuseki, designed and built separately today. Moves into this monorepo as a root-level library (`chischtli/`, ADR-0002), like Vitrinli: no routes, no authentication, no opinion about which graphs exist. Its unit of ownership is the named graph, and every graph has one writing capability (ADR-0003): in the Access Area `sync` writes everything that comes from the archive and `profile` its own per-user settings, with DPE, CPE and the SPARQL endpoint reading through `sync`'s ports; in the Deposit Area the data-creation capability writes the working graphs. → [`chischtli/CONTEXT.md`](chischtli/CONTEXT.md) (a seed).
@@ -78,6 +79,16 @@ _Avoid_: permission (DSP-API's per-group grants, from which the bridge derives t
 
 **Data classification**:
 How sensitive the data is: a second value, independent of the Access rights, with their granularity and travelling with them. One value exists today, `unclassified`.
+
+The stand-in contract below, `shared-stand-in` (`shared/stand-in/`), is published language between the Deposit Area's VRE bridge, which writes the stand-ins, and the Access Area's `sync` and `media`, which read them, until the archive exists (ADR-0002).
+
+**Generation**:
+One complete copy of a project's stand-in data, written whole into its own directory `<root>/<shortcode>/<generation>/` and never changed after; named `YYYYMMDDTHHMMSSZ-xxxxxxxx` (a UTC time, then 8 lowercase hex digits), the same name in `sync`'s and `media`'s subtree. Names are never compared for order.
+_Avoid_: version (taken by the token, format and transformation versions), snapshot (`sync`'s file in a generation).
+
+**Ready token**:
+The file `<root>/<shortcode>/.ready` that names a project's current Generation, with that generation's provenance and the generation it replaced; replaced by one rename. Provenance is the generation itself, the time the data is as of, the server it came from, the format and transformation versions and the shipped-input digest, equal in a project's `sync` and `media` tokens. A project is known to `sync` and `media` exactly when its token exists, and a reader reads only below the generation it names (not yet in code: both still read their committed data without a token, P-DEV-301).
+_Avoid_: marker, pointer, done file.
 
 ## Relationships
 

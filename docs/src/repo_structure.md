@@ -73,6 +73,7 @@ shared/                        # Crates shared by more than one service
 ├── metadata/                  # Research-metadata wire contract (crate: shared-metadata)
 ├── names/                     # The shortcode and file-name rules of stand-in data (crate: shared-names)
 ├── rate-limit/                # Per-client-IP key extractor for the rate limiters (crate: shared-rate-limit)
+├── stand-in/                  # The stand-in layout and the Ready token, reading side (crate: shared-stand-in)
 └── telemetry/                 # Browser beacon contract + collector endpoint (crate: shared-telemetry)
 
 dsp-cli/                       # Command-line client for the DaSCH Service Platform (crate: dsp-cli); a root peer, not a service
@@ -103,8 +104,9 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 | `shared-datastar` | `shared/datastar` | A typed builder for Datastar action expressions (`@get(…)`, `@post(…)`), spliced into Maud attribute values (attribute names stay Maud literals); depends on nothing but `std` — used by DPE, CPE and the editor |
 | `shared-fair` | `shared/fair` | The FAIR exposure engine: one resolved graph per published object and one writer per representation over it (ADR-0005) — `dpe-api-oai` is its only consumer today |
 | `shared-metadata` | `shared/metadata` | The research-metadata wire contract and the rules for reading a value out of it — shared by DPE and the editor |
-| `shared-names` | `shared/names` | The name rules of a project's stand-in data, `is_shortcode` and `is_file_name`, applied to a caller's string before it reaches storage; depends on nothing but `std` — used by `cpe-ports` (re-exported) and `media-store` |
+| `shared-names` | `shared/names` | The name rules of a project's stand-in data, `is_shortcode` and `is_file_name`, applied to a caller's string before it reaches storage; depends on nothing but `std` — used by `cpe-ports` (re-exported), `media-store` and `shared-stand-in` |
 | `shared-rate-limit` | `shared/rate-limit` | The key extractor the per-IP rate limiters use, `RightmostXffKeyExtractor`: the rightmost `X-Forwarded-For` entry, falling back to the connection peer address — shared by DPE, the access server and the Deposit Area's services |
+| `shared-stand-in` | `shared/stand-in` | The reading side of the stand-in contract: the layout `<root>/<shortcode>/<generation>/`, `Generation`, the Ready token (`ReadyToken`, `Provenance`, its canonical JSON encoding and its parser), `read_token`, `generation_dir` and `known_projects`; refuses symlinks and never writes; depends on `shared-names`, `serde`, `serde_json` and `thiserror` — granted to `sync-store`, `media-store` and the VRE bridge, used by none yet |
 | `shared-telemetry` | `shared/telemetry` | Browser beacon contract, validation, and the collector endpoint — shared by DPE and the editor |
 | `deposit-shell` | `areas/deposit/shell` | The Deposit Area's document shell: page, header, footer, the 403, 404 and problem pages, the sign-in link (`safe_next`, `login_url`) and the RDU-only text; `maud`, `mosaic-tiles` and `tracing` only |
 | `identity-core` | `areas/deposit/identity/core` | Identity's domain: accounts, sessions, login codes, the login and session rules, the repository traits (zero framework deps) |

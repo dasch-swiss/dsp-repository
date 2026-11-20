@@ -57,6 +57,15 @@ pub trait ArchiveProjection: Send + Sync {
     /// Calls `listener` for every project whose data appeared, changed or went, from now on: a
     /// change made before `subscribe` returns is not announced. The default announces nothing.
     fn subscribe(&self, _listener: Arc<dyn ChangeListener>) {}
+
+    /// Whether the location the projection keeps `shortcode` in is there to read, as a whole: a
+    /// mount that lost its target is not. It tells a removed project from a lost location, which
+    /// [`ProjectionError::UnknownProject`] alone does not. The default, `false`, never takes a lost
+    /// location for a removal, so an adapter that does not override it can announce no removal a
+    /// reader accepts.
+    fn location_present(&self, _shortcode: &str) -> bool {
+        false
+    }
 }
 
 /// What a project's current data was made from, as its Ready token records it. A reader compares
@@ -186,6 +195,19 @@ mod tests {
     use std::io;
 
     use super::*;
+
+    struct Bare;
+
+    impl ArchiveProjection for Bare {
+        fn snapshot(&self, shortcode: &str) -> Result<ProjectSnapshot, ProjectionError> {
+            Err(ProjectionError::UnknownProject { shortcode: shortcode.to_string() })
+        }
+    }
+
+    #[test]
+    fn test_location_present_by_default_is_false() {
+        assert!(!Bare.location_present("0803"));
+    }
 
     #[test]
     fn test_display_unknown_project_names_shortcode() {

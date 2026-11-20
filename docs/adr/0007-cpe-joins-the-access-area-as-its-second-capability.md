@@ -188,7 +188,7 @@ repository. The decision, phrased so a violation is describable in code:
   open-redirect tests run both under a base and at a root mount.
 - **CPE never stops or delays the area binary.** `access-server` builds `Cpe` from `CpeConfig`, constructs
   `sync-store`'s `LiveArchiveProjection` over `SYNC_DATA_DIR` and `media-store`'s `LiveDepositedFiles` over
-  `MEDIA_DATA_DIR`, and calls `Cpe::activate` on the blocking pool
+  `MEDIA_DATA_DIR`, and calls `Cpe::follow` on the blocking pool
   after the listener is bound, so DPE, `/healthz` and the collector answer at every moment. With `CPE_BASE`
   unset or refused, CPE is not mounted, DPE is served alone and the binary logs why. A base that is a path the
   binary or DPE has a route for (`/healthz`, `/telemetry/collect`, `/dpe/projects`) is mounted: the route keeps
@@ -312,8 +312,8 @@ Access Area's `media` over Vitrinli (not scheduled).
 Not yet in code: the bytes port and the port against `sync` serve no rights, and CPE's store and presenter
 neither store nor filter on them; the target is each file and resource with its rights attached and CPE
 deciding at request time (ADR-0012, ADR-0013; not scheduled).
-Not yet in code: CPE subscribes to no announcement of `sync`'s port, reads neither port's provenance, and does
-not rebuild the one project a port names (ADR-0012, DEV-7622).
+Not yet in code: CPE re-activates every project on an announcement of `sync`'s port, and does not rebuild the
+one project it names (ADR-0012, DEV-7989).
 Not yet in code: `media` announces no project whose Ready token changed (ADR-0012, DEV-7938).
 Not yet in code: CPE serves Incunabula alone; the incubator's `alice-in-daschland` and `hdm` have not moved in
 (not scheduled).

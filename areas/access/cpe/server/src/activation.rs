@@ -1,16 +1,17 @@
-//! Loading the projects: what [`crate::Cpe::activate`] stores.
+//! Loading the projects: what [`crate::Cpe::activate`] stores, and each re-activation of
+//! [`crate::Cpe::follow`].
 //!
 //! Every project folder is loaded on its own, and whatever goes wrong with
 //! one (a file, a port, the build, validation, a panic) is logged with its id
 //! and leaves that project unavailable: its prefix answers 503, and the others
 //! are served. Nothing here returns an error or panics.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::Arc;
 use std::time::Instant;
 
-use cpe_ports::{ArchiveProjection, DepositedFiles, FilesError};
+use cpe_ports::{ArchiveProjection, DepositedFiles, FilesError, ProjectionError, Provenance};
 use cpe_store_build::CuratedValues;
 use cpe_web::project::{LoadError, Project};
 
@@ -22,10 +23,49 @@ use crate::{assets, request, router, CpeConfig, ProjectSummary};
 const RESERVED_IDS: &[&str] = &["_static"];
 
 /// CPE once its projects are loaded: the router that serves them and lists
-/// them at its root, and the list a host reads.
+/// them at its root, the list a host reads, and how each project folder came out.
 pub(crate) struct Activated {
     pub(crate) router: axum::Router,
     pub(crate) projects: Vec<ProjectSummary>,
+    /// Every project folder's outcome, by project id.
+    pub(crate) statuses: BTreeMap<String, ProjectStatus>,
+}
+
+/// How one project folder came out of an activation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum ProjectStatus {
+    Loaded,
+    /// `sync` knows no such project while the place it would keep it is there: the project was
+    /// removed, or never deposited.
+    Unknown,
+    Failed,
+}
+
+/// Why a project did not load. The report is ready to log.
+#[derive(Debug)]
+pub(crate) enum NotLoaded {
+    Unknown(String),
+    Failed(String),
+}
+
+/// `Unknown` is only ever built on purpose.
+impl From<String> for NotLoaded {
+    fn from(report: String) -> Self {
+        Self::Failed(report)
+    }
+}
+
+/// The ids of the projects `current` served that `next` would not serve, unless `sync` no longer
+/// knows them: a re-activation is stored only when this is empty. A served project whose folder is
+/// gone holds it back too; the folders ship with the binary.
+pub(crate) fn held_back_by(current: &Activated, next: &Activated) -> Vec<String> {
+    current
+        .statuses
+        .iter()
+        .filter(|(_, status)| **status == ProjectStatus::Loaded)
+        .filter(|(id, _)| !matches!(next.statuses.get(*id), Some(ProjectStatus::Loaded | ProjectStatus::Unknown)))
+        .map(|(id, _)| id.clone())
+        .collect()
 }
 
 /// What one project is loaded from, as its source gives it.
@@ -76,7 +116,7 @@ pub(crate) fn from_sql_folders(config: &CpeConfig) -> Activated {
         let store_sql = if discovered.has_data_sql() {
             discovered.data_sql().map_err(|error| error.to_string())?
         } else {
-            return Err("it has no data.sql".to_owned());
+            return Err("it has no data.sql".to_owned().into());
         };
         Ok(Sources {
             config,
@@ -95,31 +135,44 @@ pub(crate) fn from_sql_folders(config: &CpeConfig) -> Activated {
 fn load_all(
     config: &CpeConfig,
     discovered: Vec<DiscoveredProject>,
-    sources: impl Fn(&DiscoveredProject) -> Result<Sources, String>,
+    sources: impl Fn(&DiscoveredProject) -> Result<Sources, NotLoaded>,
 ) -> Activated {
     let hidden_ids = Arc::new(hidden_ids(&config.hidden_shortcodes, &discovered));
     let mut loaded = Vec::new();
     let mut served = Vec::new();
     let mut unavailable = Vec::new();
+    let mut statuses = BTreeMap::new();
     for discovered in discovered {
         let started = Instant::now();
         // A panic in a hook, the builder or an adapter must stay this project's.
         let outcome = catch_unwind(AssertUnwindSafe(|| load(&discovered, &sources)))
-            .unwrap_or_else(|payload| Err(format!("loading it panicked: {}", panic_message(payload.as_ref()))));
+            .unwrap_or_else(|payload| Err(format!("loading it panicked: {}", panic_message(payload.as_ref())).into()));
         let elapsed_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
         match outcome {
             Ok(project) => {
                 tracing::info!(project_id = discovered.id.as_str(), elapsed_ms, "project loaded");
+                statuses.insert(discovered.id.clone(), ProjectStatus::Loaded);
                 loaded.push(project);
                 served.push(discovered);
             }
-            Err(report) => {
+            Err(NotLoaded::Unknown(report)) => {
+                tracing::warn!(
+                    project_id = discovered.id.as_str(),
+                    elapsed_ms,
+                    report = report.as_str(),
+                    "project is not in the archive projection; its prefix answers 503"
+                );
+                statuses.insert(discovered.id.clone(), ProjectStatus::Unknown);
+                unavailable.push(discovered.id);
+            }
+            Err(NotLoaded::Failed(report)) => {
                 tracing::error!(
                     project_id = discovered.id.as_str(),
                     elapsed_ms,
                     report = report.as_str(),
                     "project does not load; its prefix answers 503"
                 );
+                statuses.insert(discovered.id.clone(), ProjectStatus::Failed);
                 unavailable.push(discovered.id);
             }
         }
@@ -157,7 +210,7 @@ fn load_all(
         base.clone(),
         request::report_matched_route,
     ));
-    Activated { router, projects }
+    Activated { router, projects, statuses }
 }
 
 /// The ids of the folders whose shortcode is one of `hidden_shortcodes`, in
@@ -212,17 +265,46 @@ fn utf8(bytes: Vec<u8>, file: &str) -> Result<String, String> {
 
 /// One project's sources from the ports. The narrative inventory is complete, so a file the
 /// config names and the port does not hold is `NarrativeFileNotFound`.
+///
+/// The project is `Unknown` when the `sync` snapshot is `UnknownProject` and its location is there,
+/// whatever the provenance: the bridge removes the `sync` token before the `media` one. Otherwise
+/// the provenance both ports serve is read before anything else and again once the store is
+/// built, and the four reads must be equal, or the store may mix two generations.
 fn port_sources(
     projection: &dyn ArchiveProjection,
     files: &dyn DepositedFiles,
     discovered: &DiscoveredProject,
-) -> Result<Sources, String> {
+) -> Result<Sources, NotLoaded> {
     if let Some(refusal) = &discovered.refusal {
-        return Err(refusal.clone());
+        return Err(refusal.clone().into());
     }
     let Some(shortcode) = discovered.shortcode.as_deref() else {
-        return Err("its folder declares no shortcode".to_owned());
+        return Err("its folder declares no shortcode".to_owned().into());
     };
+    let before_reads = (files.provenance(shortcode), projection.provenance(shortcode));
+    let snapshot = match projection.snapshot(shortcode) {
+        Ok(snapshot) => snapshot,
+        Err(error @ ProjectionError::UnknownProject { .. }) => {
+            return Err(if projection.location_present(shortcode) {
+                NotLoaded::Unknown(error.to_string())
+            } else {
+                format!(
+                    "{error}, and the place it would keep it is missing or cannot be read: the location may be lost"
+                )
+                .into()
+            });
+        }
+        Err(error) => return Err(error.to_string().into()),
+    };
+    let before = provenance(shortcode, before_reads)?;
+    if before.0 != before.1 {
+        return Err(format!(
+            "the ports serve different provenance for {shortcode}: generation {} (media) and {} (sync)",
+            generation(before.0.as_ref()),
+            generation(before.1.as_ref()),
+        )
+        .into());
+    }
     let config_file = format!("{shortcode}/config.kdl");
     let config = deposited(files, shortcode, "config.kdl")?
         .ok_or_else(|| format!("{config_file}: project {shortcode} deposited no config.kdl"))?;
@@ -235,7 +317,8 @@ fn port_sources(
         return Err(format!(
             "{config_file} declares shortcode {}, but the folder's SHORTCODE is {shortcode}",
             mapping.shortcode.as_str()
-        ));
+        )
+        .into());
     }
 
     let named = cpe_core::validate::named_narratives(&config).map_err(|error| error.to_string())?;
@@ -260,9 +343,9 @@ fn port_sources(
         return Err(format!(
             "{shortcode}/curation.csv: project {shortcode} deposited no curation file, and its remodel block \
              reads curated values"
-        ));
+        )
+        .into());
     }
-    let snapshot = projection.snapshot(shortcode).map_err(|error| error.to_string())?;
     let curated = match curation {
         Some(bytes) => CuratedValues::parse(&bytes, &snapshot)
             .map_err(|fault| format!("{shortcode}/curation.csv is not a valid curation file at {fault}"))?,
@@ -280,6 +363,17 @@ fn port_sources(
     let store = cpe_store_build::build(&snapshot, &curated, &mapping, hook).map_err(|errors| errors.to_string())?;
     let header = cpe_store_build::sql::header(&discovered.id, &mapping);
     let store_sql = cpe_store_build::sql::to_sql(&store, &mapping, &header).map_err(|error| error.to_string())?;
+    let after = provenance(shortcode, (files.provenance(shortcode), projection.provenance(shortcode)))?;
+    if before != after {
+        return Err(format!(
+            "the provenance the ports serve for {shortcode} changed while it was read: generation {} before, {} (media) \
+             and {} (sync) after",
+            generation(before.1.as_ref()),
+            generation(after.0.as_ref()),
+            generation(after.1.as_ref()),
+        )
+        .into());
+    }
     Ok(Sources {
         config,
         config_file,
@@ -289,11 +383,29 @@ fn port_sources(
     })
 }
 
-/// Get one project's sources and load it. The error is a report ready to log.
+/// The provenance `media` and `sync` serve for `shortcode`, in that order.
+fn provenance(
+    shortcode: &str,
+    (media, sync): (
+        Result<Option<Provenance>, FilesError>,
+        Result<Option<Provenance>, ProjectionError>,
+    ),
+) -> Result<(Option<Provenance>, Option<Provenance>), String> {
+    let media = media.map_err(|error| format!("{shortcode}: the provenance of the deposited files: {error}"))?;
+    let sync = sync.map_err(|error| format!("{shortcode}: the provenance of the archive projection: {error}"))?;
+    Ok((media, sync))
+}
+
+/// The generation `provenance` names, for the log.
+fn generation(provenance: Option<&Provenance>) -> &str {
+    provenance.map_or("none", |provenance| provenance.generation.as_str())
+}
+
+/// Get one project's sources and load it.
 fn load(
     discovered: &DiscoveredProject,
-    sources: &impl Fn(&DiscoveredProject) -> Result<Sources, String>,
-) -> Result<Arc<Project>, String> {
+    sources: &impl Fn(&DiscoveredProject) -> Result<Sources, NotLoaded>,
+) -> Result<Arc<Project>, NotLoaded> {
     let sources = sources(discovered)?;
     let narrative_files: Vec<String> = sources.narrative.iter().map(|(name, _)| name.clone()).collect();
     let asset_files = discovered.asset_files();
@@ -308,9 +420,9 @@ fn load(
         Ok(project) => project,
         // A validation report is rendered here, while the config source it points into is at hand.
         Err(LoadError::Validation(report)) => {
-            return Err(report.render(&sources.config, &sources.config_file));
+            return Err(report.render(&sources.config, &sources.config_file).into());
         }
-        Err(other) => return Err(other.to_string()),
+        Err(other) => return Err(other.to_string().into()),
     };
     for warning in project.warnings() {
         tracing::warn!(
@@ -320,7 +432,7 @@ fn load(
             "validation warning"
         );
     }
-    with_routes_that_register(project)
+    with_routes_that_register(project).map_err(NotLoaded::from)
 }
 
 /// Refuse a project whose routes axum cannot register. `Router::route` panics on two routes it
@@ -344,7 +456,7 @@ fn with_routes_that_register(project: Project) -> Result<Arc<Project>, String> {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use std::path::{Path, PathBuf};
 
     use axum::http::{header, StatusCode};
@@ -360,10 +472,10 @@ mod tests {
     use crate::{Cpe, ProjectSummary};
 
     /// The fixture project's config, whose `remodel` block declares shortcode `0001`.
-    const THINGS: &str = include_str!("../tests/fixtures/activation/things/config.kdl");
+    pub(crate) const THINGS: &str = include_str!("../tests/fixtures/activation/things/config.kdl");
 
     /// A snapshot of project `shortcode` with one Thing, `lamp`, named `name`.
-    fn snapshot(shortcode: &str, name: &str) -> ProjectSnapshot {
+    pub(crate) fn snapshot(shortcode: &str, name: &str) -> ProjectSnapshot {
         ProjectSnapshot {
             shortcode: shortcode.to_owned(),
             resources: vec![Resource {
@@ -387,7 +499,7 @@ mod tests {
 
     /// A projects folder with one project per `(id, shortcode)`, each a folder holding its
     /// `SHORTCODE`.
-    fn projects(projects: &[(&str, &str)]) -> tempfile::TempDir {
+    pub(crate) fn projects(projects: &[(&str, &str)]) -> tempfile::TempDir {
         let root = tempfile::tempdir().expect("a temporary directory");
         for (id, shortcode) in projects {
             let dir = root.path().join(id);
@@ -398,7 +510,7 @@ mod tests {
     }
 
     /// Deposited files holding each `(shortcode, config)` as that project's `config.kdl`.
-    fn configs(configs: &[(&str, &str)]) -> FakeDepositedFiles {
+    pub(crate) fn configs(configs: &[(&str, &str)]) -> FakeDepositedFiles {
         configs
             .iter()
             .fold(FakeDepositedFiles::default(), |files, (shortcode, config)| {
@@ -418,7 +530,7 @@ mod tests {
     }
 
     /// The fixture config under another shortcode.
-    fn things_of(shortcode: &str) -> String {
+    pub(crate) fn things_of(shortcode: &str) -> String {
         let config = THINGS.replace("shortcode \"0001\"", &format!("shortcode \"{shortcode}\""));
         assert_ne!(config, THINGS, "the fixture declares shortcode 0001");
         config
@@ -655,7 +767,8 @@ mod tests {
         for (_, shortcode, cause) in cases {
             let (_root, project) = discovered(shortcode);
             let error = super::load(&project, &sources).expect_err("the project does not load");
-            assert!(error.contains(cause), "{shortcode}: {cause:?} is not in {error:?}");
+            let (super::NotLoaded::Unknown(report) | super::NotLoaded::Failed(report)) = &error;
+            assert!(report.contains(cause), "{shortcode}: {cause:?} is not in {error:?}");
         }
     }
 

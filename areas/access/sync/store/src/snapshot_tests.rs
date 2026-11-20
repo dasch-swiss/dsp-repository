@@ -277,6 +277,38 @@ fn test_provenance_project_without_token_is_none() {
 }
 
 #[test]
+fn test_location_present_project_directory_without_token_is_present() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(&dir, BOOK_0803);
+    let projection = LiveArchiveProjection::new(dir.path());
+    assert!(projection.location_present("0803"));
+
+    fs::remove_file(dir.path().join("0803/.ready")).expect("remove the token");
+    assert!(projection.location_present("0803"), "a removed token leaves the directory");
+}
+
+#[test]
+fn test_location_present_deleted_directory_beside_another_project_is_present() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(&dir, BOOK_0803);
+
+    assert!(LiveArchiveProjection::new(dir.path()).location_present("0805"));
+}
+
+#[test]
+fn test_location_present_root_without_project_directories_or_missing_is_absent() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    fs::write(dir.path().join("0804"), "a file, not a directory").expect("write a file");
+    fs::create_dir(dir.path().join("not-a-shortcode")).expect("create a directory");
+
+    let projection = LiveArchiveProjection::new(dir.path());
+    for shortcode in ["0805", "0804", "../x"] {
+        assert!(!projection.location_present(shortcode), "{shortcode}");
+    }
+    assert!(!LiveArchiveProjection::new(dir.path().join("no-such-root")).location_present("0803"));
+}
+
+#[test]
 fn test_provenance_malformed_token_returns_unavailable() {
     let dir = tempfile::tempdir().expect("create a temp dir");
     write_0803(&dir, BOOK_0803);

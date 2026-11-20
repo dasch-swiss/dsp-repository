@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::{Arc, Mutex, PoisonError};
 use std::{fmt, io};
 
@@ -12,11 +12,13 @@ use crate::{
 /// Serves each registered snapshot exactly as given, every `Vec` in its original order, and can
 /// simulate an unknown or an unavailable project. The last registration for a shortcode wins.
 /// Provenance is served as registered, independently of the snapshots, and nothing is announced
-/// until a test calls [`announce`](Self::announce). A clone shares its subscribed listeners.
+/// until a test calls [`announce`](Self::announce). A clone shares its subscribed listeners. Unlike
+/// the port's default, the location is present.
 #[derive(Debug, Clone, Default)]
 pub struct FakeArchiveProjection {
     projects: BTreeMap<String, Entry>,
     provenance: BTreeMap<String, Provenance>,
+    lost_locations: BTreeSet<String>,
     listeners: Listeners,
 }
 
@@ -58,6 +60,14 @@ impl FakeArchiveProjection {
         self
     }
 
+    /// Answer [`ArchiveProjection::location_present`] for `shortcode` with `false`: per project,
+    /// for a test's convenience, where a live adapter loses its whole location.
+    #[must_use]
+    pub fn with_lost_location(mut self, shortcode: &str) -> Self {
+        self.lost_locations.insert(shortcode.to_string());
+        self
+    }
+
     /// Tell every subscribed listener that `shortcode` changed, on the caller's thread.
     pub fn announce(&self, shortcode: &str) {
         let listeners = self.listeners.0.lock().unwrap_or_else(PoisonError::into_inner).clone();
@@ -82,6 +92,10 @@ impl ArchiveProjection for FakeArchiveProjection {
 
     fn subscribe(&self, listener: Arc<dyn ChangeListener>) {
         self.listeners.0.lock().unwrap_or_else(PoisonError::into_inner).push(listener);
+    }
+
+    fn location_present(&self, shortcode: &str) -> bool {
+        !self.lost_locations.contains(shortcode)
     }
 }
 
@@ -334,6 +348,15 @@ mod tests {
 
         assert_eq!(*first.0.lock().unwrap(), ["0803", "0804"]);
         assert_eq!(*second.0.lock().unwrap(), ["0803", "0804"]);
+    }
+
+    #[test]
+    fn test_location_present_unless_lost() {
+        let fake = FakeArchiveProjection::default().with_lost_location("0804");
+        let projection: &dyn ArchiveProjection = &fake;
+
+        assert!(projection.location_present("0803"));
+        assert!(!projection.location_present("0804"));
     }
 
     #[test]

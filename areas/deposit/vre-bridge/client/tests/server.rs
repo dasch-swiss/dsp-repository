@@ -240,7 +240,7 @@ async fn test_download_writes_the_body_to_the_file() {
         .await;
     let work = vre_bridge_client::private_work_dir(&std::env::temp_dir()).unwrap();
 
-    let zip = server(&mock.uri()).download(IRI, "e", &work).await.unwrap();
+    let zip = server(&mock.uri()).download(IRI, "e", &work, u64::MAX).await.unwrap();
 
     assert_eq!(zip.size, body.len() as u64);
     assert_eq!(zip.path, work.path().join("dump.zip"));
@@ -265,7 +265,7 @@ async fn test_download_fails_on_a_short_body() {
     });
     let work = vre_bridge_client::private_work_dir(&std::env::temp_dir()).unwrap();
 
-    let result = server(&format!("http://{address}")).download(IRI, "e", &work).await;
+    let result = server(&format!("http://{address}")).download(IRI, "e", &work, u64::MAX).await;
 
     // hyper itself reports the early end; `ShortBody` covers a body it lets through.
     assert!(
@@ -283,10 +283,47 @@ async fn test_download_of_an_unfinished_export_is_an_error() {
         .await;
     let work = vre_bridge_client::private_work_dir(&std::env::temp_dir()).unwrap();
 
-    let error = server(&mock.uri()).download(IRI, "e", &work).await.unwrap_err();
+    let error = server(&mock.uri()).download(IRI, "e", &work, u64::MAX).await.unwrap_err();
 
     assert!(matches!(error, ClientError::Status { status: 409, .. }), "{error:?}");
     assert!(!work.path().join("dump.zip").exists());
+}
+
+#[tokio::test]
+async fn test_download_announced_over_the_cap_fails_before_writing() {
+    let mock = MockServer::start().await;
+    Mock::given(method("GET"))
+        .respond_with(ResponseTemplate::new(200).set_body_bytes(vec![0u8; 101]))
+        .mount(&mock)
+        .await;
+    let work = vre_bridge_client::private_work_dir(&std::env::temp_dir()).unwrap();
+
+    let error = server(&mock.uri()).download(IRI, "e", &work, 100).await.unwrap_err();
+
+    assert!(matches!(error, ClientError::TooLarge { limit: 100, .. }), "{error:?}");
+    assert!(!work.path().join("dump.zip").exists());
+}
+
+#[tokio::test]
+async fn test_download_streaming_past_the_cap_without_a_length_fails() {
+    // A chunked body announces no length, so only the bytes received tell.
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let address = listener.local_addr().unwrap();
+    tokio::spawn(async move {
+        let (mut socket, _) = listener.accept().await.unwrap();
+        let mut request = [0u8; 4096];
+        let _ = socket.read(&mut request).await;
+        let chunk = "0123456789";
+        let body = format!("a\r\n{chunk}\r\na\r\n{chunk}\r\n0\r\n\r\n");
+        let response = format!("HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n{body}");
+        socket.write_all(response.as_bytes()).await.unwrap();
+        socket.shutdown().await.unwrap();
+    });
+    let work = vre_bridge_client::private_work_dir(&std::env::temp_dir()).unwrap();
+
+    let result = server(&format!("http://{address}")).download(IRI, "e", &work, 15).await;
+
+    assert!(matches!(result, Err(ClientError::TooLarge { limit: 15, .. })), "{result:?}");
 }
 
 #[tokio::test]

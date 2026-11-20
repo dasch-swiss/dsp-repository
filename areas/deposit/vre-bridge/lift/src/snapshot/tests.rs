@@ -424,6 +424,13 @@ fn the_report_prints_a_count_per_rule_then_at_most_twenty_of_each() {
     expected.push_str("  … and 5 more\nmissing-label (FORMAT.md §2):\n  m1\n  m2\n");
     assert_eq!(report.to_string(), expected);
     assert_eq!(format!("{report:?}"), expected);
+    assert_eq!(
+        report.counts(),
+        [
+            ("unknown-predicate (FORMAT.md §6)".to_owned(), 25),
+            ("missing-label (FORMAT.md §2)".to_owned(), 2),
+        ]
+    );
 }
 
 /// `f` written as an unzipped dump under `dir`: every quad in `data.nq`.

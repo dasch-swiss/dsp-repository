@@ -2,7 +2,7 @@
 //! email addresses: only `data/rdf/data.nq` and `data/rdf/ontology-<digits>.nq` ever leave the zip.
 
 use std::fs::{self, File, OpenOptions, Permissions};
-use std::io;
+use std::io::{self, Read};
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 
@@ -52,8 +52,10 @@ pub fn private_work_dir(parent: &Path) -> Result<TempDir, ClientError> {
 /// Unpacks the dump `zip` into `into`. Every entry name of the central directory is checked first:
 /// an absolute path, a `..` component, a symlink or two entries of one name fail the whole dump
 /// before anything is written. Then only `data.nq` and the ontologies are extracted, by name; the
-/// zip's other entries are never read.
-pub fn unpack(zip: &Path, into: &TempDir) -> Result<DumpDir, ClientError> {
+/// zip's other entries are never read. More than `max_bytes` extracted, as the entries declare or
+/// as they inflate, is [`ClientError::TooLarge`].
+pub fn unpack(zip: &Path, into: &TempDir, max_bytes: u64) -> Result<DumpDir, ClientError> {
+    let too_large = || ClientError::TooLarge { what: "the unpacked dump", limit: max_bytes };
     let file = File::open(zip).map_err(ClientError::io("opening the dump"))?;
     let mut archive = ZipArchive::new(file).map_err(ClientError::Zip)?;
     // Duplicate names collapse to one entry in the archive's index, which could hide a symlink.
@@ -62,6 +64,7 @@ pub fn unpack(zip: &Path, into: &TempDir) -> Result<DumpDir, ClientError> {
     }
 
     let mut wanted = Vec::new();
+    let mut declared = 0u64;
     for index in 0..archive.len() {
         let entry = archive.by_index_data(index).map_err(ClientError::Zip)?;
         let name = entry.name().map_err(ClientError::Zip)?;
@@ -72,24 +75,31 @@ pub fn unpack(zip: &Path, into: &TempDir) -> Result<DumpDir, ClientError> {
             return Err(ClientError::UnsafeEntry { index });
         }
         if entry.is_file() && is_extracted(&name) {
+            declared = declared.saturating_add(entry.size());
             wanted.push((index, name.into_owned()));
         }
     }
     if !wanted.iter().any(|(_, name)| name == DATA) {
         return Err(ClientError::MissingData);
     }
+    if declared > max_bytes {
+        return Err(too_large());
+    }
 
     let root = into.path().join("dump");
     let what = "writing the unpacked dump";
     fs::create_dir_all(root.join("data").join("rdf")).map_err(ClientError::io(what))?;
+    let mut remaining = max_bytes;
     for (index, name) in wanted {
-        let mut entry = archive.by_index(index).map_err(ClientError::Zip)?;
+        let entry = archive.by_index(index).map_err(ClientError::Zip)?;
         let mut out = OpenOptions::new()
             .write(true)
             .create_new(true)
             .open(root.join(&name))
             .map_err(ClientError::io(what))?;
-        io::copy(&mut entry, &mut out).map_err(ClientError::io(what))?;
+        // A declared size can lie: one byte past what is left tells an entry that inflates further.
+        let copied = io::copy(&mut entry.take(remaining.saturating_add(1)), &mut out).map_err(ClientError::io(what))?;
+        remaining = remaining.checked_sub(copied).ok_or_else(too_large)?;
     }
     Ok(DumpDir { path: root })
 }
@@ -155,7 +165,7 @@ mod tests {
         ]);
         let work = private_work_dir(&std::env::temp_dir()).unwrap();
 
-        let dump = unpack(&zip, &work).unwrap();
+        let dump = unpack(&zip, &work, u64::MAX).unwrap();
 
         assert_eq!(dump.path(), work.path().join("dump"));
         assert_eq!(
@@ -180,7 +190,7 @@ mod tests {
             ]);
             let work = private_work_dir(&std::env::temp_dir()).unwrap();
 
-            let error = unpack(&zip, &work).unwrap_err();
+            let error = unpack(&zip, &work, u64::MAX).unwrap_err();
 
             assert!(matches!(error, ClientError::UnsafeEntry { index: 1 }), "{evil}: {error:?}");
             assert!(files_below(work.path()).is_empty(), "{evil}");
@@ -200,7 +210,7 @@ mod tests {
         writer.finish().unwrap();
         let work = private_work_dir(&std::env::temp_dir()).unwrap();
 
-        let error = unpack(&zip, &work).unwrap_err();
+        let error = unpack(&zip, &work, u64::MAX).unwrap_err();
 
         assert!(matches!(error, ClientError::UnsafeEntry { index: 1 }), "{error:?}");
         assert!(files_below(work.path()).is_empty());
@@ -211,7 +221,24 @@ mod tests {
         let (_src, zip) = zip_of(&[("data/rdf/ontology-1.nq", "onto")]);
         let work = private_work_dir(&std::env::temp_dir()).unwrap();
 
-        assert!(matches!(unpack(&zip, &work), Err(ClientError::MissingData)));
+        assert!(matches!(unpack(&zip, &work, u64::MAX), Err(ClientError::MissingData)));
+    }
+
+    #[test]
+    fn test_unpack_over_the_cap_fails_before_writing_and_counts_only_extracted_entries() {
+        let (_src, zip) = zip_of(&[
+            ("data/rdf/admin.nq", "much larger than the cap, never extracted"),
+            ("data/rdf/data.nq", "12345"),
+            ("data/rdf/ontology-1.nq", "678"),
+        ]);
+
+        let work = private_work_dir(&std::env::temp_dir()).unwrap();
+        let error = unpack(&zip, &work, 7).unwrap_err();
+        assert!(matches!(error, ClientError::TooLarge { limit: 7, .. }), "{error:?}");
+        assert!(files_below(work.path()).is_empty());
+
+        let work = private_work_dir(&std::env::temp_dir()).unwrap();
+        assert!(unpack(&zip, &work, 8).is_ok());
     }
 
     #[test]

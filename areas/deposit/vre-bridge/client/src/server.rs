@@ -277,10 +277,17 @@ impl Server {
             .map_err(|_| ClientError::TimedOut { what: "the export", limit })?
     }
 
-    /// Downloads the completed export's zip as `dump.zip` into the private work directory `work`.
-    /// A failed download may leave a partial file there; it goes with the directory.
+    /// Downloads the completed export's zip as `dump.zip` into the private work directory `work`;
+    /// [`ClientError::TooLarge`] once it would exceed `max_bytes`. A failed download may leave a
+    /// partial file there; it goes with the directory.
     #[tracing::instrument(skip_all)]
-    pub async fn download(&self, project_iri: &str, id: &str, work: &TempDir) -> Result<DumpZip, ClientError> {
+    pub async fn download(
+        &self,
+        project_iri: &str,
+        id: &str,
+        work: &TempDir,
+        max_bytes: u64,
+    ) -> Result<DumpZip, ClientError> {
         let limit = self.timeouts.download;
         let into = work.path().join(DUMP_ZIP);
         let request = self
@@ -296,12 +303,19 @@ impl Server {
                 });
             }
             let expected = response.content_length();
+            let too_large = || ClientError::TooLarge { what: "the dump", limit: max_bytes };
+            if expected.is_some_and(|expected| expected > max_bytes) {
+                return Err(too_large());
+            }
             let mut file = tokio::fs::File::create_new(&into)
                 .await
                 .map_err(ClientError::io("creating the dump file"))?;
             let mut received = 0u64;
             // The workspace's reqwest has no `stream` feature.
             while let Some(chunk) = response.chunk().await.map_err(ClientError::request(EXPORT_DOWNLOAD))? {
+                if received + chunk.len() as u64 > max_bytes {
+                    return Err(too_large());
+                }
                 file.write_all(&chunk).await.map_err(ClientError::io("writing the dump file"))?;
                 received += chunk.len() as u64;
             }

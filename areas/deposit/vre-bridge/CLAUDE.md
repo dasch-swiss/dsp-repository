@@ -6,14 +6,15 @@ Vocabulary: `areas/deposit/vre-bridge/CONTEXT.md`. The decision: `areas/deposit/
 
 ## Where the bridge lives
 
-Five crates, each in its own directory; only `vre-bridge-lift` and `vre-bridge-store` exist so far.
+Five crates, each in its own directory; only `vre-bridge-lift`, `vre-bridge-store` and `vre-bridge-client` exist so
+far.
 
 | Crate | Directory | Role | Holds | Exists |
 |---|---|---|---|---|
 | `vre-bridge-lift` | `lift/` | `lift` | the lift (`lift`, `Lifted`, `LiftError`, `Violation`): the selection, the public guard and dsp-incubator's `dao-lift` `snapshot` as a library; `FORMAT.md`; the format and transformation versions | yes |
 | `vre-bridge-core` | `core/` | `core` | settings, the allowlist, refresh decisions, the shipped-input digest, outcomes | no |
 | `vre-bridge-store` | `store/` | `store` | the subtrees: generations, Ready tokens, recovery, cleanup, the lock | yes |
-| `vre-bridge-client` | `client/` | `client` | DSP-API with the service identity: change check, export, the dump's download and unpacking | no |
+| `vre-bridge-client` | `client/` | `client` | DSP-API with the service identity (`ServiceIdentity`, `Server`): project lookup, change check, export, the dump's download and private unpacking (`private_work_dir`, `unpack`), anonymous file downloads | yes |
 | `vre-bridge-server` | `server/` | `server` | the `VreBridge` facade `deposit-server` starts: the nightly run, one refresh, the operator's refresh | no |
 
 `vre-bridge-lift` grants its library to `vre-bridge-core` and `vre-bridge-server` alone (Bazel `visibility`). Its
@@ -21,6 +22,11 @@ role bans web frameworks, Maud, database crates, HTTP clients and `tokio` (`.git
 `just check`): it reads an unzipped dump from a directory it is given and returns the snapshot in memory; the
 caller writes it. `vre-bridge-store` grants its library to `vre-bridge-server` alone; every call is synchronous
 `std::fs`, for `spawn_blocking`.
+
+`vre-bridge-client` grants its library to `vre-bridge-server` alone. Its role bans web frameworks, Maud and database
+crates. It never installs a rustls crypto provider: the binary does, before the first `Server::new`, which returns
+`ClientError::NoCryptoProvider` without one. Its tests run
+against `wiremock` with the test-only key pair in `client/testdata/`, which no server trusts.
 
 ## Rules
 
@@ -50,6 +56,13 @@ caller writes it. `vre-bridge-store` grants its library to `vre-bridge-server` a
   n needs an `access-server` release whose `sync-store` reads versions n-1 and n first.
 - **`LiftError` goes to the log only.** Its text names paths, graph IRIs and resource and value IRIs of the dump; a
   closed-world violation of a label names the label's text.
+- **`ClientError` carries no secret and no data.** No token, key, URL or response body reaches its text: a
+  `reqwest::Error` goes through `without_url()`, a JSON parse error is dropped (serde quotes the input), and
+  `ServiceIdentity` and `Server` write their `Debug` by hand, without key or token (`Server` shows its base URL,
+  which may not carry credentials). A new variant keeps to that.
+- **`unpack` reads the zip by name only.** It checks every central-directory entry before writing anything (an
+  absolute path, `..`, a symlink or two entries of one name fail the dump) and never calls `ZipArchive::extract`;
+  it is blocking, so an async caller runs it in `spawn_blocking`.
 
 ## Checking the lift on a real dump
 

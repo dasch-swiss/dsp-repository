@@ -56,6 +56,7 @@ areas/
     │   ├── store/             # Identity's SQLite store, mail transports, editor-ports adapters (crate: identity-store)
     │   └── web/               # Identity's pages, handlers, routes and the Identity facade (crate: identity-web)
     ├── vre-bridge/            # VRE bridge: VRE dumps into the Access Area's stand-ins (areas/deposit/ADR-0005)
+    │   ├── client/            # DSP-API with the service identity, the dump's private unpacking (crate: vre-bridge-client)
     │   ├── lift/              # The ported dao-lift snapshot and FORMAT.md (crate: vre-bridge-lift)
     │   └── store/             # Generations, Ready tokens, recovery, removal, the lock (crate: vre-bridge-store)
     └── editor/                # Metadata editor (authenticated; depositor authoring + RDU review)
@@ -116,6 +117,7 @@ dsp-cli/                       # Command-line client for the DaSCH Service Platf
 | `identity-web` | `areas/deposit/identity/web` | Identity's login and depositor pages, their handlers and routes, and the `Identity` facade `deposit-server` starts and mounts |
 | `vre-bridge-lift` | `areas/deposit/vre-bridge/lift` | A project dump as the interim snapshot `FORMAT.md` beside it specifies, in memory: the selection, the public guard and access rights, and dsp-incubator's `dao-lift` `snapshot` as a library; `oxigraph` and `thiserror` only, used by the VRE bridge's own crates alone |
 | `vre-bridge-store` | `areas/deposit/vre-bridge/store` | The writing side of the stand-in contract, the only code that writes the `sync` and `media` subtrees: a new generation per refresh, the Ready tokens replaced by one rename each, `media` before `sync`, the rollback, recovery and removal, and the lock and nightly-run record; synchronous `std::fs`, linked by `vre-bridge-server` alone |
+| `vre-bridge-client` | `areas/deposit/vre-bridge/client` | The VRE bridge's DSP-API client: Ed25519 service-identity tokens, the project lookup, the change check, the export lifecycle, the dump's download and its unpacking into a private `0700` directory, anonymous file downloads; used by `vre-bridge-server` alone |
 | `editor-core` | `areas/deposit/editor/core` | Pure domain types for the editor (zero framework deps) |
 | `editor-ports` | `areas/deposit/editor/ports` | What the editor asks of identity: `Actor`, `Authenticator`, `UserDirectory`; `std` only |
 | `editor-store` | `areas/deposit/editor/store` | The editor's SQLite store (`editor.sqlite`) and `LiveOpenWork` behind `identity-ports` |

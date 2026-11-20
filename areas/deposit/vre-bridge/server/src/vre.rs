@@ -1,11 +1,12 @@
 //! The VRE servers a refresh talks to, behind a trait so that a test can replace them.
 
 use std::collections::BTreeMap;
+use std::path::Path;
 
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use tempfile::TempDir;
-use vre_bridge_client::{Changes, ClientError, DeleteOutcome, DumpZip, ExportStatus, ExportTrigger, Server};
+use vre_bridge_client::{Changes, ClientError, DeleteOutcome, DumpZip, ExportStatus, ExportTrigger, FileError, Server};
 use vre_bridge_core::ServerId;
 
 /// DSP-API on each configured VRE server; every call names the allowlist entry's server.
@@ -41,6 +42,10 @@ pub trait Vre: Send + Sync {
 
     async fn delete_export(&self, server: &ServerId, project_iri: &str, id: &str)
         -> Result<DeleteOutcome, ClientError>;
+
+    /// An anonymous download of `url`, below one of the server's configured bases, into the new
+    /// file `into`; its size.
+    async fn download_file(&self, server: &ServerId, url: &str, into: &Path, max_bytes: u64) -> Result<u64, FileError>;
 }
 
 fn server<'a>(servers: &'a BTreeMap<ServerId, Server>, id: &ServerId) -> Result<&'a Server, ClientError> {
@@ -88,5 +93,12 @@ impl Vre for BTreeMap<ServerId, Server> {
         export: &str,
     ) -> Result<DeleteOutcome, ClientError> {
         server(self, id)?.delete_export(project_iri, export).await
+    }
+
+    async fn download_file(&self, id: &ServerId, url: &str, into: &Path, max_bytes: u64) -> Result<u64, FileError> {
+        server(self, id)
+            .map_err(FileError::Failed)?
+            .download_file(url, into, max_bytes)
+            .await
     }
 }

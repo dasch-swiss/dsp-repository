@@ -28,7 +28,10 @@ rust_library(
 # Runs against wiremock with real time: the client's test key pair, which no server trusts.
 rust_test(
     name = "vre_bridge_server_test",
-    compile_data = ["//areas/deposit/vre-bridge/client:testdata/ed25519-private.pem"],
+    compile_data = [
+        "//areas/deposit/vre-bridge/client:testdata/ed25519-private.pem",
+        "//areas/deposit/vre-bridge/core:datei_0001",
+    ],
     crate = ":vre_bridge_server",
     proc_macro_deps = ["@crates//:async-trait"],
     deps = [

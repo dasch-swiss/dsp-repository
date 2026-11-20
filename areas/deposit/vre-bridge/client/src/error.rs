@@ -48,6 +48,11 @@ pub enum ClientError {
     MissingData,
     #[error("{what} is larger than the cap of {limit} bytes")]
     TooLarge { what: &'static str, limit: u64 },
+    /// A file URL that is not http(s) below the server's base URL or a file base, or that carries
+    /// credentials, a query or an encoded separator; refused before any request. The bases are
+    /// `EDITOR_VRE_BRIDGE_SERVERS` and `EDITOR_VRE_BRIDGE_IIIF_BASES`.
+    #[error("the file URL is not below the configured bases, or carries credentials, a query or an encoded separator")]
+    FileUrl,
     /// The caller has no `Server` for the server id it asked for.
     #[error("no client is configured for the server")]
     NoServer,

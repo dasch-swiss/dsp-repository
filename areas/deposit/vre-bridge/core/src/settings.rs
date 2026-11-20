@@ -238,6 +238,8 @@ pub enum SettingsError {
     Zero { var: &'static str },
     #[error("{var} is not a whole number")]
     Number { var: &'static str },
+    #[error("{IIIF_BASES} has no entry for server `{server}`, from which project {shortcode} ships a file mapping")]
+    NoIiifBase { server: ServerId, shortcode: String },
 }
 
 impl Settings {
@@ -286,6 +288,25 @@ impl Settings {
             max_unpacked_bytes: positive(&raw.max_unpacked_bytes, GIB / 2, MAX_UNPACKED_BYTES)?,
             max_file_bytes: positive(&raw.max_file_bytes, GIB / 2, MAX_FILE_BYTES)?,
         }))
+    }
+
+    /// Requires an IIIF base for every server from which an allowlisted project ships a file
+    /// mapping; `ships_mapping` tells by shortcode, from the shipped inputs.
+    ///
+    /// # Errors
+    ///
+    /// [`SettingsError::NoIiifBase`] for the first such project whose server has none.
+    pub fn check_iiif_bases(&self, ships_mapping: impl Fn(&str) -> bool) -> Result<(), SettingsError> {
+        for entry in self.allowlist.entries() {
+            let has_base = self.servers.get(&entry.server).is_some_and(|s| s.iiif_base.is_some());
+            if !has_base && ships_mapping(&entry.shortcode) {
+                return Err(SettingsError::NoIiifBase {
+                    server: entry.server.clone(),
+                    shortcode: entry.shortcode.clone(),
+                });
+            }
+        }
+        Ok(())
     }
 }
 

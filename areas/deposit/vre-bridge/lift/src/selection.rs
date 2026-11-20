@@ -113,6 +113,58 @@ pub(crate) fn select(index: &Index, subjects: &Subjects) -> Selection {
     Selection { resources, values, dropped }
 }
 
+/// The current file values of each selected resource, by resource IRI: a key
+/// exists exactly for the resources the snapshot holds.
+#[derive(Debug, Default)]
+pub struct SelectedFiles(BTreeMap<String, Vec<SelectedFile>>);
+
+/// One current file value a selected resource names, of any file-value class
+/// (§8), the kinds omitted whole included.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SelectedFile {
+    pub class: String,
+    /// `None` unless the value has exactly one `kb:internalFilename`.
+    pub internal_filename: Option<String>,
+}
+
+impl SelectedFiles {
+    /// The file values of `iri`, sorted by value IRI; `None` when the snapshot
+    /// does not hold `iri` as a resource.
+    pub fn of(&self, iri: &str) -> Option<&[SelectedFile]> {
+        self.0.get(iri).map(Vec::as_slice)
+    }
+}
+
+/// The selected file values each selected resource names.
+pub(crate) fn files(index: &Index, subjects: &Subjects, selection: &Selection) -> SelectedFiles {
+    let file = |iri: &str| {
+        let class = subjects.get(iri)?.class.as_ref()?.as_str().to_string();
+        let names = index
+            .get(iri)
+            .map(|e| kinds::objects(e, kb::INTERNAL_FILENAME))
+            .unwrap_or_default();
+        let internal_filename = match names.as_slice() {
+            [Term::Literal(name)] => Some(name.value().to_string()),
+            _ => None,
+        };
+        Some(SelectedFile { class, internal_filename })
+    };
+    let files = selection.resources().map(|resource| {
+        let named: BTreeSet<&str> = index
+            .get(resource)
+            .into_iter()
+            .flat_map(|e| &e.triples)
+            .filter_map(|(_, o)| match o {
+                Term::NamedNode(n) => Some(n.as_str()),
+                _ => None,
+            })
+            .filter(|o| selection.has_value(o) && subjects.kind(o) == Some(Kind::FileValue))
+            .collect();
+        (resource.to_string(), named.into_iter().filter_map(file).collect())
+    });
+    SelectedFiles(files.collect())
+}
+
 impl Selection {
     /// The selected resources, sorted.
     pub(crate) fn resources(&self) -> impl Iterator<Item = &str> {

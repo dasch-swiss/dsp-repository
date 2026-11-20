@@ -41,7 +41,7 @@ bridge inactive with the variable named, and never stops `deposit-server`. A bla
 | `EDITOR_VRE_BRIDGE_LOCK_FILE` | unset, required | Lock file on a local disk, never inside a location; the nightly-run record is `<LOCK_FILE>.nightly`. |
 | `EDITOR_VRE_BRIDGE_ALLOWLIST` | empty | `SC=server,…`, e.g. `0803=prod`. Shortcodes are four upper-case hexadecimal digits. |
 | `EDITOR_VRE_BRIDGE_SERVERS` | empty | `id=base URL,…`, e.g. `prod=https://api.dasch.swiss`; no trailing `/`. The URL, verbatim, is the token's `aud`. `https` only: `http` is accepted for a loopback host alone (a test server), since the service token would otherwise travel in cleartext. |
-| `EDITOR_VRE_BRIDGE_IIIF_BASES` | empty | `id=IIIF base URL,…`, for DaTEI projects' files; `https`, as for `SERVERS`. |
+| `EDITOR_VRE_BRIDGE_IIIF_BASES` | empty | `id=IIIF base URL,…`, e.g. `prod=https://iiif.dasch.swiss`, for DaTEI projects' files; `https`, as for `SERVERS`. Required for a server from which an allowlisted project ships `file-mapping.json`; without it the bridge is inactive. |
 | `EDITOR_VRE_BRIDGE_KEY_IDS` | empty | `id=kid,…`: the key id dsp-api knows the deployment's public key by. |
 | `EDITOR_VRE_BRIDGE_SIGNING_KEY_FILES` | empty | `id=<absolute path>,…`: per server, a file holding one Ed25519 private key as PEM PKCS#8 ([Keys](#keys)), read at start and never inside a location; a symlink is followed. The value is not logged: a malformed entry is named by its position, a file that cannot be used by its server and path, never by its content. |
 | `EDITOR_VRE_BRIDGE_SERVICE_NAME` | `dsp-repository` | The token's `iss` and `sub`, and the `name` of the key in dsp-api's trusted keys. One per deployment. |
@@ -88,6 +88,19 @@ then `sync`'s, then replaces `media`'s token and then `sync`'s, and keeps the ne
 Entries whose names are not shortcodes (`lost+found`, `PROVENANCE`) are never read or deleted. Directories are
 `0755` and files `0644`, so `access-server`'s user can read them.
 
+**DaTEI projects.** A project whose shipped inputs hold `file-mapping.json` (`{"format":"file-mapping",
+"version":1,"files":[{"key":…,"iri":…}]}`, made with a DaTEI page) has its mapped files resolved after the lift:
+each IRI must be a resource the snapshot holds, with one current file value. A text file is downloaded without
+credentials from `<IIIF base>/<SHORTCODE>/<internal name>/file`, within `EDITOR_VRE_BRIDGE_MAX_FILE_BYTES` and
+`EDITOR_VRE_BRIDGE_FILE_TIMEOUT_SECS`, and stored under its internal name; a still image is recorded by its IIIF
+URL, `<IIIF base>/<SHORTCODE>/<internal name>`, and not downloaded. `file-manifest.json` lists each key with its
+IRI and its stored name or IIIF URL, in the mapping's order. The bridge fetches only below the server's configured
+base URL and IIIF base and follows no redirect. The project is refused (exit `2`, reason `file-mapping`) for a
+mapped IRI that is deleted, not public, without a file value or holding another kind of file, or whose internal
+name is not a file name or collides with a shipped input, `file-manifest.json`, `file-layout.xml` or
+`access-rights.json`; an anonymous `401` or `403` on a download refuses it with reason `unauthorized`. A
+mapping that does not parse fails it with reason `inputs`.
+
 **One writer per location.** The lock is a local file lock and does not reach across hosts: two deployments, stage
 and prod, must never share a location, a lock file or a work directory.
 
@@ -108,7 +121,7 @@ not lose its output (`tmux`, or `docker exec … > file`).
 | Exit status | Meaning |
 |---|---|
 | `0` | Refreshed, or unchanged. |
-| `2` | Refused: the project's data does not pass the public guard or the format's closed world, or it has no shipped-inputs directory. Its tokens are unchanged. |
+| `2` | Refused: the project's data does not pass the public guard or the format's closed world, its file mapping does not resolve, or it has no shipped-inputs directory. Its tokens are unchanged. |
 | `1` | Failed, with the reason in the outcome line; a busy dump slot fails at once. Its tokens are unchanged. |
 | `75` | The lock is held by the nightly run or another refresh. Try again once it has ended. |
 | `64` | The bridge is inactive, the project is not on the allowlist, or the configuration does not load. |

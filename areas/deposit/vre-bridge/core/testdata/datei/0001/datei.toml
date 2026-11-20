@@ -1,0 +1,3 @@
+# A synthetic project's DaTEI configuration; the bridge copies it and never reads it.
+[meta]
+shortcode = "0001"

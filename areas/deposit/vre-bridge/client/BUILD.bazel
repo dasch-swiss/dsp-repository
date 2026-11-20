@@ -54,7 +54,6 @@ rust_test(
         "@crates//:serde_json",
         "@crates//:tempfile",
         "@crates//:tokio",
-        "@crates//:url",
         "@crates//:wiremock",
     ],
 )

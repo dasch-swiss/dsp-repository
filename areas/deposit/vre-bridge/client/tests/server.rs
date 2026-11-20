@@ -5,7 +5,6 @@ use std::time::Duration;
 
 use chrono::{DateTime, Utc};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use url::Url;
 use vre_bridge_client::{
     ClientError, DeleteOutcome, ExportStatus, ExportTrigger, FileError, Server, ServiceIdentity, Timeouts,
 };
@@ -372,22 +371,122 @@ async fn test_download_file_sends_no_credentials_and_maps_401_and_403_to_refused
             .await;
     }
     let server = server(&mock.uri());
-    let url = |name: &str| Url::parse(&format!("{}/files/{name}", mock.uri())).unwrap();
+    let work = tempfile::tempdir().unwrap();
+    let url = |name: &str| format!("{}/files/{name}", mock.uri());
+    let into = |name: &str| work.path().join(name);
 
-    assert_eq!(server.download_file(&url("open.txt")).await.unwrap(), b"text");
+    assert_eq!(server.download_file(&url("open.txt"), &into("open.txt"), 100).await.unwrap(), 4);
+    assert_eq!(std::fs::read(into("open.txt")).unwrap(), b"text");
     assert!(matches!(
-        server.download_file(&url("login.txt")).await,
+        server.download_file(&url("login.txt"), &into("login.txt"), 100).await,
         Err(FileError::Refused(401))
     ));
     assert!(matches!(
-        server.download_file(&url("closed.txt")).await,
+        server.download_file(&url("closed.txt"), &into("closed.txt"), 100).await,
         Err(FileError::Refused(403))
     ));
     assert!(matches!(
-        server.download_file(&url("broken.txt")).await,
+        server.download_file(&url("broken.txt"), &into("broken.txt"), 100).await,
         Err(FileError::Failed(ClientError::Status { status: 500, .. }))
     ));
     assert!(!received(&mock).await.iter().any(has_authorization));
+    let left: Vec<_> = std::fs::read_dir(work.path())
+        .unwrap()
+        .map(|e| e.unwrap().file_name())
+        .collect();
+    assert_eq!(left, ["open.txt"]);
+}
+
+#[tokio::test]
+async fn test_download_file_refuses_a_url_off_the_configured_bases_before_any_request() {
+    let (api, iiif, elsewhere) = (MockServer::start().await, MockServer::start().await, MockServer::start().await);
+    for mock in [&api, &iiif, &elsewhere] {
+        Mock::given(method("GET"))
+            .respond_with(ResponseTemplate::new(200).set_body_string("text"))
+            .mount(mock)
+            .await;
+    }
+    let server = server(&format!("{}/api", api.uri()))
+        .with_file_base(&format!("{}/iiif", iiif.uri()))
+        .unwrap();
+    let work = tempfile::tempdir().unwrap();
+    let host_port = elsewhere.uri().trim_start_matches("http://").to_owned();
+    let refused = [
+        format!("{}/iiif/0001/a.xml/file", elsewhere.uri()),
+        format!("{}/other/0001/a.xml/file", iiif.uri()),
+        format!("{}/iiifx/0001/a.xml/file", iiif.uri()),
+        format!("{}/api", api.uri()),
+        format!("{}/iiif/../other/a.xml", iiif.uri()),
+        format!("{}/iiif/%2e%2e%2fother/a.xml", iiif.uri()),
+        format!("{}/iiif/a%5Cb.xml", iiif.uri()),
+        format!("{}/iiif/a.xml?x=1", iiif.uri()),
+        format!("{}/iiif/a.xml#x", iiif.uri()),
+        format!("http://user:pass@{host_port}/iiif/a.xml"),
+        format!("ftp://{host_port}/iiif/a.xml"),
+        "not a url".to_owned(),
+    ];
+
+    for url in &refused {
+        let result = server.download_file(url, &work.path().join("f"), 100).await;
+        assert!(
+            matches!(result, Err(FileError::Failed(ClientError::FileUrl))),
+            "{url}: {result:?}"
+        );
+    }
+
+    assert!(received(&elsewhere).await.is_empty());
+    assert!(received(&iiif).await.is_empty());
+    assert!(received(&api).await.is_empty());
+    let into = work.path().join("ok");
+    let ok = server
+        .download_file(&format!("{}/iiif/0001/a.xml/file", iiif.uri()), &into, 100)
+        .await;
+    assert_eq!(ok.unwrap(), 4);
+    assert!(server
+        .download_file(&format!("{}/api/x", api.uri()), &work.path().join("x"), 100)
+        .await
+        .is_ok());
+}
+
+#[tokio::test]
+async fn test_download_file_redirect_answer_fails_and_is_not_followed() {
+    let (mock, elsewhere) = (MockServer::start().await, MockServer::start().await);
+    Mock::given(method("GET"))
+        .respond_with(ResponseTemplate::new(302).insert_header("location", format!("{}/a.xml", elsewhere.uri())))
+        .mount(&mock)
+        .await;
+    let work = tempfile::tempdir().unwrap();
+
+    let result = server(&mock.uri())
+        .download_file(&format!("{}/a.xml", mock.uri()), &work.path().join("a.xml"), 100)
+        .await;
+
+    assert!(
+        matches!(result, Err(FileError::Failed(ClientError::Status { status: 302, .. }))),
+        "{result:?}"
+    );
+    assert!(received(&elsewhere).await.is_empty());
+}
+
+#[tokio::test]
+async fn test_download_file_over_the_cap_fails_and_leaves_nothing() {
+    let mock = MockServer::start().await;
+    Mock::given(method("GET"))
+        .respond_with(ResponseTemplate::new(200).set_body_string("0123456789"))
+        .mount(&mock)
+        .await;
+    let work = tempfile::tempdir().unwrap();
+    let into = work.path().join("big.xml");
+
+    let result = server(&mock.uri())
+        .download_file(&format!("{}/big.xml", mock.uri()), &into, 9)
+        .await;
+
+    assert!(
+        matches!(result, Err(FileError::Failed(ClientError::TooLarge { limit: 9, .. }))),
+        "{result:?}"
+    );
+    assert!(!into.exists());
 }
 
 #[tokio::test]

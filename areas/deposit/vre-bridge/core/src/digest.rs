@@ -17,8 +17,9 @@ use shared_names::is_file_name;
 
 /// File names a `media` generation reserves for what the bridge writes itself; no shipped input
 /// may have one, in any case and at any depth. `vre-bridge-store`'s `RIGHTS_RECORD_FILE` is the
-/// first; a new file the bridge writes into a generation's root is added here.
-pub const RESERVED_NAMES: [&str; 2] = ["access-rights.json", "file-manifest.json"];
+/// first; a new file the bridge writes into a generation's root is added here. A stored file may
+/// not take DaTEI's `file-layout.xml` either (`FILE_LAYOUT` in `datei.rs`).
+pub const RESERVED_NAMES: [&str; 2] = ["access-rights.json", crate::FILE_MANIFEST];
 
 /// A shipped input the bridge cannot use: a configuration error. Paths are relative to the
 /// project's inputs directory (`.` for the directory itself).
@@ -50,18 +51,8 @@ pub enum DigestError {
 /// [`RESERVED_NAMES`] in any ASCII case, or a file that cannot be read, is no regular file once
 /// opened, or changes its length while it is read.
 pub fn inputs_digest(dir: &Path) -> Result<String, DigestError> {
-    let mut files = Vec::new();
-    match fs::symlink_metadata(dir) {
-        Err(e) if e.kind() == io::ErrorKind::NotFound => {}
-        Err(e) => return Err(io_error(".", &e)),
-        Ok(meta) if meta.file_type().is_symlink() => return Err(DigestError::Symlink(".".to_owned())),
-        Ok(meta) if meta.is_dir() => collect(dir, "", &mut files)?,
-        Ok(_) => return Err(DigestError::NotAFile(".".to_owned())),
-    }
-    files.sort_unstable_by(|(a, _), (b, _)| a.as_bytes().cmp(b.as_bytes()));
-
     let mut hasher = Sha256::new();
-    for (relative, path) in &files {
+    for (relative, path) in &walk(dir)? {
         let mut file = File::open(path).map_err(|e| io_error(relative, &e))?;
         // `File::open` follows a symlink the walk did not see: check what was opened.
         let meta = file.metadata().map_err(|e| io_error(relative, &e))?;
@@ -84,6 +75,30 @@ pub fn inputs_digest(dir: &Path) -> Result<String, DigestError> {
         let _ = write!(digest, "{byte:02x}");
     }
     Ok(digest)
+}
+
+/// The relative paths of the shipped inputs in `dir`, sorted by their bytes; none when `dir`
+/// does not exist. Blocking.
+///
+/// # Errors
+///
+/// As [`inputs_digest`], without reading the files' contents.
+pub fn shipped_names(dir: &Path) -> Result<Vec<String>, DigestError> {
+    Ok(walk(dir)?.into_iter().map(|(relative, _)| relative).collect())
+}
+
+/// Every regular file below `dir` as `(relative path, path)`, sorted by the relative path's bytes.
+fn walk(dir: &Path) -> Result<Vec<(String, PathBuf)>, DigestError> {
+    let mut files = Vec::new();
+    match fs::symlink_metadata(dir) {
+        Err(e) if e.kind() == io::ErrorKind::NotFound => {}
+        Err(e) => return Err(io_error(".", &e)),
+        Ok(meta) if meta.file_type().is_symlink() => return Err(DigestError::Symlink(".".to_owned())),
+        Ok(meta) if meta.is_dir() => collect(dir, "", &mut files)?,
+        Ok(_) => return Err(DigestError::NotAFile(".".to_owned())),
+    }
+    files.sort_unstable_by(|(a, _), (b, _)| a.as_bytes().cmp(b.as_bytes()));
+    Ok(files)
 }
 
 /// Every regular file below `dir` as `(relative path, path)`; `prefix` is `dir`'s relative path.

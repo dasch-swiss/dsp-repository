@@ -1,5 +1,5 @@
 use std::fmt;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use chrono::{DateTime, Utc};
@@ -97,6 +97,8 @@ pub struct Server {
     /// The configured base URL, verbatim: also the tokens' `aud`.
     base: String,
     base_url: Url,
+    /// Where anonymous file downloads may come from, beside `base_url`.
+    file_bases: Vec<Url>,
     identity: ServiceIdentity,
     client: reqwest::Client,
     timeouts: Timeouts,
@@ -143,16 +145,7 @@ impl Server {
     /// cut the dump download short). Fails if the process has installed no rustls crypto provider,
     /// where reqwest would panic.
     pub fn new(base: &str, identity: ServiceIdentity, timeouts: Timeouts) -> Result<Self, ClientError> {
-        let base_url = Url::parse(base).map_err(|_| ClientError::BaseUrl)?;
-        if !(base_url.scheme() == "https" || (base_url.scheme() == "http" && is_loopback(&base_url)))
-            || base_url.cannot_be_a_base()
-            || !base_url.username().is_empty()
-            || base_url.password().is_some()
-            || base_url.query().is_some()
-            || base_url.fragment().is_some()
-        {
-            return Err(ClientError::BaseUrl);
-        }
+        let base_url = parse_base(base)?;
         if rustls::crypto::CryptoProvider::get_default().is_none() {
             return Err(ClientError::NoCryptoProvider);
         }
@@ -162,7 +155,14 @@ impl Server {
             .redirect(reqwest::redirect::Policy::none())
             .build()
             .map_err(ClientError::request("building the HTTP client"))?;
-        Ok(Self { base: base.to_owned(), base_url, identity, client, timeouts })
+        Ok(Self {
+            base: base.to_owned(),
+            base_url,
+            file_bases: Vec::new(),
+            identity,
+            client,
+            timeouts,
+        })
     }
 
     /// The project's IRI, looked up without credentials.
@@ -358,29 +358,96 @@ impl Server {
         }
     }
 
-    /// Downloads a file without credentials. `401` and `403` are `Refused`: the file is not public.
+    /// Lets [`download_file`](Self::download_file) fetch below `base` too, beside the server's
+    /// base URL: the server's IIIF base, held to the same rules as the base URL.
+    ///
+    /// # Errors
+    ///
+    /// [`ClientError::BaseUrl`] as [`new`](Self::new).
+    pub fn with_file_base(mut self, base: &str) -> Result<Self, ClientError> {
+        self.file_bases.push(parse_base(base)?);
+        Ok(self)
+    }
+
+    /// Downloads a file without credentials into the new file `into`, in the private work
+    /// directory, and returns its size. Only a URL below the base URL or a file base is fetched:
+    /// any other is [`ClientError::FileUrl`] before a request is made, and a redirect is not
+    /// followed. `401` and `403` are `Refused`: the file is not public. Larger than `max_bytes`
+    /// is [`ClientError::TooLarge`]. On any error, a file this call created is deleted.
     #[tracing::instrument(skip_all)]
-    pub async fn download_file(&self, url: &Url) -> Result<Vec<u8>, FileError> {
-        let request = self.client.get(url.clone()).timeout(self.timeouts.file);
-        let response = request
-            .send()
+    pub async fn download_file(&self, url: &str, into: &Path, max_bytes: u64) -> Result<u64, FileError> {
+        let url = Url::parse(url)
+            .ok()
+            .filter(|url| self.is_file_url(url))
+            .ok_or(FileError::Failed(ClientError::FileUrl))?;
+        let limit = self.timeouts.file;
+        let mut created = false;
+        let fetched = tokio::time::timeout(limit, self.fetch_file(url, into, max_bytes, &mut created))
             .await
-            .map_err(|e| FileError::Failed(ClientError::request(FILE_DOWNLOAD)(e)))?;
+            .unwrap_or(Err(FileError::Failed(ClientError::TimedOut { what: "a file download", limit })));
+        if fetched.is_err() && created {
+            let _ = tokio::fs::remove_file(into).await;
+        }
+        fetched
+    }
+
+    async fn fetch_file(&self, url: Url, into: &Path, max_bytes: u64, created: &mut bool) -> Result<u64, FileError> {
+        let failed = |e| FileError::Failed(ClientError::request(FILE_DOWNLOAD)(e));
+        let mut response = self.client.get(url).send().await.map_err(failed)?;
         let status = response.status();
         if status == StatusCode::UNAUTHORIZED || status == StatusCode::FORBIDDEN {
             return Err(FileError::Refused(status.as_u16()));
         }
-        if !status.is_success() {
+        if status != StatusCode::OK {
             return Err(FileError::Failed(ClientError::Status {
                 endpoint: FILE_DOWNLOAD,
                 status: status.as_u16(),
             }));
         }
-        let body = response
-            .bytes()
+        let too_large = || FileError::Failed(ClientError::TooLarge { what: "a file", limit: max_bytes });
+        let expected = response.content_length();
+        if expected.is_some_and(|expected| expected > max_bytes) {
+            return Err(too_large());
+        }
+        let io = |what| move |e| FileError::Failed(ClientError::io(what)(e));
+        let mut file = tokio::fs::File::create_new(into)
             .await
-            .map_err(|e| FileError::Failed(ClientError::request(FILE_DOWNLOAD)(e)))?;
-        Ok(body.to_vec())
+            .map_err(io("creating a downloaded file"))?;
+        *created = true;
+        let mut received = 0u64;
+        while let Some(chunk) = response.chunk().await.map_err(failed)? {
+            if received + chunk.len() as u64 > max_bytes {
+                return Err(too_large());
+            }
+            file.write_all(&chunk).await.map_err(io("writing a downloaded file"))?;
+            received += chunk.len() as u64;
+        }
+        file.flush().await.map_err(io("writing a downloaded file"))?;
+        match expected {
+            Some(expected) if received != expected => Err(FileError::Failed(ClientError::ShortBody {
+                endpoint: FILE_DOWNLOAD,
+                received,
+                expected,
+            })),
+            _ => Ok(received),
+        }
+    }
+
+    /// An http(s) URL without credentials, query or fragment, on the origin of the base URL or a
+    /// file base and below its path. An encoded `/`, `\` or `.` is refused too: a server that
+    /// decodes it would resolve a path outside the base.
+    fn is_file_url(&self, url: &Url) -> bool {
+        let below = |base: &Url| {
+            url.origin() == base.origin() && url.path().starts_with(&format!("{}/", base.path().trim_end_matches('/')))
+        };
+        let path = url.path().to_ascii_lowercase();
+        matches!(url.scheme(), "http" | "https")
+            && url.username().is_empty()
+            && url.password().is_none()
+            && url.query().is_none()
+            && url.fragment().is_none()
+            && !["%2f", "%5c", "%2e"].iter().any(|encoded| path.contains(encoded))
+            && std::iter::once(&self.base_url).chain(&self.file_bases).any(below)
     }
 
     fn token(&self) -> Result<String, ClientError> {
@@ -415,6 +482,22 @@ impl fmt::Debug for Server {
             .field("timeouts", &self.timeouts)
             .finish_non_exhaustive()
     }
+}
+
+/// An https URL, or an http one on a loopback host, that can be a base, without credentials, query
+/// or fragment.
+fn parse_base(base: &str) -> Result<Url, ClientError> {
+    let url = Url::parse(base).map_err(|_| ClientError::BaseUrl)?;
+    if !(url.scheme() == "https" || (url.scheme() == "http" && is_loopback(&url)))
+        || url.cannot_be_a_base()
+        || !url.username().is_empty()
+        || url.password().is_some()
+        || url.query().is_some()
+        || url.fragment().is_some()
+    {
+        return Err(ClientError::BaseUrl);
+    }
+    Ok(url)
 }
 
 /// Whether the base URL's host is `localhost` or a loopback address: only there is plain http a

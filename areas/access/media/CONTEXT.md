@@ -29,7 +29,8 @@ token and the shipped inputs record provenance. The committed `data/` is a test 
 `access-server`'s image still carries: `0803/.ready`, hand-written, and the generation
 `0803/20261007T000000Z-00000000/` holding Incunabula's `config.kdl`, `curation.csv` and
 `narrative/<name>.<lang>.md`, text only, in plain git; `data/PROVENANCE` records where each file came from. Not yet
-in code: the VRE bridge, and the fixture pinned to its shipped inputs (P-DEV-301).
+in code: a deployment that configures the VRE bridge (DEV-7514), and the fixture pinned to its shipped inputs
+(P-DEV-301).
 _Avoid_: the bucket (the stand-in is not it), project folder (CPE's, which holds code and the documents about
 the data), committed snapshot (`sync`'s file in a generation is its Interim snapshot).
 

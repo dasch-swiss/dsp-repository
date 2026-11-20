@@ -24,12 +24,21 @@ That copy is the seam, and it is explicit on both sides. `EditorConfig` carries 
 
 Moving the directory under `shared/` was considered and rejected: the shared-crate rule in [Repo Structure](../repo_structure.md#shared-crates) is about crates, and this is DPE's owned content consumed through an existing explicit seam. Reopen it only if a third consumer appears.
 
+### The VRE bridge in the image
+
+The same image runs the VRE bridge ([VRE bridge operations](../vre-bridge/operations.md)). Its layer
+`image_vre_bridge_inputs` places the bridge's shipped inputs at `/app/vre-bridge/inputs`, where the image's
+`EDITOR_VRE_BRIDGE_INPUTS_DIR` points. The image sets no output location (`EDITOR_VRE_BRIDGE_SYNC_DIR`,
+`EDITOR_VRE_BRIDGE_MEDIA_DIR`), so the bridge does nothing unless a deployment sets them: the Cloud Run previews
+run this image publicly, and must neither write nor dump from DSP.
+
 ## CLI Commands
 
 | Command | Description |
 |---------|-------------|
 | `deposit-server serve` | Start the web server |
 | `deposit-server healthcheck [--url URL]` | Check if the server is healthy (default: `http://localhost:8080/healthz`) |
+| `deposit-server vre-bridge-refresh <SHORTCODE>` | The VRE bridge's operator's refresh of one project; see [VRE bridge operations](../vre-bridge/operations.md#the-operators-refresh) |
 
 `healthcheck` only accepts loopback URLs (`http://localhost`, `http://127.0.0.1`, `http://[::1]`). The URL arrives as a CLI flag from the Docker `HEALTHCHECK`, and restricting it stops a mistyped or tampered value turning the container into an SSRF probe.
 
@@ -69,6 +78,7 @@ Locally the default is `127.0.0.1:4100`, deliberately not DPE's 4000, so `just d
 | `EDITOR_MAIL_ACCOUNT_DAILY_CAP` | No | `20` | Codes that may be sent to a **single account** in 24 hours. The global cap alone does not bound one address: at a 60-second cooldown one address fits 1,440 codes a day. Must not exceed `EDITOR_MAIL_DAILY_CAP`, which startup validates. |
 | `EDITOR_SESSION_ABSOLUTE_SECS` | No | `43200` (12 h) | Absolute session lifetime, set at creation and never extended. |
 | `EDITOR_SESSION_IDLE_SECS` | No | `7200` (2 h) | Idle session timeout. Must not exceed the absolute lifetime, which startup validates. |
+| `EDITOR_VRE_BRIDGE_*` | No | *(none — the bridge does nothing)* | The VRE bridge's settings, tabled in [VRE bridge operations](../vre-bridge/operations.md#settings). The image sets `EDITOR_VRE_BRIDGE_INPUTS_DIR` only. A value the bridge refuses leaves it inactive and never stops the editor. |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | No | *(none)* | OTLP gRPC endpoint (e.g. `http://alloy:4317`). When unset, OTel falls back to no-op export. |
 | `OTEL_SERVICE_NAME` | No | *(none)* | Service name for OTel resource attributes (e.g. `editor`) |
 | `OTEL_RESOURCE_ATTRIBUTES` | No | *(none)* | Comma-separated OTel resource attributes (e.g. `service.namespace=editor,service.version=0.8.2,deployment.environment=prod`) |

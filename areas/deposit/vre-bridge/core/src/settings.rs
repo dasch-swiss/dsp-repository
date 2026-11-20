@@ -1,6 +1,7 @@
 //! The bridge's settings: [`RawSettings`] as the configuration loader reads them, one optional
-//! string or number per environment variable, and [`Settings::parse`], which checks them all at
-//! once.
+//! string per environment variable, and [`Settings::parse`], which checks them all at once. Numbers
+//! arrive as text too, so a malformed one is a configuration error of the bridge, which leaves the
+//! bridge inactive, and never stops the loader.
 //!
 //! A list variable is `key=value,…`: entries split on `,`, trimmed, empty ones dropped, each split
 //! on its first `=`. An empty or blank string counts as unset, so a deployment may set a variable
@@ -35,6 +36,8 @@ const FILE_TIMEOUT_SECS: &str = "EDITOR_VRE_BRIDGE_FILE_TIMEOUT_SECS";
 const MAX_DUMP_BYTES: &str = "EDITOR_VRE_BRIDGE_MAX_DUMP_BYTES";
 const MAX_UNPACKED_BYTES: &str = "EDITOR_VRE_BRIDGE_MAX_UNPACKED_BYTES";
 const MAX_FILE_BYTES: &str = "EDITOR_VRE_BRIDGE_MAX_FILE_BYTES";
+const DUMP_RETRIES: &str = "EDITOR_VRE_BRIDGE_DUMP_RETRIES";
+const DUMP_RETRY_SECS: &str = "EDITOR_VRE_BRIDGE_DUMP_RETRY_SECS";
 
 const GIB: u64 = 1024 * 1024 * 1024;
 
@@ -55,16 +58,16 @@ pub struct RawSettings {
     pub work_dir: Option<String>,
     pub nightly_at: Option<String>,
     pub time_zone: Option<String>,
-    pub dump_retries: Option<u64>,
-    pub dump_retry_secs: Option<u64>,
-    pub request_timeout_secs: Option<u64>,
-    pub export_timeout_secs: Option<u64>,
-    pub export_poll_secs: Option<u64>,
-    pub download_timeout_secs: Option<u64>,
-    pub file_timeout_secs: Option<u64>,
-    pub max_dump_bytes: Option<u64>,
-    pub max_unpacked_bytes: Option<u64>,
-    pub max_file_bytes: Option<u64>,
+    pub dump_retries: Option<String>,
+    pub dump_retry_secs: Option<String>,
+    pub request_timeout_secs: Option<String>,
+    pub export_timeout_secs: Option<String>,
+    pub export_poll_secs: Option<String>,
+    pub download_timeout_secs: Option<String>,
+    pub file_timeout_secs: Option<String>,
+    pub max_dump_bytes: Option<String>,
+    pub max_unpacked_bytes: Option<String>,
+    pub max_file_bytes: Option<String>,
 }
 
 /// `EDITOR_VRE_BRIDGE_SIGNING_KEYS` as read: `id=<base64 PKCS#8 DER Ed25519 private key>,…`.
@@ -248,6 +251,8 @@ pub enum SettingsError {
     Time { var: &'static str },
     #[error("{var} must be greater than 0")]
     Zero { var: &'static str },
+    #[error("{var} is not a whole number")]
+    Number { var: &'static str },
 }
 
 impl Settings {
@@ -285,16 +290,16 @@ impl Settings {
             work_dir: given(&raw.work_dir).map_or_else(std::env::temp_dir, PathBuf::from),
             nightly_at,
             time_zone: given(&raw.time_zone).unwrap_or("Europe/Zurich").to_owned(),
-            dump_retries: raw.dump_retries.unwrap_or(3),
-            dump_retry: Duration::from_secs(raw.dump_retry_secs.unwrap_or(1200)),
-            request_timeout: secs(raw.request_timeout_secs, 120, REQUEST_TIMEOUT_SECS)?,
-            export_timeout: secs(raw.export_timeout_secs, 3600, EXPORT_TIMEOUT_SECS)?,
-            export_poll: secs(raw.export_poll_secs, 15, EXPORT_POLL_SECS)?,
-            download_timeout: secs(raw.download_timeout_secs, 3600, DOWNLOAD_TIMEOUT_SECS)?,
-            file_timeout: secs(raw.file_timeout_secs, 300, FILE_TIMEOUT_SECS)?,
-            max_dump_bytes: positive(raw.max_dump_bytes, GIB / 4, MAX_DUMP_BYTES)?,
-            max_unpacked_bytes: positive(raw.max_unpacked_bytes, GIB / 2, MAX_UNPACKED_BYTES)?,
-            max_file_bytes: positive(raw.max_file_bytes, GIB / 2, MAX_FILE_BYTES)?,
+            dump_retries: number(&raw.dump_retries, 3, DUMP_RETRIES)?,
+            dump_retry: Duration::from_secs(number(&raw.dump_retry_secs, 1200, DUMP_RETRY_SECS)?),
+            request_timeout: secs(&raw.request_timeout_secs, 120, REQUEST_TIMEOUT_SECS)?,
+            export_timeout: secs(&raw.export_timeout_secs, 3600, EXPORT_TIMEOUT_SECS)?,
+            export_poll: secs(&raw.export_poll_secs, 15, EXPORT_POLL_SECS)?,
+            download_timeout: secs(&raw.download_timeout_secs, 3600, DOWNLOAD_TIMEOUT_SECS)?,
+            file_timeout: secs(&raw.file_timeout_secs, 300, FILE_TIMEOUT_SECS)?,
+            max_dump_bytes: positive(&raw.max_dump_bytes, GIB / 4, MAX_DUMP_BYTES)?,
+            max_unpacked_bytes: positive(&raw.max_unpacked_bytes, GIB / 2, MAX_UNPACKED_BYTES)?,
+            max_file_bytes: positive(&raw.max_file_bytes, GIB / 2, MAX_FILE_BYTES)?,
         }))
     }
 }
@@ -304,14 +309,19 @@ fn given(value: &Option<String>) -> Option<&str> {
     value.as_deref().map(str::trim).filter(|s| !s.is_empty())
 }
 
-fn positive(value: Option<u64>, default: u64, var: &'static str) -> Result<u64, SettingsError> {
-    match value.unwrap_or(default) {
+/// The number `value` spells, `default` when it is unset or blank. The value is never quoted.
+fn number(value: &Option<String>, default: u64, var: &'static str) -> Result<u64, SettingsError> {
+    given(value).map_or(Ok(default), |text| text.parse().map_err(|_| SettingsError::Number { var }))
+}
+
+fn positive(value: &Option<String>, default: u64, var: &'static str) -> Result<u64, SettingsError> {
+    match number(value, default, var)? {
         0 => Err(SettingsError::Zero { var }),
         n => Ok(n),
     }
 }
 
-fn secs(value: Option<u64>, default: u64, var: &'static str) -> Result<Duration, SettingsError> {
+fn secs(value: &Option<String>, default: u64, var: &'static str) -> Result<Duration, SettingsError> {
     positive(value, default, var).map(Duration::from_secs)
 }
 

@@ -15,6 +15,11 @@ const NOW: &str = "2026-11-20T12:00:00Z";
 const OLD: &str = "20261119T010000Z-0000000a";
 const OLDER: &str = "20261118T010000Z-0000000b";
 
+/// The bridge `raw` configures, its instruments on the global meter, a no-op in tests.
+fn from_raw(raw: RawSettings) -> VreBridge {
+    VreBridge::from_raw(raw, &opentelemetry::global::meter(crate::METER_SCOPE))
+}
+
 fn reason(bridge: &VreBridge) -> String {
     match bridge.inactive_reason() {
         Some(Inactive::Invalid(reason)) => reason.clone(),
@@ -28,7 +33,7 @@ fn reason(bridge: &VreBridge) -> String {
 fn test_from_raw_with_valid_settings_is_active() {
     let _ = rustls::crypto::ring::default_provider().install_default();
     let dirs = Dirs::new();
-    assert!(VreBridge::from_raw(dirs.raw("0803=prod")).is_active());
+    assert!(from_raw(dirs.raw("0803=prod")).is_active());
 }
 
 #[tokio::test(flavor = "current_thread")]
@@ -38,7 +43,7 @@ async fn test_from_raw_without_output_locations_is_inactive_and_start_spawns_not
     std::fs::create_dir(&leftover).unwrap();
     let raw = RawSettings { sync_dir: None, media_dir: None, ..dirs.raw("0803=prod") };
 
-    let bridge = VreBridge::from_raw(raw);
+    let bridge = from_raw(raw);
     bridge.start();
     tokio::task::yield_now().await;
 
@@ -55,7 +60,7 @@ fn test_from_raw_with_the_work_dir_inside_an_output_location_is_inactive() {
     std::fs::create_dir(&inside).unwrap();
     let raw = RawSettings { work_dir: Some(display(&inside)), ..dirs.raw("0803=prod") };
 
-    let reason = reason(&VreBridge::from_raw(raw));
+    let reason = reason(&from_raw(raw));
 
     assert!(reason.contains("EDITOR_VRE_BRIDGE_WORK_DIR"), "{reason}");
     assert!(reason.contains("EDITOR_VRE_BRIDGE_SYNC_DIR"), "{reason}");
@@ -69,7 +74,7 @@ fn test_from_raw_with_the_output_location_as_work_dir_is_inactive() {
         ..dirs.raw("0803=prod")
     };
 
-    assert!(reason(&VreBridge::from_raw(raw)).contains("EDITOR_VRE_BRIDGE_WORK_DIR"));
+    assert!(reason(&from_raw(raw)).contains("EDITOR_VRE_BRIDGE_WORK_DIR"));
 }
 
 #[test]
@@ -79,7 +84,7 @@ fn test_from_raw_with_a_symlinked_work_dir_is_inactive() {
     std::os::unix::fs::symlink(dirs.work.path(), &link).unwrap();
     let raw = RawSettings { work_dir: Some(display(&link)), ..dirs.raw("0803=prod") };
 
-    let reason = reason(&VreBridge::from_raw(raw));
+    let reason = reason(&from_raw(raw));
 
     assert!(
         reason.contains("EDITOR_VRE_BRIDGE_WORK_DIR") && reason.contains("symlink"),
@@ -94,7 +99,7 @@ fn test_from_raw_with_a_dangling_lock_file_symlink_is_inactive() {
     std::os::unix::fs::symlink(dirs.sync.path().join("lock"), &link).unwrap();
     let raw = RawSettings { lock_file: Some(display(&link)), ..dirs.raw("0803=prod") };
 
-    let reason = reason(&VreBridge::from_raw(raw));
+    let reason = reason(&from_raw(raw));
 
     assert!(
         reason.contains("EDITOR_VRE_BRIDGE_LOCK_FILE") && reason.contains("symlink"),
@@ -109,7 +114,7 @@ fn test_from_raw_with_an_output_location_the_sweep_would_delete_is_inactive() {
     std::fs::create_dir(&swept).unwrap();
     let raw = RawSettings { sync_dir: Some(display(&swept)), ..dirs.raw("0803=prod") };
 
-    let reason = reason(&VreBridge::from_raw(raw));
+    let reason = reason(&from_raw(raw));
 
     assert!(
         reason.contains("EDITOR_VRE_BRIDGE_SYNC_DIR") && reason.contains("sweep"),
@@ -127,7 +132,7 @@ fn test_from_raw_with_the_lock_file_where_the_sweep_would_delete_it_is_inactive(
         ..dirs.raw("0803=prod")
     };
 
-    let reason = reason(&VreBridge::from_raw(raw));
+    let reason = reason(&from_raw(raw));
 
     assert!(
         reason.contains("EDITOR_VRE_BRIDGE_LOCK_FILE") && reason.contains("sweep"),
@@ -141,7 +146,7 @@ fn test_from_raw_with_the_lock_file_inside_an_output_location_is_inactive() {
     let lock = dirs.media.path().join("lock");
     let raw = RawSettings { lock_file: Some(display(&lock)), ..dirs.raw("0803=prod") };
 
-    let reason = reason(&VreBridge::from_raw(raw));
+    let reason = reason(&from_raw(raw));
 
     assert!(reason.contains("EDITOR_VRE_BRIDGE_LOCK_FILE"), "{reason}");
     assert!(reason.contains("EDITOR_VRE_BRIDGE_MEDIA_DIR"), "{reason}");
@@ -155,7 +160,7 @@ fn test_from_raw_with_an_invalid_time_zone_is_inactive() {
         ..dirs.raw("0803=prod")
     };
 
-    assert!(reason(&VreBridge::from_raw(raw)).contains("EDITOR_VRE_BRIDGE_TIME_ZONE"));
+    assert!(reason(&from_raw(raw)).contains("EDITOR_VRE_BRIDGE_TIME_ZONE"));
 }
 
 #[test]
@@ -168,7 +173,7 @@ fn test_from_raw_with_a_signing_key_that_does_not_sign_is_inactive_and_not_quote
         ..dirs.raw("0803=prod")
     };
 
-    let reason = reason(&VreBridge::from_raw(raw));
+    let reason = reason(&from_raw(raw));
 
     assert!(
         reason.contains("EDITOR_VRE_BRIDGE_SIGNING_KEYS") && reason.contains("prod"),
@@ -266,7 +271,7 @@ async fn test_operator_refresh_of_a_project_not_allowlisted_exits_64() {
 
 #[tokio::test]
 async fn test_operator_refresh_of_an_inactive_bridge_exits_64() {
-    let bridge = VreBridge::from_raw(RawSettings {
+    let bridge = from_raw(RawSettings {
         inputs_dir: Some(display(temp().path())),
         ..RawSettings::default()
     });

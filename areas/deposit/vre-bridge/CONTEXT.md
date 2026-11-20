@@ -33,8 +33,8 @@ when that run began.
 _Avoid_: deletion (only the second step deletes).
 
 **Operator's refresh**:
-A **Forced refresh** of one allowlisted project that an operator starts in the bridge's process environment; it
-takes the **Lock file**'s lock without waiting and gives up on a **Busy** slot at once. Its exit statuses are
+A **Forced refresh** of one allowlisted project that an operator starts in the bridge's process environment,
+`deposit-server vre-bridge-refresh <SHORTCODE>`; it takes the **Lock file**'s lock without waiting and gives up on a **Busy** slot at once. Its exit statuses are
 listed under **Outcome**.
 
 **Inactive bridge**:
@@ -128,8 +128,8 @@ or an operator asked. Otherwise the change check asks from **T** minus 60 second
 **Outcome**:
 How a **Refresh** ended: unchanged (the change check listed nothing), refreshed, refused or failed; and, from
 the **Nightly run**'s removal only, removed. The **Operator's refresh** exits `0` for unchanged or refreshed,
-`2` for refused and `1` for failed; before any refresh, `64` when the bridge is inactive or the project not
-allowlisted, `75` when the lock is held. A refused or failed refresh leaves the project's tokens as they were.
+`2` for refused and `1` for failed; before any refresh, `64` when the bridge is inactive, the project not
+allowlisted or `deposit-server`'s configuration does not load, `75` when the lock is held. A refused or failed refresh leaves the project's tokens as they were.
 
 **Refusal**:
 An **Outcome** the project's data causes: the **Public guard**, the format's closed world, the server refusing the

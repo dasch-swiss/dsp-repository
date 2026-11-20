@@ -9,6 +9,7 @@ use std::{fmt, io};
 
 use chrono::{DateTime, TimeDelta, Utc};
 use chrono_tz::Tz;
+use opentelemetry::metrics::Meter;
 use tokio::time::Instant;
 use tracing::{error, info, warn};
 use vre_bridge_client::{Server, ServiceIdentity, Timeouts, DUMP_DIR_PREFIX};
@@ -16,7 +17,9 @@ use vre_bridge_core::{AllowlistEntry, FailureReason, Outcome, RawSettings, Serve
 use vre_bridge_store::{is_swept, Lock, RecoveryReport, Subtrees};
 
 use crate::refresh::spawn_blocking;
-use crate::{schedule, sweep_dump_dirs, Busy, Clock, LogReport, RefreshReport, Refresher, Report, SystemClock, Vre};
+use crate::report::{observe_active, OtelReport};
+use crate::withhold::withhold;
+use crate::{schedule, sweep_dump_dirs, Busy, Clock, RefreshReport, Refresher, Report, SystemClock, Vre};
 
 /// The operator's refresh's exit status when the bridge is not configured or the project is not
 /// on the allowlist (`EX_USAGE`).
@@ -69,9 +72,14 @@ impl VreBridge {
     /// The bridge `raw` configures, inactive when no output location is set or a setting is
     /// invalid; the reason is logged. Each server's client is built here, so a rustls crypto
     /// provider must be installed first, and each signing key signs a probe token here. It reads
-    /// the file system to check the paths, so it blocks: call it before the runtime serves.
+    /// the file system to check the paths, so it blocks: on a runtime, call it from
+    /// `spawn_blocking`.
+    ///
+    /// Its instruments are made on `meter`, scope [`METER_SCOPE`](crate::METER_SCOPE): from the
+    /// process's meter provider once that is installed, since instruments made before stay no-ops,
+    /// or from a provider with no reader where nothing may be exported.
     #[must_use]
-    pub fn from_raw(raw: RawSettings) -> Self {
+    pub fn from_raw(raw: RawSettings, meter: &Meter) -> Self {
         let state = match Settings::parse(raw) {
             Ok(None) => State::Inactive(Inactive::NotConfigured),
             Err(e) => State::Inactive(Inactive::Invalid(e.to_string())),
@@ -82,7 +90,7 @@ impl VreBridge {
                         settings,
                         time_zone,
                         Arc::new(servers),
-                        Arc::new(LogReport),
+                        Arc::new(OtelReport::new(meter)),
                         Arc::new(SystemClock),
                     ))),
                     Err(why) => State::Inactive(why),
@@ -96,6 +104,7 @@ impl VreBridge {
                 error!(reason = %why, "the VRE bridge is inactive: its configuration is invalid");
             }
         }
+        observe_active(meter, matches!(state, State::Active(_)));
         Self(state)
     }
 
@@ -149,10 +158,10 @@ impl VreBridge {
             return;
         };
         let active = Arc::clone(active);
-        runtime.spawn(async move {
+        runtime.spawn(withhold(async move {
             active.start_work().await;
             schedule::run(active).await;
-        });
+        }));
     }
 
     /// The operator's forced refresh of one allowlisted project; the exit status is the outcome's
@@ -216,7 +225,7 @@ impl Active {
     ) -> Result<Outcome, Busy> {
         let refresh = tokio::spawn({
             let (active, lock, entry) = (Arc::clone(self), Arc::clone(lock), entry.clone());
-            async move { active.refresher.refresh(&lock, &entry, operator).await }
+            withhold(async move { active.refresher.refresh(&lock, &entry, operator).await })
         });
         match refresh.await {
             Ok(result) => result,

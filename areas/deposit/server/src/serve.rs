@@ -11,6 +11,8 @@ pub(crate) async fn serve() -> std::process::ExitCode {
     // Before OTel init, so a panic during init is captured; the hook writes to stderr until
     // `SUBSCRIBER_READY` is set.
     crate::observability::install_tracing_panic_hook();
+    // Before any HTTP client is built: the VRE bridge's and the profiler's.
+    crate::observability::install_crypto_provider();
 
     // Before OTel, so the log-export decision reads the layered config. Reported rather than
     // `expect`ed: figment's error names the file, key and expected type.
@@ -114,6 +116,17 @@ pub(crate) async fn serve() -> std::process::ExitCode {
     )
     .await;
     let app = crate::router::build_app(identity.router(), editor.router(), css_href, &config.public_dir);
+
+    // After `init_otel`, which installs the meter provider its instruments come from. It never
+    // stops this process: unconfigured or misconfigured, it logs why and does nothing. Built on a
+    // blocking thread, since it checks paths and signs a probe token per key; `start` returns at
+    // once.
+    let raw = config.vre_bridge_settings();
+    let meter = opentelemetry::global::meter(vre_bridge_server::METER_SCOPE);
+    match tokio::task::spawn_blocking(move || vre_bridge_server::VreBridge::from_raw(raw, &meter)).await {
+        Ok(bridge) => bridge.start(),
+        Err(join) => tracing::error!(panicked = join.is_panic(), "the VRE bridge could not be built; it does nothing"),
+    }
 
     tracing::info!("listening on http://{}", &addr);
     let listener = tokio::net::TcpListener::bind(&addr)

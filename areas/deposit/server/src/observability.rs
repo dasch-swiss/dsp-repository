@@ -1,8 +1,10 @@
-//! The panic hook and the OTel and Pyroscope init that `serve()` runs first.
+//! The panic hook, the TLS provider, and the OTel and Pyroscope init that `serve()` runs first.
 //!
 //! `serve()` owns the call order: [`install_tracing_panic_hook`] runs before
-//! [`init_otel`], since the hook writes to stderr until [`SUBSCRIBER_READY`] flips.
+//! [`init_otel`], since the hook writes to stderr until [`SUBSCRIBER_READY`] flips. A process
+//! that is not the server logs through [`init_plain_logging`] instead; those two flip the flag.
 
+use std::io::Write as _;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use opentelemetry_sdk::logs::SdkLoggerProvider;
@@ -23,17 +25,30 @@ pub(crate) static SUBSCRIBER_READY: AtomicBool = AtomicBool::new(false);
 /// Until [`SUBSCRIBER_READY`] is set it delegates to the default stderr hook: a `catch_unwind`
 /// around a no-op `tracing::error!` reports success, so without the flag an init panic would
 /// exit 101 with an empty log. After that, the stderr hook runs only if emission itself panics.
+///
+/// A panic of the VRE bridge's work is emitted without its payload, which may quote the data the
+/// bridge handles ([`vre_bridge_server::panic_payload_withheld`]).
 pub(crate) fn install_tracing_panic_hook() {
     let default_hook = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
+        let withheld = vre_bridge_server::panic_payload_withheld();
+        let fallback = |info: &std::panic::PanicHookInfo<'_>| {
+            if withheld {
+                let location = info.location().map(ToString::to_string).unwrap_or_default();
+                // Not `eprintln!`, which panics, and so aborts, when stderr is closed.
+                let _ = writeln!(std::io::stderr(), "thread panicked at {location}: {WITHHELD_PAYLOAD}");
+            } else {
+                default_hook(info);
+            }
+        };
         if !SUBSCRIBER_READY.load(Ordering::Acquire) {
-            default_hook(info);
+            fallback(info);
             return;
         }
 
         // Best-effort structured emission.
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            let message = info.payload_as_str().unwrap_or("<non-string panic payload>");
+            let message = panic_message(info.payload_as_str(), withheld);
             let thread = std::thread::current();
             let thread_name = thread.name().unwrap_or("<unnamed>");
             // `Backtrace::capture` respects `RUST_BACKTRACE` / `RUST_LIB_BACKTRACE`.
@@ -64,9 +79,27 @@ pub(crate) fn install_tracing_panic_hook() {
         // Fall back to the default stderr hook only if the structured emission
         // itself panicked, so the panic is never silently swallowed.
         if result.is_err() {
-            default_hook(info);
+            fallback(info);
         }
     }));
+}
+
+/// What the panic hook logs in place of a withheld payload.
+const WITHHELD_PAYLOAD: &str = "<withheld: a panic of the VRE bridge's work may quote the data it handles>";
+
+fn panic_message(payload: Option<&str>, withheld: bool) -> &str {
+    match payload {
+        _ if withheld => WITHHELD_PAYLOAD,
+        Some(payload) => payload,
+        None => "<non-string panic payload>",
+    }
+}
+
+/// Installs rustls' ring provider as the process default. The workspace's reqwest is built with
+/// `rustls-no-provider`, so building a client before this panics; an `Err` means one is installed
+/// already.
+pub(crate) fn install_crypto_provider() {
+    let _ = rustls::crypto::ring::default_provider().install_default();
 }
 
 /// Initialize OTel logs export (OTLP in DEV only, when an endpoint is set; PROD
@@ -107,6 +140,15 @@ pub(crate) fn init_otel(
     (logger_provider, otel_guard)
 }
 
+/// JSON lines to stdout at `RUST_LOG`'s level, `info` by default, with no OTel export: the
+/// subscriber of a process that is not the server, such as the operator's refresh.
+pub(crate) fn init_plain_logging() {
+    let filter = tracing_subscriber::EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"));
+    tracing_subscriber::fmt().json().with_env_filter(filter).init();
+    SUBSCRIBER_READY.store(true, Ordering::Release);
+}
+
 /// Make W3C Trace Context the only format read from inbound requests. `init_subscriber_ext`
 /// installs the propagators `OTEL_PROPAGATORS` names, by default `tracecontext,baggage`, and the
 /// W3C Baggage parser of `opentelemetry_sdk` 0.31 allocates without bound on an oversized
@@ -132,8 +174,8 @@ fn start_pyroscope(
 
     // The agent's reqwest client is built with `rustls-no-provider` on the agent's own
     // thread, which panics there, ending profiling without failing the server, when no
-    // provider is installed. An `Err` means one is installed already.
-    let _ = rustls::crypto::ring::default_provider().install_default();
+    // provider is installed.
+    install_crypto_provider();
 
     let backend = pyroscope::backend::pprof_backend(
         pyroscope::backend::PprofConfig { sample_rate: PROFILING_SAMPLE_RATE },
@@ -157,6 +199,13 @@ fn start_pyroscope(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn test_panic_message_withheld_whatever_the_payload() {
+        assert_eq!(super::panic_message(Some("a literal"), true), super::WITHHELD_PAYLOAD);
+        assert_eq!(super::panic_message(None, true), super::WITHHELD_PAYLOAD);
+        assert_eq!(super::panic_message(Some("a literal"), false), "a literal");
+    }
+
     /// The default propagators parse an inbound `baggage` header; after the override only
     /// `traceparent` is read.
     #[test]

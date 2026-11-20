@@ -249,9 +249,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   writes an approved record, which the pull-request run publishes as a pull request. The Deposit
   Area is three capabilities, `identity`, `editor` and the VRE bridge, under the composition root
   `deposit-server` (`areas/deposit/server`, below; `areas/deposit/ADR-0004`), with identity's four crates in
-  `areas/deposit/identity` and the area shell in `areas/deposit/shell`. Not yet in code: `deposit-server` does
-  not start the VRE bridge (`areas/deposit/vre-bridge/`, below; `areas/deposit/ADR-0005`) and has no
-  subcommand for the operator's refresh (P-DEV-301).
+  `areas/deposit/identity`, the area shell in `areas/deposit/shell` and the VRE bridge in
+  `areas/deposit/vre-bridge/` (below; `areas/deposit/ADR-0005`).
 - **Key entities:** `ProjectDraft`, `ProjectState`, `SubmissionState`, `ReviewState`,
   `FieldReview`, `Decision`, `ProposalDecision`, `EntityProposal`, `Transition`, `PublishedProjects`, `Agents`,
   `EditorRepositories` (behind `EditorState.editor`), `ReviewRoundRepository`, `RecordClassification`, `classify_record`,
@@ -569,13 +568,15 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   security-header, CSRF, request-body-limit and OTel layers, the untraced routes, the page-URL normalizer built from both web crates' route paths, and
   the fallback 404. It
   opens identity's store, then the editor's, constructs the adapters, starts `Identity` and then
-  `Editor`, and merges their routers; it holds no business logic. Its tests are the ones that
-  need both capabilities or the assembled app.
-- **Key entities:** `EditorConfig`, `Secret`, `ConfigError`, `identity_settings`,
-  `editor_settings`, `build_router`, `build_app`, `require_same_origin`, `normalize_page_url`,
-  `TELEMETRY_NAME`, `init_otel`, `init_pyroscope`, `install_tracing_panic_hook`, `not_found`,
-  `Cli`, `healthcheck`, `TestState`, `test_app`
-- **Public interface:** the `deposit-server serve | healthcheck` CLI (the image's entrypoint `./deposit-server`
+  `Editor`, merges their routers, and builds and starts the VRE bridge (`VreBridge`) from the
+  `EDITOR_VRE_BRIDGE_*` settings; it holds no business logic. Its `vre-bridge-refresh` subcommand is the
+  operator's refresh. Its tests are the ones that need both capabilities, the assembled app or the binary.
+- **Key entities:** `EditorConfig`, `Secret`, `VreBridgeConfig`, `ConfigError`, `identity_settings`,
+  `editor_settings`, `vre_bridge_settings`, `build_router`, `build_app`, `require_same_origin`, `normalize_page_url`,
+  `TELEMETRY_NAME`, `init_otel`, `init_pyroscope`, `install_tracing_panic_hook`,
+  `install_crypto_provider`, `not_found`, `Cli`, `healthcheck`, `vre_bridge_refresh`, `TestState`, `test_app`
+- **Public interface:** the `deposit-server serve | healthcheck | vre-bridge-refresh <SHORTCODE>` CLI
+  (`vre-bridge-refresh` exits 0, 2, 1, 75 or 64; the image's entrypoint `./deposit-server`
   with command `serve`; the image is `//areas/deposit/server:image` in its `BUILD.bazel`, built by
   `just build-docker-editor` and `.github/actions/build-editor`; an OCI image has no `HEALTHCHECK`, so
   `healthcheck` stays a subcommand); its own routes `/healthz`, `POST /telemetry/collect` and the `ServeDir`
@@ -583,17 +584,20 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Local-context kit:** `areas/deposit/server/CLAUDE.md`, `areas/deposit/server/src/serve.rs`,
   `areas/deposit/server/src/router.rs`, `areas/deposit/server/src/config.rs`,
   `areas/deposit/server/src/csrf.rs`, `areas/deposit/server/src/test_support.rs`,
-  `areas/deposit/server/BUILD.bazel`
+  `areas/deposit/server/tests/vre_bridge.rs`, `areas/deposit/server/BUILD.bazel`
 - **Depends on:** areas/deposit/identity (`identity-web`: `Identity`, `IdentitySettings`,
   `SmtpPassword`, `CODE_TTL`, `is_plausible_address`, `route_paths`; `identity-store`:
   `Database`, `Source`, `LiveAuthenticator`, `LiveUserDirectory`), areas/deposit/editor
   (`editor-web`: `Editor`, `EditorSettings`,
   `route_paths`; `editor-store`: `Database`, `Source`,
   `LiveOpenWork`, built over the editor's store and the published set's data dir; `editor-ports` in
-  tests only), areas/deposit/shell (the fallback 404),
+  tests only), areas/deposit/shell (the fallback 404), areas/deposit/vre-bridge (`vre-bridge-server`:
+  `VreBridge`, `RawSettings`, `EXIT_UNUSABLE`, `panic_payload_withheld`; data (image only): the shipped
+  inputs, `//areas/deposit/vre-bridge/inputs`),
   shared/rate-limit (`RightmostXffKeyExtractor`), shared/telemetry (`collect_route`, `is_valid_traceparent`); data (tests and image only): `//areas/access/dpe/server:corpus`, the published set (ADR-0002's one
   cross-area grant); third-party: axum, clap, figment,
-  ureq, tokio, tower-http, tower_governor, the OpenTelemetry stack, pyroscope, matchit
+  ureq, tokio, tower-http, tower_governor, the OpenTelemetry stack, tracing-subscriber, rustls, pyroscope,
+  matchit
 - **Used by:** nothing in the workspace; the top of the Deposit Area's dependency graph, a
   separate deployable (`daschswiss/metadata-editor`), deployed as ops-deploy's `deposit` stack
   (`Service=deposit`) by `editor-docker-publish.yml` (main → stage) and
@@ -623,10 +627,18 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - The telemetry identity is pinned, not derived from the crate name: tracer and Pyroscope
     application name `"editor-server"` (`TELEMETRY_NAME`), Pyroscope `service.namespace=editor`,
     beacon scope `"editor"` (**review**; recorded in `CLAUDE.md`).
+  - The image's `env` sets no VRE bridge output location, so a public preview's bridge does nothing
+    (**review** — the comment above the `env` dict; no test reads the image's `env`, and
+    `vre_bridge_test` pins only that `serve` without the variables starts the bridge inactive). The
+    operator's refresh builds the bridge on a meter provider with no reader, so it exports no series
+    (**static-analysis** — `vre_bridge_test` checks it connects to no OTLP endpoint).
+  - The panic hook logs no payload of a panic of the VRE bridge's work (**structure** —
+    `panic_payload_withheld`; **review** for a task the bridge spawns).
 - **Durable state:** none of its own. It opens `identity.sqlite` and `editor.sqlite` in
   `EDITOR_DB_DIR` (two named in-memory databases when unset) and hands each store to its
   capability, which is the single writer. It hands `EDITOR_DATA_DIR` (the published set,
-  read-only) to `EditorSettings` and to `LiveOpenWork`, which reads it once at construction.
+  read-only) to `EditorSettings` and to `LiveOpenWork`, which reads it once at construction. The VRE
+  bridge's state is the bridge's (below).
 - **Fingerprint:** `93017a79c497`
 
 ### areas/deposit/vre-bridge
@@ -648,12 +660,13 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `vre-bridge-client` (`client/`): DSP-API with the service identity: Ed25519 service tokens, the project
   lookup, the change check, the export lifecycle, the dump's download and its unpacking into a private
   `0700` directory (`data.nq` and the ontologies only, both within a size cap), anonymous file downloads.
-  `vre-bridge-server` (`server/`): the `VreBridge` facade `deposit-server` is to build from its configuration
-  and start (inactive, with a named reason, when unconfigured or misconfigured); start-time sweep and
+  `vre-bridge-server` (`server/`): the `VreBridge` facade `deposit-server` builds from its configuration
+  and starts (inactive, with a named reason, when unconfigured or misconfigured); start-time sweep and
   recovery under the lock; the schedule of the nightly run in its time zone; the nightly run (record, sweep,
   recovery, removal, then each project, a busy one retried); the operator's refresh with its exit status; and
   one refresh of a project (`Refresher`), from recovery and the change check through the export, the lift and
-  both subtrees' new generation to the outcome's report, over the `Vre`, `Report` and `Clock` traits.
+  both subtrees' new generation to the outcome's report, over the `Vre`, `Report` and `Clock` traits; the
+  outcome line and the metrics (meter scope `vre_bridge`); which panics' payloads a panic hook withholds.
 - **Key entities:** `lift`, `Lifted`, `Snapshot`, `Stats`, `LiftError`, `Violation`, `Problem`, `SubjectKind`,
   `ViolationReport`, `Kind`, `Handling`, `ValueKind`, `INTERIM_FORMAT_VERSION`, `TRANSFORMATION_VERSION`; internal:
   `Dump`, `Read`, `Index`, `Ontology`, `Selection`, `Rights`, `Violations`, `Rule` (`vre-bridge-lift`);
@@ -664,7 +677,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `RemovalReport`, `StoreError` (`vre-bridge-store`); `ServiceIdentity`, `Server`, `Timeouts`, `ExportTrigger`,
   `ExportStatus`, `DeleteOutcome`, `Changes`, `DumpZip`, `DumpDir`, `ClientError`, `FileError`
   (`vre-bridge-client`); `VreBridge`, `Inactive`, `Refresher`, `Busy`, `Vre`, `Report`, `LogReport`,
-  `RefreshReport`, `RefreshSizes`, `Clock`, `SystemClock`; internal: `Active` (`vre-bridge-server`)
+  `RefreshReport`, `RefreshSizes`, `Clock`, `SystemClock`; internal: `Active`, `OtelReport`
+  (`vre-bridge-server`)
 - **Public interface:** the `vre_bridge_lift` library: `lift(dump_dir) -> Result<Lifted, LiftError>`,
   `Lifted { snapshot, stats }`, `Snapshot::write_to`, `Stats` and the key types of its counts,
   `LiftError::{Dump, Refused, ClosedWorld, Internal}`, `ViolationReport::counts`, the two version constants.
@@ -681,9 +695,11 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   wait_finished, download, delete_export, download_file}` (`download` with a byte cap); `private_work_dir`,
   `unpack` (with a byte cap), `DUMP_DIR_PREFIX`. The
   `vre_bridge_server` library: `VreBridge::{from_raw, start, operator_refresh, is_active, inactive_reason}`
-  (`from_raw(RawSettings) -> VreBridge`; `start(&self)` returns at once and never panics;
+  (`from_raw(RawSettings, &Meter) -> VreBridge`; `start(&self)` returns at once and never panics;
   `operator_refresh(&self, shortcode) -> ExitCode`), `Inactive`, `EXIT_UNUSABLE` (64), `EXIT_LOCKED` (75), the
-  re-exported `RawSettings` and `SigningKeys`; `Refresher::{new, refresh}` (`refresh(&Lock, &AllowlistEntry,
+  re-exported `RawSettings` and `SigningKeys`, `panic_payload_withheld`, `METER_SCOPE`; the instruments
+  `vre_bridge.refresh.outcomes`, `vre_bridge.refresh.duration`, `vre_bridge.refresh.size` and
+  `vre_bridge.active` on the meter `from_raw` is given; `Refresher::{new, refresh}` (`refresh(&Lock, &AllowlistEntry,
   operator) -> Result<Outcome, Busy>`), the `Vre` trait (implemented for `BTreeMap<ServerId, Server>`), `Report` with
   `LogReport`, `Clock` with `SystemClock`, `sweep_dump_dirs`, `SNAPSHOT_FILE`. No routes, no binary.
 - **Local-context kit:** `areas/deposit/vre-bridge/CLAUDE.md`, `areas/deposit/vre-bridge/CONTEXT.md`,
@@ -693,18 +709,20 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `shared/stand-in/src/lib.rs`, `areas/deposit/vre-bridge/client/src/lib.rs`,
   `areas/deposit/vre-bridge/server/src/lib.rs` (the blocking rule, the three traits),
   `areas/deposit/vre-bridge/server/src/refresh.rs` (one refresh, step by step),
-  `areas/deposit/vre-bridge/server/src/nightly.rs` (the nightly run's order)
+  `areas/deposit/vre-bridge/server/src/nightly.rs` (the nightly run's order),
+  `areas/deposit/vre-bridge/server/src/report.rs` (the outcome line and the metrics)
 - **Depends on:** shared/names (`vre-bridge-core`, `vre-bridge-store`), shared/stand-in (`vre-bridge-core`,
   `vre-bridge-store`, `vre-bridge-server`); third-party: oxigraph
   (no default features) and thiserror (`vre-bridge-lift`); chrono, sha2, thiserror (`vre-bridge-core`, which
   also takes the two version constants from `vre-bridge-lift`); chrono, rand, thiserror, tracing
   (`vre-bridge-store`); `tempfile` in tests only; reqwest, jsonwebtoken, zip (reading only), tempfile, tokio,
   serde, serde_json, url, percent-encoding, base64, chrono, uuid, thiserror, tracing and rustls, for the provider check
-  (`vre-bridge-client`); the other four bridge crates, async-trait, chrono, chrono-tz, tempfile, tokio and
-  tracing (`vre-bridge-server`)
-- **Used by:** nothing outside the bridge yet; `vre-bridge-server` grants no one yet. `vre-bridge-lift` grants `vre-bridge-core`, which takes its
+  (`vre-bridge-client`); the other four bridge crates, async-trait, chrono, chrono-tz, opentelemetry,
+  tempfile, tokio and tracing (`vre-bridge-server`; `opentelemetry_sdk` in tests only)
+- **Used by:** areas/deposit/server (`vre-bridge-server`, which grants `deposit-server` alone; the `inputs`
+  filegroup, for its image). `vre-bridge-lift` grants `vre-bridge-core`, which takes its
   version constants, and `vre-bridge-server`. `vre-bridge-core`, `vre-bridge-store` and `vre-bridge-client`
-  each grant `vre-bridge-server` alone. `deposit-server` (planned) is to depend on `vre-bridge-server` alone
+  each grant `vre-bridge-server` alone
 - **Boundary rules:**
   - `vre-bridge-core` uses no web framework, Maud or database crate (**static-analysis** —
     `check-capability-deps.sh`, the `core` role), and only `vre-bridge-server` links it (**structure** —
@@ -741,6 +759,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
     `vre-bridge-server`'s tests).
   - A refresh runs every store call, the unpacking, the lift, the digest and the work directory's removal in
     `spawn_blocking` (**review**).
+  - Metric attributes take their values from the allowlist, a subtree's shortcode directories or a fixed set
+    (**review**; `report_tests.rs` pins the attributes).
 - **Durable state:** the `sync` and `media` subtrees, of which `vre-bridge-store` is the single writer, and the
   lock file and its nightly-run record; the lift and core hold nothing between calls; the private work directory
   of a refresh in progress, which the server creates and removes through the client's `private_work_dir`.
@@ -1603,8 +1623,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   equal provenance (`//areas/access/media:data` grants `sync/store`).
 - **Durable state:** the archive projection, **single writer** `sync`; disposable, rebuilt from
   snapshot plus replay, never repaired in place (target design). Today the `sync` stand-in subtree: one directory per project with
-  its Ready token and its generations, **single writer** the VRE bridge (`areas/deposit/ADR-0005`; not yet in
-  code, P-DEV-301); `sync-store` only reads it, on every call, and holds nothing in between but the poll's
+  its Ready token and its generations, **single writer** the VRE bridge (`areas/deposit/ADR-0005`; no deployment
+  configures it, DEV-7514); `sync-store` only reads it, on every call, and holds nothing in between but the poll's
   last-seen tokens, in memory. The committed
   fixture under `areas/access/sync/data/` is in that layout: its `snapshot.nq` was written by `dao-lift` on a
   VRE dump and committed unedited, its token by hand (**review**). The test oracle `0803-arks.txt`, **single writer**
@@ -1680,8 +1700,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   port (not scheduled).
 - **Durable state:** the tables that say what is servable and where, **single writer** `media`
   (target design). Until the Access bucket: the `media` stand-in subtree, one directory per project with its
-  Ready token and its generations, **single writer** the VRE bridge (ADR-0012, `areas/deposit/ADR-0005`; not
-  yet in code, P-DEV-301). The committed fixture `areas/access/media/data/` is in that layout
+  Ready token and its generations, **single writer** the VRE bridge (ADR-0012, `areas/deposit/ADR-0005`; no
+  deployment configures it, DEV-7514). The committed fixture `areas/access/media/data/` is in that layout
   (`0803/.ready`, `0803/20261007T000000Z-00000000/` with `config.kdl`, `curation.csv` and `narrative/`), text in
   plain git with its provenance in `data/PROVENANCE`, images not committed (ADR-0009, ADR-0012, DEV-7512);
   **single writer** a person: hand-authored, edited in place and never generated (**review**). Since dsp-incubator#500 (DEV-7496)

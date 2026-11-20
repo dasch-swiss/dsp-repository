@@ -10,23 +10,24 @@
 //! deposited, by shortcode and name, whole. It lists nothing, so CPE learns which names to ask for
 //! from the project's configuration. `media` implements it; CPE's tests use
 //! [`FakeDepositedFiles`]. Every adapter applies [`is_shortcode`] and [`is_file_name`] before
-//! touching storage.
+//! touching storage, answering a refused shortcode with [`FilesError::UnknownProject`] and a
+//! refused name with [`FilesError::UnknownFile`]. The two rules come from `shared-names` and are
+//! re-exported here.
 //!
-//! The crate depends on `std` alone: a consumer's `ports` crate may reach only `std` and `shared-*`
-//! (ADR-0003), and nothing in `shared-*` is needed here. No type is `#[non_exhaustive]`, so CPE's
-//! fixtures can use struct literals and a new [`ValueKind`] fails CPE's compile instead of hiding
-//! behind a `_ =>` arm.
+//! The crate depends on `std` and `shared-names` alone: a consumer's `ports` crate may reach only
+//! `std` and `shared-*` (ADR-0003). No type is `#[non_exhaustive]`, so CPE's fixtures can use
+//! struct literals and a new [`ValueKind`] fails CPE's compile instead of hiding behind a `_ =>`
+//! arm.
 
 use std::error::Error;
 use std::fmt;
 
 pub mod contract;
 mod fake;
-mod names;
 mod snapshot;
 
 pub use fake::{FakeArchiveProjection, FakeDepositedFiles};
-pub use names::{is_file_name, is_shortcode};
+pub use shared_names::{is_file_name, is_shortcode};
 pub use snapshot::{
     Annotation, Calendar, ClassIri, DataArk, DateBound, DatePrecision, DateValue, File, LangString, ListNode,
     ListNodeIri, Motivation, ProjectSnapshot, PropertyIri, Resource, ResourceIri, Value, ValueKind, DATA_ARK_PREFIX,

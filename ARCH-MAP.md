@@ -14,7 +14,7 @@ Two deployables exist, one per area composition root, each on its own origin: `a
 (`areas/access/server`) serves **DPE**, the public read-only Discovery and Presentation
 Environment, and **CPE**, the project-specific presentations under `/cpe` (ADR-0007);
 `deposit-server` (`areas/deposit/server`) serves the authenticated **metadata editor** and
-**identity** (`areas/deposit/ADR-0004`). The capabilities share `shared-metadata` (the research-metadata contract), `shared-rate-limit` (the rate
+**identity** (`areas/deposit/ADR-0004`). The capabilities share `shared-metadata` (the research-metadata contract), `shared-names` (the shortcode and file-name rules), `shared-rate-limit` (the rate
 limiters' client-IP key), `shared-telemetry` (the
 browser-beacon collector), `shared-datastar` (typed Datastar actions) and `mosaic-tiles` (the design system), and nothing else. The
 dependency arrow is one-way: `services → shared, mosaic`, and a service never imports
@@ -832,6 +832,34 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `temporal-coverage-enrichment.json` from whatever directory it is given.
 - **Fingerprint:** `14d825167a9e`
 
+### shared/names
+
+- **Paths:** `:(glob)shared/names/**`
+- **Purpose:** `shared-names` — the name rules every reader and writer of a project's stand-in data
+  applies to a caller's string before it reaches storage: a shortcode is four upper-case hex digits
+  (stricter than `shared-metadata`'s `is_valid_shortcode`, so `0801a`–`0801e` are refused), a file name
+  is `/`-separated segments of `[A-Za-z0-9._-]`, none empty or starting with `.`, so no name climbs
+  out of a project's subtree by its spelling. A permanent crate: the rules outlive the stand-ins
+  (ADR-0002), and it is part of the closure CPE's crates are copied with (ADR-0007).
+- **Key entities:** `is_shortcode`, `is_file_name`
+- **Public interface:** `is_shortcode(&str) -> bool`, `is_file_name(&str) -> bool`; `cpe-ports`
+  re-exports both, so CPE's callers name them `cpe_ports::is_shortcode`.
+- **Local-context kit:** `shared/names/src/lib.rs`, `shared/README.md`,
+  `areas/access/cpe/ports/src/lib.rs` (the bytes port's use of the rules),
+  `areas/access/media/store/src/lib.rs` (a file-system reader that also refuses symlinks)
+- **Depends on:** nothing
+- **Used by:** areas/access/cpe (`cpe-ports`, re-exported), areas/access/media (`media-store`);
+  granted ahead of use to `sync-store`, `shared-stand-in` and the VRE bridge's `core`, `store` and
+  `server` crates (not yet in code, P-DEV-301)
+- **Boundary rules:**
+  - Depends on no service crate; holds no path into one (**structure** + **static-analysis**,
+    as for `shared-metadata`).
+  - One definition of each rule: a crate that reads or writes stand-in data by a caller's shortcode
+    or file name applies these, never a copy (**review**). The rule cannot see a symbolic link; a
+    file-system reader refuses those itself (**review**).
+- **Durable state:** none.
+- **Fingerprint:** `227d9145410a`
+
 ### shared/rate-limit
 
 - **Paths:** `:(glob)shared/rate-limit/**`
@@ -1133,7 +1161,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Key entities:** `ArchiveProjection`, `ProjectSnapshot`, `Resource`, `Annotation`,
   `Motivation`, `DataArk`, `DATA_ARK_PREFIX`, `FakeArchiveProjection`,
   `contract::violations`, and the bytes port `DepositedFiles`, `FilesError`, `FakeDepositedFiles` and its name
-  rules `is_shortcode` and `is_file_name` (in `cpe-ports`); an annotation (Region, LinkObj) is an ordinary `Resource`, found by
+  rules `is_shortcode` and `is_file_name` (from `shared-names`, re-exported); an annotation (Region, LinkObj) is an ordinary `Resource`, found by
   `Resource.annotation`, never by `class`; every `Resource` carries its plain data ARK, whose
   shape the contract checks (`Violation::MalformedDataArk`) and whose derivation is the
   adapter's (`sync-store`'s `ark.rs`). In `cpe-core`: the KDL config language
@@ -1191,7 +1219,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `areas/access/dpe/server/src/lib.rs` (the `Dpe` surface to copy), `areas/access/server/src/serve.rs`
   (where it is mounted), `shared/metadata/src/lib.rs`,
   `docs/src/mosaic/component-api-conventions.md`, `docs/adr/0003-one-modulith-per-area.md`
-- **Depends on:** `cpe-ports` depends on `std` alone. `cpe-core` depends on `kdl`,
+- **Depends on:** `cpe-ports` depends on `std` and `shared-names` alone. `cpe-core` depends on `kdl`,
   `pulldown-cmark`, `percent-encoding` and `thiserror`, and on no CPE crate, `cpe-ports`
   included. `cpe-image-viewer` depends on `maud` alone and on no CPE crate. `cpe-components` depends on
   `cpe-core`, `cpe-image-viewer` and `shared-datastar`, and on `maud`, `pulldown-cmark` and `tracing`. `cpe-store` depends on
@@ -1485,9 +1513,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `docs/adr/0003-one-modulith-per-area.md`, `areas/archive/CONTEXT.md` (where Service Files come
   from), `CONTEXT.md` (the file vocabulary under Shared), `areas/access/server/src/serve.rs`
 - **Depends on:** areas/access/cpe (`cpe-ports` only, to implement `DepositedFiles`: the one permitted
-  capability-to-capability edge, ADR-0003); third-party `tracing`; planned: vitrinli, areas/access/datei
-  (`datei/ports` only, once it exists), shared/telemetry, shared/stand-in and shared/names (ADR-0002;
-  P-DEV-301). Never `sync`'s store, never Chischtli, never a
+  capability-to-capability edge, ADR-0003); shared/names (`is_shortcode`, `is_file_name`); third-party
+  `tracing`; planned: vitrinli, areas/access/datei (`datei/ports` only, once it exists), shared/telemetry
+  and shared/stand-in (ADR-0002; P-DEV-301). Never `sync`'s store, never Chischtli, never a
   sibling's domain or web crate
 - **Used by:** areas/access/cpe (through `DepositedFiles` in `cpe-ports`; `cpe-server`'s tests link
   `media_store_for_tests`, a `testonly` library, and read the committed data through the `//areas/access/media:data`

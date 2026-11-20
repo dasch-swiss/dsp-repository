@@ -35,6 +35,10 @@ fn error(raw: RawSettings) -> SettingsError {
     error
 }
 
+fn number(text: &str) -> Option<String> {
+    Some(text.to_owned())
+}
+
 fn server(id: &str) -> ServerId {
     ServerId::parse(id).unwrap()
 }
@@ -92,16 +96,16 @@ fn test_parse_every_variable_set_kept() {
         work_dir: Some("/var/lib/vre-bridge-work".to_owned()),
         nightly_at: Some("03:30".to_owned()),
         time_zone: Some("UTC".to_owned()),
-        dump_retries: Some(0),
-        dump_retry_secs: Some(60),
-        request_timeout_secs: Some(1),
-        export_timeout_secs: Some(2),
-        export_poll_secs: Some(3),
-        download_timeout_secs: Some(4),
-        file_timeout_secs: Some(5),
-        max_dump_bytes: Some(6),
-        max_unpacked_bytes: Some(7),
-        max_file_bytes: Some(8),
+        dump_retries: number("0"),
+        dump_retry_secs: number("60"),
+        request_timeout_secs: number("1"),
+        export_timeout_secs: number("2"),
+        export_poll_secs: number(" 3 "),
+        download_timeout_secs: number("4"),
+        file_timeout_secs: number("5"),
+        max_dump_bytes: number("6"),
+        max_unpacked_bytes: number("7"),
+        max_file_bytes: number("8"),
         ..raw()
     });
 
@@ -430,17 +434,35 @@ fn test_parse_key_pasted_into_another_variable_never_quoted() {
 
 #[test]
 fn test_parse_zero_time_limit_or_size_cap_refused() {
-    let zero_timeout = RawSettings { export_poll_secs: Some(0), ..raw() };
+    let zero_timeout = RawSettings { export_poll_secs: number("0"), ..raw() };
     assert_eq!(
         error(zero_timeout),
         SettingsError::Zero { var: "EDITOR_VRE_BRIDGE_EXPORT_POLL_SECS" }
     );
 
-    let zero_cap = RawSettings { max_unpacked_bytes: Some(0), ..raw() };
+    let zero_cap = RawSettings { max_unpacked_bytes: number("0"), ..raw() };
     assert_eq!(
         error(zero_cap),
         SettingsError::Zero { var: "EDITOR_VRE_BRIDGE_MAX_UNPACKED_BYTES" }
     );
+}
+
+#[test]
+fn test_parse_number_not_a_whole_number_refused_unquoted() {
+    for text in ["three", "-1", "1.5", "18446744073709551616"] {
+        let raw = RawSettings { dump_retries: number(text), ..raw() };
+        let error = error(raw);
+        assert_eq!(error, SettingsError::Number { var: "EDITOR_VRE_BRIDGE_DUMP_RETRIES" });
+        assert!(!error.to_string().contains(text), "{error}");
+    }
+    let key = RawSettings { max_dump_bytes: number(KEY), ..raw() };
+    assert_eq!(error(key), SettingsError::Number { var: "EDITOR_VRE_BRIDGE_MAX_DUMP_BYTES" });
+}
+
+#[test]
+fn test_parse_blank_number_takes_the_default() {
+    let settings = parse(RawSettings { dump_retry_secs: number("  "), ..raw() });
+    assert_eq!(settings.dump_retry, Duration::from_secs(1200));
 }
 
 #[test]

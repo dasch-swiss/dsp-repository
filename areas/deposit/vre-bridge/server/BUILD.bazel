@@ -1,12 +1,14 @@
 load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
 # The VRE bridge's entry crate (areas/deposit/ADR-0005): the bridge deposit-server starts, its
-# nightly run and the operator's refresh, over the bridge's other four crates.
+# nightly run and the operator's refresh, over the bridge's other four crates. deposit-server is
+# the only crate that links it.
 rust_library(
     name = "vre_bridge_server",
     srcs = glob(["src/**/*.rs"]),
     crate_name = "vre_bridge_server",
     proc_macro_deps = ["@crates//:async-trait"],
+    visibility = ["//areas/deposit/server:__pkg__"],
     deps = [
         "//areas/deposit/vre-bridge/client:vre_bridge_client",
         "//areas/deposit/vre-bridge/core:vre_bridge_core",
@@ -15,6 +17,7 @@ rust_library(
         "//shared/stand-in:shared_stand_in",
         "@crates//:chrono",
         "@crates//:chrono-tz",
+        "@crates//:opentelemetry",
         "@crates//:tempfile",
         "@crates//:tokio",
         "@crates//:tracing",
@@ -28,6 +31,7 @@ rust_test(
     crate = ":vre_bridge_server",
     proc_macro_deps = ["@crates//:async-trait"],
     deps = [
+        "@crates//:opentelemetry_sdk",
         "@crates//:rustls",
         "@crates//:serde_json",
         "@crates//:tracing-subscriber",

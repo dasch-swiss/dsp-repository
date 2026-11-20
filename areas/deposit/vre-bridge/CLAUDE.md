@@ -26,15 +26,17 @@ caller writes it. `vre-bridge-store` grants its library to `vre-bridge-server` a
 crates; it has no network code and reads no file but the shipped inputs, in `inputs_digest`, which blocks. It parses
 the settings from the strings `deposit-server`'s loader reads (`Settings::parse` answers `None` when no output
 location is set: the bridge then does nothing), and takes the format and transformation versions from
-`vre-bridge-lift`. The loader hands every `EDITOR_VRE_BRIDGE_*` value over as read, `None` when unset; the defaults
-are applied in `Settings::parse` alone. A new variable is a name constant, a `RawSettings` field, a line in `parse`
-and a test in `settings_tests.rs`.
+`vre-bridge-lift`. The loader hands every `EDITOR_VRE_BRIDGE_*` value over as text, numbers included, `None` when
+unset; the defaults are applied, and the numbers parsed, in `Settings::parse` alone. A new variable is a name
+constant, a `RawSettings` field, a line in `parse` and a test in `settings_tests.rs`, then a `VreBridgeConfig` field,
+a line in `vre_bridge_settings` and in its test table in `deposit-server`'s `config.rs`, and a row in
+`docs/src/vre-bridge/operations.md`.
 
 `vre-bridge-client` grants its library to `vre-bridge-server` alone. Its role bans web frameworks, Maud and database
 crates. It never installs a rustls crypto provider: the binary does, before the first `Server::new`, which returns
 `ClientError::NoCryptoProvider` without one. Its tests run
 against `wiremock` with the test-only key pair in `client/testdata/`, which no server trusts; `vre-bridge-server`'s
-tests read its private key too (`exports_files` in `client/BUILD.bazel`).
+tests and `deposit-server`'s `vre_bridge_test` read its private key too (`exports_files` in `client/BUILD.bazel`).
 
 `vre-bridge-server` is the only crate that links the other four. A refresh (`refresh.rs`) holds the lock its
 caller took and runs the steps in order: recovery of the project, its tokens and the decision, the project
@@ -44,8 +46,8 @@ unpacking, the lift, the generation in both subtrees, the report. Three traits k
 - **`Vre`**: DSP-API, each call naming the allowlist entry's server; implemented for
   `BTreeMap<ServerId, vre_bridge_client::Server>`. The refresh's tests use that implementation against
   `wiremock`; a fake `Vre` is for the nightly run's scheduling tests.
-- **`Report`**: where an outcome goes. `LogReport` writes the outcome line; the metrics adapter is
-  `deposit-server`'s concern. A test records the reports. `refresh` never reports `Busy`; a caller that
+- **`Report`**: where an outcome goes. `LogReport` writes the outcome line; `OtelReport` (below) writes it
+  and records the metrics. A test records the reports. `refresh` never reports `Busy`; a caller that
   gives up on a busy slot reports `Failed(FailureReason::Busy)` (CONTEXT.md, **Busy**).
 - **`Clock`**: wall-clock time (`SystemClock`; `FakeClock` in tests). Poll intervals and time limits are
   `tokio::time`, so the refresh's tests run with real time and limits of a few hundred milliseconds: paused
@@ -64,6 +66,19 @@ that cannot be read or lies at or below an output location (after `canonicalize`
 the file is only read), or a signing key that does not sign a probe token. It reads the file system and builds each server's client, so the binary calls it before
 serving, after installing the rustls provider. `start` returns at once; its task takes the lock without waiting and, if it gets it,
 sweeps the leftover dump directories and recovers every allowlisted project, then runs the schedule.
+
+**Reporting** (`report.rs`): `from_raw` gives the bridge `OtelReport`, which writes `LogReport`'s outcome line and
+records `vre_bridge.refresh.outcomes` and `vre_bridge.refresh.duration` by `project`, `server` and `outcome` (a
+removal: `server` `(none)`, no duration), `vre_bridge.refresh.size` by `project` and `kind` for a refreshed
+project, and the gauge `vre_bridge.active`. The instruments are made in `from_raw` on the meter it is given:
+`serve` passes the global one after `init_otel` installs its provider, the operator's refresh one with no reader.
+An attribute's values come from the allowlist, a subtree's shortcode directories or a fixed set, never from
+the data.
+
+**Panics** (`withhold.rs`): a panic's payload may quote the data a refresh handles. `spawn_blocking` runs every
+closure inside `withheld`, and every task this crate spawns (start, each nightly run, each refresh) is wrapped
+in `withhold`; `deposit-server`'s panic hook logs no payload while `panic_payload_withheld()` is true. A new
+`tokio::spawn` here wraps its future in `withhold`.
 
 **The schedule** (`schedule.rs`) runs the next `NIGHTLY_AT` in `TIME_ZONE` strictly after now: a local time
 that occurs twice takes its first occurrence, one in a gap moves forward 15 minutes at a time until it

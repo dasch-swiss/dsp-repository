@@ -1,6 +1,11 @@
-//! The `deposit-server` CLI: argument parsing and the `healthcheck` subcommand.
+//! The `deposit-server` CLI: argument parsing, and the `healthcheck` and `vre-bridge-refresh`
+//! subcommands.
+
+use std::process::ExitCode;
 
 use clap::{Parser, Subcommand};
+use opentelemetry::metrics::MeterProvider as _;
+use opentelemetry_sdk::metrics::SdkMeterProvider;
 
 #[derive(Parser)]
 #[command(name = "deposit-server", about = "DaSCH project metadata editor")]
@@ -17,6 +22,14 @@ pub(crate) enum Commands {
     Healthcheck {
         #[arg(long, default_value = "http://localhost:8080/healthz")]
         url: String,
+    },
+    /// Refresh one allowlisted project from its DSP server now, forced, with the deployment's VRE
+    /// bridge settings. Exit status: 0 unchanged or refreshed, 2 refused, 1 failed, 75 a nightly
+    /// run or another refresh holds the lock (try again once it has ended), 64 the bridge is not
+    /// configured, the project is not allowlisted or the configuration does not load
+    VreBridgeRefresh {
+        /// The project's shortcode, e.g. 0803
+        shortcode: String,
     },
 }
 
@@ -58,6 +71,35 @@ pub(crate) fn healthcheck(url: &str) -> std::process::ExitCode {
     }
 }
 
+/// The operator's refresh, in its own process beside the server's: the configuration as `serve`
+/// loads it, the bridge's lock without waiting, and one forced refresh, whose outcome line is the
+/// record. It runs without `init_otel`, so it exports nothing.
+pub(crate) fn vre_bridge_refresh(shortcode: &str) -> ExitCode {
+    crate::observability::install_tracing_panic_hook();
+    crate::observability::install_crypto_provider();
+
+    let config = match crate::config::EditorConfig::load() {
+        Ok(config) => config,
+        Err(e) => {
+            eprintln!("deposit-server: failed to load configuration: {e}");
+            return ExitCode::from(vre_bridge_server::EXIT_UNUSABLE);
+        }
+    };
+    crate::observability::init_plain_logging();
+
+    let runtime = match tokio::runtime::Builder::new_multi_thread().enable_all().build() {
+        Ok(runtime) => runtime,
+        Err(e) => {
+            tracing::error!(error = %e, "no tokio runtime could be built; nothing is refreshed");
+            return ExitCode::FAILURE;
+        }
+    };
+    // A meter provider with no reader: this process's series would collide with the server's.
+    let meter = SdkMeterProvider::builder().build().meter(vre_bridge_server::METER_SCOPE);
+    let bridge = vre_bridge_server::VreBridge::from_raw(config.vre_bridge_settings(), &meter);
+    runtime.block_on(bridge.operator_refresh(shortcode))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -75,6 +117,12 @@ mod tests {
             panic!("expected healthcheck");
         };
         assert_eq!(url, "http://localhost:8080/healthz");
+        let Some(Commands::VreBridgeRefresh { shortcode }) =
+            Cli::parse_from(["deposit-server", "vre-bridge-refresh", "0803"]).command
+        else {
+            panic!("expected vre-bridge-refresh");
+        };
+        assert_eq!(shortcode, "0803");
     }
 
     #[test]

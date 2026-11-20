@@ -315,6 +315,10 @@ crate.spec(package = "url", version = "2", features = ["serde"])
 crate.spec(package = "urlencoding", version = "2.1")
 crate.spec(package = "uuid", version = "1.23", features = ["serde", "v4", "v7"])
 
+# vre-bridge-client reads a dump's zip. Pinned exactly: the crate releases often. Reading only:
+# `deflate` would also compile the zopfli compressor.
+crate.spec(package = "zip", version = "=9.8.1", default_features = False, features = ["deflate-flate2-zlib-rs"])
+
 # identity-core draws tokens with rand 0.9. identity-store's tests take 0.8, as `rand08` below.
 crate.spec(package = "rand", version = "0.9")
 

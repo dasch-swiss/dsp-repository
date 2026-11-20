@@ -37,7 +37,7 @@ the data), committed snapshot (`sync`'s).
 **`LiveDepositedFiles`**:
 `media-store`'s adapter for CPE's bytes port, `cpe_ports::DepositedFiles`. Each call reads
 `<dir>/<shortcode>/<name>` whole and holds nothing between calls. A caller's string reaches the file system
-only once `cpe_ports::is_shortcode` and `cpe_ports::is_file_name` accept it: a refused shortcode, or one that
+only once `shared_names::is_shortcode` and `shared_names::is_file_name` accept it: a refused shortcode, or one that
 names no directory, is `UnknownProject`; a refused name, or one that names no regular file, is `UnknownFile`.
 No component below `<dir>` may be a symbolic link: a linked project directory is `UnknownProject`, a linked
 directory or file of the name `UnknownFile`. Any other failure, a directory under the file's name or one the
@@ -76,12 +76,12 @@ _Avoid_: public user, guest (a request's viewer; a bytes port has no request).
 - **Read the Access bucket.** The adapter that replaces `LiveDepositedFiles` there resolves a name without
   following a symbolic link (`openat2`, `cap-std`) rather than checking first.
 
-`media-store` depends on `cpe-ports` alone of this repository's crates, and on `datei-ports` too once it
+`media-store` depends on `cpe-ports` and `shared-names` alone of this repository's crates, and on `datei-ports` too once it
 implements DaTEI's port. Bazel `visibility` holds both sides: `media_store` is granted to the composition root
 alone and a reader's tests use `media_store_for_tests`, which is `testonly`; and no `sync` or sibling target
 but `cpe_ports`, and `datei_ports` once it exists, grants `media-store`.
 
 A new consumer of `media` declares its own bytes port in its own ports crate, as DaTEI does with `datei-ports`,
-and `media-store` implements it beside `LiveDepositedFiles`. `is_shortcode` and `is_file_name` belong in
-`shared-names`, which the VRE bridge, `sync`, `media` and CPE all use (ADR-0002); not yet in code, they are in
-`cpe-ports` (P-DEV-301).
+and `media-store` implements it beside `LiveDepositedFiles`. `is_shortcode` and `is_file_name` live in
+`shared-names` (ADR-0002), which `media-store` and `cpe-ports` use; `sync-store` and the VRE bridge are
+granted it in `shared/names/BUILD.bazel`.

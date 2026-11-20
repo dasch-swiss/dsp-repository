@@ -148,8 +148,6 @@ Not yet in code: no stand-in directory is shared by mount; `sync`'s and `media`'
 Not yet in code: `shared-stand-in` and the VRE bridge do not exist (P-DEV-301).
 Not yet in code: no `just check` script pins the 0803 `media` fixture to the bridge's shipped inputs
 (P-DEV-301).
-Not yet in code: `shared-names` does not exist; `is_shortcode` and `is_file_name` are in `cpe-ports`
-(P-DEV-301).
 
 Enforced by: Bazel `visibility` under ADR-0001 for crate edges (structure): every first-party target lists its
 consumers, no grant crosses `areas/access` and `areas/deposit` except the published corpus

@@ -48,10 +48,10 @@ whole or refused, with their bytes: its KDL (`config.kdl`), its curation file (`
 names. A project it does not hold is `UnknownProject`, a file it does not hold `UnknownFile`, and any other
 failure `Unavailable`. It carries no fact and gives no file a meaning; an asset (an image, a download) never
 comes through it, since assets are fetched at request time by URL.
-Its name rule, `cpe_ports::is_file_name`, is stricter than `cpe-core`'s for a narrative file: segments of
+Its name rule, `cpe_ports::is_file_name` (re-exported from `shared-names`), is stricter than `cpe-core`'s for a narrative file: segments of
 `[A-Za-z0-9._-]` separated by `/`, none empty or starting with `.`. A name the KDL may write and the port
 refuses is answered `UnknownFile`, so validation reports it as `NarrativeFileNotFound`, naming the file.
-Its shortcode rule, `cpe_ports::is_shortcode`, is four upper-case hex digits; it refuses `0801a`–`0801e` on
+Its shortcode rule, `cpe_ports::is_shortcode` (likewise from `shared-names`), is four upper-case hex digits; it refuses `0801a`–`0801e` on
 purpose, a metadata-only split of BEOL (one DSP project, `0801`) with no Access-bucket prefix of its own.
 _Avoid_: the media port (`media` implements it; it does not own it), asset port, file API.
 

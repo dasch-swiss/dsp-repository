@@ -254,6 +254,11 @@ crate.spec(package = "init-tracing-opentelemetry", version = "0.36", features = 
 # types, no triplestore. `rdf-12` stays off: the format has no RDF 1.2 triple terms.
 crate.spec(package = "oxrdf", version = "0.3.4", default_features = False)
 crate.spec(package = "oxttl", version = "0.2.4", default_features = False)
+
+# vre-bridge-lift: dao-lift's in-memory store. Pinned to the release that takes the oxrdf above: one
+# hub resolves one oxrdf, and oxigraph pins it exactly. Without default features: they add RocksDB and
+# its C toolchain.
+crate.spec(package = "oxigraph", version = "=0.5.11", default_features = False)
 crate.spec(package = "percent-encoding", version = "2")
 
 # cpe-core renders authored Markdown; its types cross into CPE's component library, so both crates

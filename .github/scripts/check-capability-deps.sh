@@ -14,7 +14,8 @@
 #    attribute. A ports crate may use none; a core crate no web framework, Maud
 #    or database crate; components and image-viewer no web framework or
 #    database crate; a web crate beside its capability's server crate, which
-#    holds the handlers, no web framework; the shell no web framework. Other
+#    holds the handlers, no web framework; a lift crate no web framework, Maud,
+#    database, HTTP client or tokio; the shell no web framework. Other
 #    roles, the composition root areas/<area>/server among them, are not
 #    restricted.
 #
@@ -56,6 +57,7 @@ third_party_allowed() {
       [ "$3" = yes ] || return 0
       denied_patterns="$WEB_FRAMEWORK"
       ;;
+    lift) denied_patterns="$WEB_FRAMEWORK maud $DATABASE reqwest reqwest-* ureq tokio" ;;
     shell) denied_patterns="$WEB_FRAMEWORK" ;;
     *) return 0 ;;
   esac

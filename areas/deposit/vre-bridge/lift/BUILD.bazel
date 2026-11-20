@@ -1,0 +1,29 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+# The tests read `FORMAT.md` through `include_str!` relative to their source.
+_RUSTC_ENV = {"CARGO_MANIFEST_DIR": "areas/deposit/vre-bridge/lift"}
+
+# The ported dao-lift snapshot closure. Only the bridge's own crates link it (areas/deposit/ADR-0005).
+rust_library(
+    name = "vre_bridge_lift",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "vre_bridge_lift",
+    edition = "2024",
+    rustc_env = _RUSTC_ENV,
+    visibility = [
+        "//areas/deposit/vre-bridge/core:__pkg__",
+        "//areas/deposit/vre-bridge/server:__pkg__",
+    ],
+    deps = [
+        "@crates//:oxigraph",
+        "@crates//:thiserror",
+    ],
+)
+
+rust_test(
+    name = "vre_bridge_lift_test",
+    compile_data = ["FORMAT.md"],
+    crate = ":vre_bridge_lift",
+    edition = "2024",
+    rustc_env = _RUSTC_ENV,
+)

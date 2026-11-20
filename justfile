@@ -108,15 +108,15 @@ check-adr-refs:
 check-live-tests-ignored:
     bash .github/scripts/check-live-tests-ignored.sh
 
-# The pinned nightly rustfmt: `$RUSTFMT` when set (the Nix shell exports it), else rustup's. A bare `rustfmt` would be the stable one, which ignores .rustfmt.toml's nightly options. It formats files, so the edition is passed: 2024 for dsp-cli, 2021 for the rest of the tree.
+# The pinned nightly rustfmt: `$RUSTFMT` when set (the Nix shell exports it), else rustup's. A bare `rustfmt` would be the stable one, which ignores .rustfmt.toml's nightly options. It formats files, so the edition is passed: 2024 for dsp-cli and vre-bridge-lift, 2021 for the rest of the tree.
 
 [private]
 _rustfmt *ARGS:
     #!/usr/bin/env bash
     set -euo pipefail
     rustfmt="${RUSTFMT:-$(rustup which --toolchain {{ RUSTFMT_NIGHTLY }} rustfmt)}"
-    git ls-files -z '*.rs' ':!dsp-cli/**' | xargs -0 "$rustfmt" --edition 2021 {{ ARGS }}
-    git ls-files -z 'dsp-cli/**.rs' | xargs -0 "$rustfmt" --edition 2024 {{ ARGS }}
+    git ls-files -z '*.rs' ':!dsp-cli/**' ':!areas/deposit/vre-bridge/lift/**' | xargs -0 "$rustfmt" --edition 2021 {{ ARGS }}
+    git ls-files -z 'dsp-cli/**.rs' 'areas/deposit/vre-bridge/lift/**.rs' | xargs -0 "$rustfmt" --edition 2024 {{ ARGS }}
 
 # Run every gate script, the format checks and clippy over every Bazel target, tests included, with `-Dwarnings` (set in .bazelrc). FLAGS: extra Bazel flags, such as CI's `--config=ci` and remote flags.
 check *FLAGS: verify-checksums check-shared-paths check-capability-deps check-views-no-axum check-datastar-attributes check-adr-refs check-live-tests-ignored
@@ -231,6 +231,12 @@ canonicalize-projects *FLAGS:
     CANONICALIZE_PROJECT_FILES=1 bazel run {{ FLAGS }} \
         --run_under="/bin/bash -c 'b=\$PWD/\$0; cd \"$root\" && exec \"\$b\" \"\$@\"'" \
         //areas/deposit/editor/core:editor_core_integration_tests/canonical_round_trip_test
+
+# Run vre-bridge-lift's ignored real-dump tests: DUMP is an unzipped project dump, REFERENCE the snapshot dsp-incubator's dao-lift wrote from it at the ported commit; both absolute paths.
+[group('bazel')]
+vre-bridge-lift-real-dump DUMP REFERENCE *FLAGS:
+    bazel test {{ FLAGS }} //areas/deposit/vre-bridge/lift:all --test_output=errors --test_arg=--ignored \
+        --test_env=VRE_BRIDGE_LIFT_DUMP={{ DUMP }} --test_env=VRE_BRIDGE_LIFT_REFERENCE={{ REFERENCE }}
 
 # Re-resolve the crate universe after a `crate.spec` change, and refresh both locks. With a crate name, move only that crate, as for a security bump of a transitive crate. Never `bazel mod tidy`.
 [group('bazel')]

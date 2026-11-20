@@ -25,7 +25,7 @@ mod lock;
 mod recovery;
 mod writer;
 
-pub use lock::{sweep_work_dir, Lock};
+pub use lock::{is_swept, sweep_work_dir, Lock};
 pub use recovery::{RecoveryReport, RemovalReport};
 pub use writer::{GenerationWriter, Sizes, RIGHTS_RECORD, RIGHTS_RECORD_FILE};
 

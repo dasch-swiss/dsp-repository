@@ -1,7 +1,7 @@
 load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
-# The VRE bridge's entry crate (areas/deposit/ADR-0005): one refresh of a project, over the
-# bridge's other four crates.
+# The VRE bridge's entry crate (areas/deposit/ADR-0005): the bridge deposit-server starts, its
+# nightly run and the operator's refresh, over the bridge's other four crates.
 rust_library(
     name = "vre_bridge_server",
     srcs = glob(["src/**/*.rs"]),
@@ -14,6 +14,7 @@ rust_library(
         "//areas/deposit/vre-bridge/store:vre_bridge_store",
         "//shared/stand-in:shared_stand_in",
         "@crates//:chrono",
+        "@crates//:chrono-tz",
         "@crates//:tempfile",
         "@crates//:tokio",
         "@crates//:tracing",

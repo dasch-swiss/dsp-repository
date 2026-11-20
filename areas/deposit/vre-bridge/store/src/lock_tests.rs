@@ -3,7 +3,22 @@ use std::fs;
 use chrono::NaiveDate;
 use tempfile::TempDir;
 
-use crate::{sweep_work_dir, Lock, StoreError};
+use crate::{is_swept, sweep_work_dir, Lock, StoreError};
+
+#[test]
+fn test_is_swept_names_what_the_sweep_deletes() {
+    let work = std::path::Path::new("/work");
+    for (path, swept) in [
+        ("/work/vre-bridge-dump-x", true),
+        ("/work/vre-bridge-dump-x/sync", true),
+        ("/work/other/vre-bridge-dump-x", false),
+        ("/work", false),
+        ("/elsewhere/vre-bridge-dump-x", false),
+    ] {
+        assert_eq!(is_swept(work, "vre-bridge-dump-", std::path::Path::new(path)), swept, "{path}");
+    }
+    assert!(!is_swept(work, "", std::path::Path::new("/work/anything")));
+}
 
 #[test]
 fn test_try_acquire_held_by_another_handle_returns_none_until_dropped() {

@@ -63,6 +63,7 @@ new_ws() {
   build areas/deposit/alpha/components 'rust_library(name = "components", deps = ["@crates//:maud"])'
   build areas/deposit/alpha/image-viewer 'rust_library(name = "image-viewer", deps = ["@crates//:maud"])'
   build areas/deposit/alpha/lift 'rust_library(name = "lift", deps = ["@crates//:oxigraph"])'
+  build areas/deposit/alpha/client 'rust_library(name = "client", deps = ["@crates//:reqwest", "@crates//:tokio"])'
   build areas/deposit/shell 'rust_library(name = "shell", deps = ["@crates//:maud"])'
   build areas/deposit/server 'rust_binary(name = "server", deps = ["@crates//:axum"])'
   build shared/metadata 'rust_library(name = "metadata", visibility = ["//areas:__subpackages__"])'
@@ -119,6 +120,16 @@ check "a web crate with no server crate beside it may use a web framework" 0 "$(
 new_ws
 build areas/deposit/alpha/lift 'rust_library(name = "x", deps = ["@crates//:reqwest"])'
 fails_with "a lift crate on an HTTP client fails" "areas/deposit/alpha/lift/BUILD.bazel uses reqwest (third-party), a crate its role may not use"
+
+new_ws
+build areas/deposit/alpha/client 'rust_test(name = "t", deps = ["@crates//:axum"])'
+fails_with "a client crate on a web framework, in a test, fails" "areas/deposit/alpha/client/BUILD.bazel uses axum (third-party), a crate its role may not use"
+new_ws
+build areas/deposit/alpha/client 'rust_library(name = "x", deps = ["@crates//:maud"])'
+fails_with "a client crate on Maud fails" "areas/deposit/alpha/client/BUILD.bazel uses maud (third-party), a crate its role may not use"
+new_ws
+build areas/deposit/alpha/client 'rust_library(name = "x", deps = ["@crates//:deadpool-sqlite"])'
+fails_with "a client crate on a database crate fails" "areas/deposit/alpha/client/BUILD.bazel uses deadpool-sqlite (third-party), a crate its role may not use"
 
 new_ws
 build areas/deposit/shell 'rust_library(name = "x", deps = ["@crates//:tower-http"])'

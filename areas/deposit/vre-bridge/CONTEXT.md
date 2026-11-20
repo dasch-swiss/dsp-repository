@@ -2,11 +2,11 @@
 
 The Deposit Area's VRE bridge capability: it takes an allowlisted project's dump from its VRE server, turns it into
 an interim snapshot and the project's media files, and writes them into the Access Area's stand-in locations, the
-`sync` and `media` subtrees (`areas/deposit/ADR-0005`). Five crates are planned: `vre-bridge-lift` (`lift/`), the
+`sync` and `media` subtrees (`areas/deposit/ADR-0005`). It is five crates: `vre-bridge-lift` (`lift/`), the
 transformation of a dump into an interim snapshot, with `FORMAT.md` beside it; `vre-bridge-core` (`core/`),
-`vre-bridge-store` (`store/`), `vre-bridge-client` (`client/`) and `vre-bridge-server` (`server/`). Only
-`vre-bridge-lift` and `vre-bridge-store` exist; `CLAUDE.md` beside this file lists what each crate holds. Terms
-both areas use, such as **Shortcode**, are in the root [`CONTEXT.md`](../../../CONTEXT.md).
+`vre-bridge-store` (`store/`), `vre-bridge-client` (`client/`) and `vre-bridge-server` (`server/`). `CLAUDE.md`
+beside this file lists what each holds and which exist. Terms both areas use, such as **Shortcode**, are in the
+root [`CONTEXT.md`](../../../CONTEXT.md).
 
 ## Language
 
@@ -88,3 +88,24 @@ lock before the run does anything else, so a second process, or a restart that n
 
 **Allowlist**:
 The deployment's list of projects the bridge refreshes, each with its VRE server.
+
+**Service identity**:
+The bridge's identity on a VRE server's DSP-API: a service name, a key id and an Ed25519 signing key that the
+server trusts. The bridge signs a short-lived token with it per request; DSP-API accepts it on the four export
+endpoints only and treats an export as the service's own by the service name. `vre-bridge-client`'s
+`ServiceIdentity`.
+_Avoid_: service account, user (it is not a DSP user).
+
+**Change check**:
+The question a **Refresh** starts with: which of the project's resources changed since a cutoff, answered by
+DSP-API's public `GET /v2/resources/info` together with the server's `asOf`, which becomes **T**.
+
+**Export**:
+DSP-API's task that produces a **Dump** (`/v3/projects/{iri}/exports`). The slot is server-wide: a finished export
+blocks the next until it is deleted, so the bridge deletes its own on every outcome.
+_Avoid_: dump (the zip the export produces).
+
+**Private work directory**:
+The directory `vre-bridge-dump-<random>`, mode `0700`, into which a **Dump** is downloaded and unpacked; deleted
+on every outcome. It lies below the work directory the caller passes to `private_work_dir`, a deployment setting
+that is never inside an output location.

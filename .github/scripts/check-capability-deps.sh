@@ -16,9 +16,10 @@
 #    database crate; a web crate beside its capability's server crate, which
 #    holds the handlers, no web framework; a lift crate no web framework, Maud,
 #    database, HTTP client or tokio; a store crate no file-notification crate,
-#    since a store may sit on NFS (areas/deposit/ADR-0005); the shell no web
-#    framework. Other roles, the composition root areas/<area>/server
-#    among them, are not restricted.
+#    since a store may sit on NFS (areas/deposit/ADR-0005); a client crate no
+#    web framework, Maud or database crate; the shell no web framework. Other
+#    roles, the composition root areas/<area>/server among them, are not
+#    restricted.
 #
 # 2. No public first-party target: no `//visibility:public` in any BUILD.bazel
 #    under areas/, shared/, modules/ or dsp-cli/. Widening a target to public
@@ -61,6 +62,7 @@ third_party_allowed() {
       ;;
     lift) denied_patterns="$WEB_FRAMEWORK maud $DATABASE reqwest reqwest-* ureq tokio" ;;
     store) denied_patterns="$FILE_NOTIFICATION" ;;
+    client) denied_patterns="$WEB_FRAMEWORK maud $DATABASE" ;;
     shell) denied_patterns="$WEB_FRAMEWORK" ;;
     *) return 0 ;;
   esac

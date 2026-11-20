@@ -30,6 +30,7 @@ beside `shared/`, `vitrinli/` and `chischtli/` (not yet in code), so read the gl
 `dsp-cli/` is a sixth root, outside the `services → shared, mosaic` arrow entirely (ADR-0002): it is a client of every area rather than a member of one, no area depends on it, and it depends on no area
 crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 (the context index and the shared contract terms), `areas/deposit/editor/CONTEXT.md`, `areas/deposit/identity/CONTEXT.md`,
+`areas/deposit/vre-bridge/CONTEXT.md`,
 `areas/access/CONTEXT.md`, `areas/access/cpe/CONTEXT.md`, `areas/access/sync/CONTEXT.md`,
 `areas/access/media/CONTEXT.md`, `areas/access/datei/CONTEXT.md`,
 `areas/archive/CONTEXT.md`, `vitrinli/CONTEXT.md`,
@@ -248,8 +249,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   writes an approved record, which the pull-request run publishes as a pull request. The Deposit
   Area is three capabilities, `identity`, `editor` and the VRE bridge, under the composition root
   `deposit-server` (`areas/deposit/server`, below; `areas/deposit/ADR-0004`), with identity's four crates in
-  `areas/deposit/identity` and the area shell in `areas/deposit/shell`. Not yet in code: the VRE bridge
-  (`areas/deposit/vre-bridge/`, `areas/deposit/ADR-0005`) has no crate (P-DEV-301).
+  `areas/deposit/identity` and the area shell in `areas/deposit/shell`. Not yet in code: of the VRE bridge
+  (`areas/deposit/vre-bridge/`, below; `areas/deposit/ADR-0005`), only `vre-bridge-lift` exists (P-DEV-301).
 - **Key entities:** `ProjectDraft`, `ProjectState`, `SubmissionState`, `ReviewState`,
   `FieldReview`, `Decision`, `ProposalDecision`, `EntityProposal`, `Transition`, `PublishedProjects`, `Agents`,
   `EditorRepositories` (behind `EditorState.editor`), `ReviewRoundRepository`, `RecordClassification`, `classify_record`,
@@ -626,6 +627,40 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   capability, which is the single writer. It hands `EDITOR_DATA_DIR` (the published set,
   read-only) to `EditorSettings` and to `LiveOpenWork`, which reads it once at construction.
 - **Fingerprint:** `93017a79c497`
+
+### areas/deposit/vre-bridge
+
+- **Paths:** `:(glob)areas/deposit/vre-bridge/**`
+- **Purpose:** The Deposit Area's VRE bridge (`areas/deposit/ADR-0005`): for each allowlisted project, take
+  its dump from its VRE server, turn it into an interim snapshot and the project's media files, and write them
+  as a new generation into the Access Area's `sync` and `media` subtrees, behind per-project Ready tokens.
+  `vre-bridge-lift` (`lift/`): dsp-incubator's `dao-lift` `snapshot` as a library, the dump's
+  `data.nq` and `ontology-*.nq` as the interim snapshot `lift/FORMAT.md` specifies, in memory, or every
+  violation of the format's closed world. Planned: `vre-bridge-core` (settings, refresh decisions, the
+  shipped-input digest), `vre-bridge-store` (generations, Ready tokens, recovery, the lock),
+  `vre-bridge-client` (DSP-API with the service identity) and `vre-bridge-server` (the `VreBridge` facade, the
+  nightly run, one refresh). Not yet in code: every crate but `vre-bridge-lift` (P-DEV-301).
+- **Key entities:** `snapshot`, `Snapshot`, `Stats`, `LiftError`, `ViolationReport`, `Kind`, `Handling`,
+  `ValueKind`; internal: `Dump`, `Index`, `Ontology`, `Violations`, `Rule`
+- **Public interface:** the `vre_bridge_lift` library: `snapshot(dump_dir) -> Result<Snapshot, LiftError>`,
+  `Snapshot::{write_to, stats}`, `Stats` and the key types of its counts, `LiftError::{Dump, Violations,
+  Internal}`. No routes, no binary.
+- **Local-context kit:** `areas/deposit/vre-bridge/CLAUDE.md`, `areas/deposit/vre-bridge/CONTEXT.md`,
+  `areas/deposit/vre-bridge/lift/FORMAT.md`, `areas/deposit/vre-bridge/lift/src/snapshot/mod.rs`
+- **Depends on:** third-party: oxigraph (no default features) and thiserror (`vre-bridge-lift`)
+- **Used by:** nothing yet; `vre-bridge-lift` grants `vre-bridge-core` and `vre-bridge-server`, and
+  `deposit-server` (planned) is to depend on `vre-bridge-server` alone
+- **Boundary rules:**
+  - `vre-bridge-lift` uses no web framework, Maud, database crate, HTTP client or `tokio` (**static-analysis** —
+    `check-capability-deps.sh`, the `lift` role).
+  - Only the bridge's own crates link `vre-bridge-lift` (**structure** — `visibility`).
+  - `lift/FORMAT.md` is normative and this repository's copy is authoritative; its section numbering, its §4
+    table and its §15 vocabulary match the code (**static-analysis** — `format_doc_tests.rs`).
+  - The lift's production code calls no `expect`, `unwrap`, `panic!` or `unreachable!` (**static-analysis** —
+    the four clippy lints denied outside tests).
+  - Only `vre-bridge-store` writes the subtrees (**review** until the crate exists).
+- **Durable state:** none but the `sync` and `media` subtrees it is to write and its lock file (planned); the
+  lift holds nothing between calls.
 
 ### modules/mosaic
 

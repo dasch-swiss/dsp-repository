@@ -13,6 +13,15 @@ pub(crate) fn py_strip(text: &str) -> &str {
     text.trim_matches(is_strip_space)
 }
 
+/// `text` as Markdown with each of its lines a paragraph: the text is split at every `\n`, each
+/// line stripped as [`py_strip`] strips (which also cuts the `\r` of a `\r\n`), a line left empty
+/// dropped, and the rest joined by one blank line. A stripped line cannot start with indentation,
+/// so none becomes a code block. Nothing is escaped: Markdown in the text stays Markdown.
+pub(crate) fn as_paragraphs(text: &str) -> String {
+    let lines = text.split('\n').map(py_strip).filter(|line| !line.is_empty());
+    lines.collect::<Vec<_>>().join("\n\n")
+}
+
 /// `text` without a trailing U+001E and the whitespace around it. A text that ends in
 /// whitespace alone is returned as it is: an editor wrote that.
 ///
@@ -110,6 +119,23 @@ mod tests {
         ("\u{1c}\u{1d}\u{1e}\u{1f}", ""),
         ("a\u{1e}", "a"),
     ];
+
+    #[test]
+    fn test_as_paragraphs_makes_each_line_a_paragraph() {
+        let cases = [
+            ("Eine Zeile.", "Eine Zeile."),
+            ("Erste\n\nZweite\n \t \nDritte", "Erste\n\nZweite\n\nDritte"),
+            ("Erste\r\nZweite\r\n", "Erste\n\nZweite"),
+            ("    eingerückt\n\tmit Tab", "eingerückt\n\nmit Tab"),
+            ("*kein* Escape\n1. bleibt", "*kein* Escape\n\n1. bleibt"),
+            ("\n \n\r\n", ""),
+            ("", ""),
+        ];
+
+        for (text, expected) in cases {
+            assert_eq!(as_paragraphs(text), expected, "{text:?}");
+        }
+    }
 
     #[test]
     fn test_py_strip_matches_python() {

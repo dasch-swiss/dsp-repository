@@ -22,6 +22,12 @@ remodel {
         list-node "woodcut" { de "Holzschnitt"; en "Woodcut" }
         list-node "engraving" { de "Kupferstich"; en "Engraving" }
     }
+    // A node with an `iri` stands for that node of the archive's list; one without stands for none.
+    list "format" {
+        list-node "folio" iri="http://rdfh.ch/lists/0123/format-folio" { de "Folio"; en "Folio" }
+        list-node "quarto" iri="http://rdfh.ch/lists/0123/format-quarto" { de "Quart"; en "Quarto" }
+        list-node "small" { de "Kleinformat"; en "Small format" }
+    }
 
     class "Work" iri="http://www.knora.org/ontology/0123/plain#Work" no-addresses=#true {
         id curated-key="slug"
@@ -31,6 +37,10 @@ remodel {
         property "note" iri="http://www.knora.org/ontology/0123/plain#hasNote" type="text" empty="drop" sentinel="refuse" sentinel-within="refuse"
         property "homepage" iri="http://www.knora.org/ontology/0123/plain#hasHomepage" type="uri" max=1 sentinel="absent" sentinel-within="keep"
         property "made" iri="http://www.knora.org/ontology/0123/plain#hasDate" type="date" min=1 max=1 display-key="date_display"
+        property "remark" iri="http://www.knora.org/ontology/0123/plain#hasRemark" type="text" max=1 richtext=#true
+        property "printed" iri="http://www.knora.org/ontology/0123/plain#hasPrinted" type="date" max=1 mixed-precision="start"
+        property "copies" iri="http://www.knora.org/ontology/0123/plain#hasCopies" type="integer" max=2
+        property "format" iri="http://www.knora.org/ontology/0123/plain#hasFormat" type="list-node" list="format" max=1
         curated "genre" key="genre" type="list" list="genre" min=1
         curated "blurb" key="blurb" type="per-language"
         curated "credit" key="credit" type="text"
@@ -66,6 +76,9 @@ remodel {
         id from="iri"
         property "name" iri="http://www.knora.org/ontology/0123/plain#hasTerm" type="text" min=1 max=1
     }
+
+    // The archive's index entries are left out: no row, no refusal.
+    ignore-class iri="http://www.knora.org/ontology/0123/plain#Index"
 
     annotations {
         on "Leaf"

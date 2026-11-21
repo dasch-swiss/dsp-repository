@@ -142,7 +142,7 @@ fn kind_of(property: &RawNode) -> Kind {
     match form_of_source(property) {
         Some(Form::Text) => Kind::Text,
         Some(Form::Link) => Kind::Link,
-        Some(Form::Uri | Form::Date | Form::Label) => Kind::Other,
+        Some(Form::Uri | Form::Date | Form::Integer | Form::ListNode | Form::Label) => Kind::Other,
         None => Kind::Faulty,
     }
 }

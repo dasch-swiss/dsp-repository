@@ -5,9 +5,9 @@ use std::collections::BTreeMap;
 
 use cpe_core::remodel::Remodel;
 
-use crate::draft::{Draft, Entry, Value};
+use crate::draft::{Draft, Entry, EntryClass, Value};
 use crate::error::{refuse_shared_keys, BuildError, Rule};
-use crate::generic::{images, membership, rows, slug};
+use crate::generic::{images, membership, rows, slug, text};
 use crate::store::{CompoundPartRow, PropertyRow, ResourceRow, Store};
 
 /// Fills `resources`, `properties`, `representations` and `compound_parts` of `store` from
@@ -113,8 +113,13 @@ fn properties(draft: &Draft<'_>, mapping: &Remodel) -> Vec<PropertyRow> {
         let Some(id) = entry.kept_id() else {
             continue;
         };
+        let class = match entry.class {
+            EntryClass::Mapped(class, _) => Some(class),
+            EntryClass::Annotation | EntryClass::AnnotationLink => None,
+        };
         for (name, values) in &entry.values {
-            let written = values.iter().filter_map(|value| row(draft, id, name, value));
+            let richtext = class.is_some_and(|class| mapping.writes_richtext(class, name));
+            let written = values.iter().filter_map(|value| row(draft, id, name, value, richtext));
             found.extend((0..).zip(written).map(|(seq, row)| PropertyRow { seq, ..row }));
         }
     }
@@ -124,9 +129,11 @@ fn properties(draft: &Draft<'_>, mapping: &Remodel) -> Vec<PropertyRow> {
 
 /// The row of one value. A link to a resource that gets no row gives none: that resource was
 /// refused, and its refusal is the one report, or a hook dropped it, and the link is refused
-/// where the hook's drops are followed up.
-fn row(draft: &Draft<'_>, id: &str, name: &str, value: &Value<'_>) -> Option<PropertyRow> {
+/// where the hook's drops are followed up. A text under a name that `richtext` marks is written
+/// as `richtext`, converted only now, so every step before the writing saw it as served.
+fn row(draft: &Draft<'_>, id: &str, name: &str, value: &Value<'_>, richtext: bool) -> Option<PropertyRow> {
     match value {
+        Value::Text(served, lang) if richtext => Some(rows::richtext(id, name, text::as_paragraphs(served), *lang)),
         Value::Text(text, lang) => Some(rows::text(id, name, text, *lang)),
         Value::Date { start, end, precision, calendar, display } => {
             let bounds = (start.clone(), end.clone());

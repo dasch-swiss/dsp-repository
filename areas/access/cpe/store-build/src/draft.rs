@@ -71,7 +71,8 @@ pub enum Value<'a> {
     ListNode(String),
     /// A link to the Image of this id.
     Image(&'a str),
-    /// A number the mapping derived: a position or a count.
+    /// A whole number: a value of an integer property, or one the mapping derived, a position
+    /// or a count.
     Integer(i64),
 }
 
@@ -164,9 +165,22 @@ impl<'a> Entry<'a> {
 #[derive(Default)]
 pub(crate) struct Draft<'a> {
     entries: BTreeMap<&'a str, Entry<'a>>,
+    /// The IRIs of the resources of a class the mapping leaves out (`ignore-class`). They have
+    /// no entry; only the curation check reads them.
+    ignored: BTreeSet<&'a str>,
 }
 
 impl<'a> Draft<'a> {
+    /// Records that the resource `iri` is of a class the mapping leaves out: it gets no entry.
+    pub(crate) fn ignore(&mut self, iri: &'a str) {
+        self.ignored.insert(iri);
+    }
+
+    /// Whether the resource `iri` is of a class the mapping leaves out.
+    pub(crate) fn is_ignored(&self, iri: &str) -> bool {
+        self.ignored.contains(iri)
+    }
+
     /// Adds `entry` under its resource's IRI. The port's contract holds that no two resources
     /// share one.
     pub(crate) fn insert(&mut self, entry: Entry<'a>) {

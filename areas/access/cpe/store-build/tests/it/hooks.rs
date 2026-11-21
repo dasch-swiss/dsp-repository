@@ -12,7 +12,10 @@ use cpe_core::diagnostic::{DiagnosticKind, ValidationReport};
 use cpe_core::remodel::Remodel;
 use cpe_core::validate::{load_remodel, ConfigLoadError};
 use cpe_ports::contract::violations;
-use cpe_ports::{ProjectSnapshot, Resource, ValueKind};
+use cpe_ports::{
+    Calendar, DateBound, DatePrecision, DateValue, LangString, ListNode, ListNodeIri, ProjectSnapshot, Resource,
+    ValueKind,
+};
 use cpe_store_build::error::Rule;
 use cpe_store_build::hook::{Draft, Hook, HookFn, Mapped, Refusals, Value};
 use cpe_store_build::hooks::{resolve, HOOKS};
@@ -49,6 +52,14 @@ const HAS_HOMEPAGE: &str = "http://www.knora.org/ontology/0123/hooked#hasHomepag
 const HAS_NUMBER: &str = "http://www.knora.org/ontology/0123/hooked#hasNumber";
 const HAS_DESCRIPTION: &str = "http://www.knora.org/ontology/0123/hooked#hasDescription";
 const HAS_NEXT: &str = "http://www.knora.org/ontology/0123/hooked#hasNext";
+const HAS_DATE: &str = "http://www.knora.org/ontology/0123/hooked#hasDate";
+const HAS_VOLUME_NUMBER: &str = "http://www.knora.org/ontology/0123/hooked#hasVolumeNumber";
+const HAS_BINDING: &str = "http://www.knora.org/ontology/0123/hooked#hasBinding";
+/// The archive's list of bindings: its root and two nodes, which the block's list `binding` maps.
+const BINDINGS: &str = "http://rdfh.ch/lists/0123/bindings";
+const LEATHER: &str = "http://rdfh.ch/lists/0123/binding-leather";
+const PAPER: &str = "http://rdfh.ch/lists/0123/binding-paper";
+const CLOTH: &str = "http://rdfh.ch/lists/0123/binding-cloth";
 
 const HOMEPAGE: &str = "https://example.org/chronik";
 /// An address the archive still serves and [`tidy`] replaces. It holds the sentinel, which a
@@ -170,6 +181,60 @@ fn overrides_with_a_link(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
 fn overrides_with_two_addresses(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
     let two = vec![Value::Text(HOMEPAGE, None), Value::Text(NEW_HOMEPAGE, None)];
     draft.override_values(VOLUME, "homepage", two);
+}
+
+/// Records what the first Sheet's richtext description holds for a hook, and provides the
+/// Volume a summary of two lines, which is richtext, and a rank of two lines, which is not.
+fn summarises(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
+    let Some(sheet) = draft.entry(SHEET_1) else {
+        return;
+    };
+    let description = format!("description: {:?}", sheet.values("description"));
+    SEEN.with(|all| all.borrow_mut().push(description));
+    draft.provide_text(VOLUME, "summary", "  Eine Chronik\n\n  in zwei Zeilen", Some("de"));
+    draft.provide_text(VOLUME, "rank", "erste\nzweite", None);
+}
+
+/// Records the Volume's dates as served.
+fn reads_the_date(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
+    let Some(volume) = draft.entry(VOLUME) else {
+        return;
+    };
+    let served = volume.served("made");
+    SEEN.with(|all| all.borrow_mut().push(format!("made as served: {served:?}")));
+}
+
+/// Sets the Volume's number to one past the number the archive serves, and records what it read.
+fn renumbers(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
+    let Some(volume) = draft.entry(VOLUME) else {
+        return;
+    };
+    let served = volume.served("number");
+    SEEN.with(|all| all.borrow_mut().push(format!("number as served: {served:?}")));
+    if let [Value::Integer(number)] = served.as_slice() {
+        let next = number + 1;
+        draft.override_values(VOLUME, "number", vec![Value::Integer(next)]);
+    }
+}
+
+/// Sets the Volume's binding to paper, and records what it read.
+fn rebinds(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
+    let Some(volume) = draft.entry(VOLUME) else {
+        return;
+    };
+    let served = volume.served("binding");
+    SEEN.with(|all| all.borrow_mut().push(format!("binding as served: {served:?}")));
+    draft.override_values(VOLUME, "binding", vec![Value::ListNode("binding-paper".to_string())]);
+}
+
+/// A binding is a node of the list `binding`, and a grade is a node of another list.
+fn binds_with_a_grade(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
+    draft.override_values(VOLUME, "binding", vec![Value::ListNode("grade-first".to_string())]);
+}
+
+/// A number is an integer, and a text is none, though it reads as one.
+fn numbers_in_words(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
+    draft.override_values(VOLUME, "number", vec![Value::Text("4", None)]);
 }
 
 /// Makes the three changes the block does not declare, then records what became of the Volume.
@@ -535,6 +600,170 @@ fn test_build_override_takes_only_a_value_of_the_property_s_kind() {
         refused(&snapshot(), overrides_with_a_link),
         [(Rule::HookExceedsDeclaration, VOLUME.to_string())]
     );
+}
+
+/// A hook reads a richtext property's texts as served. What it provides under a `provides`
+/// with `richtext` is written converted, one paragraph per line, as the property's texts are;
+/// under a `provides` without it, as given.
+#[test]
+fn test_build_richtext_is_converted_when_written_and_read_by_the_hook_as_served() {
+    let described = with_text(snapshot(), SHEET_1, HAS_DESCRIPTION, "Erste\n\n  Zweite");
+    SEEN.with(|all| all.borrow_mut().clear());
+
+    let store = built(&described, summarises);
+
+    assert_eq!(
+        SEEN.with(|all| all.borrow().clone()),
+        [r#"description: Values([Text("Erste\n\n  Zweite", None)])"#]
+    );
+    let shown = properties(&store);
+    for row in [
+        ("chronik-1r", "description", 0, "rich Erste\n\nZweite@-".to_string()),
+        ("chronik", "summary", 0, "rich Eine Chronik\n\nin zwei Zeilen@de".to_string()),
+        ("chronik", "rank", 0, "erste\nzweite@-".to_string()),
+    ] {
+        assert!(shown.contains(&row), "{row:?} in {shown:?}");
+    }
+}
+
+/// Sets the first Sheet's richtext description to a text of two lines.
+fn redescribes(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
+    draft.override_values(SHEET_1, "description", vec![Value::Text("Neu\n  beschrieben", None)]);
+}
+
+/// A hook's texts on an overridden richtext property are converted when they are written, as the
+/// mapping's are.
+#[test]
+fn test_build_override_of_a_richtext_property_is_written_converted() {
+    let config = include_str!("../fixtures/hooked/config.kdl");
+    let overridden = config.replace(
+        r#"drops class="Sheet""#,
+        "drops class=\"Sheet\"\n        overrides \"description\" class=\"Sheet\"",
+    );
+    assert_ne!(overridden, config, "the fixture's hook node has a drops line");
+    let mapping = lowered(&overridden);
+
+    let store = build_with(&snapshot(), &mapping, Some(&hook(redescribes)))
+        .unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"));
+
+    let row = ("chronik-1r", "description", 0, "rich Neu\n\nbeschrieben@-".to_string());
+    let shown = properties(&store);
+    assert!(shown.contains(&row), "{shown:?}");
+}
+
+/// A hook reads a date whose bounds have different precisions, under `mixed-precision="start"`,
+/// as the mapping writes it: the start bound alone.
+#[test]
+fn test_build_hook_reads_a_mixed_date_as_the_mapping_writes_it() {
+    let day = DateBound { jdn: 2_392_707, precision: DatePrecision::Day };
+    let year_end = DateBound { jdn: 2_392_740, precision: DatePrecision::Year };
+    let date = DateValue { calendar: Calendar::Gregorian, start: day, end: year_end };
+    let dated = with_value(snapshot(), VOLUME, HAS_DATE, ValueKind::Date(date));
+    SEEN.with(|all| all.borrow_mut().clear());
+
+    let store = built(&dated, reads_the_date);
+
+    let start = "1838-11-28".to_string();
+    let expected = Value::Date {
+        start: start.clone(),
+        end: start,
+        precision: DatePrecision::Day,
+        calendar: Calendar::Gregorian,
+        display: None,
+    };
+    assert_eq!(
+        SEEN.with(|all| all.borrow().clone()),
+        [format!("made as served: {:?}", [expected])]
+    );
+    let shown = properties(&store);
+    let row = ("chronik", "made", 0, "1838-11-28/1838-11-28 day gregorian -@-".to_string());
+    assert!(shown.contains(&row), "{shown:?}");
+}
+
+/// An integer property is overridden with integers: the hook reads the archive's number as served
+/// and its own is written in its place.
+#[test]
+fn test_build_override_of_an_integer_property_writes_the_hook_s_integer() {
+    let numbered = changed(snapshot(), VOLUME, |volume| {
+        volume.values = values(vec![
+            (HAS_HOMEPAGE, ValueKind::Uri(HOMEPAGE.to_string())),
+            (HAS_VOLUME_NUMBER, ValueKind::Integer(4)),
+        ]);
+    });
+    SEEN.with(|all| all.borrow_mut().clear());
+
+    let store = built(&numbered, renumbers);
+
+    assert_eq!(SEEN.with(|all| all.borrow().clone()), ["number as served: [Integer(4)]"]);
+    let shown = properties(&store);
+    assert!(shown.contains(&("chronik", "number", 0, "int 5".to_string())), "{shown:?}");
+    assert_eq!(
+        refused(&snapshot(), numbers_in_words),
+        [(Rule::HookExceedsDeclaration, VOLUME.to_string())]
+    );
+}
+
+/// A list-node property is overridden with nodes of its own list: the hook reads the archive's
+/// node as the id of the node that stands for it, and its own is written in its place. A node of
+/// another list is no value the property takes.
+#[test]
+fn test_build_override_of_a_list_node_property_takes_a_node_of_its_list() {
+    let bound = bound_in(LEATHER);
+    SEEN.with(|all| all.borrow_mut().clear());
+
+    let store = built(&bound, rebinds);
+
+    assert_eq!(
+        SEEN.with(|all| all.borrow().clone()),
+        [r#"binding as served: [ListNode("binding-leather")]"#]
+    );
+    let shown = properties(&store);
+    assert!(
+        shown.contains(&("chronik", "binding", 0, "node binding-paper".to_string())),
+        "{shown:?}"
+    );
+    assert_eq!(
+        refused(&snapshot(), binds_with_a_grade),
+        [(Rule::HookExceedsDeclaration, VOLUME.to_string())]
+    );
+}
+
+/// An archive node the list does not map is not among the values the hook is served, and its
+/// refusal stands although the hook overrides the property.
+#[test]
+fn test_build_unmapped_list_node_is_not_served_and_its_refusal_survives_an_override() {
+    let bound = bound_in(CLOTH);
+    SEEN.with(|all| all.borrow_mut().clear());
+
+    let refused = refused(&bound, rebinds);
+
+    assert_eq!(SEEN.with(|all| all.borrow().clone()), ["binding as served: []"]);
+    assert_eq!(refused, [(Rule::UnknownListNode, VOLUME.to_string())]);
+}
+
+/// The snapshot with the Volume bound in `binding`, a node of the archive's binding list, which
+/// holds a node the block's `binding` list does not map ([`CLOTH`]).
+fn bound_in(binding: &str) -> Fixture {
+    let mut bound = changed(snapshot(), VOLUME, |volume| {
+        volume.values = values(vec![
+            (HAS_HOMEPAGE, ValueKind::Uri(HOMEPAGE.to_string())),
+            (HAS_BINDING, ValueKind::ListNode(ListNodeIri(binding.to_string()))),
+        ]);
+    });
+    let node = |iri: &str, parent: Option<&str>, position: Option<u32>| ListNode {
+        iri: ListNodeIri(iri.to_string()),
+        parent: parent.map(|parent| ListNodeIri(parent.to_string())),
+        position,
+        labels: vec![LangString { text: iri.to_string(), lang: None }],
+    };
+    bound.facts.list_nodes = vec![
+        node(BINDINGS, None, None),
+        node(LEATHER, Some(BINDINGS), Some(0)),
+        node(PAPER, Some(BINDINGS), Some(1)),
+        node(CLOTH, Some(BINDINGS), Some(2)),
+    ];
+    assert_eq!(violations(SHORTCODE, &bound.facts), []);
+    bound
 }
 
 /// The hook's values are held to the node's count, as the archive's are.

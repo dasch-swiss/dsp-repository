@@ -9,6 +9,7 @@
 
 use std::collections::HashSet;
 
+use super::super::attrs::get_bool_attr;
 use super::nodes::{
     check_attrs, check_children, check_no_args, declare_key, declare_name, first_occurrence, non_empty, push,
     single_string, ClassSeen,
@@ -70,14 +71,16 @@ pub(super) fn lower_hook(
 
 /// The child's one argument, naming `what`, and the class its `class=` names.
 /// Both are read before either is required, so that a child lacking both is
-/// reported for both.
+/// reported for both. The child takes `class` and the attributes of `more`.
 fn named_on_a_class(
     node: &RawNode,
     what: &str,
+    more: &[&str],
     outline: &Outline<'_>,
     report: &mut ValidationReport,
 ) -> (Option<String>, Option<usize>) {
-    check_attrs(node, &["class"], report);
+    let allowed: Vec<&str> = ["class"].iter().chain(more).copied().collect();
+    check_attrs(node, &allowed, report);
     check_children(node, &[], report);
     let name = single_string(node, what, report).and_then(|name| non_empty(name, what, node.span, report));
     let class = required_class(node, "class", outline, report);
@@ -90,7 +93,7 @@ fn lower_key(
     seen: &mut [ClassSeen],
     report: &mut ValidationReport,
 ) -> Option<HookKey> {
-    let (key, class) = named_on_a_class(node, "the curated key", outline, report);
+    let (key, class) = named_on_a_class(node, "the curated key", &[], outline, report);
     let (key, class) = (key?, class?);
     let key = declare_key(seen.get_mut(class)?, key, node.span, report);
     Some(HookKey { class: ClassIndex(class), key })
@@ -102,10 +105,15 @@ fn lower_provides(
     seen: &mut [ClassSeen],
     report: &mut ValidationReport,
 ) -> Option<HookProvides> {
-    let (name, class) = named_on_a_class(node, "the property's CPE name", outline, report);
+    let (name, class) = named_on_a_class(node, "the property's CPE name", &["richtext"], outline, report);
+    let richtext = get_bool_attr(node, "richtext", report);
     let (name, class) = (name?, class?);
     declare_name(seen.get_mut(class)?, &name, node.span, report);
-    Some(HookProvides { class: ClassIndex(class), name: CpeProperty::new(name) })
+    Some(HookProvides {
+        class: ClassIndex(class),
+        name: CpeProperty::new(name),
+        richtext,
+    })
 }
 
 /// A property a hook overrides is a `property` node of the class, under any
@@ -117,7 +125,7 @@ fn lower_overrides(
     overridden: &mut HashSet<(usize, usize)>,
     report: &mut ValidationReport,
 ) -> Option<HookOverrides> {
-    let (name, class) = named_on_a_class(node, "the property's CPE name", outline, report);
+    let (name, class) = named_on_a_class(node, "the property's CPE name", &[], outline, report);
     let (name, class) = (name?, class?);
     let Some((position, _)) = outline.property(class, &name) else {
         push(

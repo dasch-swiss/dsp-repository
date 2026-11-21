@@ -228,17 +228,21 @@ pub(super) enum Form {
     Uri,
     Date,
     Link,
+    Integer,
+    ListNode,
     Label,
 }
 
 /// The `type` words a `property` supports, each with the form it gives. This
 /// is the one place they are written: the lowering and the outline's silent
 /// reading of a property both come here.
-const TYPE_WORDS: [(&str, Form); 4] = [
+const TYPE_WORDS: [(&str, Form); 6] = [
     ("text", Form::Text),
     ("uri", Form::Uri),
     ("date", Form::Date),
     ("link", Form::Link),
+    ("integer", Form::Integer),
+    ("list-node", Form::ListNode),
 ];
 
 /// The supported `type` words, for a diagnostic.

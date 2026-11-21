@@ -10,6 +10,14 @@ pub(crate) fn node_id(list: &RemodelList, node: &RemodelListNode) -> String {
     format!("{}-{}", list.name, node.slug)
 }
 
+/// The id of the node of `list` that stands for the archive list node `iri`, by its `iri`;
+/// `None` when no node of the list does.
+pub(crate) fn node_id_of_iri(list: &RemodelList, iri: &str) -> Option<String> {
+    let mut nodes = list.nodes.iter();
+    let node = nodes.find(|node| node.iri.as_ref().is_some_and(|own| own.as_str() == iri))?;
+    Some(node_id(list, node))
+}
+
 /// Fills `lists`, `list_nodes` and `list_node_labels` from `lists`.
 ///
 /// A list's id is `list-<name>` and a node's is [`node_id`]. Rows are sorted by id while `seq`

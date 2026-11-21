@@ -51,13 +51,14 @@ use nodes::{
 use structure::{ClassStructure, Outline, Structure};
 use values::{lower_curated, lower_property, Scope};
 
-use super::attrs::{get_bool_attr, require_string_attr};
+use super::attrs::{get_bool_attr, get_string_attr, optional_string_attr, require_string_attr};
 use crate::config::Component as RawNode;
 use crate::diagnostic::{DiagnosticKind, Severity, ValidationReport};
 use crate::ir::Value;
 use crate::remodel::{
-    is_strip_space, ArchiveClassIri, ClassIndex, CpeClass, Remodel, RemodelAnnotations, RemodelClass, RemodelCurated,
-    RemodelImages, RemodelLabel, RemodelList, RemodelListNode, RemodelProperty, Shortcode,
+    is_strip_space, ArchiveClassIri, ArchiveListNodeIri, ClassIndex, CpeClass, Remodel, RemodelAnnotations,
+    RemodelClass, RemodelCurated, RemodelImages, RemodelLabel, RemodelList, RemodelListNode, RemodelProperty,
+    Shortcode,
 };
 
 /// Lower the top-level `remodel` node `raw`.
@@ -81,6 +82,7 @@ pub(crate) fn lower(raw: &RawNode, languages: &[&str], report: &mut ValidationRe
             "hook",
             "list",
             "class",
+            "ignore-class",
             "images",
             "annotations",
         ],
@@ -101,6 +103,7 @@ pub(crate) fn lower(raw: &RawNode, languages: &[&str], report: &mut ValidationRe
     };
     let outline = Outline::read(raw, &class_names);
     let (classes, mut seen) = lower_classes(raw, images_class.as_deref(), &scope, &outline, report);
+    let ignored = lower_ignored(raw, report);
     let annotations = at_most_one(raw, "annotations", report).and_then(|n| lower_annotations(n, &class_names, report));
     // After the classes: a key or a name the hook declares is held against
     // what its class has declared.
@@ -115,6 +118,7 @@ pub(crate) fn lower(raw: &RawNode, languages: &[&str], report: &mut ValidationRe
         languages: languages.iter().map(|&language| language.to_owned()).collect(),
         lists: lists?,
         classes: classes?,
+        ignored: ignored?,
         images,
         annotations,
         hook,
@@ -212,29 +216,38 @@ fn lower_list(
             "'list' needs at least one 'list-node'".to_owned(),
         );
     }
-    let mut slugs = HashSet::new();
+    let (mut slugs, mut iris) = (HashSet::new(), HashSet::new());
     let nodes: Vec<Option<RemodelListNode>> = list_nodes
         .into_iter()
-        .map(|n| lower_list_node(n, languages, &mut slugs, report))
+        .map(|n| lower_list_node(n, languages, (&mut slugs, &mut iris), report))
         .collect();
     let nodes: Option<Vec<RemodelListNode>> = nodes.into_iter().collect();
 
     Some(RemodelList { name: name?, nodes: nodes? })
 }
 
+/// Lowers one `list-node`. `slugs` and `iris` hold what the list's earlier nodes declared.
 fn lower_list_node(
     node: &RawNode,
     languages: &[&str],
-    slugs: &mut HashSet<String>,
+    (slugs, iris): (&mut HashSet<String>, &mut HashSet<String>),
     report: &mut ValidationReport,
 ) -> Option<RemodelListNode> {
-    check_attrs(node, &[], report);
+    check_attrs(node, &["iri"], report);
 
     let slug =
         single_string(node, "the node's slug", report).and_then(|s| non_empty(s, "the node's slug", node.span, report));
     if let Some(slug) = &slug {
         let message = || format!("list-node '{slug}' is declared more than once in its list");
         first_occurrence(slugs, slug.clone(), node.span, message, report);
+    }
+    let iri = optional_string_attr(node, "iri", report).and_then(|iri| {
+        let iri = iri.map(|iri| non_empty(iri, "a list-node's iri", node.span, report).ok_or(()));
+        iri.transpose()
+    });
+    if let Ok(Some(iri)) = &iri {
+        let message = || format!("list-node iri '{iri}' is declared more than once in its list");
+        first_occurrence(iris, iri.clone(), node.span, message, report);
     }
 
     let mut seen_languages: HashSet<&str> = HashSet::new();
@@ -277,7 +290,11 @@ fn lower_list_node(
     if !complete {
         return None;
     }
-    Some(RemodelListNode { slug: slug?, labels })
+    Some(RemodelListNode {
+        slug: slug?,
+        iri: iri.ok()?.map(ArchiveListNodeIri::new),
+        labels,
+    })
 }
 
 // ── Classes and properties ────────────────────────────────────────────────────
@@ -411,6 +428,37 @@ fn lower_class(
     (class, seen)
 }
 
+/// Lowers every `ignore-class`: the archive class IRIs the project leaves out. An IRI a
+/// `class` declares, or another `ignore-class` names, is `DuplicateRemodelEntry`.
+fn lower_ignored(raw: &RawNode, report: &mut ValidationReport) -> Option<Vec<ArchiveClassIri>> {
+    // Read silently: a faulty class `iri` is reported where the class is lowered.
+    let declared: HashSet<String> = children_named(raw, "class")
+        .filter_map(|class| get_string_attr(class, "iri"))
+        .collect();
+    let mut named = HashSet::new();
+    let ignored: Vec<Option<ArchiveClassIri>> = children_named(raw, "ignore-class")
+        .map(|node| {
+            check_attrs(node, &["iri"], report);
+            check_children(node, &[], report);
+            check_no_args(node, report);
+            let iri = require_string_attr(node, "iri", report)
+                .and_then(|iri| non_empty(iri, "an ignored class's iri", node.span, report))?;
+            if declared.contains(&iri) {
+                push(
+                    report,
+                    DiagnosticKind::DuplicateRemodelEntry,
+                    node.span,
+                    format!("ignore-class iri '{iri}' is the iri of a declared class"),
+                );
+                return None;
+            }
+            let message = || format!("ignore-class iri '{iri}' is named more than once");
+            first_occurrence(&mut named, iri.clone(), node.span, message, report).then(|| ArchiveClassIri::new(iri))
+        })
+        .collect();
+    ignored.into_iter().collect()
+}
+
 // ── images and annotations ────────────────────────────────────────────────────
 
 /// How many `class` children of `raw` are written before its child `node`.
@@ -531,8 +579,8 @@ mod tests {
     use crate::diagnostic::Span;
     use crate::remodel::{
         ArchivePropertyIri, CpeProperty, CuratedForm, CuratedKey, EmptyText, HookKey, HookOverrides, HookProvides,
-        IdPolicy, IdSource, ImageRule, ListIndex, Membership, PropertyIndex, PropertySource, RemodelHook,
-        RemodelIncomingCount, RemodelMemberCount, SentinelWhole, SentinelWithin, TextRule, ValueCount,
+        IdPolicy, IdSource, ImageRule, ListIndex, Membership, MixedPrecision, PropertyIndex, PropertySource,
+        RemodelHook, RemodelIncomingCount, RemodelMemberCount, SentinelWhole, SentinelWithin, TextRule, ValueCount,
     };
 
     /// A block holding every node of the grammar, with two languages.
@@ -542,12 +590,12 @@ remodel {
     sentinel "[missing]"
     hook {
         key "sort_key" class="Book"
-        provides "side" class="Page"
+        provides "side" class="Page" richtext=#true
         overrides "catalogue-uri" class="Book"
         drops class="Page"
     }
     list "office" {
-        list-node "amerbach" { de "Johann Amerbach"; en "Johann Amerbach" }
+        list-node "amerbach" iri="http://rdfh.ch/lists/0803/amerbach" { de "Johann Amerbach"; en "Johann Amerbach" }
         list-node "other" { en "Unnamed printer"; de "Ohne genannten Drucker" }
     }
     list "side" {
@@ -567,6 +615,7 @@ remodel {
         authorship "Universitaetsbibliothek Basel"
         license "CC BY 4.0"
     }
+    ignore-class iri="http://example.org/onto#Index"
     class "Page" iri="http://example.org/onto#Page" image=#true {
         member-of "Book" seq="seq-number"
         id from="property" property="page-id" under-parent=#true
@@ -616,6 +665,7 @@ remodel {
             empty: EmptyText::Drop,
             sentinel: SentinelWhole::Refuse,
             sentinel_within: SentinelWithin::Refuse,
+            richtext: false,
         }
     }
 
@@ -635,6 +685,7 @@ remodel {
             iri: ArchivePropertyIri::new(iri),
             count: unbounded(),
             display_key: None,
+            mixed: MixedPrecision::Refuse,
         }
     }
 
@@ -665,10 +716,12 @@ remodel {
                     nodes: vec![
                         RemodelListNode {
                             slug: "amerbach".to_owned(),
+                            iri: Some(ArchiveListNodeIri::new("http://rdfh.ch/lists/0803/amerbach")),
                             labels: vec![label("de", "Johann Amerbach"), label("en", "Johann Amerbach")],
                         },
                         RemodelListNode {
                             slug: "other".to_owned(),
+                            iri: None,
                             labels: vec![label("en", "Unnamed printer"), label("de", "Ohne genannten Drucker")],
                         },
                     ],
@@ -677,6 +730,7 @@ remodel {
                     name: "side".to_owned(),
                     nodes: vec![RemodelListNode {
                         slug: "left".to_owned(),
+                        iri: None,
                         labels: vec![label("de", "links"), label("en", "left")],
                     }],
                 },
@@ -724,6 +778,7 @@ remodel {
                                 empty: EmptyText::Drop,
                                 sentinel: SentinelWhole::Refuse,
                                 sentinel_within: SentinelWithin::Refuse,
+                                richtext: false,
                             },
                         ),
                         property(&["strip"], link("http://example.org/onto#hasBand", 0)),
@@ -734,6 +789,7 @@ remodel {
                     incoming_counts: vec![],
                 },
             ],
+            ignored: vec![ArchiveClassIri::new("http://example.org/onto#Index")],
             images: Some(RemodelImages {
                 class: CpeClass::new("Image"),
                 iiif_base: "https://iiif.example.org/0803/".to_owned(),
@@ -747,7 +803,11 @@ remodel {
             }),
             hook: Some(RemodelHook {
                 keys: vec![HookKey { class: ClassIndex(0), key: CuratedKey::new("sort_key") }],
-                provides: vec![HookProvides { class: ClassIndex(1), name: CpeProperty::new("side") }],
+                provides: vec![HookProvides {
+                    class: ClassIndex(1),
+                    name: CpeProperty::new("side"),
+                    richtext: true,
+                }],
                 overrides: vec![HookOverrides { class: ClassIndex(0), property: PropertyIndex(1) }],
                 drops: vec![ClassIndex(1)],
             }),
@@ -771,11 +831,13 @@ remodel {
     class "Book" iri="http://e/o#Book" no-addresses=#true {
         id from="iri"
         property "label" from="label" curated-key="label-key"
-        property "title" "alt" iri="http://e/o#title" type="text" min=1 max=3 empty="refuse" sentinel="absent" sentinel-within="keep" exclude-label=#true
+        property "title" "alt" iri="http://e/o#title" type="text" min=1 max=3 empty="refuse" sentinel="absent" sentinel-within="keep" exclude-label=#true richtext=#true
         property "subtitle" iri="http://e/o#subtitle" type="text" curated-key="subtitle-key"
         property "catalogue" iri="http://e/o#catalogue" type="uri" min=2 sentinel="keep" sentinel-within="keep"
-        property "printed" iri="http://e/o#printed" type="date" max=1 display-key="printed-display"
+        property "printed" iri="http://e/o#printed" type="date" max=1 display-key="printed-display" mixed-precision="start"
         property "strip" iri="http://e/o#strip" type="link" min=1 target="Strip"
+        property "copies" iri="http://e/o#copies" type="integer" min=1 max=2
+        property "office-node" iri="http://e/o#office" type="list-node" list="office" min=1 max=1
         curated "office" key="office-key" type="list" list="office" min=1
         curated "blurb" key="blurb-key" type="per-language"
         curated "note" key="note-key" type="text" min=0
@@ -787,6 +849,8 @@ remodel {
         property "plain-uri" iri="http://e/o#plainUri" type="uri"
         property "plain-date" iri="http://e/o#plainDate" type="date"
         property "book" iri="http://e/o#book" type="link" target="Book"
+        property "plain-integer" iri="http://e/o#plainInteger" type="integer"
+        property "plain-list" iri="http://e/o#plainList" type="list-node" list="side"
         curated "side" key="side-key" type="list" list="side"
         curated "plain" key="label-key" type="text"
     }
@@ -808,6 +872,7 @@ remodel {
                     empty: EmptyText::Refuse,
                     sentinel: SentinelWhole::Absent,
                     sentinel_within: SentinelWithin::Keep,
+                    richtext: true,
                 },
             ),
             property(
@@ -819,6 +884,7 @@ remodel {
                     empty: EmptyText::Drop,
                     sentinel: SentinelWhole::Refuse,
                     sentinel_within: SentinelWithin::Refuse,
+                    richtext: false,
                 },
             ),
             property(
@@ -836,6 +902,7 @@ remodel {
                     iri: ArchivePropertyIri::new("http://e/o#printed"),
                     count: count(0, Some(1)),
                     display_key: Some(CuratedKey::new("printed-display")),
+                    mixed: MixedPrecision::Start,
                 },
             ),
             property(
@@ -844,6 +911,21 @@ remodel {
                     iri: ArchivePropertyIri::new("http://e/o#strip"),
                     count: count(1, None),
                     target: ClassIndex(1),
+                },
+            ),
+            property(
+                &["copies"],
+                PropertySource::Integer {
+                    iri: ArchivePropertyIri::new("http://e/o#copies"),
+                    count: count(1, Some(2)),
+                },
+            ),
+            property(
+                &["office-node"],
+                PropertySource::ListNode {
+                    iri: ArchivePropertyIri::new("http://e/o#office"),
+                    count: count(1, Some(1)),
+                    list: ListIndex(0),
                 },
             ),
         ];
@@ -873,6 +955,21 @@ remodel {
             property(&["plain-uri"], uri("http://e/o#plainUri")),
             property(&["plain-date"], date("http://e/o#plainDate")),
             property(&["book"], link("http://e/o#book", 0)),
+            property(
+                &["plain-integer"],
+                PropertySource::Integer {
+                    iri: ArchivePropertyIri::new("http://e/o#plainInteger"),
+                    count: unbounded(),
+                },
+            ),
+            property(
+                &["plain-list"],
+                PropertySource::ListNode {
+                    iri: ArchivePropertyIri::new("http://e/o#plainList"),
+                    count: unbounded(),
+                    list: ListIndex(1),
+                },
+            ),
         ];
         let strip_curated = vec![
             RemodelCurated {
@@ -1491,11 +1588,16 @@ remodel {
     }
 
     fn type_block(word: &str) -> String {
-        let target = if word == "link" { r#" target="C""# } else { "" };
+        let target = match word {
+            "link" => r#" target="C""#,
+            "list-node" => r#" list="L""#,
+            _ => "",
+        };
         format!(
             r#"
 remodel {{
     shortcode "0803"
+    list "L" {{ list-node "n" }}
     class "C" iri="http://e/o#C" {{
         id from="iri"
         property "p" iri="http://e/o#p" type="{word}"{target}
@@ -1507,7 +1609,7 @@ remodel {{
 
     #[test]
     fn a_property_type_is_supported_unsupported_or_unknown() {
-        for word in ["text", "uri", "date", "link"] {
+        for word in ["text", "uri", "date", "link", "integer", "list-node"] {
             let out = lower_src(&type_block(word), &[]);
             assert_eq!(out.count(), 0, "`{word}` is supported: {}", out.dump());
             assert!(out.remodel.is_some(), "`{word}` lowers");
@@ -1555,6 +1657,75 @@ remodel {
         );
         // Class `B` reuses `A`'s iri and name: the namespace is per class.
         out.assert_refused(2);
+    }
+
+    #[test]
+    fn a_list_node_s_iri_is_one_per_list_and_not_empty() {
+        use DiagnosticKind as K;
+        let src = r#"
+remodel {
+    shortcode "0803"
+    list "a" {
+        list-node "first" iri="http://rdfh.ch/lists/0803/n1"
+        list-node "second" iri="http://rdfh.ch/lists/0803/n1"
+        list-node "third" iri=""
+        list-node "fourth" iri=1
+    }
+    list "b" { list-node "first" iri="http://rdfh.ch/lists/0803/n1"; }
+    class "C" iri="http://e/o#C" { id from="iri" }
+}
+"#;
+        let out = lower_src(src, &[]);
+
+        out.assert_error(&K::DuplicateRemodelEntry, "list-node \"second\"");
+        out.assert_error(&K::InvalidRemodelValue, "list-node \"third\"");
+        out.assert_error(&K::InvalidAttributeType, "list-node \"fourth\"");
+        // The list `b` takes the IRI `a` has: the IRIs are per list.
+        out.assert_refused(3);
+    }
+
+    #[test]
+    fn an_ignored_class_is_named_once_and_is_no_declared_class() {
+        use DiagnosticKind as K;
+        let src = r#"
+remodel {
+    shortcode "0803"
+    ignore-class iri="http://e/o#Index"
+    ignore-class iri="http://e/o#Cache"
+    ignore-class  iri="http://e/o#Index"
+    ignore-class iri="http://e/o#C"
+    ignore-class iri=""
+    ignore-class
+    ignore-class "Index" iri="http://e/o#Other"
+    ignore-class iri="http://e/o#Nested" { class "X"; }
+    ignore-class iri="http://e/o#Flagged" image=#true
+    class "C" iri="http://e/o#C" { id from="iri" }
+}
+"#;
+        let out = lower_src(src, &[]);
+
+        out.assert_error(&K::DuplicateRemodelEntry, r#"ignore-class  iri="http://e/o#Index""#);
+        out.assert_error(&K::DuplicateRemodelEntry, r#"ignore-class iri="http://e/o#C""#);
+        out.assert_error(&K::InvalidRemodelValue, r#"ignore-class iri="""#);
+        out.assert_error(&K::MissingRequiredAttribute, "ignore-class\n");
+        out.assert_error(&K::InvalidRemodelValue, r#"ignore-class "Index""#);
+        out.assert_error(&unknown_child("ignore-class", "class"), r#"class "X""#);
+        out.assert_error(&K::UnknownRemodelAttribute, r#"ignore-class iri="http://e/o#Flagged""#);
+        out.assert_refused(7);
+
+        let clean = r#"
+remodel {
+    shortcode "0803"
+    ignore-class iri="http://e/o#Index"
+    class "C" iri="http://e/o#C" { id from="iri" }
+    ignore-class iri="http://e/o#Cache"
+}
+"#;
+        let out = lower_src(clean, &[]);
+        assert_eq!(out.count(), 0, "{}", out.dump());
+        let ignored = out.remodel.map(|remodel| remodel.ignored);
+        let expected = ["http://e/o#Index", "http://e/o#Cache"].map(ArchiveClassIri::new);
+        assert_eq!(ignored, Some(expected.to_vec()));
     }
 
     #[test]
@@ -1623,10 +1794,10 @@ remodel {{
         } else {
             format!(r#"iri="http://e/o#p" type="{form}""#)
         };
-        let target = if form == "link" && attr != "target" {
-            r#" target="T""#
-        } else {
-            ""
+        let target = match form {
+            "link" if attr != "target" => r#" target="T""#,
+            "list-node" if attr != "list" => r#" list="office""#,
+            _ => "",
         };
         format!("        property \"p\" {source}{target} {attr}={value}")
     }
@@ -1634,7 +1805,7 @@ remodel {{
     #[test]
     fn a_property_attribute_a_form_does_not_take_is_refused_and_one_it_takes_lowers() {
         use DiagnosticKind as K;
-        let forms = ["text", "uri", "date", "link", "label"];
+        let forms = ["text", "uri", "date", "link", "integer", "list-node", "label"];
         let attrs = [
             ("curated-key", r#""k""#),
             ("empty", r#""drop""#),
@@ -1645,6 +1816,9 @@ remodel {{
             ("exclude-label", "#true"),
             ("display-key", r#""dk""#),
             ("target", r#""T""#),
+            ("list", r#""office""#),
+            ("mixed-precision", r#""start""#),
+            ("richtext", "#true"),
         ];
         // The "no" cells of the grammar's table, written out.
         let no: Vec<(&str, &str)> = vec![
@@ -1675,8 +1849,40 @@ remodel {{
             ("target", "uri"),
             ("target", "date"),
             ("target", "label"),
+            ("curated-key", "integer"),
+            ("empty", "integer"),
+            ("sentinel", "integer"),
+            ("sentinel-within", "integer"),
+            ("exclude-label", "integer"),
+            ("display-key", "integer"),
+            ("target", "integer"),
+            ("curated-key", "list-node"),
+            ("empty", "list-node"),
+            ("sentinel", "list-node"),
+            ("sentinel-within", "list-node"),
+            ("exclude-label", "list-node"),
+            ("display-key", "list-node"),
+            ("target", "list-node"),
+            ("list", "text"),
+            ("list", "uri"),
+            ("list", "date"),
+            ("list", "link"),
+            ("list", "integer"),
+            ("list", "label"),
+            ("mixed-precision", "text"),
+            ("mixed-precision", "uri"),
+            ("mixed-precision", "link"),
+            ("mixed-precision", "integer"),
+            ("mixed-precision", "list-node"),
+            ("mixed-precision", "label"),
+            ("richtext", "uri"),
+            ("richtext", "date"),
+            ("richtext", "link"),
+            ("richtext", "integer"),
+            ("richtext", "list-node"),
+            ("richtext", "label"),
         ];
-        assert_eq!(no.len(), 27, "a cell of the table was dropped");
+        assert_eq!(no.len(), 59, "a cell of the table was dropped");
 
         let mut yes = 0;
         for (attr, value) in attrs {
@@ -1694,7 +1900,7 @@ remodel {{
                 }
             }
         }
-        assert_eq!(yes, 18, "the other cells of the table are taken");
+        assert_eq!(yes, 25, "the other cells of the table are taken");
     }
 
     #[test]
@@ -1714,8 +1920,23 @@ remodel {{
                 vec![(K::ConflictingRemodelAttributes, "property \"p\"")],
             ),
             (
+                "richtext with curated-key",
+                block(&prop(r#"richtext=#true curated-key="k""#)),
+                vec![(K::ConflictingRemodelAttributes, "property \"p\"")],
+            ),
+            (
+                "a list-node without a list",
+                block(r#"        property "p" iri="http://e/o#p" type="list-node""#),
+                vec![(K::ConflictingRemodelAttributes, "property \"p\"")],
+            ),
+            (
                 "max below min",
                 block(&prop("min=3 max=1")),
+                vec![(K::InvalidRemodelValue, "property \"p\"")],
+            ),
+            (
+                "a mixed-precision word outside its vocabulary",
+                block(r#"        property "p" iri="http://e/o#p" type="date" mixed-precision="end""#),
                 vec![(K::InvalidRemodelValue, "property \"p\"")],
             ),
             (
@@ -2070,6 +2291,7 @@ remodel {
         let text = r#"iri="http://e/o#p" type="text""#;
         let date = r#"iri="http://e/o#p" type="date""#;
         let link = r#"iri="http://e/o#p" type="link""#;
+        let list_node = r#"iri="http://e/o#p" type="list-node""#;
         let prop = |rest: &str| block(&format!("        property \"p\" {rest}"));
         let at_p = |kind: DiagnosticKind| vec![(kind, "property \"p\"")];
         let class_flag = r#"
@@ -2133,6 +2355,16 @@ remodel {
             (
                 "a target naming no class",
                 prop(&format!(r#"{link} target="Ghost""#)),
+                at_p(K::UnknownRemodelReference),
+            ),
+            (
+                "an empty list",
+                prop(&format!(r#"{list_node} list="""#)),
+                at_p(K::InvalidRemodelValue),
+            ),
+            (
+                "a list naming no list",
+                prop(&format!(r#"{list_node} list="ghost""#)),
                 at_p(K::UnknownRemodelReference),
             ),
             (
@@ -3201,6 +3433,26 @@ remodel {
                 "an unknown attribute on a child",
                 hooked(&[r#"overrides "p" class="C" bogus=1"#]),
                 one(K::UnknownRemodelAttribute, "overrides"),
+            ),
+            (
+                "richtext on a key",
+                hooked(&[r#"key "k" class="C" richtext=#true"#]),
+                one(K::UnknownRemodelAttribute, "key"),
+            ),
+            (
+                "richtext on an override",
+                hooked(&[r#"overrides "p" class="C" richtext=#true"#]),
+                one(K::UnknownRemodelAttribute, "overrides"),
+            ),
+            (
+                "richtext on a drop",
+                hooked(&[r#"drops class="C" richtext=#true"#]),
+                one(K::UnknownRemodelAttribute, "drops"),
+            ),
+            (
+                "a provided richtext that is no boolean",
+                hooked(&[r#"provides "n" class="C" richtext="yes""#]),
+                one(K::InvalidAttributeType, "provides"),
             ),
             (
                 "an unknown child of the hook",

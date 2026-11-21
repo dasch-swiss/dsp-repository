@@ -118,10 +118,10 @@ shipped inputs, `areas/deposit/vre-bridge/inputs/<shortcode>/`, and the fixture 
 2. Build it. The outcomes are: the config's diagnostics with line and column, from `load_remodel`;
    a `ProjectionError` from the port when it serves no snapshot of the shortcode; `BuildErrors` with every
    refusal, each with its rule and its subject; or `sql::EmptyTable` from the writer when a block is present and its
-   table has no row. A class of the archive that the block does not declare is refused (`unmapped-class`), and so
-   is every Region and LinkObj when the block has no `annotations` node: a project whose archive has annotations
-   declares `annotations { on …; link-targets … }` and no class for them, and a project without annotations must not
-   declare the node. A property that the block does not declare is dropped without a word, so read "What the port
+   table has no row. A class of the archive that the block neither declares nor leaves out (`ignore-class`) is
+   refused (`unmapped-class`), and so is every Region and LinkObj when the block has no `annotations` node: a
+   project whose archive has annotations declares `annotations { on …; link-targets … }` and no class for them, and a
+   project without annotations must not declare the node. A property that the block does not declare is dropped without a word, so read "What the port
    serves and the block does not map" below.
 3. The tests over real data (`tests/it/committed_0803.rs` and the statics of `tests/it/main.rs`) build Incunabula
    only. Nothing in this crate builds a new project from its committed data until a test is written for it.
@@ -199,7 +199,12 @@ generic code (the file where one is worth naming), `H` is a hook rule and names 
 | Output | Bucket | Rule | Source |
 |--------|--------|------|--------|
 | Class of a resource | `M` `class`; `G` annotations by motivation (`generic/classes.rs`) | The block's `class` nodes map `inc:Book`, `inc:Page` and `inc:Band` to `Book`, `Page`, `BorderStrip`. A resource with an annotation body is a Region (motivation commenting or highlighting) or a LinkObj (linking), and its class IRI must be `kb:Region` or `kb:LinkObj` accordingly. Any other class is refused, not dropped. NEW | `Resource.class` |
-| Every value read | `G` the node's `type` | A value of another kind than the `property` node's `type` is refused, and a list-node value always is (NEW); the property's other values are then not counted or judged. A text's language is carried into `value_lang` | port |
+| Every value read | `G` the node's `type` | A value of another kind than the `property` node's `type` is refused (NEW); the property's other values are then not counted or judged. A text's language is carried into `value_lang` | port |
+| Every integer value | `G` `type="integer"` (`generic/kinds.rs`) | an `integer` row with `value_int`, in port order. Incunabula's block declares none. NEW | port |
+| Every archive list value | `G` `type="list-node" list=` (`generic/lists.rs`) | a `list_value` row whose target is the node of the named list that declares the served node's `iri`; a served node the list does not declare is refused (`unknown-list-node`) and the property gives nothing. `iri` is never written. Incunabula's block declares none. NEW | port |
+| A date of mixed precision | `G` `mixed-precision=` (`mapping/values.rs`) | refused (`mixed-date-precision`) under `"refuse"`, the default; under `"start"`, written as the single date of its start bound at the start's precision. Incunabula's block keeps the default. NEW | port |
+| Every richtext value | `G` `richtext=#true` (`generic/text.rs`, `generic/rows.rs`) | a `richtext` row: each line stripped as `str.strip()` does, empty lines left out, the rest joined by a blank line; converted only when written, so the value steps and a hook see the text as served; no Markdown escaping. Incunabula's block declares none. NEW | port |
+| A resource of an `ignore-class` class | `G` (`generic/classes.rs`, `generic/curation.rs`) | no row, no id and no refusal; a link to it is `strip-link-target`, a member under it `page-parent`, and a curated value on it `curated-key-on-wrong-class` (`unknown-curated-key` when no class reads the key); an annotation or annotation link that points at it is dropped silently, as one pointing at any resource without an entry is. Incunabula's block ignores none. NEW | port |
 | `lists`, `list_nodes`, `list_node_labels` | `M` `list` | Two vocabularies, office and side, with German and English labels. A node's `seq` is its declared position; rows are written sorted by node id | `T:252-288` |
 | Book id | `M` `id curated-key=` | the curated `slug`: exactly one per Book (`T:509-548`), not empty (`T:677-678`), and no two resources share an id (`T:965-972`) | curation |
 | Page id | `M` `id from="property" under-parent=#true` | `<book id>-<slug of the page number>`, with `-2`, `-3`, … on a repeat in positional order, over all of a Book's Pages. A Page has exactly one `seqnum` (`X:1092`) | `X:715-740`, `X:1078-1125`, `X:1391-1401` |
@@ -285,7 +290,8 @@ fails when the properties the snapshot serves on the block's classes and the blo
 these six. A change of the committed 0803 snapshot that brings a property the block does not map therefore fails that test, and the choice is to
 map it in the block or to list it in `IGNORED` and here. A second test of that file
 (`test_build_reads_every_declared_property`) takes each mapped property away in turn and fails when the store does
-not change. Only properties are dropped this way: a resource of a class the block does not declare is refused.
+not change. Only properties are dropped this way: a resource of a class the block neither declares nor leaves out is
+refused.
 
 ## Limits that are known
 

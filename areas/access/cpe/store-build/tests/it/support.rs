@@ -508,13 +508,14 @@ pub fn resources(store: &Store) -> Vec<(&str, &str)> {
     rows.map(|row| (row.id.as_str(), row.class.as_str())).collect()
 }
 
-/// A row's value as one text: a text with its language after `@`, a date as its bounds, its
-/// precision, its calendar and its display text, a link as `-> ` and its target, a list value
-/// as `node ` and its node.
+/// A row's value as one text: a text with its language after `@` (a richtext after `rich `), a
+/// date as its bounds, its precision, its calendar and its display text, a link as `-> ` and its
+/// target, a list value as `node ` and its node.
 pub fn shown(row: &PropertyRow) -> String {
     let or_none = |column: &Option<String>| column.clone().unwrap_or_else(|| "-".to_string());
     match row.value_type.as_str() {
         "text" => format!("{}@{}", or_none(&row.value_text), or_none(&row.value_lang)),
+        "richtext" => format!("rich {}@{}", or_none(&row.value_text), or_none(&row.value_lang)),
         "date" => format!(
             "{}/{} {} {} {}@{}",
             or_none(&row.date_start),

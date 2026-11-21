@@ -713,7 +713,7 @@ exactly the arguments the table lists: a further positional argument, or
 any on a node listed with none, is `InvalidRemodelValue`. A text that must
 name something (a class, property, curated, count or list name, a `list-node`
 name, a slug, a label, an `iri`, a `curated-key`, `display-key` or `target`,
-a `curated` node's `key=` or `list=`, an `id`'s `property=`, a `member-of`
+a `curated` node's `key=`, a `curated` or `property` node's `list=`, an `id`'s `property=`, a `member-of`
 parent or `seq=`, an `of=`, an `incoming-count`'s `from=`, a `via`, the
 `images` `class=`, `authorship`, `license`, a class name of `on` or
 `link-targets`, the argument and the `class=` of
@@ -728,26 +728,27 @@ an error.
 | `sentinel` | 0..1 | one string | `InvalidRemodelValue` when empty, and when it starts or ends with whitespace (a text is compared with it stripped, so such a sentinel would match none) |
 | `hook` | 0..1 | no argument; children `key`, `provides`, `overrides` and `drops`, each 0..n | `DuplicateRemodelEntry` for a second `hook`; `InvalidRemodelValue` for an argument |
 | `hook` › `key` | 0..n | a curated key; `class=` | `UnknownRemodelReference` for a `class=` no `class` declares; `DuplicateRemodelEntry` for a key that class already declares |
-| `hook` › `provides` | 0..n | a CPE property name; `class=` | `UnknownRemodelReference` for a `class=` no `class` declares; `DuplicateRemodelEntry` for a name that class already has; `ReservedRemodelName` for `image` in a block with an `images` node |
+| `hook` › `provides` | 0..n | a CPE property name; `class=`; `richtext=#true` (default `#false`; the other three children do not take it) | `UnknownRemodelReference` for a `class=` no `class` declares; `DuplicateRemodelEntry` for a name that class already has; `ReservedRemodelName` for `image` in a block with an `images` node |
 | `hook` › `overrides` | 0..n | a CPE property name; `class=` | `UnknownRemodelReference` for a `class=` no `class` declares, and for a name no `property` node of that class has; `DuplicateRemodelEntry` for a property two `overrides` nodes name, under one of its names or under two |
 | `hook` › `drops` | 0..n | no argument; `class=` | `UnknownRemodelReference` for a `class=` no `class` declares; `DuplicateRemodelEntry` for a class two `drops` nodes name; `ConflictingRemodelAttributes` for a class that another class is `member-of` |
 | `list` | 0..n | the list's name | `DuplicateRemodelEntry` for a name declared twice |
-| `list` › `list-node` | 1..n | the node's slug; one child per site language, named by the language, holding the label | `DuplicateRemodelEntry` for a slug twice in one list and for a language twice in one node; `IncompleteListTranslation` for a site language without a label; `UnknownRemodelReference` for a label language the site does not declare |
+| `list` › `list-node` | 1..n | the node's slug; `iri=` (optional, the archive list node it stands for); one child per site language, named by the language, holding the label | `DuplicateRemodelEntry` for a slug or an `iri` twice in one list and for a language twice in one node; `IncompleteListTranslation` for a site language without a label; `UnknownRemodelReference` for a label language the site does not declare |
 | `class` | 1..n | the class's CPE name; `iri=`; `image=#true` (default `#false`); `no-addresses=#true` (default `#false`) | `DuplicateRemodelEntry` for a name or an `iri` declared twice; `ReservedRemodelName` for the name the `images` block gives its `class=`; `ConflictingRemodelAttributes` for `image` in a block without an `images` node |
 | `id` | 1 per class | no argument; `curated-key=` (optional); `from="label"\|"property"\|"iri"` (optional); `property=` (with `from="property"`); `under-parent=#true` (default `#false`) | `ConflictingRemodelAttributes` for neither `curated-key` nor `from`, for `property` without `from="property"` and for `from="property"` without `property`, and for `under-parent` on a class without a `member-of` or beside `curated-key`; `UnknownRemodelReference` for a `property` that names no `text` property of the class with `max=1`; `InvalidRemodelValue` for a `from` outside its three words; `DuplicateRemodelEntry` for a curated key the class already declares |
 | `member-of` | 0..1 per class | the parent class's name; `seq=` (optional, a CPE property name) | `UnknownRemodelReference` for a parent no `class` declares; `RemodelMembershipCycle` for the class itself or a longer cycle; `DuplicateRemodelEntry` and `ReservedRemodelName` for the `seq` name as for any property name |
-| `property` | 0..n per class | one or more CPE names; a source, either `iri=` with `type="text"\|"uri"\|"date"\|"link"` or `from="label"`; `curated-key=`; `min=` (default 0); `max=` (default none); `empty="drop"\|"refuse"` (default `"drop"`); `sentinel="refuse"\|"absent"\|"keep"` (default `"refuse"`); `sentinel-within="refuse"\|"keep"` (default `"refuse"`); `exclude-label=#true`; `display-key=`; `target=` | `ConflictingRemodelAttributes` for both sources or none, for an `iri` without a `type`, for a `link` without a `target`, for an attribute the form does not take (the table below), for `exclude-label` beside `curated-key` and for `sentinel` or `sentinel-within` in a block without a `sentinel` node; `DuplicateRemodelEntry` for an `iri` another `property` of the class has, for a name the class already has and for a curated key the class already declares; `UnsupportedRemodelType` and `UnknownRemodelType` (below); `InvalidRemodelValue` for a `max` below the `min`, a `min` or `max` that is negative or above 4294967295, and a word outside the closed vocabulary of `from`, `empty`, `sentinel` or `sentinel-within`; `UnknownRemodelReference` for a `target` no `class` declares |
+| `property` | 0..n per class | one or more CPE names; a source, either `iri=` with `type="text"\|"uri"\|"date"\|"link"\|"integer"\|"list-node"` or `from="label"`; `curated-key=`; `min=` (default 0); `max=` (default none); `empty="drop"\|"refuse"` (default `"drop"`); `sentinel="refuse"\|"absent"\|"keep"` (default `"refuse"`); `sentinel-within="refuse"\|"keep"` (default `"refuse"`); `exclude-label=#true`; `display-key=`; `target=`; `list=`; `mixed-precision="refuse"\|"start"` (default `"refuse"`); `richtext=#true` (default `#false`) | `ConflictingRemodelAttributes` for both sources or none, for an `iri` without a `type`, for a `link` without a `target`, for a `list-node` without a `list`, for an attribute the form does not take (the table below), for `exclude-label` or `richtext` beside `curated-key` and for `sentinel` or `sentinel-within` in a block without a `sentinel` node; `DuplicateRemodelEntry` for an `iri` another `property` of the class has, for a name the class already has and for a curated key the class already declares; `UnsupportedRemodelType` and `UnknownRemodelType` (below); `InvalidRemodelValue` for a `max` below the `min`, a `min` or `max` that is negative or above 4294967295, and a word outside the closed vocabulary of `from`, `empty`, `sentinel`, `sentinel-within` or `mixed-precision`; `UnknownRemodelReference` for a `target` no `class` declares and a `list` no `list` declares |
 | `curated` | 0..n per class | the CPE name; `key=`; `type="text"\|"list"\|"per-language"`; `list=` (with `type="list"`); `min=` (0 or 1, default 0) | `MissingRequiredAttribute` for an absent `key=` or `type=`; `ConflictingRemodelAttributes` for `list=` beside another type and for `type="list"` without `list=`; `UnknownRemodelReference` for a `list=` no `list` declares; `DuplicateRemodelEntry` for a name the class already has and for a curated key the class already declares; `InvalidRemodelValue` for a `type` outside its three words and for a `min` other than 0 or 1 |
 | `member-count` | 0..n per class | the CPE name; `of=` | `UnknownRemodelReference` when `of` names no class, or a class that is not `member-of` this one; `DuplicateRemodelEntry` for a name the class already has |
 | `incoming-count` | 0..n per class | the CPE name; `from=`; children `via` 1..n, each one CPE property name of the `from` class | `UnknownRemodelReference` for a `from` no `class` declares and for a `via` that names no property of it; `ConflictingRemodelAttributes` for a `via` that names a property that is no `link`, or a link whose `target` is not this class; `DuplicateRemodelEntry` for a name the class already has and for a property two `via` nodes name |
 | `cover` | 0..1 per class | no argument; `curated-key=` | `MissingRequiredAttribute` for an absent `curated-key=`; `ConflictingRemodelAttributes` in a block without an `images` node, on a class no class is `member-of`, and beside the class's `image`; `DuplicateRemodelEntry` for a curated key the class already declares |
+| `ignore-class` | 0..n | no argument; `iri=` (an archive class the project does not present) | `DuplicateRemodelEntry` for an `iri` a `class` declares or another `ignore-class` names. A resource of the class gets no entry, no id, no row and no refusal; what points at it is refused ("What the block leaves out"). An annotation is told by its `annotation` field, never by its class, so `ignore-class` never reaches one; an annotation or annotation link that points at a resource of the class is dropped silently, as one pointing at any resource that has no row |
 | `images` | 0..1 | `class=` (the CPE name of the image class); `iiif-base=`; children `authorship` 1 and `license` 1, each one string | `InvalidRemodelValue` for a base that is not `https://`, a host and `/` |
 | `annotations` | 0..1 | children `on` 0..1 and `link-targets` 0..1, each one or more class names | `UnknownRemodelReference` for a name no `class` declares; `DuplicateRemodelEntry` for a name repeated within one `on` or `link-targets` |
 
-Which `property` attribute goes with which of its five forms. An attribute
+Which `property` attribute goes with which of its seven forms. An attribute
 that is present on a form that does not take it is
 `ConflictingRemodelAttributes`: presence decides, so `exclude-label=#false`
-on a `uri` is one too. `type` goes with the four `iri` forms and with
+on a `uri` is one too. `type` goes with the six `iri` forms and with
 `from="label"` never. Such an attribute is one mistake and is reported
 once: what it holds is not judged, so `empty="x"` on a `uri`,
 `target="Ghost"` on a `text` and `sentinel="keep"` on a `date` in a block
@@ -755,22 +756,26 @@ without a `sentinel` node each give that one diagnostic. The same holds for
 a `curated` node's `list=` beside a `type` other than `list`, and for an
 `id`'s `property=` without `from="property"`.
 
-| Attribute | `iri` text | `iri` uri | `iri` date | `iri` link | `from="label"` |
-|-----------|-----------|----------|-----------|-----------|----------------|
-| `curated-key` | yes | no | no | no | yes |
-| `empty` | yes | no | no | no | no (an empty label is always refused) |
-| `min`, `max` | yes | yes | yes | yes | no |
-| `sentinel`, `sentinel-within` (need a `sentinel` node) | yes | yes | no | no | no |
-| `exclude-label` (not with `curated-key`) | yes | no | no | no | no |
-| `display-key` | no | no | yes | no | no |
-| `target` | no | no | no | required | no |
+| Attribute | `iri` text | `iri` uri | `iri` date | `iri` link | `iri` integer | `iri` list-node | `from="label"` |
+|-----------|-----------|----------|-----------|-----------|--------------|----------------|----------------|
+| `curated-key` | yes | no | no | no | no | no | yes |
+| `empty` | yes | no | no | no | no | no | no (an empty label is always refused) |
+| `min`, `max` | yes | yes | yes | yes | yes | yes | no |
+| `sentinel`, `sentinel-within` (need a `sentinel` node) | yes | yes | no | no | no | no | no |
+| `exclude-label` (not with `curated-key`) | yes | no | no | no | no | no | no |
+| `display-key` | no | no | yes | no | no | no | no |
+| `target` | no | no | no | required | no | no | no |
+| `list` | no | no | no | no | no | required | no |
+| `mixed-precision` | no | no | yes | no | no | no | no |
+| `richtext` (not with `curated-key`) | yes | no | no | no | no | no | no |
 
 Readings of the table, as built:
 
-- **`type`.** `integer`, `decimal`, `boolean`, `list-node`, `geometry` and
-  `color` are `UnsupportedRemodelType`, a located "not supported yet". The
-  type word `list-node` names the archive port's value kind and has
-  nothing to do with the `list-node` node. Any other word is
+- **`type`.** `decimal`, `boolean`, `geometry` and `color` are
+  `UnsupportedRemodelType`, a located "not supported yet". The type word
+  `list-node` names the archive port's value kind: such a property reads
+  the archive's list values and maps each onto a `list-node` node of its
+  `list=`, the one whose `iri` it is. Any other word is
   `UnknownRemodelType`.
 - **A `property`'s source.** A `property` has either an `iri` with a
   `type`, or `from="label"`. Both, or neither, is
@@ -783,12 +788,12 @@ Readings of the table, as built:
   (no `from` and no readable `type`) is not checked against the table.
 - **References.** A `link`'s `target`, a `member-of` parent, a
   `member-count`'s `of` and an `incoming-count`'s `from` name a declared
-  `class`, and a `curated` node's `list=` a declared `list`, each anywhere in
+  `class`, and a `curated` or a `property` node's `list=` a declared `list`, each anywhere in
   the block: a class declared further down resolves. An `id`'s `property`
   names a `property` of its own class and a `via` one of the `from` class,
   by any of the property's names, wherever in the class it stands. A name no
-  node declares is `UnknownRemodelReference`. A `link` without a `target` is
-  `ConflictingRemodelAttributes`.
+  node declares is `UnknownRemodelReference`. A `link` without a `target`,
+  and a `list-node` without a `list`, is `ConflictingRemodelAttributes`.
 - **Ids.** Every `class` has exactly one `id`; a class without one is
   `MissingRequiredAttribute`, located at the class. An `id` has a
   `curated-key`, a `from`, or both: the key alone requires a curated value,
@@ -879,7 +884,10 @@ Readings of the table, as built:
   argument, and a class is dropped from once.
 - **`list` and `class`.** A `list` needs at least one `list-node`, and the
   block needs at least one `class`. The lowering keeps the declared order
-  of classes and of list nodes.
+  of classes and of list nodes. A `list-node`'s `iri` is optional and names
+  the node of the archive's lists it stands for; one list names an `iri`
+  once (`DuplicateRemodelEntry`), two lists may share one. A node's labels
+  are always the block's, never the archive's.
 - **No site language.** When the site declares no language, a `list-node`
   is not checked per language (no `IncompleteListTranslation`, no
   `UnknownRemodelReference` for a label) and its labels are kept as
@@ -902,12 +910,12 @@ a step names another way of cutting.
 | Step | What happens |
 |------|--------------|
 | 1 | **Curated override.** With `curated-key`, the resource's curated texts under that key are read as every curated text is: an address or the sentinel in one of them refuses the key once (the first value in the order the port serves them decides which rule); each is stripped and an empty one is no value; more than one left is `curated-count`. A refused key ends the property: no later step runs. If one text remains it is the value, the source is not read, and steps 2 to 6 are skipped. |
-| 2 | **Source and kind.** The `iri`'s values in the port's order, or the label as one untagged text. Each value of another kind than `type` is one `unexpected-value-kind`; the property then gives nothing and steps 3 to 7 are skipped. |
-| 3 | **Count.** `min` and `max` over the source's values as served, before anything is left out. One `value-count` per property, and the property gives nothing. A curated value satisfies `min`; a value that is the sentinel alone counts. |
+| 2 | **Source and kind.** The `iri`'s values in the port's order, or the label as one untagged text. Each value of another kind than `type` is one `unexpected-value-kind`; the property then gives nothing and steps 3 to 7 are skipped. An `integer` reads the archive's integer values, a `list-node` its list values. |
+| 3 | **Count.** `min` and `max` over the source's values as served, before anything is left out. One `value-count` per property, and the property gives nothing. A curated value satisfies `min`; a value that is the sentinel alone counts. A `list-node` then maps each archive node onto the node of its `list=` whose `iri` it is; the first, in the port's order, that no node stands for is `unknown-list-node`, held on the resource, and the property gives nothing. |
 | 4 | **Exclusion.** With `exclude-label`, the first value that equals the label is left out. A value is compared after a trailing U+001E and the whitespace around it are cut, and only when that run holds a U+001E; the label is compared as it is. No such value is `label-not-a-title`. |
 | 5 | **One value check per property.** The values are walked in the port's order; the first that offends gives the property's one refusal and the property gives nothing. Within a value the order is: empty once stripped with `empty="refuse"` (`empty-value`); holds `http` on a `no-addresses` class (`http-in-value`); the sentinel alone once stripped with `sentinel="refuse"`, or the sentinel inside a longer text with `sentinel-within="refuse"` (`missing-in-value`). A `uri` is exempt from the address check. |
 | 6 | **Leaving out.** A text that is empty once stripped (`empty="drop"`) and a value that is the sentinel alone once stripped (`sentinel="absent"`) give no row. |
-| 7 | **Writing.** What remains is written under each of the node's names, numbered from 0, as served: nothing is trimmed and a U+001E stays (`dsp-incubator cpe/docs/adr/0015-incunabulas-store-is-built-from-the-port.md`, N2). A text's language is carried. A curated value is written stripped. A `uri` is written as `text`. |
+| 7 | **Writing.** What remains is written under each of the node's names, numbered from 0, as served: nothing is trimmed and a U+001E stays (`dsp-incubator cpe/docs/adr/0015-incunabulas-store-is-built-from-the-port.md`, N2). A text's language is carried. A curated value is written stripped. A `uri` is written as `text`. An `integer` is written as `integer`, the number in `value_int`. A `list-node` is written as `list_value`, the node's id in `target_id`. A `text` with `richtext=#true` is written as `richtext`, converted now and not before: each of its lines a Markdown paragraph ("What the mapping derives"). Steps 1 to 6 read it as served, and a hook's texts on an overridden `richtext` property are converted when written too. |
 
 On a property the `hook` node lists under `overrides`, steps 5 and 6 run
 after the hook, on the values the hook left: the hook's values where it set
@@ -925,14 +933,15 @@ beyond the mapping's own result:
 | Child | What it permits |
 |-------|-----------------|
 | `key "<key>" class="<Class>"` | the hook reads the curated texts under the key on a resource of the class. Where the hook reads the stripped texts, the key is checked like every curated key: a text that holds an address or the sentinel refuses it (`http-in-value`, `missing-in-value`), once per resource. A resource on which the hook reads the key only as served, or not at all, is not refused for it. How many texts there may be is the hook's rule. |
-| `provides "<name>" class="<Class>"` | the hook writes the property, which no node of the class yields: texts, or nodes of a `list` the block declares (a node the list does not have is `unknown-list-node`). |
-| `overrides "<name>" class="<Class>"` | the hook sets the values of that `property` node, under each of the node's names. A value is of the kind the node writes: a text for a `text`, a `uri` and a `from="label"` node, a link to a resource of the `target` class, and for a `date` only a date the mapping gave. |
+| `provides "<name>" class="<Class>"` | the hook writes the property, which no node of the class yields: texts, or nodes of a `list` the block declares (a node the list does not have is `unknown-list-node`). With `richtext=#true` its texts are written as `richtext`, converted as a `richtext` property's are. |
+| `overrides "<name>" class="<Class>"` | the hook sets the values of that `property` node, under each of the node's names. A value is of the kind the node writes: a text for a `text`, a `uri` and a `from="label"` node, a link to a resource of the `target` class, an integer for an `integer`, a node of the `list=` list, by its id, for a `list-node`, and for a `date` only a date the mapping gave. |
 | `drops class="<Class>"` | the hook drops resources of the class. |
 
 The hook does not see the archive snapshot. It reads a resource as the
 mapping left it: its id, whether it is kept, the values of its `property`
 and `curated` nodes, and, where a step refused a property, why (a value of
-another kind, the count, or a value). Of the archive's own data it reads
+another kind, the count, or a value). The texts of a `richtext` property
+it reads as served, unconverted. Of the archive's own data it reads
 the resource's IRI, label and parents, and the values under the source of a
 declared `property`, as served. A read or a
 change the node does not declare is not made, and the build is refused
@@ -1014,7 +1023,8 @@ is the rule a refusal is reported under.
   stem of the file), and every annotation and annotation link that gets a
   row (the last part of its IRI). Ids that differ only in case are two ids.
 - **Membership.** `member-of` requires exactly one parent, of that class
-  (`page-parent`), and a `seqnum` (`page-without-seqnum`).
+  (`page-parent`; a resource of a class the block leaves out is of none),
+  and a `seqnum` (`page-without-seqnum`).
   `compound_parts` lists a parent's kept members by (`seqnum`, IRI's last
   part), renumbered from 1. `seq` writes the `seqnum` as an integer
   property.
@@ -1024,7 +1034,14 @@ is the rule a refusal is reported under.
   are taken after the hook's drops: a dropped resource is no member, and
   its links are not counted.
 - **Dates.** A `date` is converted in its own calendar at the precision
-  both bounds share (`mixed-date-precision`, `date-out-of-range`).
+  both bounds share (`mixed-date-precision`, `date-out-of-range`). A date
+  whose bounds have different precisions (a day to a year, say) is
+  `mixed-date-precision` under `mixed-precision="refuse"`, the default.
+  Under `mixed-precision="start"` it is written as the single date of its
+  start bound: start and end are both the start's day at the start's
+  precision, and the end is dropped. A date whose bounds share a precision
+  is written as it is under either word, and `date-out-of-range` is
+  checked on the bounds that are written.
   On a resource that has a value under the property, `display-key`
   requires one curated text under that key (`curated-count`),
   tagged with one of the site's languages
@@ -1033,14 +1050,24 @@ is the rule a refusal is reported under.
   text is required, and one that is curated is not written and not
   reported.
 - **Links.** A link is written with its target's id. A target of another
-  class than `target` is `strip-link-target`. A target of the right class
+  class than `target` is `strip-link-target`, and so is a resource of a
+  class the block leaves out (`ignore-class`). A target of the right class
   that was refused gives no row and no refusal. A target of the right class
   that a hook dropped is `link-target-without-row`.
+- **List values.** A `list-node` property writes, for each archive list
+  node, the node of its `list=` that stands for it by its `iri`. One that
+  no node of the list stands for is `unknown-list-node`, named by the
+  archive node's IRI, and the property gives nothing: a project declares
+  every archive node its resources use. An archive node a resource holds
+  twice is written twice.
 - **Curated properties.** `type="text"`: at most one text. `type="list"`:
   a list value; a text that is no node of the list is `unknown-list-node`.
   `type="per-language"`: one text in every site language or none
   (`curated-languages`), numbered in the site's order. `min=1` requires
   the value, counted after empty texts are left out (`curated-count`).
+  A resource of a class the block leaves out reads no key: a curated value
+  on it is `curated-key-on-wrong-class`, or `unknown-curated-key` when no
+  class reads the key.
 - **Images.** Only a class with `image=#true` has Images: each of its
   kept resources gets the Image of its file (the id is the file's stem), and
   the resource's `image` property links to it. A class without it gets none,
@@ -1078,7 +1105,18 @@ This is what the store builder writes from these declarations.
   `<name>`). A `list-node "<slug>"` is the row `list_nodes` with id
   `<name>-<slug>`, no parent and its position as `seq`, and one
   `list_node_labels` row per language. Rows are written by id, labels by
-  (node, language).
+  (node, language). A node's `iri` is not written: it only says which
+  archive values the node stands for.
+- A `richtext` row (a `text` property with `richtext=#true`, or a hook's
+  text under a `provides` with it) holds the text as Markdown, one paragraph
+  per line: the text is split at every `\n`, each line is stripped as
+  Python's `str.strip()` does (which cuts the `\r` of a `\r\n` and any
+  indentation, so no line becomes a code block), a line left empty is
+  dropped, and the rest are joined by one blank line (`\n\n`). Nothing is
+  escaped: Markdown syntax in the text is rendered as Markdown. Its
+  language is carried in `value_lang`. A text that is all blank lines is
+  written empty; only a hook can give one, since value step 6 leaves out a
+  property's.
 - An Image's `representations` row has `kind` `image`, `uri` the
   `iiif-base`, the asset and `/full/max/0/default.jpg`, the file's width
   and height, `alt` NULL, `attribution` `<authorship> · <license>` (with
@@ -1089,8 +1127,17 @@ This is what the store builder writes from these declarations.
 
 What the store builder does with what the block does not declare.
 
-- **An undeclared class.** A resource whose class the block does not
-  declare is refused (`unmapped-class`).
+- **An undeclared class.** A resource whose class the block neither
+  declares nor leaves out is refused (`unmapped-class`).
+- **A class left out.** A resource of a class an `ignore-class` names is
+  not mapped: it gets no entry, no id (so it takes no place in the id
+  space), no row and no refusal. What points at it is refused, as at any
+  resource that is not of the class it must be: a link to it is
+  `strip-link-target` (it is no resource of the link's `target`), a member
+  whose parent it is is `page-parent`, and a curated value on it is
+  `curated-key-on-wrong-class`, or `unknown-curated-key` when no class reads
+  the key. An annotation or annotation link pointing at it is dropped
+  without a refusal.
 - **An undeclared property.** A property the block does not declare on a
   class is dropped, and nothing reports it: a re-pin that brings a new
   property changes nothing in the store. Incunabula's tests list the ones
@@ -1109,7 +1156,9 @@ What the store builder writes when the block has no node of a kind.
 - **No `member-of` anywhere:** `compound_parts` is empty.
 - **No `annotations`:** the three annotation tables are empty, and a
   snapshot that serves an annotation is refused (`unmapped-class`), as is
-  any resource whose class the block does not declare.
+  any resource whose class the block neither declares nor leaves out.
+- **No `ignore-class`:** every class the snapshot serves is a declared one,
+  or its resources are refused (`unmapped-class`).
 - `resources` and `properties` are never empty. A table may be empty
   exactly when the block that feeds it is absent; an empty table whose
   block is present is refused.
@@ -2759,7 +2808,7 @@ the rest land in Phase 5. See the "Validation" section of
     builder), never at the web binary's boot: the block is optional there.
   - `DuplicateRemodelEntry` — a node occurs more often than its count
     allows; an attribute is written twice on one node; a list name, a
-    `list-node` slug within its list, a label language within a node, a
+    `list-node` slug or `iri` within its list, a label language within a node, a
     class name or a class `iri` is declared twice; a `property` repeats an
     `iri` its class already has; a `property`, a `curated`, a
     `member-count`, an `incoming-count` or a `member-of` `seq=` takes a CPE
@@ -2771,15 +2820,17 @@ the rest land in Phase 5. See the "Validation" section of
     property; an `on` or
     `link-targets` names a class twice; two `via` nodes of one
     `incoming-count` name one property; a class has a second `id`,
-    `member-of` or `cover`; the block has a second `hook`.
+    `member-of` or `cover`; the block has a second `hook`; an
+    `ignore-class` names an `iri` a `class` declares or another
+    `ignore-class` names.
   - `ReservedRemodelName` — a `class` is named like the `images` block's
     `class=`; in a block with an `images` node, a property is named
     `image`.
   - `UnknownRemodelAttribute` — an attribute outside those the node takes.
   - `UnknownRemodelType` — a `property` `type` that is neither supported nor
-    one of the six unsupported words.
-  - `UnsupportedRemodelType` — a `property` `type` of `integer`, `decimal`,
-    `boolean`, `list-node`, `geometry` or `color`.
+    one of the four unsupported words.
+  - `UnsupportedRemodelType` — a `property` `type` of `decimal`, `boolean`,
+    `geometry` or `color`.
   - `InvalidRemodelValue` — a `shortcode` that is not four characters of
     `0-9A-F`, a `sentinel` that is empty or starts or ends with whitespace,
     or an `iiif-base` that is not
@@ -2787,12 +2838,12 @@ the rest land in Phase 5. See the "Validation" section of
     `link-targets` among them), slug, label, `iri`,
     `curated-key`, `display-key`, `target`, `key=`, `list=`, `authorship` or
     `license`; a positional argument beyond the one a node takes, or any on
-    `remodel`, `hook`, `drops`, `images`, `annotations`, `id` or `cover`; an
+    `remodel`, `hook`, `drops`, `ignore-class`, `images`, `annotations`, `id` or `cover`; an
     empty argument or `class=` of a `hook` child; a
     `property` `max`
     below its `min`, a `min` or `max` that is negative or above 4294967295,
     or a word outside the closed vocabulary of its `from`, `empty`,
-    `sentinel` or `sentinel-within`; a
+    `sentinel`, `sentinel-within` or `mixed-precision`; a
     `curated` `type` outside `text`, `list` and `per-language`, or a
     `curated` `min` other than 0 or 1; an `id` `from` outside `label`,
     `property` and `iri`; an empty `property=`, `seq=`, `of=`, `from=` of
@@ -2802,7 +2853,7 @@ the rest land in Phase 5. See the "Validation" section of
   - `UnknownRemodelReference` — a `list-node` label in a language the site
     does not declare, a class name in `annotations` that no `class`
     declares, a `property` `target` that names no `class`, or a `curated`
-    `list=` that names no `list`; a `member-of` parent or an
+    or `property` `list=` that names no `list`; a `member-of` parent or an
     `incoming-count` `from=` that names no `class`; a `member-count` `of=`
     that names no class that is `member-of` this one; an `id` `property=`
     that names no `text` property of its class with `max=1`; a `via` that
@@ -2811,8 +2862,8 @@ the rest land in Phase 5. See the "Validation" section of
     its class.
   - `ConflictingRemodelAttributes` — a `property` with both an `iri` and a
     `from`, or with neither; with an `iri` and no `type`; a `link` without
-    a `target`; an attribute its form does not take (including a `type`
-    beside `from="label"`); `exclude-label` beside `curated-key`;
+    a `target`; a `list-node` without a `list`; an attribute its form does not take (including a `type`
+    beside `from="label"`); `exclude-label` or `richtext` beside `curated-key`;
     `sentinel` or `sentinel-within` in a block without a `sentinel` node. A
     `curated` with `list=` beside a `type` other than `list`, or with
     `type="list"` and no `list=`. An `id` with neither a `curated-key` nor

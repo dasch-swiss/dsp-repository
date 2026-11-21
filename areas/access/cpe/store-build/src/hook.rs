@@ -143,7 +143,8 @@ impl<'a> Draft<'a> {
     /// Adds a text to the values of the property `name` of the resource `iri`. The block must
     /// declare `provides` for the name on its class. The text is written as given: the mapping
     /// has no node for the property and so no check, and what the text may hold is the hook's
-    /// rule.
+    /// rule. Under a `provides` with `richtext`, the text is converted when it is written, as a
+    /// `richtext` property's is: each of its lines a paragraph.
     pub fn provide_text(&mut self, iri: &str, name: &str, text: &'a str, lang: Option<&'a str>) {
         let Some(name) = self.provided_on(iri, name) else {
             return;
@@ -195,8 +196,9 @@ impl<'a> Draft<'a> {
     /// the property is written under. The block must declare `overrides` for it on its class.
     ///
     /// A value is of the kind the property writes: a text for a text, an address and a label;
-    /// a link to a resource of the property's target class; a date the mapping gave. The
-    /// checks the mapping makes of a text run on these values once the hook has returned.
+    /// a link to a resource of the property's target class; an integer for an integer; a node of
+    /// the property's list, by its id, for a list node; a date the mapping gave. The checks the
+    /// mapping makes of a text run on these values once the hook has returned.
     pub fn override_values(&mut self, iri: &str, name: &str, values: Vec<Value<'a>>) {
         let class = self.class_of(iri);
         let Some(node) = class.and_then(|class| self.overridden(class, name)) else {
@@ -228,6 +230,14 @@ impl<'a> Draft<'a> {
                 };
                 let linked = self.entries.get(to);
                 linked.is_some_and(|linked| linked.is_of(*target))
+            }
+            PropertySource::Integer { .. } => matches!(value, Value::Integer(_)),
+            PropertySource::ListNode { list, .. } => {
+                let Value::ListNode(id) = value else {
+                    return false;
+                };
+                let list = self.mapping.list(*list);
+                list.nodes.iter().any(|node| lists::node_id(list, node) == *id)
             }
             // A hook writes no date of its own: it can leave out one the mapping gave.
             PropertySource::Date { .. } => {
@@ -380,7 +390,7 @@ impl<'d, 'a> View<'d, 'a> {
             nodes.find(|node| draft::names(node).any(|own| own == name))
         });
         match node {
-            Some(node) => values::served(self.entry.resource, node),
+            Some(node) => values::served(self.draft.mapping, self.entry.resource, node),
             None => {
                 self.draft.exceed(self.iri(), format!("read {name} as served"));
                 Vec::new()

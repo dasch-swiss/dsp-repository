@@ -97,6 +97,38 @@ pub(crate) fn link_of(kind: &ValueKind) -> Option<&str> {
     }
 }
 
+/// An integer; `None` for a value of any other kind.
+pub(crate) fn integer_of(kind: &ValueKind) -> Option<i64> {
+    match kind {
+        ValueKind::Integer(number) => Some(*number),
+        ValueKind::Text { .. }
+        | ValueKind::Decimal(_)
+        | ValueKind::Boolean(_)
+        | ValueKind::Date(_)
+        | ValueKind::Uri(_)
+        | ValueKind::Geometry(_)
+        | ValueKind::Color(_)
+        | ValueKind::ListNode(_)
+        | ValueKind::Link(_) => None,
+    }
+}
+
+/// The IRI of a node of an archive list; `None` for a value of any other kind.
+pub(crate) fn list_node_of(kind: &ValueKind) -> Option<&str> {
+    match kind {
+        ValueKind::ListNode(node) => Some(node.as_str()),
+        ValueKind::Text { .. }
+        | ValueKind::Integer(_)
+        | ValueKind::Decimal(_)
+        | ValueKind::Boolean(_)
+        | ValueKind::Date(_)
+        | ValueKind::Uri(_)
+        | ValueKind::Geometry(_)
+        | ValueKind::Color(_)
+        | ValueKind::Link(_) => None,
+    }
+}
+
 /// A geometry, as the archive's JSON; `None` for a value of any other kind.
 pub(crate) fn geometry_of(kind: &ValueKind) -> Option<&str> {
     match kind {

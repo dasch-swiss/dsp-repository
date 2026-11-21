@@ -15,17 +15,17 @@ use std::collections::BTreeSet;
 use std::ops::ControlFlow;
 
 use cpe_core::remodel::{
-    ClassIndex, CuratedKey, EmptyText, HookOverrides, IdPolicy, IdSource, PropertyIndex, PropertySource, Remodel,
-    RemodelClass, RemodelProperty, SentinelWhole, SentinelWithin, TextRule, ValueCount,
+    ClassIndex, CuratedKey, EmptyText, HookOverrides, IdPolicy, IdSource, MixedPrecision, PropertyIndex,
+    PropertySource, Remodel, RemodelClass, RemodelProperty, SentinelWhole, SentinelWithin, TextRule, ValueCount,
 };
 use cpe_ports::{DateValue, Resource, ValueKind};
 
 use crate::draft::{names, Cause, Draft, Value};
 use crate::error::{BuildError, Rule};
 use crate::generic::curation::{Curation, Found, Text};
-use crate::generic::dates;
-use crate::generic::kinds::{date_of, link_of, of_kind, text_of, uri_of};
+use crate::generic::kinds::{date_of, integer_of, link_of, list_node_of, of_kind, text_of, uri_of};
 use crate::generic::text::{self, py_strip, without_record_separator, Limits, Sentinel};
+use crate::generic::{dates, lists};
 
 /// What a node's mapping reads besides the resource itself.
 pub(crate) struct Sources<'a, 'd> {
@@ -177,7 +177,9 @@ fn check_overridden<'a>(draft: &mut Draft<'a>, mapping: &'a Remodel, errors: &mu
                 PropertySource::Text { iri, count, .. }
                 | PropertySource::Uri { iri, count, .. }
                 | PropertySource::Date { iri, count, .. }
-                | PropertySource::Link { iri, count, .. } => {
+                | PropertySource::Link { iri, count, .. }
+                | PropertySource::Integer { iri, count }
+                | PropertySource::ListNode { iri, count, .. } => {
                     counted(*count, given.len(), subject, iri.as_str(), errors).is_none()
                 }
             };
@@ -207,10 +209,11 @@ fn check_overridden<'a>(draft: &mut Draft<'a>, mapping: &'a Remodel, errors: &mu
     }
 }
 
-/// The values `resource` has under the source of `node`, as served: of the node's kind, not
-/// counted, not checked, none left out. A value of another kind is not among them, and neither
-/// is a date whose bounds cannot be written.
-pub(crate) fn served<'a>(resource: &'a Resource, node: &RemodelProperty) -> Vec<Value<'a>> {
+/// The values `resource` has under the source of `node`, a property of `mapping`, as served: of
+/// the node's kind, not counted, not checked, none left out. A value of another kind is not among
+/// them, and neither is a date whose bounds cannot be written or an archive list node the node's
+/// list does not map.
+pub(crate) fn served<'a>(mapping: &Remodel, resource: &'a Resource, node: &RemodelProperty) -> Vec<Value<'a>> {
     fn those<'a, T>(resource: &'a Resource, property: &str, read: impl Fn(&'a ValueKind) -> Option<T>) -> Vec<T> {
         let values = resource.values.iter();
         let under = values.filter(|value| value.property.as_str() == property);
@@ -231,10 +234,21 @@ pub(crate) fn served<'a>(resource: &'a Resource, node: &RemodelProperty) -> Vec<
             let targets = those(resource, iri.as_str(), link_of);
             targets.into_iter().map(Value::Link).collect()
         }
-        PropertySource::Date { iri, .. } => those(resource, iri.as_str(), date_of)
+        PropertySource::Integer { iri, .. } => {
+            let numbers = those(resource, iri.as_str(), integer_of);
+            numbers.into_iter().map(Value::Integer).collect()
+        }
+        PropertySource::ListNode { iri, list, .. } => {
+            let nodes = those(resource, iri.as_str(), list_node_of);
+            let mapped = nodes
+                .into_iter()
+                .filter_map(|node| lists::node_id_of_iri(mapping.list(*list), node));
+            mapped.map(Value::ListNode).collect()
+        }
+        PropertySource::Date { iri, mixed, .. } => those(resource, iri.as_str(), date_of)
             .into_iter()
             .filter_map(|date| {
-                let (start, end) = written_bounds(date).ok()?;
+                let (start, end) = written_bounds(date, *mixed).ok()?;
                 Some(Value::Date {
                     start,
                     end,
@@ -298,7 +312,7 @@ pub(crate) fn of_node<'a>(
             };
             texts(sources, resource, label_refused, read, refusals)
         }
-        PropertySource::Date { iri, count, display_key } => {
+        PropertySource::Date { iri, count, display_key, mixed } => {
             let property = iri.as_str();
             // A display text is the text of a date: a resource that has no value under the
             // property needs none, and one it has is not read. It is read before the dates,
@@ -312,7 +326,7 @@ pub(crate) fn of_node<'a>(
             counted(*count, served.len(), subject, property, refusals.held)?;
             let mut bounds = Vec::new();
             for date in served {
-                match written_bounds(date) {
+                match written_bounds(date, *mixed) {
                     Ok(written) => bounds.push((date, written)),
                     Err(rule) => {
                         let refusal = BuildError::refused(rule, subject, property);
@@ -349,6 +363,27 @@ pub(crate) fn of_node<'a>(
                 return None;
             }
             Some(targets.into_iter().map(Value::Link).collect())
+        }
+        PropertySource::Integer { iri, count } => {
+            let property = iri.as_str();
+            let numbers = of_kind(resource, property, refusals.kinds, integer_of)?;
+            counted(*count, numbers.len(), subject, property, refusals.held)?;
+            Some(numbers.into_iter().map(Value::Integer).collect())
+        }
+        PropertySource::ListNode { iri, count, list } => {
+            let property = iri.as_str();
+            let nodes = of_kind(resource, property, refusals.kinds, list_node_of)?;
+            counted(*count, nodes.len(), subject, property, refusals.held)?;
+            let list = sources.mapping.list(*list);
+            let mut ids = Vec::new();
+            for node in nodes {
+                let Some(id) = lists::node_id_of_iri(list, node) else {
+                    refusals.held.push(BuildError::refused(Rule::UnknownListNode, subject, node));
+                    return None;
+                };
+                ids.push(Value::ListNode(id));
+            }
+            Some(ids)
         }
     }
 }
@@ -447,13 +482,16 @@ fn display<'a>(
 }
 
 /// The two bounds of `date` as the store writes them: each in the date's own calendar, at the
-/// precision both share.
-fn written_bounds(date: &DateValue) -> Result<(String, String), Rule> {
+/// start's precision. Bounds of different precisions are refused, or, under
+/// [`MixedPrecision::Start`], both written as the start bound.
+fn written_bounds(date: &DateValue, mixed: MixedPrecision) -> Result<(String, String), Rule> {
     let precision = date.start.precision;
-    if precision != date.end.precision {
-        return Err(Rule::MixedDatePrecision);
-    }
-    let bounds = [date.start, date.end].map(|bound| dates::day(bound.jdn, date.calendar));
+    let end = match (precision == date.end.precision, mixed) {
+        (true, _) => date.end,
+        (false, MixedPrecision::Start) => date.start,
+        (false, MixedPrecision::Refuse) => return Err(Rule::MixedDatePrecision),
+    };
+    let bounds = [date.start, end].map(|bound| dates::day(bound.jdn, date.calendar));
     let [Some(start), Some(end)] = bounds else {
         return Err(Rule::DateOutOfRange);
     };
@@ -483,8 +521,8 @@ struct Check<'s> {
 
 impl<'s> Check<'s> {
     /// The check of the texts `node` writes on a resource of `class`, and what a refusal by it
-    /// names as read: the archive's property, or the label. `None` for a date and a link,
-    /// which write no text.
+    /// names as read: the archive's property, or the label. `None` for a date, a link, an integer
+    /// and a list node, which write no text.
     ///
     /// An address is what a `uri` is for, so it may hold one on any class, and one that is
     /// empty is no value. A label is held to what every label is: no address where none
@@ -523,7 +561,10 @@ impl<'s> Check<'s> {
                 );
                 Some((check, "label"))
             }
-            PropertySource::Date { .. } | PropertySource::Link { .. } => None,
+            PropertySource::Date { .. }
+            | PropertySource::Link { .. }
+            | PropertySource::Integer { .. }
+            | PropertySource::ListNode { .. } => None,
         }
     }
 

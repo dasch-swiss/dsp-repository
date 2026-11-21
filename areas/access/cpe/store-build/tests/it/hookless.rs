@@ -12,8 +12,9 @@ use std::sync::LazyLock;
 use cpe_core::remodel::{IdPolicy, IdSource, Remodel};
 use cpe_ports::contract::violations;
 use cpe_ports::{
-    Annotation, ArchiveProjection, DatePrecision, DateValue, FakeArchiveProjection, File, Motivation, ProjectSnapshot,
-    Resource, ResourceIri, ValueKind, DATA_ARK_PREFIX,
+    Annotation, ArchiveProjection, Calendar, ClassIri, DateBound, DatePrecision, DateValue, FakeArchiveProjection,
+    File, LangString, ListNode, ListNodeIri, Motivation, ProjectSnapshot, Resource, ResourceIri, ValueKind,
+    DATA_ARK_PREFIX,
 };
 use cpe_store_build::error::Rule;
 use cpe_store_build::store::{Store, Table};
@@ -48,17 +49,73 @@ const LEAF_CLASS: &str = "http://www.knora.org/ontology/0123/plain#Leaf";
 const ORNAMENT_CLASS: &str = "http://www.knora.org/ontology/0123/plain#Ornament";
 const PERSON_CLASS: &str = "http://www.knora.org/ontology/0123/plain#Person";
 const KEYWORD_CLASS: &str = "http://www.knora.org/ontology/0123/plain#Keyword";
+/// The class the block leaves out (`ignore-class`).
+const INDEX_CLASS: &str = "http://www.knora.org/ontology/0123/plain#Index";
+/// Two index entries whose IRIs end alike: in the id space they would share an id. The first has
+/// a text and a link to a resource of the wrong class, which a mapped resource would be refused
+/// for.
+const INDEX_1: &str = "http://rdfh.ch/0123/index-1/eintrag";
+const INDEX_2: &str = "http://rdfh.ch/0123/index-2/eintrag";
 
 const HAS_TITLE: &str = "http://www.knora.org/ontology/0123/plain#hasTitle";
 const HAS_PLACE: &str = "http://www.knora.org/ontology/0123/plain#hasPlace";
 const HAS_NOTE: &str = "http://www.knora.org/ontology/0123/plain#hasNote";
 const HAS_HOMEPAGE: &str = "http://www.knora.org/ontology/0123/plain#hasHomepage";
 const HAS_DATE: &str = "http://www.knora.org/ontology/0123/plain#hasDate";
+const HAS_PRINTED: &str = "http://www.knora.org/ontology/0123/plain#hasPrinted";
+const HAS_REMARK: &str = "http://www.knora.org/ontology/0123/plain#hasRemark";
+/// The Work's remark as served: two lines, indented, with a blank one and a `\r\n` between.
+const REMARK: &str = "  Gedruckt in zwei Spalten.\r\n\n   Mit Holzschnitten. ";
+const HAS_COPIES: &str = "http://www.knora.org/ontology/0123/plain#hasCopies";
+const HAS_FORMAT: &str = "http://www.knora.org/ontology/0123/plain#hasFormat";
+
+/// The archive's list of formats: its root and three nodes, of which the block's list `format`
+/// maps the folio and the quarto.
+const FORMATS: &str = "http://rdfh.ch/lists/0123/formats";
+const FOLIO: &str = "http://rdfh.ch/lists/0123/format-folio";
+const QUARTO: &str = "http://rdfh.ch/lists/0123/format-quarto";
+const OCTAVO: &str = "http://rdfh.ch/lists/0123/format-octavo";
 const HAS_NUMBER: &str = "http://www.knora.org/ontology/0123/plain#hasNumber";
 const HAS_CAPTION: &str = "http://www.knora.org/ontology/0123/plain#hasCaption";
 const HAS_ORNAMENT: &str = "http://www.knora.org/ontology/0123/plain#hasOrnament";
 const HAS_ORNAMENT_VERSO: &str = "http://www.knora.org/ontology/0123/plain#hasOrnamentVerso";
 const HAS_TERM: &str = "http://www.knora.org/ontology/0123/plain#hasTerm";
+
+/// A value naming the archive's list node `iri`.
+fn list_node(iri: &str) -> ValueKind {
+    ValueKind::ListNode(ListNodeIri(iri.to_string()))
+}
+
+/// A date of `calendar` from `start` to `end`, each a day number and its precision.
+fn date_of(calendar: Calendar, start: (i64, DatePrecision), end: (i64, DatePrecision)) -> DateValue {
+    let bound = |(jdn, precision)| DateBound { jdn, precision };
+    DateValue { calendar, start: bound(start), end: bound(end) }
+}
+
+/// 28 November 1489 to the year 1489, Julian: bounds of different precisions.
+fn day_to_year_1489() -> DateValue {
+    date_of(
+        Calendar::Julian,
+        (2_265_247, DatePrecision::Day),
+        (2_265_280, DatePrecision::Year),
+    )
+}
+
+/// The archive's list of formats, with an English label on each node.
+fn formats() -> Vec<ListNode> {
+    let node = |iri: &str, parent: Option<&str>, position: Option<u32>, label: &str| ListNode {
+        iri: ListNodeIri(iri.to_string()),
+        parent: parent.map(|parent| ListNodeIri(parent.to_string())),
+        position,
+        labels: vec![LangString { text: label.to_string(), lang: Some("en".to_string()) }],
+    };
+    vec![
+        node(OCTAVO, Some(FORMATS), Some(2), "Octavo"),
+        node(FORMATS, None, None, "Formats"),
+        node(FOLIO, Some(FORMATS), Some(0), "Folio"),
+        node(QUARTO, Some(FORMATS), Some(1), "Quarto"),
+    ]
+}
 
 /// A Leaf of [`WORK`] at `seqnum` with its number, a scan and `more` values.
 fn leaf(iri: &str, seqnum: i64, number: &str, more: Vec<(&str, ValueKind)>) -> Resource {
@@ -82,12 +139,20 @@ fn snapshot() -> Fixture {
     let work = Resource {
         values: values(vec![
             (HAS_NOTE, text("Zweite Notiz ")),
+            (HAS_COPIES, ValueKind::Integer(3)),
             (HAS_TITLE, text("Jahrpredigten")),
             (HAS_DATE, ValueKind::Date(year_1489())),
             (HAS_NOTE, text(" \u{1f}")),
             (HAS_TITLE, text(&format!("{WORK_TITLE}\u{1e}\n  "))),
             (HAS_PLACE, text("[unbekannt]\n")),
             (HAS_NOTE, text("Erste Notiz")),
+            (HAS_FORMAT, list_node(QUARTO)),
+            (HAS_PRINTED, ValueKind::Date(day_to_year_1489())),
+            (
+                HAS_REMARK,
+                ValueKind::Text { text: REMARK.to_string(), lang: Some("de".to_string()) },
+            ),
+            (HAS_COPIES, ValueKind::Integer(1)),
             (HAS_HOMEPAGE, ValueKind::Uri(HOMEPAGE.to_string())),
         ]),
         ..fixture_resource(WORK, WORK_CLASS, WORK_TITLE)
@@ -141,9 +206,14 @@ fn snapshot() -> Fixture {
             link_obj,
             keyword,
             leaf(LEAF_B, 1, "1r", Vec::new()),
+            Resource {
+                values: values(vec![(HAS_TITLE, text("Predigt")), (HAS_ORNAMENT, link(WORK))]),
+                ..fixture_resource(INDEX_1, INDEX_CLASS, "Predigt")
+            },
             fixture_resource(PERSON, PERSON_CLASS, "Anna Muster"),
+            fixture_resource(INDEX_2, INDEX_CLASS, "Predigt"),
         ],
-        list_nodes: Vec::new(),
+        list_nodes: formats(),
     };
     let curation = vec![
         curated(REGION, "lang", None, "de"),
@@ -232,6 +302,33 @@ pub const CASES: &[Case] = &[
         rule: Rule::CuratedKeyOnWrongClass,
         snapshot: || with_curation(snapshot(), PERSON, "cover", LEAF_B),
         subject: PERSON,
+    },
+    // An index entry is no Ornament.
+    Case {
+        feature: "ignore-class",
+        rule: Rule::StripLinkTarget,
+        snapshot: || with_link(snapshot(), LEAF_B, HAS_ORNAMENT, INDEX_1),
+        subject: LEAF_B,
+    },
+    // An index entry is no Work.
+    Case {
+        feature: "ignore-class",
+        rule: Rule::PageParent,
+        snapshot: || with_resource(snapshot(), fourth_leaf(&[INDEX_1], Some(4))),
+        subject: ADDED,
+    },
+    // `genre` is a key of the Work; no class reads `sulg`.
+    Case {
+        feature: "ignore-class",
+        rule: Rule::CuratedKeyOnWrongClass,
+        snapshot: || with_curation(snapshot(), INDEX_1, "genre", "sermon"),
+        subject: INDEX_1,
+    },
+    Case {
+        feature: "ignore-class",
+        rule: Rule::UnknownCuratedKey,
+        snapshot: || with_curation(snapshot(), INDEX_2, "sulg", "eintrag"),
+        subject: INDEX_2,
     },
     // The one parent is no Work.
     Case {
@@ -401,6 +498,24 @@ pub const CASES: &[Case] = &[
         snapshot: || with_date(|date| date.start.jdn = 1_721_423),
         subject: WORK,
     },
+    // The date `printed` is written as its start bound, which is checked for its range.
+    Case {
+        feature: "mixed-precision=\"start\"",
+        rule: Rule::DateOutOfRange,
+        snapshot: || {
+            changed(snapshot(), WORK, |work| {
+                for value in &mut work.values {
+                    if value.property.as_str() != HAS_PRINTED {
+                        continue;
+                    }
+                    if let ValueKind::Date(date) = &mut value.kind {
+                        date.start.jdn = 1_721_423;
+                    }
+                }
+            })
+        },
+        subject: WORK,
+    },
     Case {
         feature: "display-key",
         rule: Rule::CuratedCount,
@@ -420,6 +535,39 @@ pub const CASES: &[Case] = &[
             let snapshot = recurated(snapshot(), WORK, "date_display", None);
             with_curation_in(snapshot, WORK, "date_display", "fr", "1489")
         },
+        subject: WORK,
+    },
+    Case {
+        feature: "type=\"integer\"",
+        rule: Rule::UnexpectedValueKind,
+        snapshot: || with_text(snapshot(), WORK, HAS_COPIES, "3"),
+        subject: WORK,
+    },
+    // The Work has two copies, and takes two at most.
+    Case {
+        feature: "type=\"integer\"",
+        rule: Rule::ValueCount,
+        snapshot: || with_value(snapshot(), WORK, HAS_COPIES, ValueKind::Integer(2)),
+        subject: WORK,
+    },
+    Case {
+        feature: "type=\"list-node\"",
+        rule: Rule::UnexpectedValueKind,
+        snapshot: || with_text(snapshot(), WORK, HAS_FORMAT, "quarto"),
+        subject: WORK,
+    },
+    // The Work has a format, and takes one at most.
+    Case {
+        feature: "type=\"list-node\"",
+        rule: Rule::ValueCount,
+        snapshot: || with_value(snapshot(), WORK, HAS_FORMAT, list_node(FOLIO)),
+        subject: WORK,
+    },
+    // The list `format` maps no node to the archive's octavo.
+    Case {
+        feature: "type=\"list-node\"",
+        rule: Rule::UnknownListNode,
+        snapshot: || reformatted(OCTAVO),
         subject: WORK,
     },
     // The link's target is a Person, no Ornament.
@@ -585,10 +733,24 @@ fn retexted(snapshot: Fixture, resource: &str, property: &str, new: &str) -> Fix
     })
 }
 
-/// [`snapshot`] with the Work's date changed by `change`.
+/// [`snapshot`] with `node` as the Work's format.
+fn reformatted(node: &str) -> Fixture {
+    changed(snapshot(), WORK, |work| {
+        for value in &mut work.values {
+            if value.property.as_str() == HAS_FORMAT {
+                value.kind = list_node(node);
+            }
+        }
+    })
+}
+
+/// [`snapshot`] with the Work's date `made` changed by `change`.
 fn with_date(change: fn(&mut DateValue)) -> Fixture {
     changed(snapshot(), WORK, |work| {
         for value in &mut work.values {
+            if value.property.as_str() != HAS_DATE {
+                continue;
+            }
             if let ValueKind::Date(date) = &mut value.kind {
                 change(date);
             }
@@ -630,6 +792,15 @@ fn test_build_member_has_exactly_one_distinct_parent() {
 /// mapping switches on, such as the checks of an annotation's geometry.
 const FEATURE_RULES: &[(&str, &[Rule])] = &[
     ("class", &[Rule::UnmappedClass]),
+    (
+        "ignore-class",
+        &[
+            Rule::StripLinkTarget,
+            Rule::PageParent,
+            Rule::CuratedKeyOnWrongClass,
+            Rule::UnknownCuratedKey,
+        ],
+    ),
     ("curated keys", &[Rule::UnknownCuratedKey, Rule::CuratedKeyOnWrongClass]),
     (
         "id curated-key",
@@ -656,6 +827,12 @@ const FEATURE_RULES: &[(&str, &[Rule])] = &[
     ("no-addresses", &[Rule::HttpInValue]),
     ("sentinel, sentinel-within", &[Rule::MissingInValue]),
     ("type=\"date\"", &[Rule::MixedDatePrecision, Rule::DateOutOfRange]),
+    ("mixed-precision=\"start\"", &[Rule::DateOutOfRange]),
+    ("type=\"integer\"", &[Rule::UnexpectedValueKind, Rule::ValueCount]),
+    (
+        "type=\"list-node\"",
+        &[Rule::UnexpectedValueKind, Rule::ValueCount, Rule::UnknownListNode],
+    ),
     (
         "display-key",
         &[
@@ -791,6 +968,33 @@ fn test_build_annotation_of_the_class_of_another_motivation_is_refused() {
     assert_eq!(refusals, [(Rule::AnnotationClassMismatch, ADDED.to_string())]);
 }
 
+/// `ignore-class` never reaches an annotation, which is told by its `annotation` field: a Region
+/// whose class is an ignored one is still held to its motivation's class.
+#[test]
+fn test_build_annotation_of_an_ignored_class_is_still_an_annotation() {
+    let region = Resource {
+        class: ClassIri(INDEX_CLASS.to_string()),
+        ..region_on(ADDED, LEAF_A)
+    };
+
+    let refusals = refused(&with_annotation(snapshot(), region, "yes"));
+
+    assert_eq!(refusals, [(Rule::AnnotationClassMismatch, ADDED.to_string())]);
+}
+
+/// A kept link with a target of an ignored class is dropped without a refusal, as one pointing at
+/// any resource with no entry is: neither the link nor any of its targets is written.
+#[test]
+fn test_build_link_to_an_ignored_class_is_dropped_silently() {
+    let to_the_work = built(&with_annotation(snapshot(), link_to(ADDED, &[WORK]), "yes"));
+    assert!(to_the_work.annotation_links.iter().any(|row| row.id == "added"));
+
+    let store = built(&with_annotation(snapshot(), link_to(ADDED, &[WORK, INDEX_1]), "yes"));
+
+    assert!(store.annotation_links.iter().all(|row| row.id != "added"));
+    assert!(link_targets(&store).iter().all(|(link, ..)| *link != "added"));
+}
+
 /// A mapping without an `annotations` block maps no annotation, so one is of an undeclared
 /// class, whatever its class and motivation.
 #[test]
@@ -842,7 +1046,14 @@ fn test_build_plain_snapshot_gives_the_list_tables_by_id_with_the_declared_seq()
         build_with(&served(), &PLAIN, None).unwrap_or_else(|errors| panic!("the fixture's snapshot builds: {errors}"));
 
     let lists: Vec<(&str, &str)> = store.lists.iter().map(|list| (list.id.as_str(), list.name.as_str())).collect();
-    assert_eq!(lists, [("list-genre", "genre"), ("list-technique", "technique")]);
+    assert_eq!(
+        lists,
+        [
+            ("list-format", "format"),
+            ("list-genre", "genre"),
+            ("list-technique", "technique")
+        ]
+    );
     let nodes: Vec<(&str, &str, Option<&str>, i64)> = store
         .list_nodes
         .iter()
@@ -851,6 +1062,9 @@ fn test_build_plain_snapshot_gives_the_list_tables_by_id_with_the_declared_seq()
     assert_eq!(
         nodes,
         [
+            ("format-folio", "list-format", None, 0),
+            ("format-quarto", "list-format", None, 1),
+            ("format-small", "list-format", None, 2),
             ("genre-almanac", "list-genre", None, 1),
             ("genre-other", "list-genre", None, 2),
             ("genre-sermon", "list-genre", None, 0),
@@ -866,6 +1080,12 @@ fn test_build_plain_snapshot_gives_the_list_tables_by_id_with_the_declared_seq()
     assert_eq!(
         labels,
         [
+            ("format-folio", "de", "Folio"),
+            ("format-folio", "en", "Folio"),
+            ("format-quarto", "de", "Quart"),
+            ("format-quarto", "en", "Quarto"),
+            ("format-small", "de", "Kleinformat"),
+            ("format-small", "en", "Small format"),
             ("genre-almanac", "de", "Kalender"),
             ("genre-almanac", "en", "Almanac"),
             ("genre-other", "de", "Übriges"),
@@ -878,6 +1098,49 @@ fn test_build_plain_snapshot_gives_the_list_tables_by_id_with_the_declared_seq()
             ("technique-woodcut", "en", "Woodcut"),
         ]
     );
+}
+
+/// A list node's `iri` maps the archive's values and is not written: without the `iri`s, and
+/// without the property that needs them, the list tables are the same.
+#[test]
+fn test_build_list_node_iri_leaves_the_list_tables_unchanged() {
+    let config = include_str!("../fixtures/plain/config.kdl");
+    let without: String = config
+        .lines()
+        .filter(|line| !line.contains("type=\"list-node\""))
+        .map(|line| match line.find(" iri=\"http://rdfh.ch/lists/") {
+            Some(start) => {
+                let end = line[start + 7..].find('"').map_or(line.len(), |at| start + 8 + at);
+                format!("{}{}\n", &line[..start], &line[end..])
+            }
+            None => format!("{line}\n"),
+        })
+        .collect();
+    let bare = lowered(&without);
+    assert!(bare.lists.iter().flat_map(|list| &list.nodes).all(|node| node.iri.is_none()));
+    assert!(PLAIN.lists.iter().flat_map(|list| &list.nodes).any(|node| node.iri.is_some()));
+
+    let tables = |mapping: &Remodel| {
+        let store =
+            build_with(&served(), mapping, None).unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"));
+        (store.lists, store.list_nodes, store.list_node_labels)
+    };
+    assert_eq!(tables(&bare), tables(&PLAIN));
+}
+
+/// An archive list node is written as the node of the property's list that stands for it.
+#[test]
+fn test_build_archive_list_node_is_written_as_the_node_that_stands_for_it() {
+    let folio = reformatted(FOLIO);
+
+    let store = built(&folio);
+
+    let formats: Vec<_> = store.properties.iter().filter(|row| row.name == "format").collect();
+    let shown: Vec<(&str, &str, Option<&str>)> = formats
+        .iter()
+        .map(|row| (row.resource_id.as_str(), row.value_type.as_str(), row.target_id.as_deref()))
+        .collect();
+    assert_eq!(shown, [("predigten", "list_value", Some("format-folio"))]);
 }
 
 #[test]
@@ -978,8 +1241,11 @@ fn test_build_plain_snapshot_gives_the_resources_and_their_values() {
             ("predigten", "alt-title", 0, untagged("Jahrpredigten")),
             ("predigten", "blurb", 0, blurb_de),
             ("predigten", "blurb", 1, blurb_en),
+            ("predigten", "copies", 0, "int 3".to_string()),
+            ("predigten", "copies", 1, "int 1".to_string()),
             ("predigten", "credit", 0, untagged("Sammlung Muster")),
             ("predigten", "extent", 0, "int 3".to_string()),
+            ("predigten", "format", 0, "node format-quarto".to_string()),
             ("predigten", "genre", 0, "node genre-sermon".to_string()),
             ("predigten", "homepage", 0, untagged(HOMEPAGE)),
             ("predigten", "image", 0, "-> leaf-b".to_string()),
@@ -987,6 +1253,13 @@ fn test_build_plain_snapshot_gives_the_resources_and_their_values() {
             ("predigten", "name", 0, untagged(WORK_TITLE)),
             ("predigten", "note", 0, untagged("Zweite Notiz ")),
             ("predigten", "note", 1, untagged("Erste Notiz")),
+            ("predigten", "printed", 0, "1489-11-28/1489-11-28 day julian -@-".to_string()),
+            (
+                "predigten",
+                "remark",
+                0,
+                "rich Gedruckt in zwei Spalten.\n\nMit Holzschnitten.@de".to_string(),
+            ),
             ("predigten-1r", "image", 0, "-> leaf-b".to_string()),
             ("predigten-1r", "leaf-id", 0, untagged("1r")),
             ("predigten-1r", "name", 0, untagged("1r")),
@@ -1205,10 +1478,14 @@ const PLAIN_FILE: &str = r"-- plain data (Work + Leaf + Ornament + Person + Keyw
 -- DO NOT hand-edit; regenerate with: just cpe store-build plain --inplace
 
 INSERT INTO lists (id, name) VALUES
+    ('list-format', 'format'),
     ('list-genre', 'genre'),
     ('list-technique', 'technique');
 
 INSERT INTO list_nodes (id, list_id, parent_id, seq) VALUES
+    ('format-folio', 'list-format', NULL, 0),
+    ('format-quarto', 'list-format', NULL, 1),
+    ('format-small', 'list-format', NULL, 2),
     ('genre-almanac', 'list-genre', NULL, 1),
     ('genre-other', 'list-genre', NULL, 2),
     ('genre-sermon', 'list-genre', NULL, 0),
@@ -1216,6 +1493,12 @@ INSERT INTO list_nodes (id, list_id, parent_id, seq) VALUES
     ('technique-woodcut', 'list-technique', NULL, 0);
 
 INSERT INTO list_node_labels (node_id, lang, label) VALUES
+    ('format-folio', 'de', 'Folio'),
+    ('format-folio', 'en', 'Folio'),
+    ('format-quarto', 'de', 'Quart'),
+    ('format-quarto', 'en', 'Quarto'),
+    ('format-small', 'de', 'Kleinformat'),
+    ('format-small', 'en', 'Small format'),
     ('genre-almanac', 'de', 'Kalender'),
     ('genre-almanac', 'en', 'Almanac'),
     ('genre-other', 'de', 'Übriges'),
@@ -1253,8 +1536,11 @@ VALUES
     ('predigten', 'alt-title', 0, 'text', 'Jahrpredigten', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
     ('predigten', 'blurb', 0, 'text', 'Predigten für jeden Sonntag.', 'de', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
     ('predigten', 'blurb', 1, 'text', 'Sermons for every Sunday.', 'en', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+    ('predigten', 'copies', 0, 'integer', NULL, NULL, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+    ('predigten', 'copies', 1, 'integer', NULL, NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
     ('predigten', 'credit', 0, 'text', 'Sammlung Muster', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
     ('predigten', 'extent', 0, 'integer', NULL, NULL, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+    ('predigten', 'format', 0, 'list_value', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'format-quarto'),
     ('predigten', 'genre', 0, 'list_value', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'genre-sermon'),
     ('predigten', 'homepage', 0, 'text', 'https://example.org/predigten', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
     ('predigten', 'image', 0, 'link', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'leaf-b'),
@@ -1262,6 +1548,10 @@ VALUES
     ('predigten', 'name', 0, 'text', 'Predigten auf das Jahr', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
     ('predigten', 'note', 0, 'text', 'Zweite Notiz ', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
     ('predigten', 'note', 1, 'text', 'Erste Notiz', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+    ('predigten', 'printed', 0, 'date', NULL, NULL, NULL, NULL, '1489-11-28', '1489-11-28', 'day', NULL, 'julian', NULL),
+    ('predigten', 'remark', 0, 'richtext', 'Gedruckt in zwei Spalten.
+
+Mit Holzschnitten.', 'de', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
     ('predigten-1r', 'image', 0, 'link', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'leaf-b'),
     ('predigten-1r', 'leaf-id', 0, 'text', '1r', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
     ('predigten-1r', 'name', 0, 'text', '1r', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
@@ -1884,6 +2174,113 @@ remodel {
         refused_under(&work(true, false), &mapping),
         [(Rule::CuratedCount, WORK.to_string())]
     );
+}
+
+/// A date whose bounds have different precisions is refused by default and under
+/// `mixed-precision="refuse"`. Under `"start"` it is the single date of its start bound, at the
+/// start's precision, whichever bound is the finer; a date whose bounds share a precision is
+/// written as it is.
+#[test]
+fn test_build_mixed_precision_start_writes_a_mixed_date_as_its_start() {
+    let mapping = |policy: &str| {
+        lowered(&format!(
+            r#"
+site {{
+    languages "de"
+}}
+
+remodel {{
+    shortcode "0123"
+    class "Work" iri="http://www.knora.org/ontology/0123/plain#Work" {{
+        id from="iri"
+        property "made" iri="http://www.knora.org/ontology/0123/plain#hasDate" type="date"{policy}
+    }}
+}}
+"#
+        ))
+    };
+    let work = |date: DateValue| Fixture {
+        facts: ProjectSnapshot {
+            shortcode: SHORTCODE.to_string(),
+            resources: vec![Resource {
+                values: values(vec![(HAS_DATE, ValueKind::Date(date))]),
+                ..fixture_resource(WORK, WORK_CLASS, "")
+            }],
+            list_nodes: Vec::new(),
+        },
+        curation: Vec::new(),
+    };
+    let gregorian = |start, end| date_of(Calendar::Gregorian, start, end);
+    let day_to_year = gregorian((2_392_707, DatePrecision::Day), (2_392_740, DatePrecision::Year));
+    let year_to_day = gregorian((2_400_046, DatePrecision::Year), (2_400_119, DatePrecision::Day));
+    let day_to_day = gregorian((2_392_707, DatePrecision::Day), (2_392_711, DatePrecision::Day));
+
+    let start = mapping(r#" mixed-precision="start""#);
+    let made = |date: &DateValue| -> Vec<String> {
+        let store = build_with(&work(date.clone()), &start, None)
+            .unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"));
+        store.properties.iter().map(shown).collect()
+    };
+    assert_eq!(made(&day_to_year), ["1838-11-28/1838-11-28 day gregorian -@-"]);
+    assert_eq!(made(&year_to_day), ["1859/1859 year gregorian -@-"]);
+    assert_eq!(made(&day_to_day), ["1838-11-28/1838-12-02 day gregorian -@-"]);
+
+    for refusing in [mapping(""), mapping(r#" mixed-precision="refuse""#)] {
+        for mixed in [&day_to_year, &year_to_day] {
+            assert_eq!(
+                refused_under(&work(mixed.clone()), &refusing),
+                [(Rule::MixedDatePrecision, WORK.to_string())]
+            );
+        }
+        assert_eq!(refused_under(&work(day_to_day.clone()), &refusing), []);
+    }
+}
+
+/// A richtext property's texts are converted only when they are written: its steps read them as
+/// served. A title equal to the label only once its line is stripped is `label-not-a-title`; one
+/// equal as served is left out, and the rest are written as paragraphs. The sentinel inside a
+/// line refuses the property, as in any text.
+#[test]
+fn test_build_richtext_property_is_checked_on_its_texts_as_served() {
+    const CONFIG: &str = r#"
+site {
+    languages "de"
+}
+
+remodel {
+    shortcode "0123"
+    sentinel "[unbekannt]"
+    class "Work" iri="http://www.knora.org/ontology/0123/plain#Work" {
+        id from="iri"
+        property "titles" iri="http://www.knora.org/ontology/0123/plain#hasTitle" type="text" exclude-label=#true richtext=#true
+    }
+}
+"#;
+    let mapping = lowered(CONFIG);
+    let work = |titles: &[&str]| Fixture {
+        facts: ProjectSnapshot {
+            shortcode: SHORTCODE.to_string(),
+            resources: vec![Resource {
+                values: values(titles.iter().map(|title| (HAS_TITLE, text(title))).collect()),
+                ..fixture_resource(WORK, WORK_CLASS, "Chronik")
+            }],
+            list_nodes: Vec::new(),
+        },
+        curation: Vec::new(),
+    };
+
+    assert_eq!(
+        refused_under(&work(&["Chronik\n"]), &mapping),
+        [(Rule::LabelNotATitle, WORK.to_string())]
+    );
+    assert_eq!(
+        refused_under(&work(&["Chronik", "Erste Zeile\n[unbekannt]"]), &mapping),
+        [(Rule::MissingInValue, WORK.to_string())]
+    );
+    let store = build_with(&work(&["Chronik", " Die Chronik\n der Stadt"]), &mapping, None)
+        .unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"));
+    let written: Vec<String> = store.properties.iter().map(shown).collect();
+    assert_eq!(written, ["rich Die Chronik\n\nder Stadt@-"]);
 }
 
 /// A mapping whose parent class has members of two classes, and counts those of one.

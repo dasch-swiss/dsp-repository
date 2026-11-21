@@ -8,7 +8,8 @@ use crate::error::{BuildError, Rule};
 use crate::generic::knora::{LINK_OBJ_CLASS, REGION_CLASS};
 
 /// The draft of `snapshot`: its resources that have a class under `mapping`. A resource
-/// [`class_of`] refuses is in no entry.
+/// [`class_of`] refuses is in no entry, and neither is one of a class the mapping leaves out
+/// (`ignore-class`), which is not refused: the draft only records its IRI.
 pub(crate) fn classify<'a>(
     snapshot: &'a ProjectSnapshot,
     mapping: &'a Remodel,
@@ -16,6 +17,10 @@ pub(crate) fn classify<'a>(
 ) -> Draft<'a> {
     let mut draft = Draft::default();
     for resource in &snapshot.resources {
+        if is_ignored(resource, mapping) {
+            draft.ignore(resource.iri.as_str());
+            continue;
+        }
         match class_of(resource, mapping) {
             Ok(class) => draft.insert(Entry::new(resource, class)),
             Err(error) => errors.push(error),
@@ -24,8 +29,15 @@ pub(crate) fn classify<'a>(
     draft
 }
 
-/// The class of `resource`. A class the mapping does not declare is refused, never dropped: its
-/// resources would silently be missing from the store.
+/// Whether `resource` is of a class the mapping leaves out. An annotation is told by its
+/// `annotation` field, never by its class, so it never is.
+fn is_ignored(resource: &Resource, mapping: &Remodel) -> bool {
+    let class = resource.class.as_str();
+    resource.annotation.is_none() && mapping.ignored.iter().any(|ignored| ignored.as_str() == class)
+}
+
+/// The class of `resource`. A class the mapping neither declares nor leaves out is refused,
+/// never dropped: its resources would silently be missing from the store.
 ///
 /// An annotation is known by its `annotation` field and is a link or not by its motivation; its
 /// class must be the one that motivation belongs to. A mapping without an `annotations` block

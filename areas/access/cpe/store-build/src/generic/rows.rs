@@ -33,6 +33,15 @@ pub(crate) fn text(resource_id: &str, name: &str, text: &str, lang: Option<&str>
     }
 }
 
+/// One `richtext` row, numbered 0: `markdown` is the text already converted.
+pub(crate) fn richtext(resource_id: &str, name: &str, markdown: String, lang: Option<&str>) -> PropertyRow {
+    PropertyRow {
+        value_text: Some(markdown),
+        value_lang: lang.map(str::to_string),
+        ..row(resource_id, name, 0, "richtext")
+    }
+}
+
 pub(crate) fn integer(resource_id: &str, name: &str, value: i64) -> PropertyRow {
     PropertyRow {
         value_int: Some(value),

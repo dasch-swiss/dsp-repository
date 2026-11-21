@@ -24,7 +24,11 @@ pub(crate) fn is_read_as_text(resource: &Resource, class: &RemodelClass, curatio
             TextRule::ExcludeLabel => true,
             TextRule::Plain | TextRule::CuratedOverride(_) => false,
         },
-        PropertySource::Uri { .. } | PropertySource::Date { .. } | PropertySource::Link { .. } => false,
+        PropertySource::Uri { .. }
+        | PropertySource::Date { .. }
+        | PropertySource::Link { .. }
+        | PropertySource::Integer { .. }
+        | PropertySource::ListNode { .. } => false,
     })
 }
 

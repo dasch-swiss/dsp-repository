@@ -36,13 +36,14 @@ rules! {
     ContractViolation => "contract-violation",
     /// A text holds U+0000, which a SQL text literal cannot carry.
     InteriorNul => "interior-nul",
-    /// A resource that is no annotation has a class the mapping does not declare, or an
-    /// annotation stands in a snapshot whose mapping has no `annotations` node.
+    /// A resource that is no annotation has a class the mapping neither declares nor leaves out
+    /// (`ignore-class`), or an annotation stands in a snapshot whose mapping has no
+    /// `annotations` node.
     UnmappedClass => "unmapped-class",
     /// An annotation's class is not the one its motivation belongs to.
     AnnotationClassMismatch => "annotation-class-mismatch",
     /// A value under a property the builder reads is not of the kind the property's rule
-    /// expects; a list node never is.
+    /// expects.
     UnexpectedValueKind => "unexpected-value-kind",
     /// A resource whose id is a curated slug, with no source to make it from otherwise, has no
     /// curated value at all.
@@ -114,11 +115,13 @@ rules! {
     /// A rule of Incunabula's hook: a Book has a curated catalogue address without the address
     /// it replaces, or the address to replace without the one to write.
     UnpairedCatalogueOverride => "unpaired-catalogue-override",
-    /// A date's two bounds have different precisions.
+    /// A date's two bounds have different precisions, under a property whose `mixed-precision`
+    /// is `refuse`.
     MixedDatePrecision => "mixed-date-precision",
     /// A date has a bound outside the years 1 to 9999.
     DateOutOfRange => "date-out-of-range",
-    /// A link's target is no resource of the class the property names as its `target`.
+    /// A link's target is no resource of the class the property names as its `target`: a
+    /// resource of a class the mapping leaves out never is.
     StripLinkTarget => "strip-link-target",
     /// A rule of Incunabula's hook: a Page's border strip on one side is not a strip of that
     /// side.
@@ -126,7 +129,8 @@ rules! {
     /// A curated value has a key that nothing reads: no node of a class, not the hook, and not
     /// the builder for an annotation.
     UnknownCuratedKey => "unknown-curated-key",
-    /// A curated value is on a resource of a class its key is not curated on.
+    /// A curated value is on a resource of a class its key is not curated on, a class the
+    /// mapping leaves out among them.
     CuratedKeyOnWrongClass => "curated-key-on-wrong-class",
     /// An annotation's or an annotation link's curated `keep` is neither `yes` nor `no`.
     KeepNotYesOrNo => "keep-not-yes-or-no",
@@ -178,7 +182,8 @@ rules! {
     EmptyValue => "empty-value",
     /// A resource has not as many values under a property as the property takes.
     ValueCount => "value-count",
-    /// A curated text that must name a node of a list names none of its nodes.
+    /// A value that must be a node of a declared list is none of its nodes: a curated text, an
+    /// archive list node under a `list-node` property, or a node a hook provides.
     UnknownListNode => "unknown-list-node",
     /// The curated texts of a property that has one per language are not one in each of the
     /// site's languages.

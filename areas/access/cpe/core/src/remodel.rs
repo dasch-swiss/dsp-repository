@@ -41,6 +41,10 @@ string_newtype!(
     ArchivePropertyIri
 );
 string_newtype!(
+    /// The IRI of a node of one of the archive's lists.
+    ArchiveListNodeIri
+);
+string_newtype!(
     /// A class's name in CPE's store.
     CpeClass
 );
@@ -103,6 +107,9 @@ pub struct Remodel {
     pub lists: Vec<RemodelList>,
     /// The classes, in declared order.
     pub classes: Vec<RemodelClass>,
+    /// The archive classes the project leaves out, in declared order, each once and none a
+    /// declared class's. A resource of one gets no entry, no row and no refusal.
+    pub ignored: Vec<ArchiveClassIri>,
     /// The `images` block, when the project models files.
     pub images: Option<RemodelImages>,
     /// The `annotations` block, when the project models annotations.
@@ -143,6 +150,22 @@ impl Remodel {
             || self.hook.as_ref().is_some_and(|hook| !hook.keys.is_empty())
             || self.classes.iter().any(|class| !class.curated_keys().is_empty())
     }
+
+    /// Whether the texts a resource of `class` holds under the name `name` are written as
+    /// richtext: `name` is a name of a `text` property of the class with `richtext`, or a
+    /// `provides` of the hook on the class with `richtext`.
+    pub fn writes_richtext(&self, class: ClassIndex, name: &str) -> bool {
+        let property = self.class(class).properties.iter().any(|property| {
+            let richtext = matches!(property.source, PropertySource::Text { richtext: true, .. });
+            richtext && property.names.iter().any(|own| own.as_str() == name)
+        });
+        let provided = self
+            .hook
+            .iter()
+            .flat_map(|hook| &hook.provides)
+            .any(|provides| provides.richtext && provides.class == class && provides.name.as_str() == name);
+        property || provided
+    }
 }
 
 /// One `list`: a name and its nodes.
@@ -154,11 +177,14 @@ pub struct RemodelList {
     pub nodes: Vec<RemodelListNode>,
 }
 
-/// One `list-node`: a slug and a label per site language.
+/// One `list-node`: a slug, the archive node it stands for, and a label per site language.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RemodelListNode {
     /// The node's slug, unique within its list.
     pub slug: String,
+    /// The archive list node the node stands for, unique within its list; `None` for a node no
+    /// archive value maps onto.
+    pub iri: Option<ArchiveListNodeIri>,
     /// The labels, in declared order.
     pub labels: Vec<RemodelLabel>,
 }
@@ -248,7 +274,10 @@ impl RemodelClass {
                     TextRule::Plain | TextRule::ExcludeLabel => {}
                 },
                 PropertySource::Date { display_key, .. } => keys.extend(display_key),
-                PropertySource::Uri { .. } | PropertySource::Link { .. } => {}
+                PropertySource::Uri { .. }
+                | PropertySource::Link { .. }
+                | PropertySource::Integer { .. }
+                | PropertySource::ListNode { .. } => {}
             }
         }
         keys.extend(curated.iter().map(|curated| &curated.key));
@@ -397,6 +426,16 @@ pub enum TextRule {
     ExcludeLabel,
 }
 
+/// What a date property does with a date whose two bounds have different precisions.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MixedPrecision {
+    /// The date is refused.
+    Refuse,
+    /// The date is written as the single date of its start bound, at the start's precision: its
+    /// end is dropped.
+    Start,
+}
+
 /// Where a `property` gets its value, with exactly the rules its form takes.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PropertySource {
@@ -419,6 +458,9 @@ pub enum PropertySource {
         sentinel: SentinelWhole,
         /// What a value that contains the sentinel does.
         sentinel_within: SentinelWithin,
+        /// Whether its values are written as richtext, each line a paragraph. Never with a
+        /// curated override, whose text would stand in unconverted.
+        richtext: bool,
     },
     /// An archive URI property.
     Uri {
@@ -439,6 +481,8 @@ pub enum PropertySource {
         count: ValueCount,
         /// The curation-table key holding the date's display text.
         display_key: Option<CuratedKey>,
+        /// What a date whose two bounds have different precisions does.
+        mixed: MixedPrecision,
     },
     /// An archive link property.
     Link {
@@ -449,6 +493,22 @@ pub enum PropertySource {
         /// The class the link points at.
         target: ClassIndex,
     },
+    /// An archive integer property.
+    Integer {
+        /// The property's IRI in the archive.
+        iri: ArchivePropertyIri,
+        /// How many values it may hold.
+        count: ValueCount,
+    },
+    /// An archive list property, whose values are nodes of a declared list.
+    ListNode {
+        /// The property's IRI in the archive.
+        iri: ArchivePropertyIri,
+        /// How many values it may hold.
+        count: ValueCount,
+        /// The list whose nodes stand for the archive's, by their `iri`.
+        list: ListIndex,
+    },
 }
 
 impl PropertySource {
@@ -456,9 +516,12 @@ impl PropertySource {
     pub fn iri(&self) -> Option<&ArchivePropertyIri> {
         match self {
             Self::Label { .. } => None,
-            Self::Text { iri, .. } | Self::Uri { iri, .. } | Self::Date { iri, .. } | Self::Link { iri, .. } => {
-                Some(iri)
-            }
+            Self::Text { iri, .. }
+            | Self::Uri { iri, .. }
+            | Self::Date { iri, .. }
+            | Self::Link { iri, .. }
+            | Self::Integer { iri, .. }
+            | Self::ListNode { iri, .. } => Some(iri),
         }
     }
 }
@@ -553,6 +616,9 @@ pub struct HookProvides {
     pub class: ClassIndex,
     /// The property's name in CPE's store; no node of the class yields it.
     pub name: CpeProperty,
+    /// Whether the texts the hook writes under it are written as richtext, each line a
+    /// paragraph.
+    pub richtext: bool,
 }
 
 /// One `overrides` of a `hook`: a `property` of `class` whose values the hook may set.
@@ -605,6 +671,24 @@ mod tests {
             assert!(remodel_with(block, class).reads_curation(), "{block}{class}");
         }
         assert!(!remodel_with("", "").reads_curation());
+    }
+
+    #[test]
+    fn a_name_is_written_as_richtext_under_a_richtext_property_or_provides_of_its_class() {
+        let remodel = remodel_with(
+            r#"    hook { provides "summary" class="Thing" richtext=#true; provides "plain" class="Thing"; }"#,
+            concat!(
+                "        property \"body\" \"body-too\" iri=\"http://e/o#body\" type=\"text\" richtext=#true\n",
+                "        property \"note\" iri=\"http://e/o#note\" type=\"text\"\n",
+            ),
+        );
+        let thing = ClassIndex(0);
+        for name in ["body", "body-too", "summary"] {
+            assert!(remodel.writes_richtext(thing, name), "{name}");
+        }
+        for name in ["note", "plain", "absent"] {
+            assert!(!remodel.writes_richtext(thing, name), "{name}");
+        }
     }
 
     #[test]

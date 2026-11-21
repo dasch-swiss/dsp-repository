@@ -104,10 +104,10 @@ impl Cpe {
     /// Blocking: it reads the projects folder and asks each port for each
     /// project, so an async host calls it inside `spawn_blocking`, after its
     /// listener is bound. It returns nothing and never panics. A project
-    /// that does not load is logged with its id and answers 503 on its
-    /// prefix, and the others are served and, unless hidden, listed at the base; any other
-    /// path that names no project is CPE's not-found. A later call loads
-    /// everything again and replaces what is served, whatever failed; if it
+    /// that fails to load is logged with its id and answers 503 on its
+    /// prefix, and the others are served and, unless hidden, listed at the base; a project
+    /// with no Ready token, and any other path that names no project, is CPE's not-found. A later
+    /// call loads everything again and replaces what is served, whatever failed; if it
     /// panics outside a project's own load, what was served before stays. Only
     /// [`Cpe::follow`] holds a re-activation back, and a host that follows does
     /// not call this on the same `Cpe` as well.

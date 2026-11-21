@@ -106,13 +106,19 @@ repository. The decision, phrased so a violation is describable in code:
 
 - **Validation happens when a project is activated, not when the process boots.** `Cpe::new` reads nothing
   and cannot fail, and `activate` returns nothing and never panics, so CPE cannot stop or delay the area
-  binary. A project that does not activate (its configuration, the projection, the build, validation, or a
+  binary. A project that fails to activate (its configuration, the projection, the build, validation, or a
   panic in any of them) is logged with its id and is offline on its own prefix: every path under it is
   answered 503 with `Retry-After` and `Cache-Control: no-store`, while DPE and every other project keep
   serving. Until `activate` has finished, every CPE path is answered that way.
-- **"Not ready" is kept apart from "not there".** 404 is for a path that names no project. With no projects
-  at all, the overview lists none and every other path is not found; with `sync`'s data missing, every
-  project answers 503.
+- **"Not ready" is kept apart from "not there".** A project that has data on this deployment and fails is
+  not ready, and answers 503 as above. A project with no Ready token on this deployment is not there: every
+  path under its prefix answers CPE's 404, exactly as a path that names no project, with
+  `Cache-Control: no-store` like every 404 of CPE's not-found, since a 503 would tell a
+  visitor that a project not released on this deployment exists (*Unknown project* and *Released*,
+  `areas/access/CONTEXT.md`). A broken token, a token naming a missing generation, and a location that is
+  missing or holds no project at all are failures, not an unknown project: with `sync`'s
+  data missing, every project answers 503. With no projects at all, the overview lists none and every other
+  path is not found.
 - **A strict mode for development, CI and tests fails the whole start on the first invalid project**, as the
   prototype's `--check` does. It is the same verb as DPE's `validate`, on the area binary. The page a project
   answers while offline is a designed page.

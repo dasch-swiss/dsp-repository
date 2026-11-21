@@ -1,9 +1,10 @@
 //! The answer for what CPE knows and cannot serve: status 503.
 //!
-//! "Not ready" is not "not there". A project that did not load, and all of
+//! "Not ready" is not "not there". A project that failed to load, and all of
 //! CPE until its projects are loaded, answer 503 with `Retry-After` and
 //! `Cache-Control: no-store`, so that no client and no cache takes the answer
-//! for a missing page. 404 is kept for a path that names no project.
+//! for a missing page. 404 is kept for a path that names no project, and for
+//! a project with no Ready token, which is not there.
 
 use axum::http::{header, StatusCode};
 use axum::response::{IntoResponse, Response};

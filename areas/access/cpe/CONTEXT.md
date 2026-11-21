@@ -279,19 +279,20 @@ and it is tried once more after the host's retry interval.
 _Avoid_: reload, refresh (the operator's word for the whole effect), rebuild (one project's store, DEV-7989).
 
 **Unavailable project**:
-A project folder that did not activate: another folder declares its shortcode, a port does not hold the
-project or cannot be read, a deposited file is not UTF-8 or a required one is not there (its `config.kdl`; its
+A project folder that failed to activate: another folder declares its shortcode, `media` does not hold the
+project, `sync` does not hold it and its location is missing or holds no project, a port cannot be read, a
+deposited file is not UTF-8 or a required one is not there (its `config.kdl`; its
 `curation.csv` when the **Mapping** reads a curated key), its configuration does not parse or validate (a
 narrative file it names and the port does not hold included), the KDL declares another shortcode than
 `SHORTCODE`, the curation file or the build refuses the data, or any of these panics. It is
 logged with its id, and every path under its prefix is answered 503 with `Retry-After` and
 `Cache-Control: no-store`; the other projects are served ("a project fails alone", ADR-0007), and the **Overview** does not list it. 404 is for a path that names no project
-folder. A folder is a project when its
+folder, and for an unknown project (`areas/access/CONTEXT.md`), which is not there. A folder is a project when its
 name passes the **Project id** rule and it holds a regular `SHORTCODE` file whose trimmed text passes
 `cpe_ports::is_shortcode`. A folder that fails either is not a project, so its paths are 404; it is logged,
 unless it holds no `SHORTCODE` at all.
 ADR-0007 says such a project is "offline on its own prefix"; the offline page it designs is DEV-7403's.
-_Avoid_: missing project (that is the 404).
+_Avoid_: missing project (that is the 404); unknown project for an unavailable one (an unknown project is a 404, defined in `areas/access/CONTEXT.md`).
 
 Nothing in a request reaches the file system. Discovery lists the projects directory without following a
 symbolic link, the assets are read into memory at activation, and a request's project segment and path are

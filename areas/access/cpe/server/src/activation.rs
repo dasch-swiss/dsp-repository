@@ -4,7 +4,8 @@
 //! Every project folder is loaded on its own, and whatever goes wrong with
 //! one (a file, a port, the build, validation, a panic) is logged with its id
 //! and leaves that project unavailable: its prefix answers 503, and the others
-//! are served. Nothing here returns an error or panics.
+//! are served. A project with no Ready token is not there, and its prefix answers 404.
+//! Nothing here returns an error or panics.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::panic::{catch_unwind, AssertUnwindSafe};
@@ -36,7 +37,7 @@ pub(crate) struct Activated {
 pub(crate) enum ProjectStatus {
     Loaded,
     /// `sync` knows no such project while the place it would keep it is there: the project was
-    /// removed, or never deposited.
+    /// removed, or never deposited. Its prefix answers 404, as a path that names no project does.
     Unknown,
     Failed,
 }
@@ -64,6 +65,19 @@ pub(crate) fn held_back_by(current: &Activated, next: &Activated) -> Vec<String>
         .iter()
         .filter(|(_, status)| **status == ProjectStatus::Loaded)
         .filter(|(id, _)| !matches!(next.statuses.get(*id), Some(ProjectStatus::Loaded | ProjectStatus::Unknown)))
+        .map(|(id, _)| id.clone())
+        .collect()
+}
+
+/// The ids of the projects `current` served that `sync` no longer knows in `next`: storing `next`
+/// withdraws them. A partial or stale mount can look the same, so each is logged as a warning.
+pub(crate) fn withdrawn_by(current: &Activated, next: &Activated) -> Vec<String> {
+    current
+        .statuses
+        .iter()
+        .filter(|(id, status)| {
+            **status == ProjectStatus::Loaded && next.statuses.get(*id) == Some(&ProjectStatus::Unknown)
+        })
         .map(|(id, _)| id.clone())
         .collect()
 }
@@ -132,22 +146,21 @@ pub(crate) fn from_sql_folders(config: &CpeConfig) -> Activated {
 
 /// Load each of `discovered` from what `sources` gives for it.
 ///
-/// "Not ready" is not "not there": a folder that is a project and does not
-/// load is kept as unavailable, so that its prefix answers 503 and not 404.
+/// "Not ready" is not "not there": a project that fails is kept as unavailable, so that its
+/// prefix answers 503 and not 404. An unknown project is not there: no route and no 503 is
+/// kept for it, so its prefix answers as a path that names no project.
 fn load_all(
     config: &CpeConfig,
     discovered: Vec<DiscoveredProject>,
     sources: impl Fn(&DiscoveredProject) -> Result<Sources, NotLoaded>,
 ) -> Activated {
-    let hidden_ids = Arc::new(hidden_ids(&config.hidden_shortcodes, &discovered));
     let mut loaded = Vec::new();
-    let mut served = Vec::new();
     let mut unavailable = Vec::new();
     let mut statuses = BTreeMap::new();
-    for discovered in discovered {
+    for discovered in &discovered {
         let started = Instant::now();
         // A panic in a hook, the builder or an adapter must stay this project's.
-        let outcome = catch_unwind(AssertUnwindSafe(|| load(&discovered, &sources)))
+        let outcome = catch_unwind(AssertUnwindSafe(|| load(discovered, &sources)))
             .unwrap_or_else(|payload| Err(format!("loading it panicked: {}", panic_message(payload.as_ref())).into()));
         let elapsed_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
         match outcome {
@@ -155,17 +168,17 @@ fn load_all(
                 tracing::info!(project_id = discovered.id.as_str(), elapsed_ms, "project loaded");
                 statuses.insert(discovered.id.clone(), ProjectStatus::Loaded);
                 loaded.push(project);
-                served.push(discovered);
             }
             Err(NotLoaded::Unknown(report)) => {
-                tracing::warn!(
+                // Expected on a deployment that does not release the project, so not a warning.
+                tracing::info!(
                     project_id = discovered.id.as_str(),
+                    shortcode = discovered.shortcode.as_deref(),
                     elapsed_ms,
                     report = report.as_str(),
-                    "project is not in the archive projection; its prefix answers 503"
+                    "project is not in the archive projection; its prefix answers 404"
                 );
                 statuses.insert(discovered.id.clone(), ProjectStatus::Unknown);
-                unavailable.push(discovered.id);
             }
             Err(NotLoaded::Failed(report)) => {
                 tracing::error!(
@@ -175,7 +188,7 @@ fn load_all(
                     "project does not load; its prefix answers 503"
                 );
                 statuses.insert(discovered.id.clone(), ProjectStatus::Failed);
-                unavailable.push(discovered.id);
+                unavailable.push(discovered.id.clone());
             }
         }
     }
@@ -183,8 +196,14 @@ fn load_all(
         projects_dir = %config.projects_dir.display(),
         served = loaded.len(),
         unavailable = unavailable.len(),
+        unknown = statuses.values().filter(|status| **status == ProjectStatus::Unknown).count(),
         "CPE's projects are loaded"
     );
+    let hidden_ids = Arc::new(hidden_ids(&config.hidden_shortcodes, &discovered, &statuses));
+    let served: Vec<DiscoveredProject> = discovered
+        .into_iter()
+        .filter(|project| statuses.get(&project.id) == Some(&ProjectStatus::Loaded))
+        .collect();
 
     let base = config.base_or_root();
     let projects = loaded
@@ -215,11 +234,15 @@ fn load_all(
     Activated { router, projects, statuses }
 }
 
-/// The ids of the folders whose shortcode is one of `hidden_shortcodes`, in
-/// any case, served or not. Logs them, and each shortcode no folder has: a
-/// project may be listed before it is deployed, and a mistyped shortcode
-/// shows here.
-fn hidden_ids(hidden_shortcodes: &BTreeSet<String>, discovered: &[DiscoveredProject]) -> BTreeSet<String> {
+/// The ids of the served and failed projects whose shortcode is one of `hidden_shortcodes`, in
+/// any case. An unknown project is left out: under `X-Robots-Tag` its 404 would differ from any
+/// other. Logs the ids, and each shortcode no folder has: a project may be listed before it is
+/// deployed, and a mistyped shortcode shows here.
+fn hidden_ids(
+    hidden_shortcodes: &BTreeSet<String>,
+    discovered: &[DiscoveredProject],
+    statuses: &BTreeMap<String, ProjectStatus>,
+) -> BTreeSet<String> {
     // A folder's shortcode is upper case (`cpe_ports::is_shortcode`). The host hands the set upper
     // case; upper-casing again keeps a host that does not from showing a project it meant to hide.
     let hidden_shortcodes: BTreeSet<String> = hidden_shortcodes.iter().map(|code| code.to_ascii_uppercase()).collect();
@@ -227,7 +250,9 @@ fn hidden_ids(hidden_shortcodes: &BTreeSet<String>, discovered: &[DiscoveredProj
     let mut matched = BTreeSet::new();
     for project in discovered {
         if let Some(shortcode) = project.shortcode.as_deref().filter(|code| hidden_shortcodes.contains(*code)) {
-            ids.insert(project.id.clone());
+            if matches!(statuses.get(&project.id), Some(ProjectStatus::Loaded | ProjectStatus::Failed)) {
+                ids.insert(project.id.clone());
+            }
             matched.insert(shortcode);
         }
     }
@@ -668,10 +693,14 @@ pub(crate) mod tests {
                 self.0.snapshot(shortcode)
             }
         }
+
+        fn location_present(&self, shortcode: &str) -> bool {
+            self.0.location_present(shortcode)
+        }
     }
 
     /// The projection of the cases below: `0001` and `0005` to `0018` are served, `0003` is
-    /// unavailable, and `0004` serves a snapshot of `0001`.
+    /// unavailable, `0004` serves a snapshot of `0001`, and `0002` it does not know.
     fn failing_projection() -> Mismatching {
         let mismatched = ProjectSnapshot {
             shortcode: "0001".to_owned(),
@@ -684,8 +713,8 @@ pub(crate) mod tests {
         Mismatching(served.with_unavailable("0003"), mismatched)
     }
 
-    /// Each project that does not activate, as `(folder, SHORTCODE)`, the deposited files that
-    /// make it fail, and the cause its report names.
+    /// Each project that fails, as `(folder, SHORTCODE)`, the deposited files that make it fail,
+    /// and the cause its report names.
     fn failing_projects() -> (Vec<(&'static str, &'static str, &'static str)>, FakeDepositedFiles) {
         let delta = std::fs::read_to_string(fixture().join("delta/config.kdl")).expect("the fixture is readable");
         let reads_curation = things_of("0016").replace(
@@ -695,7 +724,6 @@ pub(crate) mod tests {
         assert_ne!(reads_curation, things_of("0016"), "the fixture's class has an id node");
         let files = configs(&[
             ("0001", THINGS),
-            ("0002", &things_of("0002")),
             ("0003", &things_of("0003")),
             ("0004", &things_of("0004")),
             ("0005", &delta),
@@ -713,7 +741,6 @@ pub(crate) mod tests {
         .with_file("0013", "config.kdl", [0xff, 0xfe])
         .with_file("0014", "narrative/home.md", [0xff, 0xfe]);
         let cases = vec![
-            ("unknown", "0002", "holds no project 0002"),
             ("outage", "0003", "is unavailable: simulated outage"),
             ("mismatch", "0004", "requested project 0004, but the snapshot is of 0001"),
             ("no-remodel", "0005", "has no 'remodel' block"),
@@ -756,7 +783,7 @@ pub(crate) mod tests {
         (cases, files)
     }
 
-    /// Each cause of a project that does not activate is reported as that cause, so that the
+    /// Each cause of a project that fails is reported as that cause, so that the
     /// 503s of the test below are not many times one unrelated failure.
     #[test]
     fn a_project_that_cannot_be_loaded_is_reported_with_its_cause() {
@@ -769,9 +796,17 @@ pub(crate) mod tests {
         for (_, shortcode, cause) in cases {
             let (_root, project) = discovered(shortcode);
             let error = super::load(&project, &sources).expect_err("the project does not load");
-            let (super::NotLoaded::Unknown(report) | super::NotLoaded::Failed(report)) = &error;
+            let super::NotLoaded::Failed(report) = &error else {
+                panic!("{shortcode} is failed, not unknown: {error:?}");
+            };
             assert!(report.contains(cause), "{shortcode}: {cause:?} is not in {error:?}");
         }
+        let (_root, unknown) = discovered("0002");
+        let error = super::load(&unknown, &sources).expect_err("the project does not load");
+        assert!(
+            matches!(&error, super::NotLoaded::Unknown(report) if report.contains("holds no project 0002")),
+            "{error:?}"
+        );
     }
 
     #[tokio::test]
@@ -807,6 +842,136 @@ pub(crate) mod tests {
             "the overview lists the one served project: {overview}"
         );
         assert!(overview.contains("href=\"/things/\""), "{overview}");
+    }
+
+    /// `uri`'s answer with the headers that vary between two requests taken out.
+    async fn answer(cpe: &Cpe, uri: &str) -> (StatusCode, axum::http::HeaderMap, String) {
+        let (status, mut headers, body) = get(cpe, uri).await;
+        headers.remove(header::DATE);
+        (status, headers, body)
+    }
+
+    /// Asserts that each path under `prefix` is answered as the same path under a prefix that
+    /// names no project folder: CPE's 404, with nothing that tells the two apart.
+    async fn assert_answered_as_no_project(cpe: &Cpe, prefix: &str) {
+        for path in ["", "/", "/things/lamp"] {
+            let (uri, nowhere) = (format!("/{prefix}{path}"), format!("/no-such-folder{path}"));
+            let answered = answer(cpe, &uri).await;
+            assert_eq!(answered.0, StatusCode::NOT_FOUND, "{uri}");
+            assert!(!answered.1.contains_key(header::RETRY_AFTER), "{uri}");
+            assert_eq!(answered.1[header::CACHE_CONTROL], "no-store", "{uri}");
+            assert!(
+                answered.2.contains("This address does not name a project."),
+                "{uri}: {}",
+                answered.2
+            );
+            assert_eq!(answered, answer(cpe, &nowhere).await, "{uri} and {nowhere}");
+        }
+    }
+
+    /// CPE over `things` (0001, served), `unknown` (0002, no Ready token) and `outage` (0003,
+    /// failed), with `hidden` the shortcodes of the Hidden projects.
+    fn served_unknown_and_failed(hidden: &[&str]) -> (tempfile::TempDir, Cpe) {
+        let root = projects(&[("things", "0001"), ("unknown", "0002"), ("outage", "0003")]);
+        let cpe = Cpe::new(&crate::CpeConfig {
+            hidden_shortcodes: hidden.iter().map(|&shortcode| shortcode.to_owned()).collect(),
+            ..config_for(root.path())
+        });
+        cpe.activate(
+            &FakeArchiveProjection::default()
+                .with_project(snapshot("0001", "Brass lamp"))
+                .with_unavailable("0003"),
+            &configs(&[
+                ("0001", THINGS),
+                ("0002", &things_of("0002")),
+                ("0003", &things_of("0003")),
+            ]),
+        );
+        (root, cpe)
+    }
+
+    /// Catches an unknown project answered 503, which tells a visitor that it exists.
+    #[tokio::test]
+    async fn a_project_with_no_ready_token_answers_as_a_path_that_names_no_project() {
+        let (_root, cpe) = served_unknown_and_failed(&[]);
+
+        assert_answered_as_no_project(&cpe, "unknown").await;
+        assert_eq!(cpe.projects().len(), 1);
+        let (_, _, overview) = get(&cpe, "/").await;
+        assert!(!overview.contains("/unknown/"), "{overview}");
+    }
+
+    /// Catches hidden ids collected from every folder: the header alone would tell a hidden
+    /// unknown project's 404 apart.
+    #[tokio::test]
+    async fn a_hidden_project_with_no_ready_token_answers_that_404_without_x_robots_tag() {
+        let (_root, cpe) = served_unknown_and_failed(&["0001", "0002", "0003"]);
+
+        assert_answered_as_no_project(&cpe, "unknown").await;
+        for uri in ["/unknown", "/unknown/", "/unknown/things/lamp"] {
+            let (_, headers, _) = get(&cpe, uri).await;
+            assert!(!headers.contains_key("x-robots-tag"), "{uri}");
+        }
+    }
+
+    /// Catches a 404 a cache may keep: a project that is unknown now may be served after the next
+    /// re-activation, and a served project's path may name a page then.
+    #[tokio::test]
+    async fn a_served_projects_404_is_not_stored_either() {
+        let (_root, cpe) = served_unknown_and_failed(&[]);
+
+        let (status, headers, _) = get(&cpe, "/things/no-such-page").await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
+        assert_eq!(headers[header::CACHE_CONTROL], "no-store");
+    }
+
+    /// An activation with only `statuses`.
+    fn with_statuses(statuses: &[(&str, super::ProjectStatus)]) -> super::Activated {
+        super::Activated {
+            router: axum::Router::new(),
+            projects: Vec::new(),
+            statuses: statuses.iter().map(|(id, status)| ((*id).to_owned(), *status)).collect(),
+        }
+    }
+
+    #[test]
+    fn withdrawn_by_names_the_served_projects_sync_no_longer_knows_and_no_other() {
+        use super::ProjectStatus::{Failed, Loaded, Unknown};
+        let current = with_statuses(&[
+            ("served-then-unknown", Loaded),
+            ("served-then-served", Loaded),
+            ("unknown-then-unknown", Unknown),
+            ("failed-then-unknown", Failed),
+            ("served-then-failed", Loaded),
+        ]);
+        let next = with_statuses(&[
+            ("served-then-unknown", Unknown),
+            ("served-then-served", Loaded),
+            ("unknown-then-unknown", Unknown),
+            ("failed-then-unknown", Unknown),
+            ("served-then-failed", Failed),
+            ("new-and-unknown", Unknown),
+        ]);
+
+        assert_eq!(super::withdrawn_by(&current, &next), vec!["served-then-unknown".to_owned()]);
+    }
+
+    #[tokio::test]
+    async fn a_hidden_project_that_is_served_or_failed_carries_x_robots_tag_on_every_answer() {
+        let (_root, cpe) = served_unknown_and_failed(&["0001", "0002", "0003"]);
+
+        for uri in [
+            "/things/",
+            "/things/things/lamp",
+            "/things/no-such-page",
+            "/outage",
+            "/outage/x",
+        ] {
+            let (_, headers, _) = get(&cpe, uri).await;
+            assert_eq!(headers["x-robots-tag"], "noindex, nofollow", "{uri}");
+        }
+        let (status, headers, _) = get(&cpe, "/outage/").await;
+        assert_unavailable(status, &headers, "/outage/");
     }
 
     #[tokio::test]
@@ -1151,14 +1316,33 @@ pub(crate) mod tests {
         );
     }
 
+    /// A missing or empty location is a broken deployment, never a project with no Ready token.
     #[tokio::test]
-    async fn without_the_data_directory_incunabula_answers_503_on_its_prefix() {
-        let cpe = Cpe::new(&config_for(&committed_projects()));
-        cpe.activate(
-            &LiveArchiveProjection::new(sync_data().join("no-such-folder")),
-            &LiveDepositedFiles::new(media_data()),
-        );
-        assert_incunabula_answers_503(&cpe).await;
+    async fn without_the_data_directory_or_with_an_empty_one_incunabula_answers_503_on_its_prefix() {
+        let empty = tempfile::tempdir().expect("a temporary directory");
+        for location in [sync_data().join("no-such-folder"), empty.path().to_owned()] {
+            let cpe = Cpe::new(&config_for(&committed_projects()));
+            cpe.activate(&LiveArchiveProjection::new(location), &LiveDepositedFiles::new(media_data()));
+            assert_incunabula_answers_503(&cpe).await;
+        }
+    }
+
+    /// A broken token, and one that names a generation the location does not hold, are a broken
+    /// project, never a project with no Ready token.
+    #[tokio::test]
+    async fn with_a_broken_ready_token_or_one_naming_a_missing_generation_incunabula_answers_503() {
+        let token = std::fs::read(sync_data().join("0803/.ready")).expect("Incunabula's token is committed");
+        for token in [token, b"{}\n".to_vec()] {
+            let location = tempfile::tempdir().expect("a temporary directory");
+            std::fs::create_dir(location.path().join("0803")).expect("the project directory is created");
+            std::fs::write(location.path().join("0803/.ready"), token).expect("the token is written");
+            let cpe = Cpe::new(&config_for(&committed_projects()));
+            cpe.activate(
+                &LiveArchiveProjection::new(location.path()),
+                &LiveDepositedFiles::new(media_data()),
+            );
+            assert_incunabula_answers_503(&cpe).await;
+        }
     }
 
     #[tokio::test]

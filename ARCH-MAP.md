@@ -1302,8 +1302,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   facade in the shape of `dpe-server`: `CpeConfig`, and `Cpe` with its router and its activation. The router's
   root, which is the base with and without a trailing slash, is the overview of the loaded projects that are not hidden (ADR-0007). Activation
   loads every project folder that holds a `SHORTCODE`, from the files the bytes port serves for that
-  shortcode and a store built from the archive projection port's snapshot, and a project that does not
-  activate answers 503 on its own prefix while the others are served (ADR-0007); the crate also serves the stylesheets and `public/` from a
+  shortcode and a store built from the archive projection port's snapshot, and a project that fails to
+  activate answers 503 on its own prefix, and one with no Ready token 404, while the others are served (ADR-0007); the crate also serves the stylesheets and `public/` from a
   compiled-in table. A project's folder under `projects/` holds its `SHORTCODE` and the documents describing its
   data, and no code; until `media` serves assets at request time, it also holds its `assets/`. A
   hook is a module of the builder and a `HOOKS` row, a project component a `PROJECT_RENDERERS` row (ADR-0007).
@@ -1445,8 +1445,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   whole text to their lengths and SHA-256). In `cpe-server`: no `pub` item names a type of another CPE crate but
   `cpe-ports` (**static-analysis**: the crate's test `no_pub_item_names_another_cpe_crate`, a text check over
   `lib.rs` and `config.rs`); CPE never stops its host, so no constructor fails, `activate` returns nothing and
-  catches a panic, and what did not load answers 503 with `Retry-After` and `Cache-Control:
-  no-store`, never 404 (**static-analysis**: the tests of its `activation` module, which hold a panic inside
+  catches a panic, and a project that fails to load answers 503 with `Retry-After` and `Cache-Control:
+  no-store`, never 404, while one with no Ready token answers CPE's 404, as a path that names no project does
+  (**static-analysis**: the tests of its `activation` module, which hold a panic inside
   one project's load; a panic outside it is caught too, and that is **review**, as is a binary built with
   `panic = "abort"`); no request path is joined
   onto a directory (structural where a request is answered, since `AssetInventory::serve` and

@@ -87,11 +87,21 @@ fn reactivate(cpe: &Cpe, projection: &dyn ArchiveProjection, files: &dyn Deposit
     let outcome = catch_unwind(AssertUnwindSafe(|| {
         let next = activation::from_ports(&cpe.config, projection, files);
         // `cpe-reactivate` is the only thread that stores once the first activation is done.
-        let held_back = cpe
-            .activated()
-            .map(|current| activation::held_back_by(&current, &next))
+        let current = cpe.activated();
+        let held_back = current
+            .as_ref()
+            .map(|current| activation::held_back_by(current, &next))
             .unwrap_or_default();
         if held_back.is_empty() {
+            for project_id in current
+                .map(|current| activation::withdrawn_by(&current, &next))
+                .unwrap_or_default()
+            {
+                tracing::warn!(
+                    project_id = project_id.as_str(),
+                    "a served project is no longer in the archive projection; its prefix answers 404"
+                );
+            }
             cpe.store(next);
         }
         held_back
@@ -125,14 +135,14 @@ mod tests {
     use std::sync::{mpsc, Arc, Mutex, PoisonError, RwLock};
     use std::time::{Duration, Instant};
 
-    use axum::http::StatusCode;
+    use axum::http::{header, StatusCode};
     use cpe_ports::{
         ArchiveProjection, ChangeListener, DepositedFiles, FakeArchiveProjection, FakeDepositedFiles, FilesError,
         ProjectSnapshot, ProjectionError, Provenance,
     };
 
     use crate::activation::tests::{configs, projects, snapshot, things_of, THINGS};
-    use crate::tests::{assert_unavailable, config_for, get};
+    use crate::tests::{config_for, get};
     use crate::Cpe;
 
     /// Answers to `provenance`, in order, the last one for good.
@@ -362,9 +372,31 @@ mod tests {
         run(&cpe, &projection, &files, &["0003"]);
 
         assert_eq!(lamp(&cpe, "things").await, Ok("Copper kettle"));
-        let (status, headers, _) = get(&cpe, "/other/").await;
-        assert_unavailable(status, &headers, "/other/");
+        let (status, headers, body) = get(&cpe, "/other/").await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
+        assert!(!headers.contains_key(header::RETRY_AFTER));
+        assert!(body.contains("This address does not name a project."), "{body}");
         assert_eq!(cpe.projects().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn a_project_sync_comes_to_know_is_presented_after_the_announcement() {
+        let root = projects(&[("things", "0001"), ("other", "0003")]);
+        let cpe = Cpe::new(&config_for(root.path()));
+        let projection = Projection::new(
+            FakeArchiveProjection::default()
+                .with_project(snapshot("0001", "Brass lamp"))
+                .with_provenance("0001", provenance("G1")),
+        );
+        let files = Files::new();
+        cpe.activate(&projection, &files);
+        assert_eq!(lamp(&cpe, "other").await, Err(StatusCode::NOT_FOUND));
+
+        projection.swap(lamps("Brass lamp"));
+        run(&cpe, &projection, &files, &["0003"]);
+
+        assert_both_brass(&cpe).await;
+        assert_eq!(cpe.projects().len(), 2);
     }
 
     /// A lost mount looks like every token removed; the missing location tells it apart.

@@ -18,7 +18,9 @@ to CPE.
 - **Refresh**: by a project's Ready token, with no restart (ADR-0012). `sync` polls its tokens every
   `SYNC_POLL_SECS` and announces a project whose token appeared, changed or was removed. On an announcement for
   a shortcode a project folder declares, CPE re-activates: it loads every project again, and serves the result
-  only if every project it served before loads again, or is no longer in `sync` (its token removed). Each
+  only if every project it served before loads again, or is no longer in `sync` (its token removed, after
+  which it answers `404`; a project served before is then logged at warning level, `a served project is no
+  longer in the archive projection; its prefix answers 404`, since a partial or stale mount looks the same). Each
   project's provenance is read from both ports before and after its store is built, and all four reads must be
   equal. Otherwise CPE keeps serving what it served, logs at error level which projects held the re-activation
   back (`CPE's re-activation is held back`), and tries once more after `RETRY_AFTER_POLLS` poll intervals (`access-server`);
@@ -53,7 +55,18 @@ carries `X-Robots-Tag: noindex, nofollow`, its pages and its not-found carry
 otherwise served as before, to anyone with the link. The start log has three lines for it: the shortcodes
 read (`hidden projects: none`, or `hidden projects: <list>`), the hidden project ids (`hidden project ids`),
 and each listed shortcode that no project folder has (`a hidden shortcode names no project folder`), so a typo
-shows there.
+shows there. A hidden project with no Ready token is not among the hidden project ids and carries no
+`X-Robots-Tag`: it answers `404` as any project with no Ready token does.
+
+### Releasing a project on a deployment
+
+A project is released on a deployment by adding its shortcode to that deployment's VRE bridge allowlist,
+`EDITOR_VRE_BRIDGE_ALLOWLIST`, in ops-deploy. The bridge then writes the project's data and Ready tokens to
+`SYNC_DATA_DIR` and `MEDIA_DATA_DIR`, `sync` announces the project, and CPE serves it without a restart. On a
+deployment that does not release it, a project whose folder is in the image has no Ready token: its paths
+answer CPE's not-found, `404`, as a path that names no project, the overview does not list it, and the log has
+`project is not in the archive projection; its prefix answers 404` at info level. Nothing in the
+project's files marks it released, and merging a project folder does not by itself serve it anywhere.
 
 The variable is read at start: hiding or un-hiding takes a restart or a redeploy. Search engines notice that a
 project was un-hidden only when they next crawl it, and an HTTP cache keeps a `noindex` response until it
@@ -63,14 +76,16 @@ expires.
 
 The port is bound first, and CPE's projects are loaded afterwards, in the background. Until they are, every
 path under `/cpe` answers `503` with `Retry-After: 30` and `Cache-Control: no-store`. That `503`, and the one
-a refused configuration answers, carries no `X-Robots-Tag`, since no project id is known yet. DPE and
-`/healthz` answer throughout. Nothing of CPE's stops the binary or delays its start.
+a refused configuration answers, carries no `X-Robots-Tag`, since no project id is known yet. CPE's
+not-found, `404`, also carries `Cache-Control: no-store`, since the next re-activation may serve what it
+answers for. DPE and `/healthz` answer throughout. Nothing of CPE's stops the binary or delays its start.
 
 | Situation | Under `/cpe` | Logged | DPE |
 |-----------|--------------|--------|-----|
 | Projects are still loading | `503`, every path | `CPE is mounted and activates in the background` (info) | serves |
 | A project is loaded | its pages, and its entry in the overview, unless it is a Hidden project | `project loaded`, then `CPE's projects are loaded` with the counts (info) | serves |
-| A project's Ready token in `SYNC_DATA_DIR` is missing while its directory, or another project's, is there | `503` on that project's paths; the overview does not list it | `project is not in the archive projection; its prefix answers 503` (warning) | serves |
+| A project's Ready token in `SYNC_DATA_DIR` is missing while its directory, or another project's, is there: the project is not released on this deployment | CPE's not-found, `404`, on that project's paths, as for a path that names no project; the overview does not list it | `project is not in the archive projection; its prefix answers 404`, with the shortcode (info) | serves |
+| A re-activation finds a project it served with no Ready token in `SYNC_DATA_DIR` while its directory, or another project's, is there | as for a project with no Ready token: CPE's not-found, `404` | `a served project is no longer in the archive projection; its prefix answers 404`, with the project id (warning), then `CPE re-activated` | serves |
 | A re-activation is held back | what was served before | `CPE's re-activation is held back`, with the project ids (error), after each project's own line | serves |
 | `SYNC_DATA_DIR` is missing or holds no project directory; the project's Ready token is unreadable or a symlink; the generation the token names or its snapshot is missing, unreadable or a symlink; or the token names an interim format version `sync` does not read | `503` on that project's paths; the overview does not list it | `project does not load; its prefix answers 503`, with the reason (error); for a missing directory also `SYNC_DATA_DIR names no directory …` at start (warning) | serves |
 | `MEDIA_DATA_DIR`, a project's Ready token in it, the generation the token names, or a file the project needs from it is missing, unreadable or not UTF-8 | `503` on that project's paths; the overview does not list it | `project does not load; its prefix answers 503`, with the reason (error); for a missing directory also `MEDIA_DATA_DIR names no directory …` at start (warning) | serves |
@@ -87,7 +102,7 @@ a refused configuration answers, carries no `X-Robots-Tag`, since no project id 
 | The router cannot be built with CPE at `CPE_BASE` (no value is known to do this) | not mounted: DPE's answer | the panic's own line, then `the router's build with CPE at CPE_BASE panicked …`, with the base and the reason (error) | serves alone |
 
 `/healthz` says nothing about CPE. Whether Incunabula is served is read from the log line
-`CPE's projects are loaded` (`served`, `unavailable`) or from the status of `/cpe/incunabula/`.
+`CPE's projects are loaded` (`served`, `unavailable`, `unknown`) or from the status of `/cpe/incunabula/`.
 
 A CPE request is traced by the binary's layers, under DPE's telemetry identity, with a span named by CPE's
 route (`GET /cpe/incunabula/books/{id}`).

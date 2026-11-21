@@ -14,7 +14,8 @@
 //! an unknown path under a project matches no route and reaches the fallback.
 //! [`build`] always sets that fallback. It renders the project's not-found
 //! page under a loaded project's id, answers 503 under the id of a project
-//! that did not load, and renders CPE's own not-found page otherwise. It never
+//! that failed to load, and renders CPE's own not-found page otherwise, an
+//! unknown project's id included. It never
 //! redirects and never puts the request path into the response; see
 //! `fallback_handler`.
 //!
@@ -94,7 +95,7 @@ fn status_code(status: cpe_core::view_data::PageStatus) -> StatusCode {
 
 /// Build CPE's router over the loaded projects.
 ///
-/// `unavailable` holds the ids of the project folders that did not load: no
+/// `unavailable` holds the ids of the projects that failed to load: no
 /// route is registered for them, and the fallback answers their prefix 503.
 /// `assets` is every loaded project's asset inventory. Each handler closure
 /// gets a clone of `origin_cfg` and resolves its own request's public origin
@@ -433,8 +434,7 @@ fn static_routes(app: Router, dir: &cpe_core::url::StaticDir) -> Router {
 }
 
 /// The overview of the projects, at the router's root: one teaser per loaded
-/// project that is not hidden. A project that did not load has none, as its
-/// prefix answers 503.
+/// project that is not hidden. A project that did not load has none.
 ///
 /// `?appearance=` sets the cookie and redirects to the page without it, as
 /// on a project's page; no other query key is read or removed. The page is
@@ -498,12 +498,15 @@ pub(crate) fn project_segment(path: &str) -> Option<&str> {
 /// **Project resolution** is [`project_segment`]'s, compared with the known
 /// project ids.
 ///
-/// - The id of a project that did not load → 503 ([`unavailable::response`]): the project exists
-///   and is not served, which is not a missing page.
+/// - The id of a project that failed to load → 503 ([`unavailable::response`]): the project exists
+///   and is not served, which is not a missing page. An unknown project is not among them and falls
+///   to the last case.
 /// - A loaded project's id → `cpe_web::page::render_not_found_project`: the project's own 404, full
 ///   project chrome and its `theme {}`, with the robots meta when the project is hidden.
-/// - No match → `cpe_web::page::render_not_found_site`: CPE's own 404, product-default knob,
-///   built-in language resolution.
+/// - No match, an unknown project's id included → `cpe_web::page::render_not_found_site`: CPE's own
+///   404, product-default knob, built-in language resolution.
+///
+/// Both 404s carry `Cache-Control: no-store`, as the 503 does.
 ///
 /// **Security-load-bearing: this handler performs NO redirect and sets NO
 /// cookie.** It must NEVER call `override_redirect` or
@@ -602,7 +605,8 @@ fn fallback_handler(
             }
         };
 
-        std::future::ready((StatusCode::NOT_FOUND, markup).into_response())
+        // Not stored, like the 503: the next re-activation may serve what is missing now.
+        std::future::ready((StatusCode::NOT_FOUND, [(header::CACHE_CONTROL, "no-store")], markup).into_response())
     }
 }
 

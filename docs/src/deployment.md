@@ -19,6 +19,10 @@ Defined in `a11y-dpe.yml`.
 
 Runs on PRs and pushes to `main` that touch `areas/access/dpe/**`, `areas/access/server/**`, `areas/access/cpe/**`, `areas/access/sync/**`, `areas/access/media/**`, `shared/**` or `modules/mosaic/tiles/**` (everything compiled into the binary the suite starts), or the Bazel build's own files. The suite tests DPE's pages. `just test-a11y-dpe` builds the release server and stylesheet with Bazel, then runs Playwright accessibility tests with axe-core against WCAG 2.1 AA. `a11y-editor.yml` does the same for the editor, with its whole suite (`just test-e2e-editor`).
 
+`a11y-cpe.yml` runs CPE's whole suite on Incunabula (`just test-e2e-cpe`): every journey with and without JavaScript, and
+axe against WCAG 2.1 AA in the JavaScript pass. It runs on PRs and pushes to `main` that touch `areas/access/**`, `shared/**` or
+`modules/mosaic/**`, or the Bazel build's own files.
+
 ### Fuzz Testing
 
 Defined in `fuzz.yml`.

@@ -30,7 +30,8 @@ areas/
 │   │   ├── server/            # CPE's host crate: configuration, discovery, router (crate: cpe-server)
 │   │   ├── store/             # CPE's read-side store: SQLite schema, loader, query layer (crate: cpe-store)
 │   │   ├── store-build/       # Builds a project's store from the port's snapshot (crate: cpe-store-build)
-│   │   └── web/               # CPE's page assembly: a loaded project, its pages and fragments (crate: cpe-web)
+│   │   ├── web/               # CPE's page assembly: a loaded project, its pages and fragments (crate: cpe-web)
+│   │   └── web-e2e-tests/     # Playwright E2E tests on Incunabula, with and without JavaScript
 │   ├── sync/                  # sync, the archive projection's writer (at its minimum so far)
 │   │   ├── store/             # Serves each project's Interim snapshot, by Ready token, behind CPE's archive projection port (crate: sync-store)
 │   │   └── data/              # Committed fixture of project 0803 in the stand-in layout (Ready token, generation) and its PROVENANCE

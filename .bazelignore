@@ -7,6 +7,7 @@ dsp-cli/target
 # npm installs, with BUILD-less trees of their own.
 areas/access/dpe/web-e2e-tests/node_modules
 areas/deposit/editor/web-e2e-tests/node_modules
+areas/access/cpe/web-e2e-tests/node_modules
 modules/mosaic/playground-e2e-tests/node_modules
 
 # Worktrees under .claude are whole checkouts with their own MODULE.bazel.

@@ -242,5 +242,7 @@ Incunabula has no search bar. A project with one has a request these figures do 
 
 ## Tests that start the binary
 
-DPE's Playwright suites (end-to-end and accessibility) start `access-server` without `CPE_BASE`, so CPE is
-not mounted in them. `just run` and `just dev` set `CPE_BASE=/cpe`.
+DPE's Playwright suite starts `access-server` without `CPE_BASE`, so CPE is not mounted in it. CPE's suite
+(`areas/access/cpe/web-e2e-tests`, `just test-e2e-cpe`) sets `CPE_BASE=/cpe` and `DPE_SITE_ADDR=127.0.0.1:4102`
+and nothing else, so the binary serves the committed data of project 0803 from the repository root; it waits for
+`/cpe/incunabula/` to answer, not for `/healthz`. `just run` and `just dev` set `CPE_BASE=/cpe`.

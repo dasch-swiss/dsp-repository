@@ -92,6 +92,8 @@ A new capability's paths also go into each path filter that should see it (`a11y
 `cloud-run-dpe-pull-request.yml`, `scout-dpe.yml`); `docs/src/deployment.md` says what each runs on. All three
 have `areas/access/cpe/**`, `areas/access/sync/**` and `areas/access/media/**` beside DPE's and this crate's
 paths, so a change to a presentation's files is previewed, scanned and checked for accessibility.
+`a11y-cpe.yml`, which runs CPE's suite (`areas/access/cpe/web-e2e-tests`, `just test-e2e-cpe`), filters on
+`areas/access/**` as a whole, so a new capability of the Access Area is already in it.
 `bazel query 'deps(//areas/access/server:image_musl)' --output=package` lists every package the image is
 built from.
 

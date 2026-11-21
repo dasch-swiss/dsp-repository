@@ -20,7 +20,7 @@ Review checklist for the DSP Repository. Organized by priority.
 - `dpe-core` and `shared-metadata` have no framework dependencies (no axum, no maud)
 - `shared-metadata` takes no dependency on a service crate, and no path into a service's data directory. Both halves fail the build, so this is a spot-check rather than a hand-verification: a service dependency is a dependency cycle, and a hardcoded path is caught by `just check-shared-paths` (`.github/scripts/check-shared-paths.sh`)
 - Validate command covers all data file types (DPE)
-- E2E test directory naming: `web-e2e-tests/` for DPE, `playground-e2e-tests/` for Mosaic
+- E2E test directory naming: `web-e2e-tests/` for DPE, the editor and CPE, `playground-e2e-tests/` for Mosaic
 
 **CLI**
 - CLI subcommands are documented in help text

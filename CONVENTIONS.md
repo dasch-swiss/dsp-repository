@@ -34,7 +34,7 @@ Agent reference card for the **work phase**. Pair with `REVIEW.md`, the review-p
 
 - **Testing pyramid and strategy**: See `docs/src/dpe/testing-strategy.md`
 - **Test naming**: `test_{what}_{condition}_{expected}` (e.g., `test_parse_project_missing_title_returns_error`)
-- **Test locations**: `#[cfg(test)]` modules or adjacent `_tests.rs` files for unit tests; `areas/access/dpe/web-e2e-tests/` and `areas/deposit/editor/web-e2e-tests/` for DPE and editor E2E; `modules/mosaic/playground-e2e-tests/` for Mosaic E2E
+- **Test locations**: `#[cfg(test)]` modules or adjacent `_tests.rs` files for unit tests; `areas/access/dpe/web-e2e-tests/`, `areas/deposit/editor/web-e2e-tests/` and `areas/access/cpe/web-e2e-tests/` for DPE, editor and CPE E2E; `modules/mosaic/playground-e2e-tests/` for Mosaic E2E
 
 ## Observability Conventions
 
@@ -68,6 +68,8 @@ Before opening a PR, read `git log origin/main` and recent merged PRs. Use them 
 - `just validate-data` after any change under `areas/access/dpe/server/data/`.
 - `just validate-cpe` after any change to a CPE project folder (`areas/access/cpe/projects/`), its shipped inputs
   (`areas/deposit/vre-bridge/inputs/`) or its stand-in (`areas/access/{sync,media}/data/`).
+- `just test-e2e-cpe` after a change to CPE's markup, routes or styles, or to a Mosaic tile: its Playwright suite
+  runs Incunabula with and without JavaScript, axe included, which `just test` does not.
 - `just commit-lint` before pushing; the `gate` CI job runs the same check.
 
 ## Where to Go for Depth

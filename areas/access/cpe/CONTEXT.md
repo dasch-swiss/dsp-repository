@@ -201,6 +201,8 @@ same link.
 Every URL the crate writes is built by `cpe_core::url` from the **Base** its caller hands it.
 Its markup is pinned by 30 snapshots in `web/src/snapshots/`, and `web/tests/projects/` holds 234 fixture
 projects, one per validation rule or page shape; `tests/validation.rs` loads each through `Project::load`.
+What the snapshots cannot show, a page that works in a browser with and without JavaScript, is held by the
+Playwright suite in `web-e2e-tests/` on Incunabula (`just test-e2e-cpe`, axe included).
 Some fixtures and snapshots carry the names of the incubator's other projects as test data; those projects
 are not in this repository.
 

@@ -100,6 +100,8 @@ jobs:
         run: cd areas/access/dpe/web-e2e-tests && npx @biomejs/biome check .
       - name: Lint Mosaic E2E tests
         run: cd modules/mosaic/playground-e2e-tests && npx @biomejs/biome check .
+      - name: Lint CPE E2E tests
+        run: cd areas/access/cpe/web-e2e-tests && npx @biomejs/biome check .
 
   docs:
     runs-on: ubuntu-latest

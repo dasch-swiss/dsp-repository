@@ -1277,7 +1277,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `image-viewer/` (crate `cpe-image-viewer`), `store/` (crate `cpe-store`, with its schema in
   `store/schema.sql`), `store-build/` (crate `cpe-store-build`), `web/` (crate `cpe-web`), `server/` (crate `cpe-server`), `projects/` (one folder per project,
   `projects/incunabula/` so far), `public/` (CPE's shared static files, with the vendored `datastar.js` in
-  `public/vendor/`) and `CONTEXT.md` (CPE's vocabulary and what its port serves)
+  `public/vendor/`), `web-e2e-tests/` (the Playwright suite on Incunabula, with and without JavaScript,
+  `just test-e2e-cpe`, run by `a11y-cpe.yml`) and `CONTEXT.md` (CPE's vocabulary and what its port serves)
 - **Purpose:** CPE, the Configurable Presentation Environment — a second Access-Area
   hypermedia server rendering project-specific presentations over the same data as DPE,
   configured per project. A project's KDL, narrative and curation are deposited files read at activation

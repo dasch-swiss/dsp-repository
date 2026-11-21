@@ -1,0 +1,95 @@
+name: a11y / cpe
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main]
+    paths:
+      # Everything the binary the suite starts is built from: the Access Area's crates and CPE's
+      # data, the shared crates and the Mosaic tiles they render through.
+      - "areas/access/**"
+      - "shared/**"
+      - "modules/mosaic/**"
+      # The Bazel build: what it reads besides the sources above.
+      - "MODULE.bazel"
+      - "MODULE.bazel.lock"
+      - "Cargo.Bazel.lock"
+      - ".bazelrc"
+      - ".bazelversion"
+      - "platforms/**"
+      - "bazel/**"
+      - "tools/**"
+      - ".github/actions/bazel-setup/**"
+      - ".github/actions/bazel-rbe/**"
+  pull_request:
+    paths:
+      - "areas/access/**"
+      - "shared/**"
+      - "modules/mosaic/**"
+      # The Bazel build: what it reads besides the sources above.
+      - "MODULE.bazel"
+      - "MODULE.bazel.lock"
+      - "Cargo.Bazel.lock"
+      - ".bazelrc"
+      - ".bazelversion"
+      - "platforms/**"
+      - "bazel/**"
+      - "tools/**"
+      - ".github/actions/bazel-setup/**"
+      - ".github/actions/bazel-rbe/**"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  a11y:
+    # Pinned as a11y-dpe.yml is: an older Playwright cannot install Chromium on ubuntu 26.04, which
+    # ubuntu-latest became.
+    runs-on: ubuntu-24.04
+    name: a11y / cpe / WCAG 2.1 AA + no-JS
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bazel setup
+        id: bazel
+        uses: ./.github/actions/bazel-setup
+        with:
+          rbe-runner-endpoint: ${{ vars.REMOTEBUILD_RUNNER_ENDPOINT }}
+          rbe-ca-cert: ${{ secrets.REMOTEBUILD_CA_CERT }}
+          rbe-client-cert: ${{ secrets.REMOTEBUILD_CLIENT_CERT }}
+          rbe-client-key: ${{ secrets.REMOTEBUILD_CLIENT_KEY }}
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install web-e2e-tests dependencies
+        run: cd areas/access/cpe/web-e2e-tests && npm install
+
+      - name: Install Playwright browsers
+        run: cd areas/access/cpe/web-e2e-tests && npx playwright install chromium --with-deps
+
+      - name: Run E2E, accessibility and no-JavaScript tests
+        # The whole suite, not the accessibility spec alone: its two projects, `chromium-js` and
+        # `chromium-nojs`, each cover what the other cannot. The recipe builds the release server
+        # with Bazel first; Playwright starts it from the path the recipe passes.
+        run: just test-e2e-cpe ${{ steps.bazel.outputs.flags }}
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-a11y-cpe
+          path: areas/access/cpe/web-e2e-tests/playwright-report/
+          retention-days: 7
+
+      - name: Save Bazel repository cache
+        if: ${{ !cancelled() && steps.bazel.outputs.repo-cache-key != '' && steps.bazel.outputs.repo-cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.cache/bazel-repo
+          key: ${{ steps.bazel.outputs.repo-cache-key }}

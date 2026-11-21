@@ -35,6 +35,7 @@ CI's `check / publish-dry-run / stable` runs `cargo publish --dry-run --locked` 
 | `just image-smoke` | loads the three images, starts each, and expects 200 from `/healthz` (the playground: `/`) and exit 0 from the `healthcheck` subcommand |
 | `just build-fuzz` | the libFuzzer binaries of the DPE fuzz targets, `--config=fuzz` |
 | `just test-a11y-dpe`, `test-e2e-editor`, `test-a11y-editor` | builds the server with `--config=release` for this machine and the release stylesheet, then runs the Playwright suite with the binary's path in `ACCESS_SERVER_BIN` or `DEPOSIT_SERVER_BIN` |
+| `just test-e2e-cpe`, `test-a11y-cpe` | builds `access-server` with `--config=release` for this machine, then runs CPE's Playwright suite with the binary's path in `ACCESS_SERVER_BIN`; no stylesheet build, since CPE's stylesheets are compiled into the binary |
 | `just clean` | `bazel clean` |
 
 A recipe that takes `FLAGS` passes them to Bazel, as CI passes `--config=ci` and the remote flags, for example `just test --test_output=errors`. A single package is plain Bazel: `bazel test //shared/telemetry/...`.

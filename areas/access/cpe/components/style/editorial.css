@@ -346,6 +346,8 @@ html[data-align="justify"] .editorial__sections > p {
      rail  from 80rem the reading column and the rail side by side, centred
            together; breakouts start at the reading column's edge
    Below 80rem both are the `text` form.
+   Exception: right above a compound viewer's contents rail, the head and
+   intro start at the frame's edge with the rail (record.css, `.cv-toc`).
 
    The reading measure never changes. In a breakout only the office groups
    and the figure blocks use the full width; every other child keeps --read.

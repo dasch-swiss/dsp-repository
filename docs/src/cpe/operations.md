@@ -86,11 +86,39 @@ or not `CPE_BASE` is set. It prints one paragraph per project folder:
 | The project does not load, for any reason in the table below that answers `503` | `FAILED`, with the report CPE logs | yes |
 | The folder's `SHORTCODE` is malformed, unreadable or a symlink, or its name is not a project id | `FAILED`, with the reason | yes |
 | The folder has no `SHORTCODE` | nothing: it is no project | no |
-| CPE's configuration is refused | `CPE: not checked`, with the reason | yes |
+| CPE's configuration is refused, or no folder has a `SHORTCODE` | `CPE: not checked`, with the reason | yes |
 
 Every project's paragraph is printed before the verb exits, so one run shows every failure. Folder names and
 report lines are printed with their control characters escaped. `serve` is not strict: there a project that
 fails takes only itself offline.
+
+`--inputs <dir>` names a directory laid out as the VRE bridge ships a project's inputs
+(`<shortcode>/config.kdl`, `<shortcode>/curation.csv`, `<shortcode>/narrative/<name>`). For each project folder
+it adds a data-free check of what is shipped for its shortcode: the configuration parses, its `remodel` block
+loads and declares the folder's shortcode, its `site` block passes every check that needs neither archive data
+nor assets (the languages and `default-language` among them, with the diagnostics the full load gives), and each
+narrative file it names has its base file or its variant in the site's default language (`default-language`,
+else the first language). The check follows no symbolic link inside the inputs directory: a `narrative` that is
+not a real directory fails it, and a linked file counts as missing. A narrative file name the deposited files
+refuse at activation (characters outside `A-Za-z0-9._-`, a leading `.`, a path separator) fails it too. Whether
+the cover image is in the project's assets, the nav and `not-found` routes, pages and components are checked by
+the full load only: they need the project's assets or archive data.
+
+The data-free check's outcome is a line below the project's: `inputs: checked`, `inputs: none shipped`, or
+`inputs: FAILED` with the report, which fails the run. A project with neither stand-in data (unknown) nor shipped
+inputs passes with the note `neither stand-in data nor shipped inputs`. A directory given that is not there fails
+the run.
+
+`--must-serve <shortcode>` (repeatable, or comma-separated) fails the run when that project is unknown, failed or
+declared by no folder, so a stand-in that went missing cannot pass as an unknown project. When the check fails as
+a whole (`CPE: not checked`), that error is the one cause printed.
+
+`just validate-cpe` runs the verb from the repository root, as `just validate-data` does, against the committed
+stand-ins under `areas/access/{sync,media}/data` (`serve`'s defaults), with
+`--inputs areas/deposit/vre-bridge/inputs --must-serve 0803`. `test.yml`'s required job runs it after
+`just test`. A project with a committed stand-in gets the full check, and one with shipped inputs alone, as a new
+project has before its data is deposited, gets the data-free one. Run it after changing a project folder, its
+shipped inputs or its stand-in.
 
 The image carries CPE's project folders but no data of `sync`'s or `media`'s, so `validate` run in a container
 without `SYNC_DATA_DIR` and `MEDIA_DATA_DIR` pointing at mounted data fails every project, as `serve` would

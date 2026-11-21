@@ -69,8 +69,11 @@ Between areas, the rules are:
   the editor's pull-request run turns approved records into pull requests against the committed project files under
   `areas/access/dpe/server/data`, and the VRE bridge writes the stand-ins of `sync` and `media` into a directory
   that `deposit-server` and `access-server` share by mount (ADR-0012). These are the two paths that cross the
-  areas, and the only ones; the `just check` script that pins the 0803 `media` fixture byte for byte to the
-  bridge's shipped inputs belongs to the second. Both end when the archive exists. In the
+  areas, and the only ones; two reads of the bridge's shipped inputs by path belong to the second: the
+  `just check` script that pins the 0803 `media` fixture byte for byte to them, and `just validate-cpe`, which
+  hands their directory to `access-server validate` as an argument for its data-free check of each CPE project.
+  No Bazel target of the Access Area depends on one of the Deposit Area's for either. Both paths end when the
+  archive exists. In the
   target design, the Deposit Area submits packages to Spycherli over an intent protocol (register an intent with
   a declared manifest, upload to a quarantine bucket, complete, validate), and Spycherli feeds every Access-Area
   service with pointer messages on a message bus plus immutable objects in object storage.
@@ -156,7 +159,8 @@ by no other code writing the directory with `std::fs` (review); `access-server` 
 read-only is deployment-level, in
 ops-deploy, and not checked in this repository; `check-shared-paths.sh` for paths from a shared crate into an
 area, which no dependency edge shows (static-analysis); `check-stand-in-fixture.sh`, run by `just check`,
-for the 0803 `media` fixture holding the bridge's shipped inputs byte for byte, the only code that reads
-both areas' trees (static-analysis); `cargo publish --dry-run --locked --manifest-path
+for the 0803 `media` fixture holding the bridge's shipped inputs byte for byte, and `just validate-cpe`, which
+passes the inputs directory to `access-server validate` by path, the only code that reads both areas' trees
+(static-analysis); `cargo publish --dry-run --locked --manifest-path
 dsp-cli/Cargo.toml` in `check.yml` for dsp-cli's publishing manifest (static-analysis); review for state
 ownership, shared concepts and the archive's storage.

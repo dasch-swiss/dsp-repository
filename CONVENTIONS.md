@@ -66,6 +66,8 @@ Before opening a PR, read `git log origin/main` and recent merged PRs. Use them 
 
 - `just fmt`, then `just check` (formatting, clippy, and the repo's static checks) and `just test`. While iterating, `bazel test //<package>/...` on the packages you changed.
 - `just validate-data` after any change under `areas/access/dpe/server/data/`.
+- `just validate-cpe` after any change to a CPE project folder (`areas/access/cpe/projects/`), its shipped inputs
+  (`areas/deposit/vre-bridge/inputs/`) or its stand-in (`areas/access/{sync,media}/data/`).
 - `just commit-lint` before pushing; the `gate` CI job runs the same check.
 
 ## Where to Go for Depth

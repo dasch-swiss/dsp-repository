@@ -9,7 +9,7 @@ All CI/CD workflows are defined as GitHub Actions in `.github/workflows/`.
 Every push and pull request runs:
 
 - **check.yml** — `just check` with Bazel: the gate scripts, vendored-JS checksums among them (see [Security](./security.md)), formatting (`maudfmt` for `html!` macros and the pinned nightly `rustfmt`), clippy over every Bazel target; a dsp-cli packaging dry run and test run against its own manifest (`cargo publish --dry-run`, `cargo test`); the E2E suites' Biome lint; the mdBook build
-- **test.yml** — `just test` (every Bazel test) and `just image-smoke` (the three images built, started and answering), and the tests of the `.github/scripts` gates (`just test-scripts`)
+- **test.yml** — `just test` (every Bazel test), `just validate-cpe` (DPE's data and every committed CPE project) and `just image-smoke` (the three images built, started and answering), and the tests of the `.github/scripts` gates (`just test-scripts`)
 - **scout-dpe.yml** / **scout-editor.yml** / **scout-mosaic-playground.yml** — Docker image vulnerability scanning of the Bazel-built images (see [Security](./security.md))
 - **dsp-cli-drift.yml** — its `changes` job (deciding whether anything under `dsp-cli/**` changed) runs on every PR; see [dsp-cli drift detection](#dsp-cli-drift-detection) below
 

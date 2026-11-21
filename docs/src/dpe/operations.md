@@ -31,7 +31,7 @@ The `access-server` binary provides three subcommands:
 | Command | Description |
 |---------|-------------|
 | `access-server serve` | Start the web server |
-| `access-server validate <data_dir>` | Validate DPE's data files under the given directory, then every CPE project |
+| `access-server validate <data_dir> [--inputs <dir>] [--must-serve <shortcode>...]` | Validate DPE's data files under the given directory, then every CPE project (the two flags are CPE's) |
 | `access-server healthcheck [--url URL]` | Check if the server is healthy (default: `http://localhost:8080/healthz`) |
 
 ### `access-server validate`

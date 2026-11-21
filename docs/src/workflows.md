@@ -24,6 +24,7 @@ For any interaction or coding-related workflow, the justfile is the primary sour
 | `just install-e2e-requirements` | Install Playwright browsers for E2E tests |
 | `just docs-serve` | Serve documentation locally at localhost:3000 |
 | `just validate-data` | Validate DPE's data files in the default data directory, then every CPE project (`access-server validate`) |
+| `just validate-cpe` | `just validate-data`, with the data-free check of the VRE bridge's shipped inputs and 0803 required to be served; CI's required job runs it |
 | `just verify-checksums` | Check vendored JS against each `vendor/README.md` table (also run by `just check`) |
 | `just check-shared-paths` | Fail the build if a crate under `shared/` hardcodes a path into a service module (also run by `just check`) |
 | `just check-capability-deps` | Fail the build if a Deposit or Access Area role's `BUILD.bazel` uses a third-party crate its role may not, or any `BUILD.bazel` under `areas/`, `shared/`, `modules/` or `dsp-cli/` makes a target `//visibility:public`; the bans are listed at the top of `.github/scripts/check-capability-deps.sh` (ADR-0003). Edges between first-party crates are each target's `visibility` (also run by `just check`) |

@@ -66,6 +66,7 @@ check (one job):
 
 test / ubuntu / stable (one job):
   bazel test //... (just test)
+  DPE's data and every committed CPE project, strictly (just validate-cpe)
   build, load and start the three images (just image-smoke)
 
 a11y / dpe, a11y / editor (on path changes):

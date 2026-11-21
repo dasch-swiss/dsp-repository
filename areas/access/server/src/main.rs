@@ -24,13 +24,15 @@ fn main() -> ExitCode {
             ExitCode::SUCCESS
         }
         Some(cli::Commands::Serve) => serve::serve(),
-        Some(cli::Commands::Validate { data_dir }) => {
+        Some(cli::Commands::Validate { data_dir, inputs, must_serve }) => {
             let cpe = serve::cpe_setup_from_env();
             let passes = validate::validate(
                 &data_dir,
                 &cpe.config,
                 &sync_store::LiveArchiveProjection::new(cpe.sync_data_dir),
                 &media_store::LiveDepositedFiles::new(cpe.media_data_dir),
+                inputs.as_deref(),
+                &must_serve,
                 &mut std::io::stdout(),
             );
             if passes {

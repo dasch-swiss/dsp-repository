@@ -25,11 +25,13 @@ mod assets;
 mod config;
 mod discovery;
 mod follow;
+mod inputs;
 mod request;
 mod router;
 mod static_files;
 mod unavailable;
 
+use std::path::Path;
 use std::sync::{Arc, PoisonError, RwLock};
 
 pub use config::CpeConfig;
@@ -49,8 +51,8 @@ pub struct ProjectSummary {
 /// What [`validate`] found.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Validation {
-    /// Why no project was checked: CPE's configuration is refused, or the check panicked outside
-    /// a project's own load.
+    /// Why the check fails as a whole: CPE's configuration is refused, the inputs directory is not
+    /// there, no project folder is found, or the check panicked outside a project's own load.
     pub error: Option<String>,
     /// Every folder with a `SHORTCODE`, sorted by folder name. A folder with none is no project and
     /// is not in it.
@@ -58,15 +60,11 @@ pub struct Validation {
 }
 
 impl Validation {
-    /// Whether no project failed and nothing stopped the check. An unknown project does not fail
-    /// it: a project not released where the check runs is expected.
+    /// Whether no project and no project's inputs failed, and nothing stopped the check. An unknown
+    /// project does not fail it: a project not released where the check runs is expected.
     #[must_use]
     pub fn passes(&self) -> bool {
-        self.error.is_none()
-            && !self
-                .projects
-                .iter()
-                .any(|project| matches!(project.outcome, ProjectOutcome::Failed { .. }))
+        self.error.is_none() && !self.projects.iter().any(ProjectReport::failed)
     }
 }
 
@@ -78,6 +76,17 @@ pub struct ProjectReport {
     /// The shortcode the folder's `SHORTCODE` declares; `None` for a folder discovery skips.
     pub shortcode: Option<String>,
     pub outcome: ProjectOutcome,
+    /// The data-free check of the inputs shipped for its shortcode; `None` when [`validate`] was
+    /// given no inputs directory, or the folder declares no valid shortcode.
+    pub inputs: Option<InputsCheck>,
+}
+
+impl ProjectReport {
+    /// Whether the folder fails the check: it does not load, or its shipped inputs fail.
+    #[must_use]
+    pub fn failed(&self) -> bool {
+        matches!(self.outcome, ProjectOutcome::Failed { .. }) || matches!(self.inputs, Some(InputsCheck::Failed { .. }))
+    }
 }
 
 /// How one project folder came out of [`validate`]. Every text is ready to print.
@@ -91,28 +100,52 @@ pub enum ProjectOutcome {
     Failed { report: String },
 }
 
+/// How a project's shipped inputs came out of [`validate`]'s data-free check.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum InputsCheck {
+    /// Its config parses, its remodel block loads and declares the folder's shortcode, and every
+    /// narrative file it names is there in its base or default-language form.
+    Passed,
+    /// The inputs directory ships nothing for its shortcode.
+    NoneShipped,
+    /// What is wrong with them, ready to print.
+    Failed { report: String },
+}
+
 /// Load every project folder from `projection` and `files` once, as [`Cpe::activate`] does,
 /// serve nothing, and report how each came out: the strict check a host runs before it ships a
-/// project, where [`Cpe::activate`] would only take a failing project offline.
+/// project, where [`Cpe::activate`] would only take a failing project offline. Given `inputs`, a
+/// directory laid out as the VRE bridge ships a project's inputs, it also runs the data-free check
+/// on what it ships for each project folder's shortcode ([`ProjectReport::inputs`]).
+///
+/// Finding no project folder fails the check, as does an `inputs` that is not a directory: either
+/// would otherwise pass with nothing checked.
 ///
 /// Blocking, and it never panics: a panic outside a project's own load is [`Validation::error`].
 pub fn validate(
     config: &CpeConfig,
     projection: &dyn cpe_ports::ArchiveProjection,
     files: &dyn cpe_ports::DepositedFiles,
+    inputs: Option<&Path>,
 ) -> Validation {
+    let failed = |error: String| Validation { error: Some(error), projects: Vec::new() };
     if let Some(reason) = config.refusal() {
-        return Validation {
-            error: Some(format!("CPE's configuration is refused: {reason}")),
-            projects: Vec::new(),
-        };
+        return failed(format!("CPE's configuration is refused: {reason}"));
     }
-    match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| activation::validate(config, projection, files))) {
+    if let Some(inputs) = inputs.filter(|inputs| !inputs.is_dir()) {
+        return failed(format!(
+            "the inputs directory {} is missing or not a directory",
+            inputs.display()
+        ));
+    }
+    match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        activation::validate(config, projection, files, inputs)
+    })) {
+        Ok(projects) if projects.is_empty() => {
+            failed(format!("no project folder under {}", config.projects_dir.display()))
+        }
         Ok(projects) => Validation { error: None, projects },
-        Err(payload) => Validation {
-            error: Some(format!("CPE's check panicked: {}", activation::panic_message(payload.as_ref()))),
-            projects: Vec::new(),
-        },
+        Err(payload) => failed(format!("CPE's check panicked: {}", activation::panic_message(payload.as_ref()))),
     }
 }
 
@@ -571,8 +604,8 @@ mod tests {
         use cpe_ports::FakeArchiveProjection;
 
         use super::config_for;
-        use crate::activation::tests::{configs, projects, snapshot, things_of, THINGS};
-        use crate::{validate, ProjectOutcome, ProjectReport};
+        use crate::activation::tests::{configs, projects, snapshot, things_of, things_with_narrative, THINGS};
+        use crate::{validate, InputsCheck, ProjectOutcome, ProjectReport};
 
         /// The fixture config with a second page whose id is taken: a validation error.
         fn broken() -> String {
@@ -616,6 +649,7 @@ mod tests {
                     ("0003", &things_of("0003")),
                     ("0004", &unused_label()),
                 ]),
+                None,
             );
             (root, validation)
         }
@@ -664,7 +698,7 @@ mod tests {
             std::fs::create_dir(root.path().join("malformed")).expect("the folder is created");
             std::fs::write(root.path().join("malformed/SHORTCODE"), "08x3\n").expect("SHORTCODE is written");
             std::fs::create_dir(root.path().join("notes")).expect("the folder is created");
-            let validation = validate(&config_for(root.path()), &FakeArchiveProjection::default(), &configs(&[]));
+            let validation = validate(&config_for(root.path()), &FakeArchiveProjection::default(), &configs(&[]), None);
 
             let malformed = report(&validation.projects, "malformed");
             assert_eq!(malformed.shortcode, None);
@@ -683,12 +717,219 @@ mod tests {
             let root = projects(&[("things", "0001"), ("unknown", "0003")]);
             let projection = FakeArchiveProjection::default().with_project(snapshot("0001", "Brass lamp"));
             let files = configs(&[("0001", THINGS)]);
-            let validation = validate(&config_for(root.path()), &projection, &files);
+            let validation = validate(&config_for(root.path()), &projection, &files, None);
             assert!(validation.passes(), "{validation:?}");
 
             let refused = crate::CpeConfig { base: "no-slash".to_owned(), ..config_for(root.path()) };
-            let validation = validate(&refused, &projection, &files);
+            let validation = validate(&refused, &projection, &files, None);
             assert!(validation.error.as_deref().is_some_and(|error| error.contains("CPE_BASE")));
+            assert!(!validation.passes());
+        }
+
+        /// An inputs directory shipping, per `(shortcode, config, narrative files)`, that config
+        /// and those files under `narrative/`.
+        fn inputs(shipped: &[(&str, &str, &[&str])]) -> tempfile::TempDir {
+            let root = tempfile::tempdir().expect("a temporary directory");
+            for (shortcode, config, narrative) in shipped {
+                let dir = root.path().join(shortcode);
+                std::fs::create_dir_all(dir.join("narrative")).expect("the inputs folder is created");
+                std::fs::write(dir.join("config.kdl"), config).expect("config.kdl is written");
+                for name in *narrative {
+                    std::fs::write(dir.join("narrative").join(name), "# A narrative\n")
+                        .expect("the narrative is written");
+                }
+            }
+            root
+        }
+
+        /// The data-free check of the inputs `shipped` for one project folder, `things`, declaring
+        /// `0001`, which `sync` does not know: there is no stand-in data for it.
+        fn checked(shipped: &[(&str, &str, &[&str])]) -> crate::Validation {
+            let root = projects(&[("things", "0001")]);
+            let inputs = inputs(shipped);
+            validate(
+                &config_for(root.path()),
+                &FakeArchiveProjection::default(),
+                &configs(&[]),
+                Some(inputs.path()),
+            )
+        }
+
+        fn failed_inputs(validation: &crate::Validation) -> &str {
+            match &report(&validation.projects, "things").inputs {
+                Some(InputsCheck::Failed { report }) => report,
+                other => panic!("the inputs fail: {other:?}"),
+            }
+        }
+
+        #[test]
+        fn the_data_free_check_fails_on_shipped_inputs_whose_configuration_does_not_parse() {
+            let validation = checked(&[("0001", "site { title \"unclosed\n", &[])]);
+            assert!(failed_inputs(&validation).starts_with("0001/config.kdl"), "{validation:?}");
+            assert!(!validation.passes());
+        }
+
+        #[test]
+        fn the_data_free_check_needs_a_narratives_base_file_or_default_language_variant_only() {
+            // The fixture's site declares "en" "de": "en" is its default language.
+            let config = things_with_narrative("0001");
+            let validation = checked(&[("0001", &config, &["home.de.md"])]);
+            assert!(failed_inputs(&validation).contains("'home.md'"), "{validation:?}");
+            assert!(!validation.passes());
+
+            for held in [&["home.md"][..], &["home.en.md"]] {
+                let validation = checked(&[("0001", &config, held)]);
+                assert_eq!(
+                    report(&validation.projects, "things").inputs,
+                    Some(InputsCheck::Passed),
+                    "{held:?}"
+                );
+                assert!(validation.passes(), "{validation:?}");
+            }
+        }
+
+        #[test]
+        fn the_data_free_check_refuses_a_narrative_name_the_deposited_files_refuse_even_when_shipped() {
+            for name in ["my page.md", ".x.md"] {
+                let config = things_with_narrative("0001").replace("home.md", name);
+                let validation = checked(&[("0001", &config, &[name])]);
+                assert!(
+                    failed_inputs(&validation).contains(&format!("'{name}', which is not a file name")),
+                    "{validation:?}"
+                );
+                assert!(!validation.passes());
+            }
+        }
+
+        #[test]
+        fn the_data_free_check_follows_no_symbolic_link_for_the_narrative_folder() {
+            let root = projects(&[("things", "0001")]);
+            let shipped = inputs(&[("0001", &things_with_narrative("0001"), &[])]);
+            let elsewhere = tempfile::tempdir().expect("a temporary directory");
+            std::fs::write(elsewhere.path().join("home.md"), "# Elsewhere\n").expect("the narrative is written");
+            let narrative = shipped.path().join("0001/narrative");
+            std::fs::remove_dir(&narrative).expect("the narrative folder is removed");
+            std::os::unix::fs::symlink(elsewhere.path(), &narrative).expect("the link is created");
+            let validation = validate(
+                &config_for(root.path()),
+                &FakeArchiveProjection::default(),
+                &configs(&[]),
+                Some(shipped.path()),
+            );
+            assert_eq!(failed_inputs(&validation), "0001/narrative is not a directory");
+        }
+
+        /// The report the full load gives for project `things` (0001) with `config` and stand-in
+        /// data.
+        fn fully_loaded(config: &str) -> String {
+            let root = projects(&[("things", "0001")]);
+            let validation = validate(
+                &config_for(root.path()),
+                &FakeArchiveProjection::default().with_project(snapshot("0001", "Brass lamp")),
+                &configs(&[("0001", config)]),
+                None,
+            );
+            match &report(&validation.projects, "things").outcome {
+                ProjectOutcome::Failed { report } => report.clone(),
+                other => panic!("the full load fails: {other:?}"),
+            }
+        }
+
+        #[test]
+        fn the_data_free_check_refuses_a_default_language_the_site_does_not_declare_as_the_full_load_does() {
+            let config = THINGS.replace(
+                "languages \"en\" \"de\"\n",
+                "languages \"en\" \"de\"\n    default-language \"xx\"\n",
+            );
+            assert_ne!(config, THINGS, "the fixture declares its languages");
+            let validation = checked(&[("0001", &config, &[])]);
+            assert!(failed_inputs(&validation).contains("default-language 'xx'"), "{validation:?}");
+            assert_eq!(failed_inputs(&validation), fully_loaded(&config));
+            assert!(!validation.passes());
+        }
+
+        #[test]
+        fn the_data_free_check_refuses_a_site_without_a_required_language_as_the_full_load_does() {
+            let config = THINGS.replace("languages \"en\" \"de\"", "languages \"en\" \"fr\"");
+            assert_ne!(config, THINGS, "the fixture declares its languages");
+            let validation = checked(&[("0001", &config, &[])]);
+            assert!(failed_inputs(&validation).contains("must include 'de'"), "{validation:?}");
+            assert_eq!(failed_inputs(&validation), fully_loaded(&config));
+            assert!(!validation.passes());
+        }
+
+        #[test]
+        fn the_data_free_check_fails_when_the_mappings_shortcode_is_not_the_folders() {
+            let validation = checked(&[("0001", &things_of("0002"), &[])]);
+            assert!(
+                failed_inputs(&validation).contains("declares shortcode 0002, but the folder's SHORTCODE is 0001"),
+                "{validation:?}"
+            );
+            assert!(!validation.passes());
+        }
+
+        #[test]
+        fn the_data_free_check_fails_on_a_folder_whose_shortcode_is_not_valid() {
+            let root = projects(&[("things", "0001"), ("malformed", "08x3")]);
+            let inputs = inputs(&[("0001", THINGS, &[])]);
+            let validation = validate(
+                &config_for(root.path()),
+                &FakeArchiveProjection::default(),
+                &configs(&[]),
+                Some(inputs.path()),
+            );
+            assert_eq!(report(&validation.projects, "things").inputs, Some(InputsCheck::Passed));
+            let malformed = report(&validation.projects, "malformed");
+            assert!(matches!(malformed.outcome, ProjectOutcome::Failed { .. }), "{malformed:?}");
+            assert_eq!(
+                malformed.inputs, None,
+                "a folder without a valid shortcode has no inputs to look up"
+            );
+            assert!(!validation.passes());
+        }
+
+        #[test]
+        fn a_project_with_neither_stand_in_data_nor_shipped_inputs_passes() {
+            let validation = checked(&[]);
+            let things = report(&validation.projects, "things");
+            assert!(matches!(things.outcome, ProjectOutcome::Unknown { .. }), "{things:?}");
+            assert_eq!(things.inputs, Some(InputsCheck::NoneShipped));
+            assert!(validation.passes(), "{validation:?}");
+        }
+
+        #[test]
+        fn the_check_fails_with_no_project_folder_and_with_an_inputs_directory_that_is_not_there() {
+            let empty = projects(&[]);
+            let validation = validate(
+                &config_for(empty.path()),
+                &FakeArchiveProjection::default(),
+                &configs(&[]),
+                None,
+            );
+            assert!(
+                validation
+                    .error
+                    .as_deref()
+                    .is_some_and(|error| error.starts_with("no project folder")),
+                "{validation:?}"
+            );
+            assert!(!validation.passes());
+
+            let root = projects(&[("things", "0001")]);
+            let missing = empty.path().join("inputs");
+            let validation = validate(
+                &config_for(root.path()),
+                &FakeArchiveProjection::default(),
+                &configs(&[]),
+                Some(&missing),
+            );
+            assert!(
+                validation
+                    .error
+                    .as_deref()
+                    .is_some_and(|error| error.contains("missing or not a directory")),
+                "{validation:?}"
+            );
             assert!(!validation.passes());
         }
     }

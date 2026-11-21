@@ -171,6 +171,10 @@ run *FLAGS: css-release
 validate-data:
     bazel run --run_in_cwd //areas/access/server:access_server -- validate {{ DPE_DATA_DIR }}
 
+# Validate DPE's data and every committed CPE project: in full against the committed stand-ins, which must serve 0803, and data-free against the VRE bridge's shipped inputs, read by path (ADR-0002). FLAGS: extra Bazel flags, such as CI's.
+validate-cpe *FLAGS:
+    bazel run --run_in_cwd {{ FLAGS }} //areas/access/server:access_server -- validate {{ DPE_DATA_DIR }} --inputs areas/deposit/vre-bridge/inputs --must-serve 0803
+
 # Re-download and re-patch the DataCite JSON schema the DataCite JSON writer's output is shape-checked against. The script takes the XSD directory as an argument because a shared crate may not know a module's layout; this justfile may, and passes it. (DEV-7268)
 refresh-datacite-schema:
     bash shared/fair/testdata/schemas/download-schemas.sh \

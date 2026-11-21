@@ -37,6 +37,9 @@ jobs:
           rbe-client-key: ${{ secrets.REMOTEBUILD_CLIENT_KEY }}
       - name: just test
         run: just test ${{ steps.bazel.outputs.flags }}
+      # DPE's data and every committed CPE project, strictly (docs/src/cpe/operations.md).
+      - name: just validate-cpe
+        run: just validate-cpe ${{ steps.bazel.outputs.flags }}
       # The three images, built from the same commit, started and answering.
       - name: just image-smoke
         run: just image-smoke ${{ steps.bazel.outputs.flags }}

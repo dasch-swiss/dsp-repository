@@ -3,30 +3,67 @@
 use std::io::Write;
 use std::path::Path;
 
-use cpe_server::{CpeConfig, ProjectOutcome, Validation};
+use cpe_server::{CpeConfig, InputsCheck, ProjectOutcome, Validation};
 
 /// Check DPE's data under `dpe_data_dir`, then every CPE project in `cpe_config`'s projects folder
-/// from the two ports, and return whether both pass. DPE prints to stdout and CPE to `out`, every
-/// project's outcome before the result. A failed CPE project fails the run; an unknown one is a
-/// warning, since the check runs where a project need not be released.
+/// from the two ports, with the data-free check of what `inputs` ships for each, and return whether
+/// both pass. DPE prints to stdout and CPE to `out`, every project's outcome before the result. A
+/// failed CPE project or a failed inputs check fails the run; an unknown project is a warning,
+/// since the check runs where a project need not be released, unless its shortcode is in
+/// `must_serve`.
 pub(crate) fn validate(
     dpe_data_dir: &Path,
     cpe_config: &CpeConfig,
     projection: &dyn cpe_ports::ArchiveProjection,
     files: &dyn cpe_ports::DepositedFiles,
+    inputs: Option<&Path>,
+    must_serve: &[String],
     out: &mut impl Write,
 ) -> bool {
     let dpe_passes = dpe_server::validate(dpe_data_dir);
-    let cpe = cpe_server::validate(cpe_config, projection, files);
-    let printed = out.write_all(cpe_report(&cpe, &cpe_config.projects_dir).as_bytes()).is_ok();
-    dpe_passes && cpe.passes() && printed
+    let cpe = cpe_server::validate(cpe_config, projection, files, inputs);
+    let not_served = not_served(&cpe, must_serve);
+    let mut report = cpe_report(&cpe, &cpe_config.projects_dir);
+    for line in &not_served {
+        report.push_str(&format!("CPE: {line}\n"));
+    }
+    let printed = out.write_all(report.as_bytes()).is_ok();
+    dpe_passes && cpe.passes() && not_served.is_empty() && printed
+}
+
+/// Why each of `must_serve` is not served, one line per shortcode that is not. None when the check
+/// failed as a whole: it found no project, and its error is the cause to print.
+fn not_served(validation: &Validation, must_serve: &[String]) -> Vec<String> {
+    if validation.error.is_some() {
+        return Vec::new();
+    }
+    must_serve
+        .iter()
+        .filter_map(|shortcode| {
+            let declaring: Vec<_> = validation
+                .projects
+                .iter()
+                .filter(|project| project.shortcode.as_ref() == Some(shortcode))
+                .collect();
+            let why = match declaring.as_slice() {
+                [] => "no project folder declares it",
+                [project] => match project.outcome {
+                    ProjectOutcome::Served { .. } => return None,
+                    ProjectOutcome::Unknown { .. } => "it is unknown here",
+                    ProjectOutcome::Failed { .. } => "it failed",
+                },
+                _ => "more than one project folder declares it",
+            };
+            Some(format!("{shortcode} must be served, but {why}."))
+        })
+        .collect()
 }
 
 /// What CPE's check found, one paragraph per project folder and a closing line.
 fn cpe_report(validation: &Validation, projects_dir: &Path) -> String {
     let mut text = String::new();
     if let Some(error) = &validation.error {
-        text.push_str(&format!("\nCPE: not checked: {error}\nCPE: failed.\n"));
+        text.push_str(&format!("\nCPE: not checked: {}\nCPE: failed.\n", printable(error)));
         return text;
     }
     text.push_str(&format!(
@@ -55,10 +92,24 @@ fn cpe_report(validation: &Validation, projects_dir: &Path) -> String {
                 text.push_str(&indented(reason));
             }
             ProjectOutcome::Failed { report } => {
-                failed += 1;
                 text.push_str(&format!("  {name}: FAILED\n"));
                 text.push_str(&indented(report));
             }
+        }
+        match &project.inputs {
+            None => {}
+            Some(InputsCheck::Passed) => text.push_str("    inputs: checked\n"),
+            Some(InputsCheck::NoneShipped) if matches!(project.outcome, ProjectOutcome::Unknown { .. }) => {
+                text.push_str("    note: neither stand-in data nor shipped inputs, so nothing of it is checked\n");
+            }
+            Some(InputsCheck::NoneShipped) => text.push_str("    inputs: none shipped\n"),
+            Some(InputsCheck::Failed { report }) => {
+                text.push_str("    inputs: FAILED\n");
+                text.push_str(&indented(&indented(report)));
+            }
+        }
+        if project.failed() {
+            failed += 1;
         }
     }
     if failed == 0 {
@@ -90,6 +141,8 @@ fn printable(text: &str) -> String {
 
 #[cfg(test)]
 pub(crate) mod tests {
+    use std::path::Path;
+
     use cpe_ports::{FakeArchiveProjection, FakeDepositedFiles};
     use cpe_server::CpeConfig;
 
@@ -128,13 +181,21 @@ pub(crate) mod tests {
     }
 
     /// The run over `dpe` and CPE's `config`, and what it printed for CPE.
-    fn run(
-        dpe: &std::path::Path,
+    fn run(dpe: &Path, config: &CpeConfig, ports: &(FakeArchiveProjection, FakeDepositedFiles)) -> (bool, String) {
+        run_with(dpe, config, ports, None, &[])
+    }
+
+    /// [`run`] with an inputs directory and the shortcodes that must be served.
+    fn run_with(
+        dpe: &Path,
         config: &CpeConfig,
         (projection, files): &(FakeArchiveProjection, FakeDepositedFiles),
+        inputs: Option<&Path>,
+        must_serve: &[&str],
     ) -> (bool, String) {
+        let must_serve: Vec<String> = must_serve.iter().map(|&code| code.to_owned()).collect();
         let mut out = Vec::new();
-        let passes = super::validate(dpe, config, projection, files, &mut out);
+        let passes = super::validate(dpe, config, projection, files, inputs, &must_serve, &mut out);
         (passes, String::from_utf8(out).expect("the report is UTF-8"))
     }
 
@@ -198,5 +259,87 @@ pub(crate) mod tests {
         let (passes, printed) = run(dpe.path(), &config, &ports(&["0001"], &["0002"]));
         assert!(!passes, "{printed}");
         assert!(printed.contains("broken (0002): FAILED"), "{printed}");
+    }
+
+    #[test]
+    fn a_project_with_neither_stand_in_data_nor_shipped_inputs_passes_with_a_note() {
+        let dpe = valid_dpe_data();
+        let root = projects_folder(&[("things", "0001"), ("new", "0002")]);
+        let inputs = tempfile::tempdir().expect("a temporary directory");
+        let (passes, printed) = run_with(
+            dpe.path(),
+            &cpe_config(root.path(), ""),
+            &ports(&["0001"], &[]),
+            Some(inputs.path()),
+            &[],
+        );
+        assert!(passes, "{printed}");
+        assert!(
+            printed.contains("new (0002): warning: unknown here, so not checked\n")
+                && printed
+                    .contains("    note: neither stand-in data nor shipped inputs, so nothing of it is checked\n"),
+            "{printed}"
+        );
+        assert!(
+            printed.contains("things (0001): served\n    inputs: none shipped\n"),
+            "{printed}"
+        );
+    }
+
+    #[test]
+    fn the_run_fails_when_a_shortcode_that_must_be_served_is_not() {
+        let dpe = valid_dpe_data();
+        let root = projects_folder(&[("things", "0001"), ("gone", "0003")]);
+        let config = cpe_config(root.path(), "");
+        let served = ports(&["0001"], &[]);
+        let (passes, printed) = run_with(dpe.path(), &config, &served, None, &["0001"]);
+        assert!(passes, "a served project passes: {printed}");
+        for (shortcode, why) in [
+            ("0003", "it is unknown here"),
+            ("0004", "no project folder declares it"),
+        ] {
+            let (passes, printed) = run_with(dpe.path(), &config, &served, None, &["0001", shortcode]);
+            assert!(!passes, "{printed}");
+            assert!(
+                printed.contains(&format!("CPE: {shortcode} must be served, but {why}.")),
+                "{printed}"
+            );
+        }
+
+        let root = projects_folder(&[("broken", "0002")]);
+        let (passes, printed) = run_with(
+            dpe.path(),
+            &cpe_config(root.path(), ""),
+            &ports(&[], &["0002"]),
+            None,
+            &["0002"],
+        );
+        assert!(!passes, "{printed}");
+        assert!(printed.contains("CPE: 0002 must be served, but it failed."), "{printed}");
+    }
+
+    #[test]
+    fn the_run_fails_with_no_project_folder_and_with_an_inputs_directory_that_is_not_there() {
+        let dpe = valid_dpe_data();
+        let empty = projects_folder(&[]);
+        let (passes, printed) = run_with(dpe.path(), &cpe_config(empty.path(), ""), &ports(&[], &[]), None, &["0001"]);
+        assert!(!passes, "{printed}");
+        assert!(printed.contains("CPE: not checked: no project folder under"), "{printed}");
+        assert!(
+            !printed.contains("must be served"),
+            "the check's error is the one cause printed: {printed}"
+        );
+
+        let root = projects_folder(&[("things", "0001")]);
+        let missing = empty.path().join("inputs");
+        let (passes, printed) = run_with(
+            dpe.path(),
+            &cpe_config(root.path(), ""),
+            &ports(&["0001"], &[]),
+            Some(&missing),
+            &[],
+        );
+        assert!(!passes, "{printed}");
+        assert!(printed.contains("missing or not a directory"), "{printed}");
     }
 }

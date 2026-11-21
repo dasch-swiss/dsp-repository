@@ -159,7 +159,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Key entities:** `app`, `assemble`, `mount_cpe`, `name_span_by_cpe_route`, `activate_in_background`, `serve`,
   `cpe_setup_from_env` (CPE's configuration and data directories, for both verbs), `validate` (the verb), `DEFAULT_SYNC_DATA_DIR`, `DEFAULT_MEDIA_DATA_DIR`, `data_dir`, `sync_poll_interval`, `parse_hidden_projects`, `shutdown_signal`,
   `init_otel`, `init_pyroscope`, `TELEMETRY_NAME`, `is_allowed_healthcheck_url`
-- **Public interface:** the `access-server serve | validate <data_dir> | healthcheck <url>` CLI;
+- **Public interface:** the `access-server serve | validate <data_dir> [--inputs <dir>] [--must-serve <shortcode>] | healthcheck <url>` CLI;
   `/healthz` and `POST /telemetry/collect` (untraced), every route DPE's router carries, and every
   path under `Cpe::base()` (`CPE_BASE`, `/cpe` in the image), which is CPE's. `DPE_SITE_ADDR`,
   `SYNC_DATA_DIR`, `SYNC_POLL_SECS`, `MEDIA_DATA_DIR` and `ACCESS_HIDDEN_PROJECTS` are read here (an empty data directory variable is unset;
@@ -1315,7 +1315,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   shape the contract checks (`Violation::MalformedDataArk`) and whose derivation is the
   adapter's (`sync-store`'s `ark.rs`). In `cpe-core`: the KDL config language
   (`validate::load_config`, `validate::load_remodel`, `validate::named_narratives` (the narrative files a KDL
-  names, for activation to ask the bytes port for), `ConfigLoadError`, `ConfigError`),
+  names, for activation to ask the bytes port for, and the data-free check of shipped inputs), `validate::check_site`
+  (the site-block checks that need no data and no assets, for the data-free check), `ConfigLoadError`, `ConfigError`),
   its validation against a project's facts (`ValidationContext`, `validate::facts::ProjectFacts`),
   the IR a valid configuration lowers to (`ir::SiteConfig`, `ir::Component`, `remodel::Remodel`, with
   `Remodel::reads_curation`),
@@ -1349,8 +1350,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   host sets and no file or variable of CPE's does), `Cpe` (`new`, `activate`, `router`,
   `base`, `projects`; `from_sql_folders` is test support and compiles for tests only), `ProjectSummary`,
   `MatchedRoute` (the route template a response carries in its extensions, for the host's request span), and
-  `validate` with `Validation`, `ProjectReport` and `ProjectOutcome` (every project loaded once without serving,
-  for the host's strict check; diagnostics as text)
+  `validate` with `Validation`, `ProjectReport`, `ProjectOutcome` and `InputsCheck` (every project loaded once without serving,
+  for the host's strict check, and given an inputs directory the data-free check of what it ships per project; diagnostics as text)
 - **Public interface:** `cpe-server`'s `Cpe` and `CpeConfig`: the router, mounted by areas/access/server
   at `Cpe::base()` on the area's origin beside DPE's routes, and `Cpe::follow` and `Cpe::activate`, which take both ports. No `pub` item of
   `cpe-server` names a type of another CPE crate, `cpe-ports`' excepted. `cpe/ports` is not an interface CPE offers but the ports CPE

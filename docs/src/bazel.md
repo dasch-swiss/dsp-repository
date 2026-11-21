@@ -1,6 +1,6 @@
 # Building with Bazel
 
-Bazel builds and tests every crate, the stylesheets, the fuzz targets and the images (ADR-0001). Every `just` recipe and every CI job uses it: `check` runs `just check`, which ends with clippy over every target, and `test / ubuntu / stable` runs `just test`, then `just image-smoke`.
+Bazel builds and tests every crate, the stylesheets, the fuzz targets and the images (ADR-0001). Every `just` recipe and every CI job uses it: `check` runs `just check`, which ends with clippy over every target, and `test / ubuntu / stable` runs `just test`, then `just validate-cpe` and `just image-smoke`.
 
 The pins are those of Sipi: Bazel in `.bazelversion`, the rulesets and the Rust version in `MODULE.bazel`. The C and C++ toolchain is hermetic (`llvm`, zero-sysroot): it fetches the macOS SDK itself and builds the Linux libc runtimes from source, so no Xcode and no host compiler is used for compiling.
 
@@ -21,7 +21,7 @@ CI's `check / publish-dry-run / stable` runs `cargo publish --dry-run --locked` 
 | `just test` | `bazel test //...`, then the gate scripts' tests |
 | `just check` | the gate scripts, `just`, `maudfmt` and pinned nightly `rustfmt` formatting, and clippy over every target, tests and the `manual` dsp-cli live targets included, with `-Dwarnings` |
 | `just fmt` | `maudfmt`, then the pinned nightly `rustfmt` (`$RUSTFMT`, else rustup's), edition 2024 for dsp-cli and 2021 for the rest |
-| `just run`, `just validate-data`, `just dsp-cli-run` | `bazel run --run_in_cwd`, so the binary runs from the repository root |
+| `just run`, `just validate-data`, `just validate-cpe`, `just dsp-cli-run` | `bazel run --run_in_cwd`, so the binary runs from the repository root |
 | `just css`, `css-release`, `css-editor`, `css-editor-release`, `css-mosaic` | builds a stylesheet target and copies it into the application's `public/assets/` |
 | `just dev`, `dev-otel`, `dev-editor`, `dev-editor-otel`, `watch-mosaic-playground` | Tailwind `--watch` with the Bazel-pinned CLI, and bacon restarting the server's binary |
 | `just repin [crate]` | re-resolves the crate universe and refreshes `Cargo.Bazel.lock` and `MODULE.bazel.lock` |

@@ -138,11 +138,12 @@ pub(crate) fn from_ports(
 /// How each folder [`from_ports`] would load comes out, as [`crate::validate`] reports it, sorted
 /// by folder; no router is built. A folder [`from_ports`] skips for its `SHORTCODE` or its name is
 /// failed, though `serve` answers 404 for it; one with no `SHORTCODE` is no project and is left
-/// out.
+/// out. Given `inputs`, each folder with a shortcode also gets the data-free check of its inputs.
 pub(crate) fn validate(
     config: &CpeConfig,
     projection: &dyn ArchiveProjection,
     files: &dyn DepositedFiles,
+    inputs: Option<&std::path::Path>,
 ) -> Vec<ProjectReport> {
     let discovery = discovery::discover_for_activation(&config.projects_dir);
     let mut reports: Vec<ProjectReport> = discovery
@@ -156,6 +157,7 @@ pub(crate) fn validate(
             outcome: ProjectOutcome::Failed {
                 report: format!("{} {}", skipped.folder.escape_debug(), skipped.reason),
             },
+            inputs: None,
         })
         .collect();
     let (_, mut statuses) = load_each(&discovery.projects, |discovered| port_sources(projection, files, discovered));
@@ -165,7 +167,15 @@ pub(crate) fn validate(
             ProjectStatus::Unknown { report } => ProjectOutcome::Unknown { reason: report },
             ProjectStatus::Failed { report } => ProjectOutcome::Failed { report },
         };
-        Some(ProjectReport { folder: project.id, shortcode: project.shortcode, outcome })
+        let inputs = inputs
+            .zip(project.shortcode.as_deref())
+            .map(|(dir, code)| crate::inputs::check(dir, code));
+        Some(ProjectReport {
+            folder: project.id,
+            shortcode: project.shortcode,
+            outcome,
+            inputs,
+        })
     }));
     reports.sort_by(|a, b| a.folder.cmp(&b.folder));
     reports
@@ -401,17 +411,7 @@ fn port_sources(
     let config = deposited(files, shortcode, "config.kdl")?
         .ok_or_else(|| format!("{config_file}: project {shortcode} deposited no config.kdl"))?;
     let config = utf8(config, &config_file)?;
-    let mapping = cpe_core::validate::load_remodel(&config).map_err(|error| match error {
-        cpe_core::validate::ConfigLoadError::Parse(error) => error.to_string(),
-        cpe_core::validate::ConfigLoadError::Validation(report) => report.render(&config, &config_file),
-    })?;
-    if mapping.shortcode.as_str() != shortcode {
-        return Err(format!(
-            "{config_file} declares shortcode {}, but the folder's SHORTCODE is {shortcode}",
-            mapping.shortcode.as_str()
-        )
-        .into());
-    }
+    let mapping = remodel_of(&config, &config_file, shortcode)?;
 
     let named = cpe_core::validate::named_narratives(&config).map_err(|error| error.to_string())?;
     let mut narrative: Vec<(String, String)> = Vec::new();
@@ -473,6 +473,26 @@ fn port_sources(
         narrative_complete: true,
         store_sql,
     })
+}
+
+/// The remodel block of `config`, the text of `config_file`, when it loads and declares the
+/// project folder's `shortcode`; otherwise the report, ready to print.
+pub(crate) fn remodel_of(
+    config: &str,
+    config_file: &str,
+    shortcode: &str,
+) -> Result<cpe_core::remodel::Remodel, String> {
+    let mapping = cpe_core::validate::load_remodel(config).map_err(|error| match error {
+        cpe_core::validate::ConfigLoadError::Parse(error) => format!("{config_file}: {error}"),
+        cpe_core::validate::ConfigLoadError::Validation(report) => report.render(config, config_file),
+    })?;
+    if mapping.shortcode.as_str() != shortcode {
+        return Err(format!(
+            "{config_file} declares shortcode {}, but the folder's SHORTCODE is {shortcode}",
+            mapping.shortcode.as_str()
+        ));
+    }
+    Ok(mapping)
 }
 
 /// The provenance `media` and `sync` serve for `shortcode`, in that order.
@@ -649,7 +669,7 @@ pub(crate) mod tests {
     }
 
     /// The fixture config under `shortcode`, with a home page that shows `home.md`.
-    fn things_with_narrative(shortcode: &str) -> String {
+    pub(crate) fn things_with_narrative(shortcode: &str) -> String {
         things_with_home(shortcode, "    narrative file=\"home.md\"")
     }
 

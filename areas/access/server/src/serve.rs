@@ -958,7 +958,7 @@ remodel {
         let projection = FakeArchiveProjection::default()
             .with_project(things_snapshot("0001"))
             .with_project(things_snapshot("0002"));
-        assert!(!cpe_server::validate(&cpe_config(root.path(), BASE), &projection, &files).passes());
+        assert!(!cpe_server::validate(&cpe_config(root.path(), BASE), &projection, &files, None).passes());
 
         activate_in_background(&cpe, projection, files, Duration::from_secs(60))
             .await

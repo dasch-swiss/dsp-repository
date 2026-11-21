@@ -1437,7 +1437,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   URL is built through that module at all, and not joined by hand, is **review**. `public/vendor/datastar.js` is checked against its README by `just verify-checksums`
   (**static-analysis**); the three SVG files in `public/` are DaSCH's own and carry no checksum.
   `cpe-components` splices rendered Markdown and a few constants through `PreEscaped` (**review**; DPE's
-  three-site rule does not apply here). `cpe-store-build`'s library reads nothing but what it is given, and its generic code names no project
+  three-site rule does not apply here); the number of `PreEscaped(` call sites per file of its non-test code is
+  pinned, so a new site cannot land unreviewed (**static-analysis**: the crate's test
+  `pre_escaped_call_sites_match_the_pinned_table` in `src/lib.rs`, which does not see a splice without call syntax). `cpe-store-build`'s library reads nothing but what it is given, and its generic code names no project
   (**static-analysis**: the source searches of its `tests/it/hygiene.rs`. The second holds for Incunabula
   alone: the search is for the hand-kept list `PROJECT_NOUNS`, and nothing checks that a second project's
   nouns are added to it, **review**); a hook and the `hook` node of its

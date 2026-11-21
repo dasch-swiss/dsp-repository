@@ -1,6 +1,6 @@
 # CPE
 
-The Configurable Presentation Environment: the Access Area's second capability, a hypermedia server for project-specific presentations over the archive's data (ADR-0007). Its eight crates are here: its two ports, onto the archive projection and for bytes, `cpe-ports` in `ports/`, its domain crate, `cpe-core` in `core/`, its component library, `cpe-components` in `components/`, its image viewer, `cpe-image-viewer` in `image-viewer/`, its store, `cpe-store` in `store/`, the builder that fills the store, `cpe-store-build` in `store-build/`, its page assembly, `cpe-web` in `web/`, and its host crate, `cpe-server` in `server/`. Its one project so far, Incunabula, is the folder `projects/incunabula/`, and its shared static files are in `public/`. A project's KDL, narrative, curation and assets are deposited files: CPE reads the first three at activation through a second port, for bytes, against `media`, and `media` is to serve the assets at request time (ADR-0012). A project's folder holds no code (ADR-0007). Incunabula's KDL, narrative and curation are in `media`'s stand-in directory, `areas/access/media/data/0803/` ([`../media/CONTEXT.md`](../media/CONTEXT.md)); until `media` serves assets, they are in the project folder. `access-server` mounts the host crate's router at the base. CPE's store is a derived read model, rebuilt from empty from what its two ports serve and fed by nothing else (ADR-0008); in the target both ports serve it with rights attached, it stores each row's rights and CPE filters every request on them, as the anonymous consumer until an authorisation mechanism exists (ADR-0012, ADR-0013). The Access Area's own terms (DPE, CPE, DIP shape, Landing page) are in [`../CONTEXT.md`](../CONTEXT.md), the contract terms (Project, Shortcode) in the root [`CONTEXT.md`](../../../CONTEXT.md) `## Shared`.
+The Configurable Presentation Environment: the Access Area's second capability, a hypermedia server for project-specific presentations over the archive's data (ADR-0007). Its eight crates are here: its two ports, onto the archive projection and for bytes, `cpe-ports` in `ports/`, its domain crate, `cpe-core` in `core/`, its component library, `cpe-components` in `components/`, its image viewer, `cpe-image-viewer` in `image-viewer/`, its store, `cpe-store` in `store/`, the builder that fills the store, `cpe-store-build` in `store-build/`, its page assembly, `cpe-web` in `web/`, and its host crate, `cpe-server` in `server/`. Its one project so far, Incunabula, is the folder `projects/incunabula/`, and its shared static files are in `public/`. A project's KDL, narrative, curation and assets are deposited files: CPE reads the first three at activation through a second port, for bytes, against `media`, and `media` is to serve the assets at request time (ADR-0012). A project's folder holds no code (ADR-0007). Incunabula's KDL, narrative and curation are in `media`'s stand-in directory, `areas/access/media/data/0803/` ([`../media/CONTEXT.md`](../media/CONTEXT.md)); until `media` serves assets, its assets are in the project folder, which holds nothing else of it. `access-server` mounts the host crate's router at the base. CPE's store is a derived read model, rebuilt from empty from what its two ports serve and fed by nothing else (ADR-0008); in the target both ports serve it with rights attached, it stores each row's rights and CPE filters every request on them, as the anonymous consumer until an authorisation mechanism exists (ADR-0012, ADR-0013). The Access Area's own terms (DPE, CPE, DIP shape, Landing page) are in [`../CONTEXT.md`](../CONTEXT.md), the contract terms (Project, Shortcode) in the root [`CONTEXT.md`](../../../CONTEXT.md) `## Shared`.
 
 ## Language
 
@@ -235,10 +235,10 @@ with `public/.biome.json` (`just lint-e2e`).
 carries no inline `<script>`. A short expression stays in its attribute; a long one moves to `cpe.js`. Short
 behaviour DataStar cannot express stays inline as a listed exception: the clipboard copy (`breadcrumb.rs`,
 `data_links.rs`), Escape, outside-click and focus-out on disclosures (`dom.rs`), clearing the search field
-(`search_bar.rs`, `facet_panel.rs`), the header menu and the crop-error marks (`page.rs`, `dom.rs`,
+(`search_bar.rs`, `facet_panel.rs`), the header menu and the crop-error marks (`web/src/page.rs`, `dom.rs`,
 `showcase.rs`), and the order control (`resource_list.rs`). Not yet in code: the viewer controls in
 `media.rs` call into the image viewer from their attributes, and `cpe-server`'s `router.rs` sends an
-`ExecuteScript` (#582).
+`ExecuteScript`, which waits for #582.
 _Avoid_: inline script (for an attribute's expression).
 
 ## The host crate
@@ -322,7 +322,7 @@ name passes the **Project id** rule and it holds a regular `SHORTCODE` file whos
 `cpe_ports::is_shortcode`. A folder that fails either is not a project, so its paths are 404; it is logged,
 unless it holds no `SHORTCODE` at all. The strict check (`cpe_server::validate`, `access-server validate`) fails
 such a folder all the same, since it holds a `SHORTCODE` that cannot be served.
-ADR-0007 says such a project is "offline on its own prefix"; the offline page it designs is DEV-7403's.
+ADR-0007 says such a project is "offline on its own prefix"; the offline page it designs is DEV-8027's.
 _Avoid_: missing project (that is the 404); unknown project for an unavailable one (an unknown project is a 404, defined in `areas/access/CONTEXT.md`).
 
 Nothing in a request reaches the file system. Discovery lists the projects directory without following a

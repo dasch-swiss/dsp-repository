@@ -1367,7 +1367,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   to CPE's other crates, not to a host: no crate of this repository outside the capability depends on either. The
   same holds for `cpe-store`, whose `pub` surface names no `rusqlite` type, and for
   `cpe-web`, whose `pub` items are what `cpe-server` calls.
-- **Local-context kit:** `areas/access/cpe/CONTEXT.md`, `areas/access/cpe/ports/src/lib.rs`,
+- **Local-context kit:** `areas/access/cpe/CLAUDE.md` (the agent runbook), `areas/access/cpe/CONTEXT.md`,
+  `docs/src/cpe/architecture.md`, `docs/src/cpe/component-library.md`, `areas/access/cpe/ports/src/lib.rs`,
   `areas/access/cpe/core/src/lib.rs`, `areas/access/cpe/components/src/lib.rs`,
   `areas/access/cpe/image-viewer/src/lib.rs`, `areas/access/cpe/store/src/lib.rs`,
   `areas/access/cpe/server/src/lib.rs`, `areas/access/cpe/server/src/activation.rs`,

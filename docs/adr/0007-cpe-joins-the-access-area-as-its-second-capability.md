@@ -324,7 +324,7 @@ one project it names (ADR-0012, DEV-7989).
 Not yet in code: `media` announces no project whose Ready token changed (ADR-0012, DEV-7938).
 Not yet in code: CPE serves Incunabula alone; the incubator's `alice-in-daschland` and `hdm` have not moved in
 (not scheduled).
-Not yet in code: the page of an offline project is a plain 503 page, not a designed one (DEV-7403).
+Not yet in code: the page of an offline project is a plain 503 page, not a designed one (DEV-8027).
 Not yet in code: CPE's record pages carry no ADR-0005 metadata, and no adapter feeds `shared-fair` from CPE's
 store (DEV-7409).
 Not yet in code: CPE's glossary is `dsp-incubator cpe/CONTEXT.md`, not `areas/access/cpe/CONTEXT.md` (not

@@ -54,6 +54,20 @@ pub(crate) enum SkipReason {
     NotAProjectId,
 }
 
+/// The reason as the rest of a sentence that starts with the folder's name. A malformed shortcode
+/// is quoted with its escapes, as it is read from a file.
+impl std::fmt::Display for SkipReason {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NoShortcode => f.write_str("holds no SHORTCODE"),
+            Self::ShortcodeNotARegularFile => f.write_str("has a SHORTCODE that is not a regular file"),
+            Self::UnreadableShortcode => f.write_str("has a SHORTCODE that cannot be read or is not UTF-8"),
+            Self::MalformedShortcode(text) => write!(f, "has a SHORTCODE {text:?}, which is not a shortcode"),
+            Self::NotAProjectId => f.write_str("has a SHORTCODE, but its name is not a project id"),
+        }
+    }
+}
+
 /// The projects [`discover_for_activation`] found, sorted by id, and the
 /// folders it passed over, sorted by name.
 #[derive(Debug)]

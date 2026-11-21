@@ -31,18 +31,19 @@ The `access-server` binary provides three subcommands:
 | Command | Description |
 |---------|-------------|
 | `access-server serve` | Start the web server |
-| `access-server validate <data_dir>` | Validate all data files under the given directory |
+| `access-server validate <data_dir>` | Validate DPE's data files under the given directory, then every CPE project |
 | `access-server healthcheck [--url URL]` | Check if the server is healthy (default: `http://localhost:8080/healthz`) |
 
 ### `access-server validate`
 
-Validates JSON data files for structural correctness and cross-reference integrity.
+Validates DPE's JSON data files for structural correctness and cross-reference integrity, then checks CPE's
+projects strictly (`docs/src/cpe/operations.md`, *Checking the projects: `access-server validate`*).
 
 ```bash
 access-server validate ./data
 ```
 
-**What it checks:**
+**What it checks in DPE's data:**
 - JSON schema validity for all data file types (projects, persons, organizations, records, clusters, collections)
 - Cross-references between projects, persons, and organizations
 - Orphaned files that are not referenced by any parent entity
@@ -50,8 +51,9 @@ access-server validate ./data
 - Every distinct `temporalCoverage` name resolves to a structured date (ChronOntology or the offline enrichment table), or is explicitly marked `source: "unresolved"`. See `docs/src/dpe/oai-pmh.md` → *Temporal coverage*.
 
 **Exit codes:**
-- `0` — all data files are valid
-- `1` — validation errors found (details printed to stderr)
+- `0` — all of DPE's data files are valid and no CPE project failed
+- `1` — DPE's data has errors, or a CPE project failed, or CPE's configuration is refused (details printed to
+  stdout)
 
 ### `access-server healthcheck`
 

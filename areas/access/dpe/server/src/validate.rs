@@ -1,7 +1,7 @@
 //! The logic behind the `access-server validate` subcommand.
 
-pub(crate) fn validate(data_dir: std::path::PathBuf) -> std::process::ExitCode {
-    let report = collect_validation_errors(&data_dir);
+pub(crate) fn validate(data_dir: &std::path::Path) -> bool {
+    let report = collect_validation_errors(data_dir);
 
     println!(
         "Validated: {} projects, {} records, {} persons, {} organizations",
@@ -10,13 +10,13 @@ pub(crate) fn validate(data_dir: std::path::PathBuf) -> std::process::ExitCode {
 
     if report.errors.is_empty() {
         println!("All data files are valid.");
-        std::process::ExitCode::SUCCESS
+        true
     } else {
         println!("\n{} error(s) found:", report.errors.len());
         for err in &report.errors {
             println!("  - {err}");
         }
-        std::process::ExitCode::FAILURE
+        false
     }
 }
 

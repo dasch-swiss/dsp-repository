@@ -72,6 +72,30 @@ The variable is read at start: hiding or un-hiding takes a restart or a redeploy
 project was un-hidden only when they next crawl it, and an HTTP cache keeps a `noindex` response until it
 expires.
 
+## Checking the projects: `access-server validate`
+
+`access-server validate <dpe_data_dir>` checks DPE's data, then loads every CPE project once, as `serve` would,
+and serves nothing. It reads the same variables as `serve` (`CPE_PROJECTS_DIR`, `SYNC_DATA_DIR`,
+`MEDIA_DATA_DIR`, and their defaults, which fit a run from the repository root) and checks the projects whether
+or not `CPE_BASE` is set. It prints one paragraph per project folder:
+
+| Outcome | Printed | Fails the run |
+|---------|---------|---------------|
+| The project loads | `served`, and each validation warning with its place in `config.kdl` | no |
+| The project has no Ready token in `SYNC_DATA_DIR` (not released where the check runs) | `warning: unknown here, so not checked`, with the reason | no |
+| The project does not load, for any reason in the table below that answers `503` | `FAILED`, with the report CPE logs | yes |
+| The folder's `SHORTCODE` is malformed, unreadable or a symlink, or its name is not a project id | `FAILED`, with the reason | yes |
+| The folder has no `SHORTCODE` | nothing: it is no project | no |
+| CPE's configuration is refused | `CPE: not checked`, with the reason | yes |
+
+Every project's paragraph is printed before the verb exits, so one run shows every failure. Folder names and
+report lines are printed with their control characters escaped. `serve` is not strict: there a project that
+fails takes only itself offline.
+
+The image carries CPE's project folders but no data of `sync`'s or `media`'s, so `validate` run in a container
+without `SYNC_DATA_DIR` and `MEDIA_DATA_DIR` pointing at mounted data fails every project, as `serve` would
+answer `503` for each.
+
 ## Start-up, and what CPE answers when something is missing
 
 The port is bound first, and CPE's projects are loaded afterwards, in the background. Until they are, every

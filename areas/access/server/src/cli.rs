@@ -15,9 +15,13 @@ pub(crate) struct Cli {
 pub(crate) enum Commands {
     /// Start the web server
     Serve,
-    /// Validate all data files under the given data directory
+    /// Validate DPE's data files, then every CPE project, and fail if either fails
+    ///
+    /// CPE's projects are read as `serve` reads them (`CPE_PROJECTS_DIR`, `SYNC_DATA_DIR`,
+    /// `MEDIA_DATA_DIR`), whether or not `CPE_BASE` is set. Every project's report is printed; a
+    /// project that fails to load fails the run, and one with no Ready token is a warning.
     Validate {
-        /// Path to the data directory containing projects/, persons/, organizations/, records/
+        /// Path to DPE's data directory containing projects/, persons/, organizations/, records/
         data_dir: PathBuf,
     },
     /// Check if the server is healthy (for Docker HEALTHCHECK)

@@ -102,8 +102,8 @@ impl Dpe {
     }
 }
 
-/// The `validate` subcommand's logic: checks every data file under `data_dir`
-/// and reports counts and errors.
-pub fn validate(data_dir: std::path::PathBuf) -> std::process::ExitCode {
+/// DPE's part of the `validate` subcommand: checks every data file under `data_dir`, prints
+/// counts and errors to stdout, and returns whether every file is valid.
+pub fn validate(data_dir: &std::path::Path) -> bool {
     validate::validate(data_dir)
 }

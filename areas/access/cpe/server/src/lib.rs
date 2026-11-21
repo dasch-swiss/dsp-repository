@@ -2,7 +2,8 @@
 //!
 //! This crate is a library only; a composition root owns `main`, the listener
 //! and the tracing layers, mounts [`Cpe::router`] and calls [`Cpe::follow`], or
-//! [`Cpe::activate`] to load once.
+//! [`Cpe::activate`] to load once. [`validate`] loads every project once and
+//! serves none, for a host's strict check.
 //! Nothing here may name a type of `cpe-core`, `cpe-store`, `cpe-store-build`,
 //! `cpe-web`, `cpe-components` or `cpe-image-viewer` in a `pub` signature:
 //! that boundary is what lets a host depend on this crate and `cpe-ports`
@@ -43,6 +44,76 @@ pub struct ProjectSummary {
     pub title: String,
     /// The path of the project's start page, [`Cpe::base`] included.
     pub url: String,
+}
+
+/// What [`validate`] found.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Validation {
+    /// Why no project was checked: CPE's configuration is refused, or the check panicked outside
+    /// a project's own load.
+    pub error: Option<String>,
+    /// Every folder with a `SHORTCODE`, sorted by folder name. A folder with none is no project and
+    /// is not in it.
+    pub projects: Vec<ProjectReport>,
+}
+
+impl Validation {
+    /// Whether no project failed and nothing stopped the check. An unknown project does not fail
+    /// it: a project not released where the check runs is expected.
+    #[must_use]
+    pub fn passes(&self) -> bool {
+        self.error.is_none()
+            && !self
+                .projects
+                .iter()
+                .any(|project| matches!(project.outcome, ProjectOutcome::Failed { .. }))
+    }
+}
+
+/// One project folder, as [`validate`] found it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProjectReport {
+    /// The folder's name, which is the project id when the folder is a project.
+    pub folder: String,
+    /// The shortcode the folder's `SHORTCODE` declares; `None` for a folder discovery skips.
+    pub shortcode: Option<String>,
+    pub outcome: ProjectOutcome,
+}
+
+/// How one project folder came out of [`validate`]. Every text is ready to print.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ProjectOutcome {
+    /// It loads and would be served. Each warning is one diagnostic, located in its config.
+    Served { warnings: Vec<String> },
+    /// `sync` knows no such project: it would answer 404, and nothing of it is checked.
+    Unknown { reason: String },
+    /// It does not load and would answer 503; the report is the one CPE logs.
+    Failed { report: String },
+}
+
+/// Load every project folder from `projection` and `files` once, as [`Cpe::activate`] does,
+/// serve nothing, and report how each came out: the strict check a host runs before it ships a
+/// project, where [`Cpe::activate`] would only take a failing project offline.
+///
+/// Blocking, and it never panics: a panic outside a project's own load is [`Validation::error`].
+pub fn validate(
+    config: &CpeConfig,
+    projection: &dyn cpe_ports::ArchiveProjection,
+    files: &dyn cpe_ports::DepositedFiles,
+) -> Validation {
+    if let Some(reason) = config.refusal() {
+        return Validation {
+            error: Some(format!("CPE's configuration is refused: {reason}")),
+            projects: Vec::new(),
+        };
+    }
+    match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| activation::validate(config, projection, files))) {
+        Ok(projects) => Validation { error: None, projects },
+        Err(payload) => Validation {
+            error: Some(format!("CPE's check panicked: {}", activation::panic_message(payload.as_ref()))),
+            projects: Vec::new(),
+        },
+    }
 }
 
 /// The route that answered a request, as its template with [`Cpe::base`] in
@@ -494,6 +565,132 @@ mod tests {
         assert_eq!(status, StatusCode::OK, "the other project is served");
         let (status, headers, _) = get(&cpe, "/clash/").await;
         assert_unavailable(status, &headers, "/clash/");
+    }
+
+    mod validation {
+        use cpe_ports::FakeArchiveProjection;
+
+        use super::config_for;
+        use crate::activation::tests::{configs, projects, snapshot, things_of, THINGS};
+        use crate::{validate, ProjectOutcome, ProjectReport};
+
+        /// The fixture config with a second page whose id is taken: a validation error.
+        fn broken() -> String {
+            format!("{}\npage id=\"home\" route=\"/again\"\n", things_of("0002"))
+        }
+
+        /// The fixture config under `0004`, labelling a property no Thing has: a validation
+        /// warning.
+        fn unused_label() -> String {
+            format!(
+                "{}\nlabels {{\n    property \"colour\" {{\n        en \"Colour\"\n        de \"Farbe\"\n    }}\n}}\n",
+                things_of("0004")
+            )
+        }
+
+        fn report<'a>(reports: &'a [ProjectReport], folder: &str) -> &'a ProjectReport {
+            reports
+                .iter()
+                .find(|report| report.folder == folder)
+                .unwrap_or_else(|| panic!("{folder} is reported: {reports:?}"))
+        }
+
+        /// `things` (0001) is valid, `broken` (0002) fails validation, `unknown` (0003) has no
+        /// Ready token and `labelled` (0004) loads with a warning.
+        fn validated() -> (tempfile::TempDir, crate::Validation) {
+            let root = projects(&[
+                ("things", "0001"),
+                ("broken", "0002"),
+                ("unknown", "0003"),
+                ("labelled", "0004"),
+            ]);
+            let validation = validate(
+                &config_for(root.path()),
+                &FakeArchiveProjection::default()
+                    .with_project(snapshot("0001", "Brass lamp"))
+                    .with_project(snapshot("0002", "Brass lamp"))
+                    .with_project(snapshot("0004", "Brass lamp")),
+                &configs(&[
+                    ("0001", THINGS),
+                    ("0002", &broken()),
+                    ("0003", &things_of("0003")),
+                    ("0004", &unused_label()),
+                ]),
+            );
+            (root, validation)
+        }
+
+        #[test]
+        fn a_valid_project_is_served_a_broken_one_failed_with_its_report_and_one_without_a_token_unknown() {
+            let (_root, validation) = validated();
+            assert_eq!(validation.error, None);
+            let reports = &validation.projects;
+
+            let things = report(reports, "things");
+            assert_eq!(things.shortcode.as_deref(), Some("0001"));
+            assert_eq!(things.outcome, ProjectOutcome::Served { warnings: Vec::new() });
+
+            let ProjectOutcome::Failed { report: text } = &report(reports, "broken").outcome else {
+                panic!("broken fails: {reports:?}");
+            };
+            assert!(
+                text.starts_with("0002/config.kdl:"),
+                "the report is located in the config: {text}"
+            );
+
+            assert!(
+                matches!(&report(reports, "unknown").outcome, ProjectOutcome::Unknown { reason } if reason.contains("0003")),
+                "{reports:?}"
+            );
+            assert!(!validation.passes(), "a failed project fails the check");
+        }
+
+        #[test]
+        fn a_served_projects_warnings_are_in_its_outcome() {
+            let (_root, validation) = validated();
+            let ProjectOutcome::Served { warnings } = &report(&validation.projects, "labelled").outcome else {
+                panic!("labelled is served: {validation:?}");
+            };
+            assert_eq!(warnings.len(), 1, "{warnings:?}");
+            assert!(
+                warnings[0].starts_with("0004/config.kdl:") && warnings[0].contains("colour"),
+                "{warnings:?}"
+            );
+        }
+
+        #[test]
+        fn a_folder_with_a_malformed_shortcode_is_failed_and_one_with_none_is_not_reported() {
+            let root = projects(&[]);
+            std::fs::create_dir(root.path().join("malformed")).expect("the folder is created");
+            std::fs::write(root.path().join("malformed/SHORTCODE"), "08x3\n").expect("SHORTCODE is written");
+            std::fs::create_dir(root.path().join("notes")).expect("the folder is created");
+            let validation = validate(&config_for(root.path()), &FakeArchiveProjection::default(), &configs(&[]));
+
+            let malformed = report(&validation.projects, "malformed");
+            assert_eq!(malformed.shortcode, None);
+            assert!(
+                matches!(&malformed.outcome, ProjectOutcome::Failed { report } if report.contains("\"08x3\"")),
+                "{malformed:?}"
+            );
+            assert!(
+                validation.projects.iter().all(|report| report.folder != "notes"),
+                "{validation:?}"
+            );
+        }
+
+        #[test]
+        fn only_unknown_projects_besides_the_served_pass_and_a_refused_configuration_fails() {
+            let root = projects(&[("things", "0001"), ("unknown", "0003")]);
+            let projection = FakeArchiveProjection::default().with_project(snapshot("0001", "Brass lamp"));
+            let files = configs(&[("0001", THINGS)]);
+            let validation = validate(&config_for(root.path()), &projection, &files);
+            assert!(validation.passes(), "{validation:?}");
+
+            let refused = crate::CpeConfig { base: "no-slash".to_owned(), ..config_for(root.path()) };
+            let validation = validate(&refused, &projection, &files);
+            assert!(validation.error.as_deref().is_some_and(|error| error.contains("CPE_BASE")));
+            assert!(!validation.passes());
+        }
     }
 
     /// The names of the other CPE crates. `cpe_ports` is not among them: its

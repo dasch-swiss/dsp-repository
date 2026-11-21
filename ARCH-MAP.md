@@ -84,7 +84,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   tracing-opentelemetry, tower-livereload and notify (`dpe-server`'s `dev` feature, which
   `access-server`'s `dev` feature turns on); dev: insta (`dpe-server`)
 - **Used by:** areas/access/server (`dpe-server`'s library surface only: `serve.rs::assemble` merges
-  `Dpe::router()` and nests CPE's router beside it under `CPE_BASE`; `main.rs` calls
+  `Dpe::router()` and nests CPE's router beside it under `CPE_BASE`; `validate.rs` calls
   `dpe_server::validate`; its image `//areas/access/server:image` packs `//areas/access/dpe:public`,
   `//areas/access/dpe:css` and the corpus); the fuzz targets in `server/fuzz/` inside the component
   (`cc_fuzz_test` over `testonly` shims) read `dpe-core`; areas/deposit/editor and areas/deposit/server — data
@@ -157,7 +157,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   adapters of CPE's two ports over `SYNC_DATA_DIR` and `MEDIA_DATA_DIR` and has CPE activate over them in the
   background, after the listener is bound.
 - **Key entities:** `app`, `assemble`, `mount_cpe`, `name_span_by_cpe_route`, `activate_in_background`, `serve`,
-  `DEFAULT_SYNC_DATA_DIR`, `DEFAULT_MEDIA_DATA_DIR`, `data_dir`, `sync_poll_interval`, `parse_hidden_projects`, `shutdown_signal`,
+  `cpe_setup_from_env` (CPE's configuration and data directories, for both verbs), `validate` (the verb), `DEFAULT_SYNC_DATA_DIR`, `DEFAULT_MEDIA_DATA_DIR`, `data_dir`, `sync_poll_interval`, `parse_hidden_projects`, `shutdown_signal`,
   `init_otel`, `init_pyroscope`, `TELEMETRY_NAME`, `is_allowed_healthcheck_url`
 - **Public interface:** the `access-server serve | validate <data_dir> | healthcheck <url>` CLI;
   `/healthz` and `POST /telemetry/collect` (untraced), every route DPE's router carries, and every
@@ -167,7 +167,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `CpeConfig::hidden_shortcodes`); `DPE_*` and `CPE_*` by the capabilities' own configurations. The
   Docker image stays `daschswiss/dpe`.
 - **Local-context kit:** `areas/access/server/CLAUDE.md`, `areas/access/server/src/serve.rs`,
-  `areas/access/server/src/observability.rs`, `areas/access/server/BUILD.bazel` (its `deps`, the
+  `areas/access/server/src/observability.rs`, `areas/access/server/src/validate.rs`, `areas/access/server/BUILD.bazel` (its `deps`, the
   image's data layer and `env`), `areas/access/dpe/server/src/lib.rs`, `areas/access/cpe/server/src/lib.rs`,
   `docs/adr/0003-one-modulith-per-area.md`
 - **Depends on:** areas/access/dpe (`dpe-server` only), areas/access/cpe (`cpe-server`, and
@@ -1347,8 +1347,10 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `share_link::compose_canonical_query`, `share_link::compose_absolute_url`, `share_link::ViewSurface`. In
   `cpe-server`: `CpeConfig` (`CPE_PROJECTS_DIR`, `CPE_PUBLIC_ORIGIN`, `CPE_BASE`, and `hidden_shortcodes`, which the
   host sets and no file or variable of CPE's does), `Cpe` (`new`, `activate`, `router`,
-  `base`, `projects`; `from_sql_folders` is test support and compiles for tests only), `ProjectSummary` and
-  `MatchedRoute` (the route template a response carries in its extensions, for the host's request span)
+  `base`, `projects`; `from_sql_folders` is test support and compiles for tests only), `ProjectSummary`,
+  `MatchedRoute` (the route template a response carries in its extensions, for the host's request span), and
+  `validate` with `Validation`, `ProjectReport` and `ProjectOutcome` (every project loaded once without serving,
+  for the host's strict check; diagnostics as text)
 - **Public interface:** `cpe-server`'s `Cpe` and `CpeConfig`: the router, mounted by areas/access/server
   at `Cpe::base()` on the area's origin beside DPE's routes, and `Cpe::follow` and `Cpe::activate`, which take both ports. No `pub` item of
   `cpe-server` names a type of another CPE crate, `cpe-ports`' excepted. `cpe/ports` is not an interface CPE offers but the ports CPE

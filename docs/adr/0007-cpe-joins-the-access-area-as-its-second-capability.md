@@ -119,8 +119,9 @@ repository. The decision, phrased so a violation is describable in code:
   missing or holds no project at all are failures, not an unknown project: with `sync`'s
   data missing, every project answers 503. With no projects at all, the overview lists none and every other
   path is not found.
-- **A strict mode for development, CI and tests fails the whole start on the first invalid project**, as the
-  prototype's `--check` does. It is the same verb as DPE's `validate`, on the area binary. The page a project
+- **A strict mode for development, CI and tests is the area binary's `validate` verb, the same verb as
+  DPE's**: it loads every project once without serving, prints every project's report, and fails when any
+  project fails to load or a folder's `SHORTCODE` or name is refused. `serve` has no strict mode. The page a project
   answers while offline is a designed page.
 
 **The component library and the seam**
@@ -321,8 +322,7 @@ one project it names (ADR-0012, DEV-7989).
 Not yet in code: `media` announces no project whose Ready token changed (ADR-0012, DEV-7938).
 Not yet in code: CPE serves Incunabula alone; the incubator's `alice-in-daschland` and `hdm` have not moved in
 (not scheduled).
-Not yet in code: `access-server validate` checks DPE's data only and fails on no CPE project, and the page of an
-offline project is a plain 503 page, not a designed one (DEV-7403).
+Not yet in code: the page of an offline project is a plain 503 page, not a designed one (DEV-7403).
 Not yet in code: CPE's record pages carry no ADR-0005 metadata, and no adapter feeds `shared-fair` from CPE's
 store (DEV-7409).
 Not yet in code: CPE's glossary is `dsp-incubator cpe/CONTEXT.md`, not `areas/access/cpe/CONTEXT.md` (not

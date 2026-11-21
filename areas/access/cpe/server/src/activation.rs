@@ -17,7 +17,7 @@ use cpe_store_build::CuratedValues;
 use cpe_web::project::{LoadError, Project};
 
 use crate::discovery::{self, DiscoveredProject};
-use crate::{assets, request, router, CpeConfig, ProjectSummary};
+use crate::{assets, request, router, CpeConfig, ProjectOutcome, ProjectReport, ProjectSummary};
 
 /// What `cpe-core`'s `ReservedProjectId` check is given. The id rule already refuses every id that
 /// starts with `_`, and that is what keeps a project off CPE's own `_static` directory.
@@ -32,14 +32,21 @@ pub(crate) struct Activated {
     pub(crate) statuses: BTreeMap<String, ProjectStatus>,
 }
 
-/// How one project folder came out of an activation.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// How one project folder came out of an activation, with what it reported, ready to print.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum ProjectStatus {
-    Loaded,
+    /// Each warning is one diagnostic, located in the config.
+    Loaded {
+        warnings: Vec<String>,
+    },
     /// `sync` knows no such project while the place it would keep it is there: the project was
     /// removed, or never deposited. Its prefix answers 404, as a path that names no project does.
-    Unknown,
-    Failed,
+    Unknown {
+        report: String,
+    },
+    Failed {
+        report: String,
+    },
 }
 
 /// Why a project did not load. The report is ready to log.
@@ -63,8 +70,13 @@ pub(crate) fn held_back_by(current: &Activated, next: &Activated) -> Vec<String>
     current
         .statuses
         .iter()
-        .filter(|(_, status)| **status == ProjectStatus::Loaded)
-        .filter(|(id, _)| !matches!(next.statuses.get(*id), Some(ProjectStatus::Loaded | ProjectStatus::Unknown)))
+        .filter(|(_, status)| matches!(status, ProjectStatus::Loaded { .. }))
+        .filter(|(id, _)| {
+            !matches!(
+                next.statuses.get(*id),
+                Some(ProjectStatus::Loaded { .. } | ProjectStatus::Unknown { .. })
+            )
+        })
         .map(|(id, _)| id.clone())
         .collect()
 }
@@ -76,7 +88,8 @@ pub(crate) fn withdrawn_by(current: &Activated, next: &Activated) -> Vec<String>
         .statuses
         .iter()
         .filter(|(id, status)| {
-            **status == ProjectStatus::Loaded && next.statuses.get(*id) == Some(&ProjectStatus::Unknown)
+            matches!(status, ProjectStatus::Loaded { .. })
+                && matches!(next.statuses.get(*id), Some(ProjectStatus::Unknown { .. }))
         })
         .map(|(id, _)| id.clone())
         .collect()
@@ -122,6 +135,42 @@ pub(crate) fn from_ports(
     })
 }
 
+/// How each folder [`from_ports`] would load comes out, as [`crate::validate`] reports it, sorted
+/// by folder; no router is built. A folder [`from_ports`] skips for its `SHORTCODE` or its name is
+/// failed, though `serve` answers 404 for it; one with no `SHORTCODE` is no project and is left
+/// out.
+pub(crate) fn validate(
+    config: &CpeConfig,
+    projection: &dyn ArchiveProjection,
+    files: &dyn DepositedFiles,
+) -> Vec<ProjectReport> {
+    let discovery = discovery::discover_for_activation(&config.projects_dir);
+    let mut reports: Vec<ProjectReport> = discovery
+        .skipped
+        .iter()
+        .filter(|skipped| skipped.reason != discovery::SkipReason::NoShortcode)
+        .map(|skipped| ProjectReport {
+            folder: skipped.folder.clone(),
+            shortcode: None,
+            // A name that fails the id rule may hold a line break, which would split the report.
+            outcome: ProjectOutcome::Failed {
+                report: format!("{} {}", skipped.folder.escape_debug(), skipped.reason),
+            },
+        })
+        .collect();
+    let (_, mut statuses) = load_each(&discovery.projects, |discovered| port_sources(projection, files, discovered));
+    reports.extend(discovery.projects.into_iter().filter_map(|project| {
+        let outcome = match statuses.remove(&project.id)? {
+            ProjectStatus::Loaded { warnings } => ProjectOutcome::Served { warnings },
+            ProjectStatus::Unknown { report } => ProjectOutcome::Unknown { reason: report },
+            ProjectStatus::Failed { report } => ProjectOutcome::Failed { report },
+        };
+        Some(ProjectReport { folder: project.id, shortcode: project.shortcode, outcome })
+    }));
+    reports.sort_by(|a, b| a.folder.cmp(&b.folder));
+    reports
+}
+
 /// Every project folder that holds a `data.sql`, opened from that text: test support behind
 /// [`crate::Cpe::from_sql_folders`].
 #[cfg(test)]
@@ -154,55 +203,23 @@ fn load_all(
     discovered: Vec<DiscoveredProject>,
     sources: impl Fn(&DiscoveredProject) -> Result<Sources, NotLoaded>,
 ) -> Activated {
-    let mut loaded = Vec::new();
-    let mut unavailable = Vec::new();
-    let mut statuses = BTreeMap::new();
-    for discovered in &discovered {
-        let started = Instant::now();
-        // A panic in a hook, the builder or an adapter must stay this project's.
-        let outcome = catch_unwind(AssertUnwindSafe(|| load(discovered, &sources)))
-            .unwrap_or_else(|payload| Err(format!("loading it panicked: {}", panic_message(payload.as_ref())).into()));
-        let elapsed_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
-        match outcome {
-            Ok(project) => {
-                tracing::info!(project_id = discovered.id.as_str(), elapsed_ms, "project loaded");
-                statuses.insert(discovered.id.clone(), ProjectStatus::Loaded);
-                loaded.push(project);
-            }
-            Err(NotLoaded::Unknown(report)) => {
-                // Expected on a deployment that does not release the project, so not a warning.
-                tracing::info!(
-                    project_id = discovered.id.as_str(),
-                    shortcode = discovered.shortcode.as_deref(),
-                    elapsed_ms,
-                    report = report.as_str(),
-                    "project is not in the archive projection; its prefix answers 404"
-                );
-                statuses.insert(discovered.id.clone(), ProjectStatus::Unknown);
-            }
-            Err(NotLoaded::Failed(report)) => {
-                tracing::error!(
-                    project_id = discovered.id.as_str(),
-                    elapsed_ms,
-                    report = report.as_str(),
-                    "project does not load; its prefix answers 503"
-                );
-                statuses.insert(discovered.id.clone(), ProjectStatus::Failed);
-                unavailable.push(discovered.id.clone());
-            }
-        }
-    }
+    let (loaded, statuses) = load_each(&discovered, sources);
+    let unavailable: Vec<String> = statuses
+        .iter()
+        .filter(|(_, status)| matches!(status, ProjectStatus::Failed { .. }))
+        .map(|(id, _)| id.clone())
+        .collect();
     tracing::info!(
         projects_dir = %config.projects_dir.display(),
         served = loaded.len(),
         unavailable = unavailable.len(),
-        unknown = statuses.values().filter(|status| **status == ProjectStatus::Unknown).count(),
+        unknown = statuses.values().filter(|status| matches!(status, ProjectStatus::Unknown { .. })).count(),
         "CPE's projects are loaded"
     );
     let hidden_ids = Arc::new(hidden_ids(&config.hidden_shortcodes, &discovered, &statuses));
     let served: Vec<DiscoveredProject> = discovered
         .into_iter()
-        .filter(|project| statuses.get(&project.id) == Some(&ProjectStatus::Loaded))
+        .filter(|project| matches!(statuses.get(&project.id), Some(ProjectStatus::Loaded { .. })))
         .collect();
 
     let base = config.base_or_root();
@@ -234,6 +251,51 @@ fn load_all(
     Activated { router, projects, statuses }
 }
 
+/// Load each of `discovered` on its own, a failure or a panic staying that project's: the loaded
+/// projects, and every project's status by id.
+fn load_each(
+    discovered: &[DiscoveredProject],
+    sources: impl Fn(&DiscoveredProject) -> Result<Sources, NotLoaded>,
+) -> (Vec<Arc<Project>>, BTreeMap<String, ProjectStatus>) {
+    let mut loaded = Vec::new();
+    let mut statuses = BTreeMap::new();
+    for discovered in discovered {
+        let started = Instant::now();
+        // A panic in a hook, the builder or an adapter must stay this project's.
+        let outcome = catch_unwind(AssertUnwindSafe(|| load(discovered, &sources)))
+            .unwrap_or_else(|payload| Err(format!("loading it panicked: {}", panic_message(payload.as_ref())).into()));
+        let elapsed_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
+        match outcome {
+            Ok((project, warnings)) => {
+                tracing::info!(project_id = discovered.id.as_str(), elapsed_ms, "project loaded");
+                statuses.insert(discovered.id.clone(), ProjectStatus::Loaded { warnings });
+                loaded.push(project);
+            }
+            Err(NotLoaded::Unknown(report)) => {
+                // Expected on a deployment that does not release the project, so not a warning.
+                tracing::info!(
+                    project_id = discovered.id.as_str(),
+                    shortcode = discovered.shortcode.as_deref(),
+                    elapsed_ms,
+                    report = report.as_str(),
+                    "project is not in the archive projection; its prefix answers 404"
+                );
+                statuses.insert(discovered.id.clone(), ProjectStatus::Unknown { report });
+            }
+            Err(NotLoaded::Failed(report)) => {
+                tracing::error!(
+                    project_id = discovered.id.as_str(),
+                    elapsed_ms,
+                    report = report.as_str(),
+                    "project does not load; its prefix answers 503"
+                );
+                statuses.insert(discovered.id.clone(), ProjectStatus::Failed { report });
+            }
+        }
+    }
+    (loaded, statuses)
+}
+
 /// The ids of the served and failed projects whose shortcode is one of `hidden_shortcodes`, in
 /// any case. An unknown project is left out: under `X-Robots-Tag` its 404 would differ from any
 /// other. Logs the ids, and each shortcode no folder has: a project may be listed before it is
@@ -250,7 +312,10 @@ fn hidden_ids(
     let mut matched = BTreeSet::new();
     for project in discovered {
         if let Some(shortcode) = project.shortcode.as_deref().filter(|code| hidden_shortcodes.contains(*code)) {
-            if matches!(statuses.get(&project.id), Some(ProjectStatus::Loaded | ProjectStatus::Failed)) {
+            if matches!(
+                statuses.get(&project.id),
+                Some(ProjectStatus::Loaded { .. } | ProjectStatus::Failed { .. })
+            ) {
                 ids.insert(project.id.clone());
             }
             matched.insert(shortcode);
@@ -428,11 +493,11 @@ fn generation(provenance: Option<&Provenance>) -> &str {
     provenance.map_or("none", |provenance| provenance.generation.as_str())
 }
 
-/// Get one project's sources and load it.
+/// Get one project's sources and load it, with its validation warnings rendered as lines.
 fn load(
     discovered: &DiscoveredProject,
     sources: &impl Fn(&DiscoveredProject) -> Result<Sources, NotLoaded>,
-) -> Result<Arc<Project>, NotLoaded> {
+) -> Result<(Arc<Project>, Vec<String>), NotLoaded> {
     let sources = sources(discovered)?;
     let narrative_files: Vec<String> = sources.narrative.iter().map(|(name, _)| name.clone()).collect();
     let asset_files = discovered.asset_files();
@@ -451,6 +516,7 @@ fn load(
         }
         Err(other) => return Err(other.to_string().into()),
     };
+    let mut warnings = Vec::new();
     for warning in project.warnings() {
         tracing::warn!(
             project_id = discovered.id.as_str(),
@@ -458,8 +524,12 @@ fn load(
             message = warning.message.as_str(),
             "validation warning"
         );
+        let mut one = cpe_core::diagnostic::ValidationReport::new();
+        one.push(warning.clone());
+        warnings.push(one.render(&sources.config, &sources.config_file));
     }
-    with_routes_that_register(project).map_err(NotLoaded::from)
+    let project = with_routes_that_register(project).map_err(NotLoaded::from)?;
+    Ok((project, warnings))
 }
 
 /// Refuse a project whose routes axum cannot register. `Router::route` panics on two routes it
@@ -930,27 +1000,32 @@ pub(crate) mod tests {
         super::Activated {
             router: axum::Router::new(),
             projects: Vec::new(),
-            statuses: statuses.iter().map(|(id, status)| ((*id).to_owned(), *status)).collect(),
+            statuses: statuses.iter().map(|(id, status)| ((*id).to_owned(), status.clone())).collect(),
         }
     }
 
     #[test]
     fn withdrawn_by_names_the_served_projects_sync_no_longer_knows_and_no_other() {
-        use super::ProjectStatus::{Failed, Loaded, Unknown};
+        use super::ProjectStatus;
+        let (loaded, unknown, failed) = (
+            ProjectStatus::Loaded { warnings: Vec::new() },
+            ProjectStatus::Unknown { report: String::new() },
+            ProjectStatus::Failed { report: String::new() },
+        );
         let current = with_statuses(&[
-            ("served-then-unknown", Loaded),
-            ("served-then-served", Loaded),
-            ("unknown-then-unknown", Unknown),
-            ("failed-then-unknown", Failed),
-            ("served-then-failed", Loaded),
+            ("served-then-unknown", loaded.clone()),
+            ("served-then-served", loaded.clone()),
+            ("unknown-then-unknown", unknown.clone()),
+            ("failed-then-unknown", failed.clone()),
+            ("served-then-failed", loaded.clone()),
         ]);
         let next = with_statuses(&[
-            ("served-then-unknown", Unknown),
-            ("served-then-served", Loaded),
-            ("unknown-then-unknown", Unknown),
-            ("failed-then-unknown", Unknown),
-            ("served-then-failed", Failed),
-            ("new-and-unknown", Unknown),
+            ("served-then-unknown", unknown.clone()),
+            ("served-then-served", loaded),
+            ("unknown-then-unknown", unknown.clone()),
+            ("failed-then-unknown", unknown.clone()),
+            ("served-then-failed", failed),
+            ("new-and-unknown", unknown),
         ]);
 
         assert_eq!(super::withdrawn_by(&current, &next), vec!["served-then-unknown".to_owned()]);

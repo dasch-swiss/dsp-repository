@@ -11,6 +11,15 @@ each capability and injects it, and mounts routes, but does not implement busine
 own. It wires two capabilities, DPE and CPE (ADR-0007), without either depending on the other, and
 constructs `sync`'s and `media`'s adapters of CPE's two ports to hand them to CPE.
 
+## `validate`: DPE's data, then CPE's projects, strictly
+
+`access-server validate <data_dir>` (`validate.rs`) runs `dpe_server::validate` on DPE's data directory, then
+`cpe_server::validate` over the same CPE configuration and ports `serve` uses (`serve::cpe_setup_from_env`:
+`CPE_*`, `SYNC_DATA_DIR`, `MEDIA_DATA_DIR`; no variable of its own), whether or not `CPE_BASE` is set. It
+prints every CPE project's outcome before it exits, and exits non-zero when DPE fails or any CPE project
+fails; a project with no Ready token is a printed warning. The strictness is the verb's alone: `serve` has no
+strict start and keeps taking only a failing project offline.
+
 ## Router assembly: the traced/untraced order matters
 
 `serve.rs`'s `app()` merges DPE's router and nests CPE's, applies the OTel layers, then mounts
@@ -87,7 +96,7 @@ built from.
 `shared-rate-limit`, `shared-telemetry` and infra crates only — never on a capability's `core`, `web` or `api-*` crate, and never on
 `cpe-store`. This crate imports only `dpe-server`'s public surface (`DpeConfig`, `Dpe`, `validate`,
 `normalize_page_url`), `cpe-server`'s (`CpeConfig`, `Cpe`,
-`MatchedRoute`), the ports' traits and `is_shortcode` from `cpe-ports`, `sync-store`'s `LiveArchiveProjection` and
+`MatchedRoute`, `validate` and its `Validation` and `ProjectOutcome`), the ports' traits and `is_shortcode` from `cpe-ports`, `sync-store`'s `LiveArchiveProjection` and
 `DEFAULT_POLL_INTERVAL`, and `media-store`'s `LiveDepositedFiles`;
 reaching past them into a capability's internals defeats the boundary the capability crate exists
 to hold. Bazel `visibility` enforces this: no `core`, `web` or `api-*` target and not `cpe-store` grants this

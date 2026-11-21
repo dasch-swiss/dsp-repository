@@ -1,4 +1,4 @@
-//! `serve()` and `shutdown_signal`.
+//! `serve()`, `shutdown_signal`, and the setup of CPE that `serve` and `validate` share.
 
 use std::collections::BTreeSet;
 use std::process::ExitCode;
@@ -40,6 +40,24 @@ fn sync_poll_interval(value: Option<&str>) -> Duration {
                 default
             }
         },
+    }
+}
+
+/// What CPE runs on in both verbs: its configuration, from `cpe.toml` and `CPE_*`, and the data
+/// directories of its two ports, from `SYNC_DATA_DIR` and `MEDIA_DATA_DIR`.
+pub(crate) struct CpeSetup {
+    pub(crate) config: cpe_server::CpeConfig,
+    pub(crate) sync_data_dir: String,
+    pub(crate) media_data_dir: String,
+}
+
+/// [`CpeSetup`] from the environment. Cannot fail: a configuration CPE refuses is kept, with its
+/// reason, for CPE to report.
+pub(crate) fn cpe_setup_from_env() -> CpeSetup {
+    CpeSetup {
+        config: cpe_server::CpeConfig::load(),
+        sync_data_dir: data_dir(std::env::var("SYNC_DATA_DIR").ok(), DEFAULT_SYNC_DATA_DIR),
+        media_data_dir: data_dir(std::env::var("MEDIA_DATA_DIR").ok(), DEFAULT_MEDIA_DATA_DIR),
     }
 }
 
@@ -290,7 +308,7 @@ pub(crate) async fn serve() -> ExitCode {
     });
 
     // Neither call can fail: a CPE that cannot be served must not stop DPE.
-    let mut cpe_config = cpe_server::CpeConfig::load();
+    let CpeSetup { config: mut cpe_config, sync_data_dir, media_data_dir } = cpe_setup_from_env();
     cpe_config.hidden_shortcodes = hidden_projects_from_env();
     let cpe = Cpe::new(&cpe_config);
 
@@ -298,8 +316,6 @@ pub(crate) async fn serve() -> ExitCode {
         .unwrap_or_else(|_| "127.0.0.1:4000".to_string())
         .parse()
         .expect("invalid site address (DPE_SITE_ADDR)");
-    let sync_data_dir = data_dir(std::env::var("SYNC_DATA_DIR").ok(), DEFAULT_SYNC_DATA_DIR);
-    let media_data_dir = data_dir(std::env::var("MEDIA_DATA_DIR").ok(), DEFAULT_MEDIA_DATA_DIR);
     let sync_poll = sync_poll_interval(std::env::var("SYNC_POLL_SECS").ok().as_deref());
 
     let (app, cpe_is_mounted) = app(dpe.router(), &cpe);
@@ -396,7 +412,7 @@ async fn shutdown_signal() {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use std::collections::BTreeSet;
     use std::path::{Path, PathBuf};
     use std::sync::{mpsc, Mutex, OnceLock, PoisonError};
@@ -447,7 +463,7 @@ mod tests {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..")
     }
 
-    fn cpe_config(projects_dir: &Path, base: &str) -> CpeConfig {
+    pub(crate) fn cpe_config(projects_dir: &Path, base: &str) -> CpeConfig {
         let mut config = CpeConfig::default();
         config.projects_dir = projects_dir.to_owned();
         config.base = base.to_owned();
@@ -455,7 +471,7 @@ mod tests {
     }
 
     /// A project built from archive project `0001`.
-    const THINGS: &str = r#"
+    pub(crate) const THINGS: &str = r#"
 site {
     title "Things Fixture"
     languages "en" "de"
@@ -477,7 +493,7 @@ remodel {
 
     /// The snapshot of a Things project: `0001`, or another shortcode whose config is
     /// [`THINGS`] with that shortcode.
-    fn things_snapshot(shortcode: &str) -> ProjectSnapshot {
+    pub(crate) fn things_snapshot(shortcode: &str) -> ProjectSnapshot {
         ProjectSnapshot {
             shortcode: shortcode.to_owned(),
             resources: vec![Resource {
@@ -501,7 +517,7 @@ remodel {
 
     /// A projects folder with one Things project per `(id, shortcode)`, each a folder holding
     /// its `SHORTCODE`.
-    fn projects_folder(projects: &[(&str, &str)]) -> tempfile::TempDir {
+    pub(crate) fn projects_folder(projects: &[(&str, &str)]) -> tempfile::TempDir {
         let root = tempfile::tempdir().expect("a temporary directory");
         for (id, shortcode) in projects {
             let dir = root.path().join(id);
@@ -929,6 +945,27 @@ remodel {
             let (status, headers, _) = get(&router, uri).await;
             assert_unavailable(status, &headers, uri);
         }
+        assert_eq!(status_of(router.clone(), "/cpe/things/").await, StatusCode::OK);
+        assert_eq!(status_of(router, "/dpe/projects").await, StatusCode::OK);
+    }
+
+    /// `validate` fails on this fixture; `serve` has no strict start.
+    #[tokio::test]
+    async fn a_project_validate_fails_on_takes_only_itself_offline_in_serve() {
+        let root = projects_folder(&[("things", "0001"), ("broken", "0002")]);
+        let cpe = Cpe::new(&cpe_config(root.path(), BASE));
+        let files = things_files().with_file("0002", "config.kdl", crate::validate::tests::broken_things("0002"));
+        let projection = FakeArchiveProjection::default()
+            .with_project(things_snapshot("0001"))
+            .with_project(things_snapshot("0002"));
+        assert!(!cpe_server::validate(&cpe_config(root.path(), BASE), &projection, &files).passes());
+
+        activate_in_background(&cpe, projection, files, Duration::from_secs(60))
+            .await
+            .expect("the activation task ends");
+        let router = app(&dpe(), &cpe);
+        let (status, headers, _) = get(&router, "/cpe/broken/").await;
+        assert_unavailable(status, &headers, "/cpe/broken/");
         assert_eq!(status_of(router.clone(), "/cpe/things/").await, StatusCode::OK);
         assert_eq!(status_of(router, "/dpe/projects").await, StatusCode::OK);
     }

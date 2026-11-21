@@ -217,7 +217,9 @@ against them.
 
 ## The host crate
 
-`cpe-server` in `server/` is what a composition root sees of CPE: `CpeConfig` and `Cpe`. It holds the routes,
+`cpe-server` in `server/` is what a composition root sees of CPE: `CpeConfig`, `Cpe`, and `validate`, which loads
+every project once without serving and reports each one's outcome as text, for a strict check: served (what
+activation calls loaded), unknown, or failed. It holds the routes,
 the request's language and appearance preferences, the discovery of project folders, the table of static
 files and the inventory of the projects' assets. No type of another CPE crate is in its `pub` items,
 `cpe-ports`' excepted; a test of the crate holds that. It installs no tracing layer and binds no port: its
@@ -290,7 +292,8 @@ logged with its id, and every path under its prefix is answered 503 with `Retry-
 folder, and for an unknown project (`areas/access/CONTEXT.md`), which is not there. A folder is a project when its
 name passes the **Project id** rule and it holds a regular `SHORTCODE` file whose trimmed text passes
 `cpe_ports::is_shortcode`. A folder that fails either is not a project, so its paths are 404; it is logged,
-unless it holds no `SHORTCODE` at all.
+unless it holds no `SHORTCODE` at all. The strict check (`cpe_server::validate`, `access-server validate`) fails
+such a folder all the same, since it holds a `SHORTCODE` that cannot be served.
 ADR-0007 says such a project is "offline on its own prefix"; the offline page it designs is DEV-7403's.
 _Avoid_: missing project (that is the 404); unknown project for an unavailable one (an unknown project is a 404, defined in `areas/access/CONTEXT.md`).
 

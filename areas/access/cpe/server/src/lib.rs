@@ -8,7 +8,11 @@
 //! `cpe-web`, `cpe-components` or `cpe-image-viewer` in a `pub` signature:
 //! that boundary is what lets a host depend on this crate and `cpe-ports`
 //! alone. `tests::no_pub_item_names_another_cpe_crate` holds it, and relies on
-//! this file and `config.rs` importing no CPE crate with `use`.
+//! this file and `config.rs` importing no CPE crate with `use`. It has one
+//! exception: the `hooks` parameter of the doc-hidden `Cpe::activate_with_hooks`
+//! and `Cpe::follow_with_hooks` names `cpe_store_build::hook::Hook`, the seam a
+//! host that supplies hooks writes them against anyway. The test allows that
+//! parameter and nothing else.
 //!
 //! CPE never stops its host. Nothing here fails or panics on what it finds: a
 //! configuration that is refused, a projects folder that is missing, a port
@@ -121,6 +125,9 @@ pub enum InputsCheck {
 /// Finding no project folder fails the check, as does an `inputs` that is not a directory: either
 /// would otherwise pass with nothing checked.
 ///
+/// It knows no host's hooks: a project whose hook only a host supplies fails with
+/// `hook-not-registered`.
+///
 /// Blocking, and it never panics: a panic outside a project's own load is [`Validation::error`].
 pub fn validate(
     config: &CpeConfig,
@@ -172,6 +179,9 @@ pub struct Cpe {
     /// `None` until the projects are loaded. A guard is held only to read or
     /// replace the `Arc`, never across an `.await`.
     active: Arc<RwLock<Option<Arc<activation::Activated>>>>,
+    /// The host's hooks the last [`Cpe::activate_with_hooks`] was given, kept before it loads
+    /// anything, so every re-activation loads with them even if that activation stored nothing.
+    hooks: Arc<RwLock<Vec<cpe_store_build::hook::Hook>>>,
 }
 
 impl Cpe {
@@ -197,6 +207,7 @@ impl Cpe {
             config: Arc::new(config.clone()),
             base: Arc::new(config.base_or_root()),
             active: Arc::default(),
+            hooks: Arc::default(),
         }
     }
 
@@ -219,12 +230,29 @@ impl Cpe {
     /// "Never panics" rests on unwinding: a binary built with
     /// `panic = "abort"` loses it.
     pub fn activate(&self, projection: &dyn cpe_ports::ArchiveProjection, files: &dyn cpe_ports::DepositedFiles) {
+        self.activate_with_hooks(projection, files, &[]);
+    }
+
+    /// [`Cpe::activate`], with `hooks` beside `cpe-store-build`'s own table of hooks. A
+    /// project's hook is the one row that names its folder in either. A folder that two rows
+    /// name, in both tables or twice in `hooks`, does not load and answers 503 on its prefix.
+    ///
+    /// For a host that prototypes projects outside this repository, and so writes their hooks
+    /// against `cpe-store-build`'s `hook` seam itself; nothing in this repository calls it.
+    #[doc(hidden)]
+    pub fn activate_with_hooks(
+        &self,
+        projection: &dyn cpe_ports::ArchiveProjection,
+        files: &dyn cpe_ports::DepositedFiles,
+        hooks: &[cpe_store_build::hook::Hook],
+    ) {
         if self.config.refusal().is_some() {
             return;
         }
+        hooks.clone_into(&mut self.hooks.write().unwrap_or_else(PoisonError::into_inner));
         let config = &self.config;
         match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            activation::from_ports(config, projection, files)
+            activation::from_ports(config, projection, files, hooks)
         })) {
             Ok(activated) => self.store(activated),
             Err(payload) => tracing::error!(
@@ -250,12 +278,26 @@ impl Cpe {
         files: Arc<dyn cpe_ports::DepositedFiles>,
         retry_after: std::time::Duration,
     ) {
+        self.follow_with_hooks(projection, files, retry_after, &[]);
+    }
+
+    /// [`Cpe::follow`], activating with `hooks` as [`Cpe::activate_with_hooks`] does. They are
+    /// kept before the first activation runs, and every re-activation loads with them, whether or
+    /// not the first activation stored anything.
+    #[doc(hidden)]
+    pub fn follow_with_hooks(
+        &self,
+        projection: Arc<dyn cpe_ports::ArchiveProjection>,
+        files: Arc<dyn cpe_ports::DepositedFiles>,
+        retry_after: std::time::Duration,
+        hooks: &[cpe_store_build::hook::Hook],
+    ) {
         if self.config.refusal().is_some() {
             return;
         }
         let (announce, announced) = std::sync::mpsc::channel();
         projection.subscribe(Arc::new(follow::Announcements(announce)));
-        self.activate(projection.as_ref(), files.as_ref());
+        self.activate_with_hooks(projection.as_ref(), files.as_ref(), hooks);
         let cpe = self.clone();
         let spawned = std::thread::Builder::new()
             .name("cpe-reactivate".to_owned())
@@ -290,6 +332,11 @@ impl Cpe {
         // The projects served before are dropped here, after the guard: requests do not wait for
         // it.
         drop(replaced);
+    }
+
+    /// The host's hooks the last activation was given.
+    fn hooks(&self) -> Vec<cpe_store_build::hook::Hook> {
+        self.hooks.read().unwrap_or_else(PoisonError::into_inner).clone()
     }
 
     fn activated(&self) -> Option<Arc<activation::Activated>> {
@@ -945,6 +992,24 @@ mod tests {
         "cpe_image_viewer",
     ];
 
+    /// The one parameter a `pub` signature may name another CPE crate in, and the signatures that
+    /// may hold it (see the crate doc).
+    const BOUNDARY_EXCEPTION: (&[&str], &str) = (
+        &["pub fn activate_with_hooks(", "pub fn follow_with_hooks("],
+        "hooks: &[cpe_store_build::hook::Hook]",
+    );
+
+    /// The other CPE crates `signature` names, outside the one parameter the boundary allows.
+    fn forbidden_names(signature: &str) -> Vec<&'static str> {
+        let (functions, parameter) = BOUNDARY_EXCEPTION;
+        let checked = if functions.iter().any(|function| signature.starts_with(function)) {
+            signature.replacen(parameter, "", 1)
+        } else {
+            signature.to_owned()
+        };
+        OTHER_CPE_CRATES.iter().copied().filter(|name| checked.contains(name)).collect()
+    }
+
     /// `source` up to its test module, without comment lines.
     fn production_lines(source: &str) -> Vec<&str> {
         source
@@ -1015,9 +1080,8 @@ mod tests {
             }
             for signature in pub_signatures(&lines) {
                 signatures += 1;
-                for name in OTHER_CPE_CRATES {
-                    assert!(!signature.contains(name), "{file}: a pub item names {name}: {signature}");
-                }
+                let names = forbidden_names(&signature);
+                assert!(names.is_empty(), "{file}: a pub item names {names:?}: {signature}");
             }
         }
         assert!(signatures > 0, "the pub items were not found");
@@ -1036,5 +1100,32 @@ mod tests {
         let signatures = pub_signatures(&lines);
         assert_eq!(signatures.len(), 1);
         assert!(signatures[0].contains("cpe_web"), "{signatures:?}");
+    }
+
+    #[test]
+    fn the_boundary_exception_is_the_hooks_parameter_alone() {
+        let lines = [
+            "    pub fn activate_with_hooks(",
+            "        &self,",
+            "        hooks: &[cpe_store_build::hook::Hook],",
+            "        project: cpe_web::project::Project,",
+            "    ) {",
+        ];
+        let signatures = pub_signatures(&lines);
+        assert_eq!(signatures.len(), 1);
+        assert_eq!(forbidden_names(&signatures[0]), ["cpe_web"]);
+
+        // `cpe_store` is a prefix of `cpe_store_build`, so both are found.
+        let elsewhere = "pub fn activate_more(&self, hooks: &[cpe_store_build::hook::Hook]) {";
+        assert!(forbidden_names(elsewhere).contains(&"cpe_store_build"));
+        let twice =
+            "pub fn activate_with_hooks(hooks: &[cpe_store_build::hook::Hook], more: &[cpe_store_build::hook::Hook]) {";
+        assert!(forbidden_names(twice).contains(&"cpe_store_build"));
+        for allowed in [
+            "pub fn activate_with_hooks( &self, hooks: &[cpe_store_build::hook::Hook], ) {",
+            "pub fn follow_with_hooks( &self, retry_after: Duration, hooks: &[cpe_store_build::hook::Hook], ) {",
+        ] {
+            assert!(forbidden_names(allowed).is_empty(), "{allowed}");
+        }
     }
 }

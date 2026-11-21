@@ -13,6 +13,7 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use cpe_ports::{ArchiveProjection, DepositedFiles, FilesError, ProjectionError, Provenance};
+use cpe_store_build::hook::Hook;
 use cpe_store_build::CuratedValues;
 use cpe_web::project::{LoadError, Project};
 
@@ -112,11 +113,13 @@ struct Sources {
 
 /// Every project folder with a `SHORTCODE`, loaded from the two ports: its
 /// config, narrative and curation from `files`, and the snapshot of its
-/// shortcode from `projection`, each asked once per project.
+/// shortcode from `projection`, each asked once per project. Its hook is its
+/// row in `cpe-store-build`'s table or in `hooks` (see [`hook_of`]).
 pub(crate) fn from_ports(
     config: &CpeConfig,
     projection: &dyn ArchiveProjection,
     files: &dyn DepositedFiles,
+    hooks: &[Hook],
 ) -> Activated {
     let discovery = discovery::discover_for_activation(&config.projects_dir);
     for skipped in &discovery.skipped {
@@ -131,7 +134,7 @@ pub(crate) fn from_ports(
         }
     }
     load_all(config, discovery.projects, |discovered| {
-        port_sources(projection, files, discovered)
+        port_sources(projection, files, hooks, discovered)
     })
 }
 
@@ -160,7 +163,9 @@ pub(crate) fn validate(
             inputs: None,
         })
         .collect();
-    let (_, mut statuses) = load_each(&discovery.projects, |discovered| port_sources(projection, files, discovered));
+    let (_, mut statuses) = load_each(&discovery.projects, |discovered| {
+        port_sources(projection, files, &[], discovered)
+    });
     reports.extend(discovery.projects.into_iter().filter_map(|project| {
         let outcome = match statuses.remove(&project.id)? {
             ProjectStatus::Loaded { warnings } => ProjectOutcome::Served { warnings },
@@ -365,6 +370,24 @@ fn utf8(bytes: Vec<u8>, file: &str) -> Result<String, String> {
     String::from_utf8(bytes).map_err(|_| format!("{file} is not valid UTF-8"))
 }
 
+/// The hook of the project with the folder name `id`: its one row in `cpe-store-build`'s table
+/// and `hooks` together, `None` when neither names it. A folder with more than one row has no
+/// hook to call, so the error refuses the project.
+fn hook_of<'h>(id: &str, hooks: &'h [Hook]) -> Result<Option<&'h Hook>, String> {
+    let built_in = cpe_store_build::hooks::HOOKS.iter().filter(|hook| hook.project == id).count();
+    let host = hooks.iter().filter(|hook| hook.project == id).count();
+    if built_in + host > 1 {
+        return Err(format!(
+            "its hook is registered twice: {built_in} row(s) in cpe-store-build's table and {host} among the host's \
+             hooks name the folder {id}"
+        ));
+    }
+    Ok(cpe_store_build::hooks::HOOKS
+        .iter()
+        .chain(hooks)
+        .find(|hook| hook.project == id))
+}
+
 /// One project's sources from the ports. The narrative inventory is complete, so a file the
 /// config names and the port does not hold is `NarrativeFileNotFound`.
 ///
@@ -375,6 +398,7 @@ fn utf8(bytes: Vec<u8>, file: &str) -> Result<String, String> {
 fn port_sources(
     projection: &dyn ArchiveProjection,
     files: &dyn DepositedFiles,
+    hooks: &[Hook],
     discovered: &DiscoveredProject,
 ) -> Result<Sources, NotLoaded> {
     if let Some(refusal) = &discovered.refusal {
@@ -451,7 +475,7 @@ fn port_sources(
         narrative_files = narrative.len(),
         "read from the archive projection and the deposited files"
     );
-    let hook = cpe_store_build::hooks::resolve(&discovered.id);
+    let hook = hook_of(&discovered.id, hooks)?;
     let store = cpe_store_build::build(&snapshot, &curated, &mapping, hook).map_err(|errors| errors.to_string())?;
     let header = cpe_store_build::sql::header(&discovered.id, &mapping);
     let store_sql = cpe_store_build::sql::to_sql(&store, &mapping, &header).map_err(|error| error.to_string())?;
@@ -581,6 +605,7 @@ pub(crate) mod tests {
         ArchiveProjection, ClassIri, DataArk, FakeArchiveProjection, FakeDepositedFiles, ProjectSnapshot,
         ProjectionError, PropertyIri, Resource, ResourceIri, Value, ValueKind, DATA_ARK_PREFIX,
     };
+    use cpe_store_build::hook::{Draft, Hook, Refusals};
     use media_store::LiveDepositedFiles;
     use sync_store::LiveArchiveProjection;
 
@@ -880,7 +905,7 @@ pub(crate) mod tests {
         let projection = failing_projection();
         let (cases, files) = failing_projects();
         let (_root, things) = discovered("0001");
-        let sources = |discovered: &DiscoveredProject| super::port_sources(&projection, &files, discovered);
+        let sources = |discovered: &DiscoveredProject| super::port_sources(&projection, &files, &[], discovered);
         assert!(super::load(&things, &sources).is_ok(), "the fixture loads");
 
         for (_, shortcode, cause) in cases {
@@ -1128,7 +1153,7 @@ pub(crate) mod tests {
         let (_root, project) = discovered("0001");
         let projection = FakeArchiveProjection::default().with_project(snapshot("0001", "Brass lamp"));
 
-        let _ = super::port_sources(&projection, &files, &project).expect("the store builds");
+        let _ = super::port_sources(&projection, &files, &[], &project).expect("the store builds");
 
         let names: Vec<String> = files.requests().into_iter().map(|(_, name)| name).collect();
         assert_eq!(
@@ -1310,6 +1335,123 @@ pub(crate) mod tests {
         assert!(body.contains("Copper kettle") && !body.contains("Brass lamp"), "{body}");
     }
 
+    /// The text [`summarise`] gives every Thing as its `summary`.
+    pub(crate) const SUMMARY: &str = "Summarised by the host's hook";
+
+    /// A host's hook: every Thing's `summary` is [`SUMMARY`].
+    fn summarise(draft: &mut Draft<'_>, _: &mut Refusals) {
+        let things: Vec<&str> = draft.entries_of("Thing").iter().map(|thing| thing.iri()).collect();
+        for iri in things {
+            draft.provide_text(iri, "summary", SUMMARY, None);
+        }
+    }
+
+    /// A host's row for the folder `project`, with [`summarise`].
+    pub(crate) fn host_hook(project: &'static str) -> Hook {
+        Hook { project, remodel: summarise }
+    }
+
+    /// The fixture config whose `remodel` block declares a hook that provides `summary` on a
+    /// Thing, which the Thing's page shows.
+    pub(crate) fn things_with_hook() -> String {
+        let config = THINGS
+            .replace(
+                "    shortcode \"0001\"\n",
+                "    shortcode \"0001\"\n    hook {\n        provides \"summary\" class=\"Thing\"\n    }\n",
+            )
+            .replace("show-properties \"name\"\n", "show-properties \"name\" \"summary\"\n");
+        assert!(
+            config.contains("provides \"summary\"") && config.contains("show-properties \"name\" \"summary\""),
+            "the fixture has a remodel block and a resource-detail"
+        );
+        config
+    }
+
+    #[tokio::test]
+    async fn a_project_whose_block_declares_a_hook_is_served_with_the_hosts_row() {
+        let root = projects(&[("things", "0001")]);
+        let cpe = Cpe::new(&config_for(root.path()));
+
+        cpe.activate_with_hooks(
+            &FakeArchiveProjection::default().with_project(snapshot("0001", "Brass lamp")),
+            &configs(&[("0001", &things_with_hook())]),
+            &[host_hook("things")],
+        );
+
+        let (status, _, body) = get(&cpe, "/things/things/lamp").await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert!(body.contains("Brass lamp") && body.contains(SUMMARY), "{body}");
+    }
+
+    #[tokio::test]
+    async fn a_project_whose_block_declares_a_hook_answers_503_without_a_row() {
+        let root = projects(&[("things", "0001")]);
+        let cpe = Cpe::new(&config_for(root.path()));
+        let projection = FakeArchiveProjection::default().with_project(snapshot("0001", "Brass lamp"));
+        let files = configs(&[("0001", &things_with_hook())]);
+        let (_root, things) = discovered("0001");
+
+        let Err(super::NotLoaded::Failed(report)) =
+            super::port_sources(&projection, &files, &[host_hook("other")], &things)
+        else {
+            panic!("the block's hook is not registered, so the project fails");
+        };
+        assert!(report.contains("hook-not-registered"), "{report}");
+
+        cpe.activate_with_hooks(&projection, &files, &[host_hook("other")]);
+        let (status, headers, _) = get(&cpe, "/things/").await;
+        assert_unavailable(status, &headers, "/things/");
+    }
+
+    /// A folder with two rows: one in `cpe-store-build`'s table (`incunabula`) and one of the
+    /// host's, or two of the host's. Each refuses that project alone, with a report, and never
+    /// panics.
+    #[tokio::test]
+    async fn a_hook_registered_twice_refuses_its_project_alone() {
+        let projection = FakeArchiveProjection::default()
+            .with_project(snapshot("0001", "Brass lamp"))
+            .with_project(snapshot("0002", "Copper kettle"));
+        let files = configs(&[("0001", &things_with_hook()), ("0002", &things_of("0002"))]);
+        let cases: [(&str, Vec<Hook>, &str); 2] = [
+            (
+                "incunabula",
+                vec![host_hook("incunabula")],
+                "1 row(s) in cpe-store-build's table and 1 among the host's hooks name the folder incunabula",
+            ),
+            (
+                "things",
+                vec![host_hook("things"), host_hook("things")],
+                "0 row(s) in cpe-store-build's table and 2 among the host's hooks name the folder things",
+            ),
+        ];
+
+        for (folder, hooks, cause) in cases {
+            let root = projects(&[(folder, "0001"), ("kettle", "0002")]);
+            let project = crate::discovery::discover_for_activation(root.path())
+                .projects
+                .into_iter()
+                .find(|project| project.id == folder)
+                .expect("the folder is a project");
+            let Err(super::NotLoaded::Failed(report)) = super::port_sources(&projection, &files, &hooks, &project)
+            else {
+                panic!("{folder}: a hook registered twice fails the project");
+            };
+            assert!(
+                report.contains("its hook is registered twice") && report.contains(cause),
+                "{folder}: {report}"
+            );
+
+            let cpe = Cpe::new(&config_for(root.path()));
+            cpe.activate_with_hooks(&projection, &files, &hooks);
+            let uri = format!("/{folder}/");
+            let (status, headers, _) = get(&cpe, &uri).await;
+            assert_unavailable(status, &headers, &uri);
+            let (status, _, body) = get(&cpe, "/kettle/things/lamp").await;
+            assert_eq!(status, StatusCode::OK, "{folder}: {body}");
+            assert!(body.contains("Copper kettle"), "{folder}: {body}");
+        }
+    }
+
     /// The committed project folders, `sync`'s committed data and `media`'s.
     fn committed_projects() -> PathBuf {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../projects")
@@ -1371,7 +1513,7 @@ pub(crate) mod tests {
             .expect("Incunabula's folder is committed");
         let projection = LiveArchiveProjection::new(sync_data());
         let files = LiveDepositedFiles::new(media_data());
-        super::port_sources(&projection, &files, &discovered)
+        super::port_sources(&projection, &files, &[], &discovered)
             .expect("Incunabula's store builds from the committed 0803 data")
             .store_sql
     }

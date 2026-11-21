@@ -14,8 +14,10 @@ repository. The decision, phrased so a violation is describable in code:
   project's presentation is a route prefix inside CPE's router, never a deployment of its own.
 - **`cpe-server` is CPE's host crate and its facade.** It holds CPE's configuration, router and activation
   behind one type, `Cpe`, in the shape of `dpe-server`'s `Dpe`. No type of another CPE crate appears in its
-  `pub` items, `cpe-ports`' types excepted, so a composition root depends on `cpe-server` and `cpe-ports` and on
-  nothing else of CPE; it never names `cpe-store`. `Cpe::projects()` and `ProjectSummary` are there for a host
+  `pub` items, `cpe-ports`' types excepted, and the `hooks` parameter of the `#[doc(hidden)]`
+  `Cpe::activate_with_hooks` and `Cpe::follow_with_hooks`, which names `cpe_store_build::hook::Hook` for a host
+  outside this repository that supplies its own projects' hooks; so a composition root of this repository
+  depends on `cpe-server` and `cpe-ports` and on nothing else of CPE; it never names `cpe-store`. `Cpe::projects()` and `ProjectSummary` are there for a host
   that wants the list of projects itself.
 - **CPE has three crate roles that ADR-0003's anatomy does not list.** `cpe-store-build` is the library that
   turns the port's snapshot and a project's `remodel {}` block into the rows of CPE's store; it depends on
@@ -335,7 +337,8 @@ Not yet in code: `dsp-incubator/cpe` does not vendor `shared-names`, which `cpe-
 Enforced by: Bazel `visibility` per ADR-0001 for the seam, CPE's crates by their roles and the composition
 root's dependencies, and `testonly` on `sync`'s and `media`'s `data` filegroups, which keeps them out of
 `access-server`'s image layers (**structure**); `check-capability-deps.sh`, run by `just check`, for the third-party bans
-of CPE's roles and for no target being public (**static-analysis**); `cpe-server`'s tests for the facade (`no_pub_item_names_another_cpe_crate`), for
+of CPE's roles and for no target being public (**static-analysis**); `cpe-server`'s tests for the facade (`no_pub_item_names_another_cpe_crate`,
+`the_boundary_exception_is_the_hooks_parameter_alone`), for
 the 503 and 404 behaviour (its `activation` module, over `FakeArchiveProjection`), for Incunabula's store text
 (length and SHA-256, below its header and whole, in its `activation` module), for the `SHORTCODE` rules (its
 `activation` and `discovery` modules), for the overview (`router.rs`, `lib.rs`, `activation.rs`) and for the URLs a crawl

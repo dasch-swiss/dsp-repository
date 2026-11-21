@@ -3,8 +3,8 @@
 //!
 //! [`build`] is the one entry. What a project's mapping says is done by `mapping` and
 //! `generic`, which name no project. What it cannot say is the project's hook, a module under
-//! `projects` with a row in [`hooks::HOOKS`]; a hook reaches the build only through the seam
-//! of [`hook`].
+//! `projects` with a row in [`hooks::HOOKS`], or a row a host supplies; a hook reaches the
+//! build only through the seam of [`hook`].
 //!
 //! The library is pure: it reads nothing but what it is given. Reading a config or a curation
 //! file, getting the snapshot from an adapter and writing a file are its caller's; the curation
@@ -44,10 +44,10 @@ pub const SCHEMA_SQL: &str = include_str!("../../store/schema.sql");
 /// `property` and `curated` nodes, its image and its counts, checks every annotation, and
 /// builds every table of the store. A table whose block the mapping does not have stays empty.
 ///
-/// `hook` is the project's hook, as [`hooks::resolve`] gives it for the project's folder. It is
-/// held to the mapping: a mapping that declares a hook needs one, and a mapping that declares
-/// none takes none. A declared hook is called once, after the mapping gave every resource its
-/// id and the values of its nodes, and before anything is derived from what the build keeps:
+/// `hook` is the project's hook: the row that [`hooks::HOOKS`] or a host has for the project's
+/// folder. It is held to the mapping: a mapping that declares a hook needs one, and a mapping that
+/// declares none takes none. A declared hook is called once, after the mapping gave every resource
+/// its id and the values of its nodes, and before anything is derived from what the build keeps:
 /// covers, counts, images, annotations and rows.
 ///
 /// The port's contract is checked first, against the mapping's shortcode, and its violations

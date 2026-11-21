@@ -1340,7 +1340,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `InvalidCuration`, `store::Store` and `store::Table` (the built rows), `sql::to_sql` and `sql::header` (the SQL text),
   `SCHEMA_SQL`, `error::BuildErrors` and `error::Rule` (every refusal has a rule), `hook::Hook` and
   `hook::Draft` (the seam a hook works through), `hooks::HOOKS` and `hooks::resolve` (the table of hooks, by
-  project id, the name of the project's folder). In `cpe-web`: `project::Project` (the loaded project; `Project::load`, `page_data`,
+  project id, the name of the project's folder; `resolve` sees no host's rows). In `cpe-web`: `project::Project` (the loaded project; `Project::load`, `page_data`,
   `get_resource`) and `project::LoadError`, `page::render_page`, `page::render_compound_fragment` and
   `page::CompoundFragmentOutput`, `page::render_site_index` and `page::ProjectTeaser` (the overview and one
   project on it, from `Project::teaser`), `page::render_not_found_project`, `page::render_not_found_site`,
@@ -1355,8 +1355,11 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   for the host's strict check, and given an inputs directory the data-free check of what it ships per project; diagnostics as text)
 - **Public interface:** `cpe-server`'s `Cpe` and `CpeConfig`: the router, mounted by areas/access/server
   at `Cpe::base()` on the area's origin beside DPE's routes, and `Cpe::follow` and `Cpe::activate`, which take both ports. No `pub` item of
-  `cpe-server` names a type of another CPE crate, `cpe-ports`' excepted. `cpe/ports` is not an interface CPE offers but the ports CPE
-  consumes: `ArchiveProjection`, which `sync` implements, and `DepositedFiles`, which `media` implements. `pub` in `cpe-core` and in `cpe-components` means visible
+  `cpe-server` names a type of another CPE crate, `cpe-ports`' excepted, with one exception: the `hooks` parameter of the
+  `#[doc(hidden)]` `Cpe::activate_with_hooks` and `Cpe::follow_with_hooks` names `cpe_store_build::hook::Hook`, so a host
+  that supplies its own projects' hooks depends on `cpe-store-build` as well. Such a host builds this tree outside this
+  repository; nothing here calls them, and no target here but `cpe-server` may depend on `cpe-store-build`.
+  `cpe/ports` is not an interface CPE offers but the ports CPE consumes: `ArchiveProjection`, which `sync` implements, and `DepositedFiles`, which `media` implements. `pub` in `cpe-core` and in `cpe-components` means visible
   to CPE's other crates, not to a host: no crate of this repository outside the capability depends on either. The
   same holds for `cpe-store`, whose `pub` surface names no `rusqlite` type, and for
   `cpe-web`, whose `pub` items are what `cpe-server` calls.
@@ -1449,8 +1452,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   committed `data.sql` byte for byte; the header names both ports (ADR-0007;
   **static-analysis**: that file is not here, and two tests of `cpe-server` hold the text below the header and the
   whole text to their lengths and SHA-256). In `cpe-server`: no `pub` item names a type of another CPE crate but
-  `cpe-ports` (**static-analysis**: the crate's test `no_pub_item_names_another_cpe_crate`, a text check over
-  `lib.rs` and `config.rs`); CPE never stops its host, so no constructor fails, `activate` returns nothing and
+  `cpe-ports`, except the `hooks` parameter of the two hidden `*_with_hooks` methods (**static-analysis**: the crate's
+  test `no_pub_item_names_another_cpe_crate`, a text check over `lib.rs` and `config.rs`, and
+  `the_boundary_exception_is_the_hooks_parameter_alone`); CPE never stops its host, so no constructor fails, `activate` returns nothing and
   catches a panic, and a project that fails to load answers 503 with `Retry-After` and `Cache-Control:
   no-store`, never 404, while one with no Ready token answers CPE's 404, as a path that names no project does
   (**static-analysis**: the tests of its `activation` module, which hold a panic inside

@@ -10,7 +10,7 @@ and no environment. Its caller, `cpe-server`'s activation, asks the bytes port f
 its `remodel` block through `cpe_core::validate::load_remodel`, asks the bytes port for `curation.csv` and the
 archive projection port for the snapshot of the block's shortcode, reads the curation against the snapshot with
 `CuratedValues::parse` (`CuratedValues::none` when the project deposited none and its block reads no curated key),
-resolves the hook by the project's folder name with `hooks::resolve`, calls `build`, and renders the store as SQL
+takes the hook whose row in `hooks::HOOKS`, or among a host's own rows, names the project's folder, calls `build`, and renders the store as SQL
 text with `sql::to_sql` under the header `sql::header` gives. `cpe-store` opens that text over its schema
 (`../store/schema.sql`, which this crate includes as `SCHEMA_SQL`). What the store holds that the port does not serve
 is declared in the project's block (the shortcode, the sentinel, the list vocabularies, the image rights and the IIIF

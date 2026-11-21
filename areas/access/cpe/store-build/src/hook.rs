@@ -27,7 +27,8 @@ use crate::mapping::{label, values};
 /// A project's rules that its mapping cannot say. It sees the draft and nothing else.
 pub type HookFn = fn(&mut Draft<'_>, &mut Refusals);
 
-/// One row of the builder's table of hooks.
+/// One row of the builder's table of hooks, or of a host's.
+#[derive(Clone, Copy)]
 pub struct Hook {
     /// The project's folder name.
     pub project: &'static str,

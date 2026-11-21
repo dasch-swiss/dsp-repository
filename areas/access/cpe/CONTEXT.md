@@ -162,14 +162,17 @@ _Avoid_: schema (the store's tables), configuration (the whole `config.kdl`).
 
 **Hook**:
 What one project needs and its mapping cannot say, as code: a module under `store-build/src/projects/` and
-one row of the const table `hooks::HOOKS`, looked up by the **Project id** (`hooks::resolve`). The
+one row of the const table `hooks::HOOKS`, looked up by the **Project id**. The
 block's `hook` node declares what the hook may read and change, and `build` refuses a hook without a
 declaration, a declaration without a hook, and any read or change beyond it. A hook works on a narrow
 `hook::Draft` of the mapped resources and never sees the snapshot. Incunabula has the only one. A project
 with a hook therefore adds a module and a table row to this crate, and its names to two hand-kept lists of
 the crate's `tests/it/hygiene.rs`; the crate's `README.md`, "Adding a project", has every step. A project
 without one adds no registry row: a folder with its `SHORTCODE`, and its deposited files (ADR-0007,
-ADR-0012).
+ADR-0012). A host that drafts projects outside this repository may supply rows of its own to
+`cpe-server`'s hidden `Cpe::activate_with_hooks` or `Cpe::follow_with_hooks`; a project's hook is then the one
+row that names its folder in `HOOKS` and the host's rows together, and a folder named by two rows does not
+load. `Cpe` keeps the host's rows before its first activation, and each re-activation loads with them.
 _Avoid_: script, plugin (a hook is compiled in and typed), registry entry in the project's folder.
 
 The crate depends on `cpe-core` and `cpe-ports`, and not on `cpe-store`: it includes `store/schema.sql` as text. Its tests over Incunabula read the committed
@@ -224,7 +227,9 @@ every project once without serving and reports each one's outcome as text, for a
 activation calls loaded), unknown, or failed. It holds the routes,
 the request's language and appearance preferences, the discovery of project folders, the table of static
 files and the inventory of the projects' assets. No type of another CPE crate is in its `pub` items,
-`cpe-ports`' excepted; a test of the crate holds that. It installs no tracing layer and binds no port: its
+`cpe-ports`' excepted, and the `hooks` parameter of the hidden `Cpe::activate_with_hooks` and
+`Cpe::follow_with_hooks` (a host's **Hook** rows) is the one exception; a test of the crate holds that.
+It installs no tracing layer and binds no port: its
 host does. A host's tracing layer sees the router as one service, so every response of a route carries
 the route's template in its extensions (`MatchedRoute`, the base in front), and the host names its request
 span by it. `access-server` is that host: it nests the router at the base and activates CPE over
@@ -333,6 +338,8 @@ an edge outside the lists fails analysis. No crate outside `areas/access/cpe/` d
 Mosaic target grants a CPE package; no CPE library grants `cpe-core`; and `cpe-store` depends on no CPE crate but
 `cpe-core`, `cpe-store-build` on none but `cpe-core` and `cpe-ports`, `cpe-server` on every CPE crate but
 `cpe-store`. A new crate starts visible to nobody: each edge to it is one line in its BUILD file, reviewed there.
+A host that supplies its own **Hook** rows builds this tree itself and is no target of this repository: no
+target here outside `cpe-server` may depend on `cpe-store-build`, and granting one is a change to this seam.
 
 The `sync` and `media` stores reach CPE only as their `testonly` variants, `sync_store_for_tests` and
 `media_store_for_tests`, which only a test target can depend on (ADR-0008). The third-party bans by role are

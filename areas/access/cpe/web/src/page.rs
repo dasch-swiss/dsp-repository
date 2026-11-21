@@ -6484,30 +6484,39 @@ mod tests {
     }
 
     /// The full page corrects a stale address before the reader's URL seed
-    /// runs, in the same script, to the path and query minus `page` and
-    /// `member`, JS-string-escaped; the `_compound` fragment never does.
+    /// runs, in the same `data-init`, to the path and query minus `page` and
+    /// `member`, JS-string-escaped and then attribute-escaped; the
+    /// `_compound` fragment never does.
     #[test]
     fn stale_page_replace_state_is_full_page_only_and_precedes_the_seed() {
         let (full, fragment) = render_stale_book("page=zzz&lang=de&member=2");
         assert!(
             full.contains(
-                "<script>history.replaceState(null, '', '/alice-in-daschland/books/B1?lang=de');window.__cpeReaderUrl = location.pathname + location.search;</script>"
+                r#"data-init="history.replaceState(null, '', '/alice-in-daschland/books/B1?lang=de');window.__cpeReaderUrl = location.pathname + location.search;""#
             ),
             "got: {full}"
         );
         assert_eq!(full.matches("replaceState").count(), 1, "got: {full}");
         assert!(!fragment.contains("replaceState"), "got: {fragment}");
         assert!(
-            fragment.contains("<script>window.__cpeReaderUrl = location.pathname + location.search;</script>"),
+            fragment.contains(r#"data-init="window.__cpeReaderUrl = location.pathname + location.search;""#),
             "got: {fragment}"
         );
+        assert!(!fragment.contains("<script"), "got: {fragment}");
         let (bare, _) = render_stale_book("page=zzz");
-        assert!(bare.contains("history.replaceState(null, '', '/alice-in-daschland/books/B1');"));
-        let (hostile, _) = render_stale_book("page=zzz&x=%27</script><b>");
+        assert!(bare.contains(r#"data-init="history.replaceState(null, '', '/alice-in-daschland/books/B1');"#));
+        let (hostile, _) = render_stale_book(r#"page=zzz&x=%27</script>"<b>'\"#);
         assert!(
-            hostile
-                .contains(r"history.replaceState(null, '', '/alice-in-daschland/books/B1?x=%27\x3C/script>\x3Cb>');"),
+            hostile.contains(
+                r#"data-init="history.replaceState(null, '', '/alice-in-daschland/books/B1?x=%27\x3C/script&gt;&quot;\x3Cb&gt;\'\\');"#
+            ),
             "got: {hostile}"
+        );
+        // DataStar turns `@name(` into an action call even inside a string literal.
+        let (action, _) = render_stale_book("page=zzz&x=@get(1)");
+        assert!(
+            action.contains(r"history.replaceState(null, '', '/alice-in-daschland/books/B1?x=\x40get(1)');"),
+            "got: {action}"
         );
     }
 
@@ -6517,7 +6526,7 @@ mod tests {
     fn stale_page_replace_state_keeps_the_page_shown_by_member() {
         let (full, _) = render_stale_book_at("page=zzz&lang=de&member=2", 2);
         assert!(
-            full.contains("history.replaceState(null, '', '/alice-in-daschland/books/B1?lang=de&page=CH_001');"),
+            full.contains("history.replaceState(null, '', '/alice-in-daschland/books/B1?lang=de&amp;page=CH_001');"),
             "got: {full}"
         );
         let (only, _) = render_stale_book_at("page=zzz&member=2", 2);

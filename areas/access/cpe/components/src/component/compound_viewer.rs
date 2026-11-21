@@ -91,7 +91,7 @@ use cpe_core::ir::{
     ClassLabel, CompoundLayout, CompoundPage, MemberIndex, PickerMode, PropertyLabel, PropertyValue, Resource,
 };
 use cpe_core::lang::Lang;
-use maud::{html, Markup, PreEscaped};
+use maud::{html, Markup};
 use shared_datastar::{self as datastar, Get};
 
 use crate::chrome::{
@@ -264,34 +264,20 @@ pub struct CompoundViewerCfg<'a> {
 const POPSTATE_RELOAD_EXPR: &str =
     "if (location.pathname + location.search !== window.__cpeReaderUrl) { location.reload(); }";
 
-/// The one-time inline script every populated compound-viewer root emits as
-/// its FIRST child, seeding `window.__cpeReaderUrl` — the plain, one-way
+/// The statement every populated compound-viewer root runs from its
+/// `data-init`, seeding `window.__cpeReaderUrl` — the plain, one-way
 /// "URL the reader currently shows" value [`POPSTATE_RELOAD_EXPR`] compares
 /// against.
 ///
-/// Deliberately a plain `window` PROPERTY, not a DataStar signal
-/// — no two-way signal syncing, and never a
-/// reactively-written `data-*` attribute (`dsp-incubator cpe/CLAUDE.md`'s DataStar directive-
-/// scope constraint: a `data-*` attribute is for markup, not a scratch
-/// variable). Two writers only, by design:
+/// A plain `window` property: not a DataStar signal (no two-way syncing), and
+/// not a `data-*` attribute (those are for markup). Two writers only:
 ///
-/// 1. This inline `<script>`, on every NORMAL document parse — a fresh full-page load (including
-///    the reload [`POPSTATE_RELOAD_EXPR`] itself triggers) always re-executes it, seeding the value
-///    from whatever `location` the browser is actually showing at that moment. On a `_compound`
-///    fragment swap the vendored DataStar bundle's morph normally WOULD re-execute a patched-in
-///    inline `<script>` (it tracks already-loaded scripts in a `WeakSet` and skips only those);
-///    this one does not re-run in practice because the morph reuses the SAME script DOM node across
-///    the swap (same tag, same position — nothing about it diffs), so it is treated as
-///    already-tracked and skipped. This is not "patched-in scripts never execute" — it's DOM-node
-///    identity being preserved by the morph. The swap's own `ExecuteScript`
-///    (`compound_fragment_response`) is the SECOND writer, updating the value explicitly, in the
-///    same script that calls `pushState`, so the two can never drift regardless of whether this
-///    seed script re-runs (re-seeding from `location` is idempotent either way). This doc fix
-///    changes no code path.
-/// 2. `compound_fragment_response`'s `pushState` `ExecuteScript`, right after the
-///    `history.pushState` call — since a swap never re-runs this inline script, the handler must
-///    set `window.__cpeReaderUrl` itself to keep it in sync with the address bar it just wrote.
-const READER_URL_INIT_SCRIPT: &str = "window.__cpeReaderUrl = location.pathname + location.search;";
+/// 1. This statement, when DataStar initialises the root, and again whenever the attribute's value
+///    changes (a stale full page morphed to a `_compound` fragment); re-seeding from `location` is
+///    idempotent.
+/// 2. `compound_fragment_response`'s `ExecuteScript`, right after its `history.pushState`: a swap
+///    that leaves the attribute unchanged runs no `data-init`.
+const READER_URL_SEED_EXPR: &str = "window.__cpeReaderUrl = location.pathname + location.search;";
 
 /// Wraps `body` in the `<article id="compound-viewer" tabindex="-1">` root
 /// shared by every populated (`total >= 1`) branch of [`render_compound_viewer`],
@@ -316,12 +302,11 @@ const READER_URL_INIT_SCRIPT: &str = "window.__cpeReaderUrl = location.pathname 
 /// `section.resource-list-section.page`) — without it content hugs the
 /// viewport edges.
 ///
-/// Both [`READER_URL_INIT_SCRIPT`] (an inline `<script>`, first child) and
-/// [`POPSTATE_RELOAD_EXPR`] (`data-on:popstate__window`) are FIXED,
-/// per-render-invariant strings — no `cfg` value is interpolated into
-/// either — so the emitted markup, this fn's own open-tag bytes included,
-/// stays byte-identical across every render, unlike the
-/// per-member `@get(...)` expressions the pager/rail carry.
+/// [`POPSTATE_RELOAD_EXPR`] (`data-on:popstate__window`) is a FIXED,
+/// per-render-invariant string, and so is the `data-init` value
+/// ([`READER_URL_SEED_EXPR`]) except on a full page with a stale address,
+/// unlike the per-member `@get(...)` expressions the pager/rail carry.
+/// The root renders no `<script>`.
 ///
 /// `stale` (the `pages` layout only): the reader is `aria-describedby` its
 /// status line, so a screen-reader user hears the stale-address line when
@@ -329,8 +314,8 @@ const READER_URL_INIT_SCRIPT: &str = "window.__cpeReaderUrl = location.pathname 
 /// announced on arrival.
 ///
 /// `url_fix`: a `history.replaceState` statement prepended to the
-/// init script, so the seed then reads the corrected `location` — see
-/// [`stale_url_correction`].
+/// seed in `data-init`, so the seed then reads the corrected `location` —
+/// see [`stale_url_correction`].
 ///
 /// `pages_keys` is the `pages` variant's `keydown` expression, from
 /// [`pages_keydown`].
@@ -341,7 +326,7 @@ fn render_cv_root(
     url_fix: Option<String>,
     body: Markup,
 ) -> Markup {
-    let init_script = PreEscaped(format!("{}{READER_URL_INIT_SCRIPT}", url_fix.unwrap_or_default()));
+    let init = format!("{}{READER_URL_SEED_EXPR}", url_fix.unwrap_or_default());
     let popstate = POPSTATE_RELOAD_EXPR;
     if let Some(keys) = pages_keys {
         html! {
@@ -355,11 +340,9 @@ fn render_cv_root(
                 aria-describedby=[stale.then_some(PAGES_STATUS_ID)]
                 data-class=[wide]
                 data-on:popstate__window=(popstate)
+                data-init=(init)
                 data-on:keydown=(keys)
-            {
-                script { (init_script) }
-                (body)
-            }
+            { (body) }
         }
     } else {
         html! {
@@ -369,10 +352,8 @@ fn render_cv_root(
                 id="compound-viewer"
                 tabindex="-1"
                 data-on:popstate__window=(popstate)
-            {
-                script { (init_script) }
-                (body)
-            }
+                data-init=(init)
+            { (body) }
         }
     }
 }
@@ -1160,7 +1141,7 @@ const URL_CORRECTION_DROP: &[&str] = &["page", "member", "datastar"];
 /// the Copy link gives there), else that plus `page=<shown member id>`, since
 /// a `?member=N` beside the stale value decides the page shown and must not
 /// be lost. Replace, not push: Back still leaves the
-/// book. It runs before [`READER_URL_INIT_SCRIPT`] in the same script, so
+/// book. It runs before [`READER_URL_SEED_EXPR`] in the same `data-init`, so
 /// the seed reads the corrected `location` and there is no third
 /// `__cpeReaderUrl` writer. Relative and JS-string-escaped, like the
 /// router's `pushState` URL. `None` when not stale or on the fragment path.
@@ -2017,8 +1998,8 @@ mod tests {
     /// still unconditionally carries its own `data-on:popstate__window`
     /// (every populated
     /// compound-viewer root needs Back/Forward to work, regardless of
-    /// whether it has a pager or rail at all), and the plain
-    /// `window.__cpeReaderUrl` init script the listener compares against.
+    /// whether it has a pager or rail at all), and the `data-init` that
+    /// seeds the plain `window.__cpeReaderUrl` the listener compares against.
     #[test]
     fn single_member_no_data_on() {
         let routes = make_routes();
@@ -2037,9 +2018,10 @@ mod tests {
             "the root must still carry the reload-on-popstate listener, got: {out}"
         );
         assert!(
-            out.contains("<script>window.__cpeReaderUrl = location.pathname + location.search;</script>"),
-            "the root must seed window.__cpeReaderUrl via an inline script, got: {out}"
+            out.contains(r#"data-init="window.__cpeReaderUrl = location.pathname + location.search;""#),
+            "the root must seed window.__cpeReaderUrl from its data-init, got: {out}"
         );
+        assert!(!out.contains("<script"), "the root must render no script, got: {out}");
         assert!(
             !out.contains("data-signals") && !out.contains("currentPageQuery") && !out.contains("X-CPE-Popstate"),
             "Option B must not reintroduce the retired DataStar-signal/header \

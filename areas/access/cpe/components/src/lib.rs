@@ -27,9 +27,6 @@ mod tests {
         ("component/editorial.rs", 10),
         // `push_html` output over Markdown with its raw HTML events removed.
         ("component/markdown.rs", 2),
-        // The reader's init script: a constant, after the `replaceState` statement that
-        // `stale_url_correction` builds from a JS-string-escaped URL.
-        ("component/compound_viewer.rs", 1),
     ];
 
     /// Adding or removing a site fails this test until `PINNED` changes with it, so every new

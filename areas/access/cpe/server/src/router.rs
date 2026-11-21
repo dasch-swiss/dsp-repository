@@ -1658,10 +1658,10 @@ fn compound_fragment_response(
 
     // `window.__cpeReaderUrl` is the plain, one-way "URL the reader
     // currently shows" value the popstate listener compares against
-    // (`cpe_components::component::compound_viewer`'s `READER_URL_INIT_SCRIPT`/
-    // `POPSTATE_RELOAD_EXPR`, NOT a DataStar signal — a fragment swap never
-    // re-runs the inline init script that seeds it on a normal page load,
-    // so this write, right alongside `pushState`, is the only thing that
+    // (`cpe_components::component::compound_viewer`'s `READER_URL_SEED_EXPR`/
+    // `POPSTATE_RELOAD_EXPR`, NOT a DataStar signal — a swap whose root
+    // attribute is unchanged never re-runs the `data-init` that seeds it on a
+    // normal page load, so this write, right alongside `pushState`, is what
     // keeps it in sync with the address bar after a JS-enhanced click).
     let script = format!(
         "history.pushState(null, '', '{escaped_relative}'); \

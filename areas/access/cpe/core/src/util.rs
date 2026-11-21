@@ -484,7 +484,8 @@ pub fn escape_js_string_literal(s: &str) -> String {
 /// the four JS line-terminator characters (`\n`, `\r`, U+2028 LINE
 /// SEPARATOR, U+2029 PARAGRAPH SEPARATOR), each of which terminates a
 /// single-quoted JS string literal on its own, independent of quote
-/// escaping.
+/// escaping. Also `@` as `\x40`: DataStar rewrites `@name(` into an action
+/// call even inside a string literal.
 pub fn js_string_escape(s: &str) -> String {
     let mut out = String::with_capacity(s.len());
     for c in s.chars() {
@@ -492,6 +493,7 @@ pub fn js_string_escape(s: &str) -> String {
             '\\' => out.push_str("\\\\"),
             '\'' => out.push_str("\\'"),
             '<' => out.push_str("\\x3C"),
+            '@' => out.push_str("\\x40"),
             '\n' => out.push_str("\\n"),
             '\r' => out.push_str("\\r"),
             '\u{2028}' => out.push_str("\\u2028"),
@@ -678,6 +680,13 @@ mod tests {
     #[test]
     fn js_string_escape_escapes_line_terminators() {
         assert_eq!(js_string_escape("a\nb\rc\u{2028}d\u{2029}e"), "a\\nb\\rc\\u2028d\\u2029e");
+    }
+
+    /// DataStar turns `@name(` into an action call even inside a string
+    /// literal of a `data-*` expression.
+    #[test]
+    fn js_string_escape_escapes_at_sign() {
+        assert_eq!(js_string_escape("x=@get(1)"), r"x=\x40get(1)");
     }
 
     #[test]

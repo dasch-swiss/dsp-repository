@@ -297,10 +297,9 @@ Nothing in a request reaches the file system. Discovery lists the projects direc
 symbolic link, the assets are read into memory at activation, and a request's project segment and path are
 looked up as strings.
 
-`Cpe::from_sql_folders` is legacy, hidden from the documentation: it loads project folders that hold a
+`Cpe::from_sql_folders` is test support and compiles for tests only: it loads project folders that hold a
 `config.kdl` and a committed `data.sql`, and reads the configuration and the flat `narrative/` from the folder,
-not through a port. It is for the incubator's host and for tests (`server/tests/fixtures/`), and ends with
-DEV-7498.
+not through a port, so that `cpe-server`'s tests load their fixtures (`server/tests/fixtures/`).
 
 ## The project folders
 

@@ -7,8 +7,8 @@
 //! - [`discover_for_activation`], for `Cpe::activate` and `Cpe::follow`: a regular `SHORTCODE` file
 //!   naming the project whose deposited files and snapshot the ports serve. Its config and
 //!   narrative come through the bytes port, never from the folder.
-//! - [`discover_sql_folders`], the legacy path of `Cpe::from_sql_folders`: a `config.kdl`, read
-//!   from the folder with its flat `narrative/` and its `data.sql`.
+//! - `discover_sql_folders`, test support behind `Cpe::from_sql_folders`: a `config.kdl`, read from
+//!   the folder with its flat `narrative/` and its `data.sql`.
 //!
 //! Either way `assets/` is walked to any depth. Nothing here follows a
 //! symbolic link, and every path read is built from a directory listing,
@@ -24,7 +24,7 @@ pub(crate) struct DiscoveredProject {
     pub(crate) id: String,
     dir: PathBuf,
     /// The shortcode of the folder's `SHORTCODE` file; `None` for a folder
-    /// [`discover_sql_folders`] found.
+    /// `discover_sql_folders` found.
     pub(crate) shortcode: Option<String>,
     /// Why the folder, a project, is not loaded: another folder declares its
     /// shortcode.
@@ -63,6 +63,7 @@ pub(crate) struct Discovery {
 }
 
 /// What can go wrong reading the files of a discovered project.
+#[cfg(test)]
 #[derive(Debug, thiserror::Error)]
 pub(crate) enum SourcesError {
     #[error("project '{id}': {file} cannot be read: {source}")]
@@ -73,6 +74,7 @@ pub(crate) enum SourcesError {
 
 /// Whether `path` is a regular file. A symbolic link is not, wherever it
 /// points: `symlink_metadata` describes the link itself.
+#[cfg(test)]
 fn is_regular_file(path: &Path) -> bool {
     fs::symlink_metadata(path).is_ok_and(|meta| meta.is_file())
 }
@@ -85,6 +87,7 @@ fn is_real_dir(path: &Path) -> bool {
 /// The names of the regular files directly in `dir`, sorted. Empty when `dir`
 /// is missing or is a symbolic link. A name that is not UTF-8 is left out: no
 /// config value could name it.
+#[cfg(test)]
 fn file_names(dir: &Path) -> Vec<String> {
     if !is_real_dir(dir) {
         return Vec::new();
@@ -123,6 +126,7 @@ fn collect_files_recursively(dir: &Path, prefix: &str, out: &mut Vec<String>) {
 }
 
 impl DiscoveredProject {
+    #[cfg(test)]
     fn read_utf8(&self, file: &str) -> Result<String, SourcesError> {
         let bytes = fs::read(self.dir.join(file)).map_err(|source| SourcesError::Unreadable {
             id: self.id.clone(),
@@ -133,16 +137,19 @@ impl DiscoveredProject {
     }
 
     /// Whether the folder holds a `data.sql`.
+    #[cfg(test)]
     pub(crate) fn has_data_sql(&self) -> bool {
         is_regular_file(&self.dir.join("data.sql"))
     }
 
     /// The content of `config.kdl`.
+    #[cfg(test)]
     pub(crate) fn config_source(&self) -> Result<String, SourcesError> {
         self.read_utf8("config.kdl")
     }
 
     /// The content of `data.sql`.
+    #[cfg(test)]
     pub(crate) fn data_sql(&self) -> Result<String, SourcesError> {
         self.read_utf8("data.sql")
     }
@@ -163,6 +170,7 @@ impl DiscoveredProject {
     /// The bare file names in the project's `narrative/` folder (e.g.
     /// `["home.de.md", "home.md"]`), sorted. Empty when there is no such
     /// folder. Only direct children: narrative files are flat by convention.
+    #[cfg(test)]
     pub(crate) fn narrative_files(&self) -> Vec<String> {
         file_names(&self.dir.join("narrative"))
     }
@@ -212,6 +220,7 @@ impl DiscoveredProject {
 
     /// The UTF-8 content of every file of [`Self::narrative_files`], as
     /// `(bare file name, content)`.
+    #[cfg(test)]
     pub(crate) fn narrative_contents(&self) -> Result<Vec<(String, String)>, SourcesError> {
         self.narrative_files()
             .into_iter()
@@ -309,6 +318,7 @@ pub(crate) fn discover_for_activation(root: &Path) -> Discovery {
 
 /// The projects under `root` that `Cpe::from_sql_folders` loads: every folder
 /// with a regular `config.kdl` whose name is a project id, sorted by id.
+#[cfg(test)]
 pub(crate) fn discover_sql_folders(root: &Path) -> Vec<DiscoveredProject> {
     let mut projects: Vec<DiscoveredProject> = folders(root)
         .into_iter()

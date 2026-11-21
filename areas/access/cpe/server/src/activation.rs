@@ -108,7 +108,9 @@ pub(crate) fn from_ports(
     })
 }
 
-/// Every project folder that holds a `data.sql`, opened from that text.
+/// Every project folder that holds a `data.sql`, opened from that text: test support behind
+/// [`crate::Cpe::from_sql_folders`].
+#[cfg(test)]
 pub(crate) fn from_sql_folders(config: &CpeConfig) -> Activated {
     load_all(config, discovery::discover_sql_folders(&config.projects_dir), |discovered| {
         let config = discovered.config_source().map_err(|error| error.to_string())?;

@@ -33,7 +33,6 @@ rust_library(
         "@crates//:maud",
         "@crates//:percent-encoding",
         "@crates//:serde",
-        "@crates//:thiserror",
         "@crates//:tower",
         "@crates//:tracing",
     ],
@@ -72,6 +71,7 @@ rust_test(
         "//areas/access/sync/store:sync_store_for_tests",
         "@crates//:sha2",
         "@crates//:tempfile",
+        "@crates//:thiserror",
         "@crates//:tokio",
     ],
 )

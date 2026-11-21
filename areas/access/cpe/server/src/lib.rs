@@ -165,14 +165,14 @@ impl Cpe {
     /// `data.sql`, each opened from that SQL text, its config and narrative
     /// read from the folder. Blocking: it reads the projects folder.
     ///
-    /// For the incubator's host and for tests only. Removable once no project
-    /// ships a `data.sql` (DEV-7498).
+    /// Test support: it lets the tests load their `data.sql` fixtures without
+    /// the ports.
     ///
     /// A folder without a `data.sql`, and a project that does not load, are
     /// answered 503 on their prefix; the others are served.
-    #[doc(hidden)]
+    #[cfg(test)]
     #[must_use]
-    pub fn from_sql_folders(config: &CpeConfig) -> Self {
+    pub(crate) fn from_sql_folders(config: &CpeConfig) -> Self {
         let cpe = Self::new(config);
         if config.refusal().is_none() {
             cpe.store(activation::from_sql_folders(config));

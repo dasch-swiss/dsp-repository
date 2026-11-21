@@ -1347,7 +1347,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `share_link::compose_canonical_query`, `share_link::compose_absolute_url`, `share_link::ViewSurface`. In
   `cpe-server`: `CpeConfig` (`CPE_PROJECTS_DIR`, `CPE_PUBLIC_ORIGIN`, `CPE_BASE`, and `hidden_shortcodes`, which the
   host sets and no file or variable of CPE's does), `Cpe` (`new`, `activate`, `router`,
-  `base`, `projects`, and the doc-hidden `from_sql_folders`, which ends with DEV-7498), `ProjectSummary` and
+  `base`, `projects`; `from_sql_folders` is test support and compiles for tests only), `ProjectSummary` and
   `MatchedRoute` (the route template a response carries in its extensions, for the host's request span)
 - **Public interface:** `cpe-server`'s `Cpe` and `CpeConfig`: the router, mounted by areas/access/server
   at `Cpe::base()` on the area's origin beside DPE's routes, and `Cpe::follow` and `Cpe::activate`, which take both ports. No `pub` item of
@@ -1453,9 +1453,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `static_files::serve` are given strings; **review** in `discovery`, the one module that reads the disk);
   the crate's own code cannot name either adapter (**structure**: `sync-store` and `media-store` grant
   `cpe-server` only their `testonly` variants, which a library cannot depend on); that a host feeds a store through `Cpe::follow` or `Cpe::activate` and the
-  ports, and not through the doc-hidden, legacy `Cpe::from_sql_folders` (a committed `data.sql`, with the
-  configuration and narrative read from the folder, kept for the incubator's host and for tests until
-  DEV-7498), is **review**; activation reads a project's configuration, narrative and curation through the
+  ports, and not through `Cpe::from_sql_folders` (a committed `data.sql`, with the configuration and
+  narrative read from the folder: test support), is **structure**: that loader compiles under `#[cfg(test)]`
+  only; activation reads a project's configuration, narrative and curation through the
   bytes port only, refuses a project whose KDL declares another shortcode than its `SHORTCODE` or that shares
   its shortcode with another folder, and leaves a project whose block reads a curated key and that deposited
   no curation file not ready (**static-analysis**: the tests of its `activation` and `discovery` modules); a request's origin, where none is configured, is taken from `Host` and
@@ -1497,8 +1497,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   single writer CPE, rebuilt from empty from what the ports serve (ADR-0008, ADR-0012;
   the schema and the queries are in `cpe-store` and what builds a store from a snapshot in `cpe-store-build`).
   The store is built at every start and re-activation and kept nowhere: `cpe-server`'s `Cpe::activate` builds each project's in
-  memory, **single writer** that call and `Cpe::follow`'s re-activations (or, until DEV-7498, `Cpe::from_sql_folders` in its place, never both
-  in one host), and nothing is written to disk. `projects/incunabula/` is
+  memory, **single writer** that call and `Cpe::follow`'s re-activations (in `cpe-server`'s tests, `Cpe::from_sql_folders` in their place), and nothing is written to disk. `projects/incunabula/` is
   committed code and documents (`SHORTCODE`, `assets/` and the four documents about its data), **single writer**
   the project's developers (**review**); the process reads it at activation and never writes it. Its
   configuration, narrative and curation are `media`'s (areas/access/media). `cpe-ports`, `cpe-core`,

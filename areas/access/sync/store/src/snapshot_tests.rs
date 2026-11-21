@@ -1664,6 +1664,117 @@ fn test_snapshot_still_image_without_height_returns_unavailable() {
 }
 
 #[test]
+fn test_snapshot_file_with_two_copyright_holders_returns_unavailable() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(
+        &dir,
+        r#"
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/0803/incunabula#Page> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/2000/01/rdf-schema#label> "a1r" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <https://ontology.dasch.swiss/dao#hasRepresentation> <urn:dsp:representation:sdSI> <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Representation> <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#representationType> <https://ontology.dasch.swiss/dao#DocumentRepresentation> <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#internalFilename> "Ga0Jw5YpN3s-Transkription.pdf" <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#copyrightHolder> "Public Domain" <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#copyrightHolder> "AI-Generated" <urn:dsp:project:0803> .
+        "#,
+    );
+
+    let error = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect_err("an invalid file is not served");
+
+    let ProjectionError::Unavailable(source) = &error else {
+        panic!("expected Unavailable, got {error:?}")
+    };
+    let source = source.downcast_ref::<SnapshotError>().expect("the source is a SnapshotError");
+    assert!(
+        matches!(
+            source,
+            SnapshotError::Invalid { path: _, subject, reason: InvalidFact::RepeatedPredicate { predicate } }
+                if subject == "urn:dsp:representation:sdSI"
+                    && predicate == "https://ontology.dasch.swiss/dao#copyrightHolder"
+        ),
+        "{source:?}"
+    );
+}
+
+#[test]
+fn test_snapshot_file_with_iri_as_copyright_holder_returns_unavailable() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(
+        &dir,
+        r#"
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/0803/incunabula#Page> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/2000/01/rdf-schema#label> "a1r" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <https://ontology.dasch.swiss/dao#hasRepresentation> <urn:dsp:representation:sdSI> <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Representation> <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#representationType> <https://ontology.dasch.swiss/dao#DocumentRepresentation> <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#internalFilename> "Ga0Jw5YpN3s-Transkription.pdf" <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#copyrightHolder> <http://rdfh.ch/licenses/public-domain> <urn:dsp:project:0803> .
+        "#,
+    );
+
+    let error = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect_err("an invalid file is not served");
+
+    let ProjectionError::Unavailable(source) = &error else {
+        panic!("expected Unavailable, got {error:?}")
+    };
+    let source = source.downcast_ref::<SnapshotError>().expect("the source is a SnapshotError");
+    assert!(
+        matches!(
+            source,
+            SnapshotError::Invalid { path: _, subject, reason: InvalidFact::UnfitLiteral { predicate, lexical } }
+                if subject == "urn:dsp:representation:sdSI"
+                    && predicate == "https://ontology.dasch.swiss/dao#copyrightHolder"
+                    && lexical == "http://rdfh.ch/licenses/public-domain"
+        ),
+        "{source:?}"
+    );
+}
+
+#[test]
+fn test_snapshot_file_with_language_tagged_author_returns_unavailable() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(
+        &dir,
+        r#"
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/0803/incunabula#Page> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <http://www.w3.org/2000/01/rdf-schema#label> "a1r" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/pG4w> <https://ontology.dasch.swiss/dao#hasRepresentation> <urn:dsp:representation:sdSI> <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Representation> <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#representationType> <https://ontology.dasch.swiss/dao#DocumentRepresentation> <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#internalFilename> "Ga0Jw5YpN3s-Transkription.pdf" <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#authorship> "John Tenniel"@en <urn:dsp:project:0803> .
+        "#,
+    );
+
+    let error = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect_err("an invalid file is not served");
+
+    let ProjectionError::Unavailable(source) = &error else {
+        panic!("expected Unavailable, got {error:?}")
+    };
+    let source = source.downcast_ref::<SnapshotError>().expect("the source is a SnapshotError");
+    assert!(
+        matches!(
+            source,
+            SnapshotError::Invalid { path: _, subject, reason: InvalidFact::UnfitLiteral { predicate, lexical } }
+                if subject == "urn:dsp:representation:sdSI"
+                    && predicate == "https://ontology.dasch.swiss/dao#authorship"
+                    && lexical == "John Tenniel"
+        ),
+        "{source:?}"
+    );
+}
+
+#[test]
 fn test_snapshot_representation_without_type_returns_unavailable() {
     let dir = tempfile::tempdir().expect("create a temp dir");
     write_0803(

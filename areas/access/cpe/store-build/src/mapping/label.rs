@@ -28,7 +28,8 @@ pub(crate) fn is_read_as_text(resource: &Resource, class: &RemodelClass, curatio
         | PropertySource::Date { .. }
         | PropertySource::Link { .. }
         | PropertySource::Integer { .. }
-        | PropertySource::ListNode { .. } => false,
+        | PropertySource::ListNode { .. }
+        | PropertySource::Class { .. } => false,
     })
 }
 

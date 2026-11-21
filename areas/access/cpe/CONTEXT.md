@@ -362,9 +362,10 @@ them (ADR-0012).
 | List nodes (tree, position, labels) and list values | — | — |
 | Links, subject to object, `isRegionOf`, `hasLinkTo` and `isAnnotationOf` included; Regions and LinkObjs as resources with their `oa:motivatedBy` and `oa:hasTarget` | LinkValue reifications | DAO strips them (`FORMAT.md` §6) |
 | Ordered membership (`isPartOf` parents and `seqnum`) | `isSequenceOf` | No project uses it yet; added when one needs it |
-| One file per resource: still image (asset and dimensions), audio, moving image, document | Other file kinds (archive, text, external and vector still images), file bytes, original filename, MIME types, checksums | CPE builds IIIF URLs from the asset name; the rest is not presented |
+| One file per resource: still image (asset and dimensions), audio, moving image, document; each with its legal information (authors and copyright holder, `FileLegal`) | Other file kinds (archive, text, external and vector still images), file bytes, original filename, MIME types, checksums | CPE builds IIIF URLs from the asset name; the rest is not presented |
 | — | Per-resource curation, project-wide configuration (vocabularies with their labels and order, rights constants) | Configuration and curation are deposited files that come through the **Bytes port** against `media` (ADR-0012) |
-| — | Rights and legal information (license, copyright holder, authorship) | Its own follow-up, needed before CPE serves ADR-0005 landing pages (ADR-0007's ARK clause) |
+| — | Access rights and data classification | Its own follow-up, needed before CPE serves ADR-0005 landing pages (ADR-0007's ARK clause) |
+| — | A file's license | Not carried (`FORMAT.md` D14); an image's license is the `images` block's (`store-build`'s README) |
 | — | Permissions, creation and deletion metadata | Not presented yet; in the target the port serves every resource with its rights attached (ADR-0012, ADR-0013) |
 | — | Deleted resources and values, superseded value versions | Not current facts |
 | — | A snapshot revision | The port announces a changed project beside the snapshot (`subscribe`); CPE re-activates every project on it, not the one named (ADR-0008, DEV-7989) |

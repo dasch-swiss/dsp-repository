@@ -1,6 +1,6 @@
 //! The lowering of what places a class among the others: its `id`,
-//! `member-of`, `member-count`, `incoming-count` and `cover` nodes and its
-//! `image` attribute.
+//! `member-of`, `members`, `member-count`, `incoming-count` and `cover` nodes
+//! and its `image` attribute.
 //!
 //! It imports nothing from `validate::remodel`. These nodes refer to other
 //! classes and to their properties, wherever in the block those stand, so the
@@ -16,7 +16,8 @@
 use std::collections::HashSet;
 
 use super::super::attrs::{
-    first_positional_string, get_attr, get_bool_attr, has_attr, optional_string_attr, positional_string_args,
+    first_positional_string, get_attr, get_bool_attr, get_string_attr, has_attr, optional_string_attr,
+    positional_string_args,
 };
 use super::nodes::{
     at_most_one, check_attrs, check_children, check_leaf, check_no_args, children_named, declare_name, exactly_one,
@@ -28,7 +29,7 @@ use crate::diagnostic::{DiagnosticKind, ValidationReport};
 use crate::ir::Value;
 use crate::remodel::{
     ClassIndex, CpeProperty, CuratedKey, IdPolicy, IdSource, ImageRule, Membership, PropertyIndex,
-    RemodelIncomingCount, RemodelMemberCount,
+    RemodelIncomingCount, RemodelMemberCount, RemodelMembers, IMAGE_LINK, IMAGE_RIGHTS,
 };
 
 // ── The outline ───────────────────────────────────────────────────────────────
@@ -37,6 +38,8 @@ use crate::remodel::{
 pub(super) struct Outline<'a> {
     /// Whether the block has an `images` node.
     has_images: bool,
+    /// The position of the class the `images` node names, when it names a declared one.
+    declared_images: Option<usize>,
     /// Each `class` node's name in declared order (`None` where unreadable).
     class_names: &'a [Option<String>],
     /// Each `class` node in declared order.
@@ -76,8 +79,12 @@ impl<'a> Outline<'a> {
     /// The outline of the `remodel` node `raw`, whose `class` nodes have the
     /// names `class_names`.
     pub(super) fn read(raw: &'a RawNode, class_names: &'a [Option<String>]) -> Self {
+        let images = children_named(raw, "images").next();
         Self {
-            has_images: children_named(raw, "images").next().is_some(),
+            has_images: images.is_some(),
+            declared_images: images
+                .and_then(|images| get_string_attr(images, "class"))
+                .and_then(|class| position_of(class_names, &class)),
             class_names,
             classes: children_named(raw, "class").collect(),
         }
@@ -142,7 +149,7 @@ fn kind_of(property: &RawNode) -> Kind {
     match form_of_source(property) {
         Some(Form::Text) => Kind::Text,
         Some(Form::Link) => Kind::Link,
-        Some(Form::Uri | Form::Date | Form::Integer | Form::ListNode | Form::Label) => Kind::Other,
+        Some(Form::Uri | Form::Date | Form::Integer | Form::ListNode | Form::Label | Form::Class) => Kind::Other,
         None => Kind::Faulty,
     }
 }
@@ -168,6 +175,7 @@ pub(super) struct Structure {
     pub(super) image: ImageRule,
     pub(super) id: IdPolicy,
     pub(super) member_of: Option<Membership>,
+    pub(super) members: Vec<RemodelMembers>,
     pub(super) member_counts: Vec<RemodelMemberCount>,
     pub(super) incoming_counts: Vec<RemodelIncomingCount>,
 }
@@ -188,6 +196,7 @@ pub(super) struct ClassStructure<'a> {
     id: Option<IdPolicy>,
     member_of: Option<Membership>,
     cover: Option<CuratedKey>,
+    members: Vec<Option<RemodelMembers>>,
     member_counts: Vec<Option<RemodelMemberCount>>,
     incoming_counts: Vec<Option<RemodelIncomingCount>>,
 }
@@ -211,14 +220,22 @@ impl<'a> ClassStructure<'a> {
             id: None,
             member_of: None,
             cover: None,
+            members: Vec::new(),
             member_counts: Vec::new(),
             incoming_counts: Vec::new(),
         }
     }
 
-    /// Whether the block the class stands in has an `images` node.
-    pub(super) fn block_has_images(&self) -> bool {
-        self.outline.has_images
+    /// The property names no node of the class may take, because the builder writes them: the
+    /// image link in a block whose `images` node names no declared class, and an image's rights
+    /// on the class it names.
+    pub(super) fn reserved_names(&self) -> &'static [&'static str] {
+        match self.outline.declared_images {
+            Some(images) if images == self.index => &IMAGE_RIGHTS,
+            Some(_) => &[],
+            None if self.outline.has_images => &[IMAGE_LINK],
+            None => &[],
+        }
     }
 
     /// Lowers `child` when it is one of this module's nodes; any other node
@@ -231,6 +248,10 @@ impl<'a> ClassStructure<'a> {
                 self.member_of = self.lower_member_of(child, seen, report);
             }
             "cover" if is(self.cover_node) => self.cover = self.lower_cover(child, seen, report),
+            "members" => {
+                let members = self.lower_members(child, seen, report);
+                self.members.push(members);
+            }
             "member-count" => {
                 let count = self.lower_member_count(child, seen, report);
                 self.member_counts.push(count);
@@ -250,6 +271,9 @@ impl<'a> ClassStructure<'a> {
         if has_attr(self.class, "image") && !self.outline.has_images {
             conflict(self.class, "has 'image' but the block has no 'images' node", report);
         }
+        if has_attr(self.class, "image") && self.outline.declared_images.is_some() {
+            conflict(self.class, "has 'image' but the 'images' node names a declared class", report);
+        }
         let image = match self.cover_node {
             Some(_) => ImageRule::Cover(self.cover?),
             None if required => ImageRule::Required,
@@ -263,6 +287,7 @@ impl<'a> ClassStructure<'a> {
             image,
             id: self.id?,
             member_of,
+            members: self.members.into_iter().collect::<Option<_>>()?,
             member_counts: self.member_counts.into_iter().collect::<Option<_>>()?,
             incoming_counts: self.incoming_counts.into_iter().collect::<Option<_>>()?,
         })
@@ -328,7 +353,7 @@ impl ClassStructure<'_> {
     // ── id ────────────────────────────────────────────────────────────────────
 
     fn lower_id(&self, node: &RawNode, seen: &mut ClassSeen, report: &mut ValidationReport) -> Option<IdPolicy> {
-        check_attrs(node, &["curated-key", "from", "property", "under-parent"], report);
+        check_attrs(node, &["curated-key", "from", "property", "under-parent", "verbatim"], report);
         check_children(node, &[], report);
         check_no_args(node, report);
 
@@ -350,6 +375,7 @@ impl ClassStructure<'_> {
             Ok(Some(IdFrom::Property)) | Err(()) => self.id_property(node, report),
         };
         let under_parent = get_bool_attr(node, "under-parent", report);
+        let verbatim = get_bool_attr(node, "verbatim", report);
 
         let has = |attr: &str| has_attr(node, attr);
         let mut found = Vec::new();
@@ -365,6 +391,9 @@ impl ClassStructure<'_> {
             }
             _ => {}
         }
+        if has("verbatim") && matches!(from, Ok(Some(IdFrom::Label | IdFrom::Iri) | None)) {
+            found.push("takes 'verbatim' only with from=\"property\"");
+        }
         if has("under-parent") && self.member_of_node.is_none() {
             found.push("has 'under-parent' but its class has no 'member-of'");
         }
@@ -377,6 +406,7 @@ impl ClassStructure<'_> {
             None => None,
             Some(IdFrom::Label) => Some(IdSource::Label),
             Some(IdFrom::Iri) => Some(IdSource::Iri),
+            Some(IdFrom::Property) if verbatim => Some(IdSource::Verbatim(property.ok()??)),
             Some(IdFrom::Property) => Some(IdSource::Property(property.ok()??)),
         };
         if !consistent {
@@ -421,7 +451,7 @@ impl ClassStructure<'_> {
         seen: &mut ClassSeen,
         report: &mut ValidationReport,
     ) -> Option<Membership> {
-        check_attrs(node, &["seq"], report);
+        check_attrs(node, &["seq", "via"], report);
         check_children(node, &[], report);
 
         let parent = single_string(node, "the parent class", report)
@@ -461,11 +491,40 @@ impl ClassStructure<'_> {
                 .ok_or(()),
             Err(()) => Err(()),
         };
+        let via = self.member_via(node, parent, report);
 
         if on_a_cycle {
             return None;
         }
-        Some(Membership { parent: ClassIndex(parent?), seq: seq.ok()? })
+        Some(Membership { parent: ClassIndex(parent?), seq: seq.ok()?, via: via.ok()? })
+    }
+
+    /// A `member-of`'s `via`: a link property of the parent class, at `parent`, whose target is
+    /// this class. `Ok(None)` when absent; `Err(())` when unreadable, empty, naming no such
+    /// property, or when the parent is unknown (each reported where it stands).
+    fn member_via(
+        &self,
+        node: &RawNode,
+        parent: Option<usize>,
+        report: &mut ValidationReport,
+    ) -> Result<Option<PropertyIndex>, ()> {
+        let Some(name) = optional_string_attr(node, "via", report)? else {
+            return Ok(None);
+        };
+        let name = non_empty(name, "a member-of's via", node.span, report).ok_or(())?;
+        let Some((position, property)) = self.outline.property(parent.ok_or(())?, &name) else {
+            push(
+                report,
+                DiagnosticKind::UnknownRemodelReference,
+                node.span,
+                format!("'member-of' names '{name}' as its via, which is no property of the parent class"),
+            );
+            return Err(());
+        };
+        match self.links_here(node, &name, property, report) {
+            true => Ok(Some(PropertyIndex(position))),
+            false => Err(()),
+        }
     }
 
     // ── member-count and incoming-count ───────────────────────────────────────
@@ -558,24 +617,50 @@ impl ClassStructure<'_> {
         if !first_occurrence(counted, position, node.span, message, report) {
             return None;
         }
+        self.links_here(node, &name, property, report)
+            .then_some(PropertyIndex(position))
+    }
+
+    /// Whether `property`, which `node` names `name`, is a link whose target is this class. One
+    /// that is no link, or links elsewhere, is a conflict at `node`; a faulty one is reported
+    /// where it stands.
+    fn links_here(&self, node: &RawNode, name: &str, property: &RawNode, report: &mut ValidationReport) -> bool {
         match kind_of(property) {
-            Kind::Faulty => return None,
+            Kind::Faulty => return false,
             Kind::Text | Kind::Other => {
                 conflict(node, &format!("names '{name}', which is no link"), report);
-                return None;
+                return false;
             }
             Kind::Link => {}
         }
         // A link whose `target` names no class is faulty: reported there.
         let Some(Value::String(target)) = get_attr(property, "target") else {
-            return None;
+            return false;
         };
-        let target = position_of(self.outline.class_names, &target)?;
+        let Some(target) = position_of(self.outline.class_names, &target) else {
+            return false;
+        };
         if target != self.index {
             conflict(node, &format!("names '{name}', whose target is not this class"), report);
-            return None;
+            return false;
         }
-        Some(PropertyIndex(position))
+        true
+    }
+
+    // ── members ───────────────────────────────────────────────────────────────
+
+    fn lower_members(
+        &self,
+        node: &RawNode,
+        seen: &mut ClassSeen,
+        report: &mut ValidationReport,
+    ) -> Option<RemodelMembers> {
+        check_attrs(node, &["from"], report);
+        check_children(node, &[], report);
+
+        let name = property_name(node, seen, report);
+        let from = required_class(node, "from", self.outline, report);
+        Some(RemodelMembers { name: name?, from: ClassIndex(from?) })
     }
 
     // ── cover ─────────────────────────────────────────────────────────────────
@@ -600,6 +685,9 @@ impl ClassStructure<'_> {
         let mut found = Vec::new();
         if !outline.has_images {
             found.push("needs an 'images' node in the block");
+        }
+        if outline.declared_images.is_some() {
+            found.push("stands in a block whose 'images' node names a declared class");
         }
         if !has_members {
             found.push("stands on a class no class is a member-of");

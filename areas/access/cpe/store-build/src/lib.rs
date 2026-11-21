@@ -12,7 +12,7 @@
 
 use cpe_core::remodel::Remodel;
 use cpe_ports::contract::{self, Violation};
-use cpe_ports::{File, ProjectSnapshot, ResourceIri, ValueKind};
+use cpe_ports::{ProjectSnapshot, ResourceIri, ValueKind};
 
 use crate::error::{BuildError, BuildErrors, Rule};
 use crate::generic::curation::{self, Curation};
@@ -48,7 +48,7 @@ pub const SCHEMA_SQL: &str = include_str!("../../store/schema.sql");
 /// folder. It is held to the mapping: a mapping that declares a hook needs one, and a mapping that
 /// declares none takes none. A declared hook is called once, after the mapping gave every resource
 /// its id and the values of its nodes, and before anything is derived from what the build keeps:
-/// covers, counts, images, annotations and rows.
+/// covers, counts, member links, images, annotations and rows.
 ///
 /// The port's contract is checked first, against the mapping's shortcode, and its violations
 /// are returned alone: the rules rely on it, and only an adapter is certain to have checked
@@ -97,11 +97,12 @@ pub fn build(
     let mut draft = generic::classes::classify(snapshot, mapping, &mut errors);
     let curation = Curation::read(curated, mapping.sentinel.as_deref());
     curation::refuse_misplaced_keys(&curation, &draft, mapping, &mut errors);
-    generic::membership::read(&mut draft, &mut errors);
-    generic::images::read(&mut draft, &mut errors);
+    generic::membership::read(&mut draft, mapping, &mut errors);
+    generic::images::read(&mut draft, mapping, &mut errors);
     crate::mapping::ids::mint(&mut draft, &curation, mapping, &mut errors);
     generic::images::refuse_shared(&draft, mapping, &mut errors);
     crate::mapping::values::map(&mut draft, &curation, mapping, &mut errors);
+    crate::mapping::values::flags(&mut draft);
     crate::mapping::curated::map(&mut draft, &curation, mapping);
 
     let (mut draft, curation) = match declared_hook {
@@ -112,6 +113,7 @@ pub fn build(
 
     generic::images::covers(&mut draft, &curation, mapping, &mut errors);
     generic::counts::fill(&mut draft, mapping);
+    generic::membership::members(&mut draft, mapping);
     finalise::fill(&draft, mapping, &mut store, &mut errors);
     generic::annotations::fill(&draft, &curation, mapping, &mut store, &mut errors);
 
@@ -176,6 +178,12 @@ fn refuse_mapping_nuls(mapping: &Remodel, errors: &mut Vec<BuildError>) {
         for node in &class.curated {
             check(node.name.as_str(), "curated");
         }
+        for flag in &class.flags {
+            check(flag.name.as_str(), "flag");
+        }
+        for node in &class.members {
+            check(node.name.as_str(), "members");
+        }
         for count in &class.member_counts {
             check(count.name.as_str(), "member-count");
         }
@@ -212,14 +220,15 @@ fn refuse_interior_nuls(snapshot: &ProjectSnapshot, curated: &CuratedValues, err
     for resource in &snapshot.resources {
         check(&resource.iri, resource.iri.as_str(), "iri");
         check(&resource.iri, &resource.label, "label");
-        match &resource.file {
-            Some(
-                File::StillImage { asset, .. }
-                | File::Audio { asset }
-                | File::MovingImage { asset }
-                | File::Document { asset },
-            ) => check(&resource.iri, asset, "file"),
-            None => {}
+        if let Some(file) = &resource.file {
+            check(&resource.iri, file.asset(), "file");
+            let legal = file.legal();
+            for author in &legal.authorship {
+                check(&resource.iri, author, "authorship");
+            }
+            if let Some(holder) = &legal.copyright_holder {
+                check(&resource.iri, holder, "copyright");
+            }
         }
         for value in &resource.values {
             let property = value.property.as_str();

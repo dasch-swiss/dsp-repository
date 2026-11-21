@@ -9,8 +9,8 @@ use cpe_core::remodel::Remodel;
 use cpe_core::validate::load_remodel;
 use cpe_ports::contract::violations;
 use cpe_ports::{
-    Annotation, Calendar, ClassIri, DataArk, DateBound, DatePrecision, DateValue, File, ListNode, ListNodeIri,
-    Motivation, ProjectSnapshot, PropertyIri, Resource, ResourceIri, Value, ValueKind, DATA_ARK_PREFIX,
+    Annotation, Calendar, ClassIri, DataArk, DateBound, DatePrecision, DateValue, File, FileLegal, ListNode,
+    ListNodeIri, Motivation, ProjectSnapshot, PropertyIri, Resource, ResourceIri, Value, ValueKind, DATA_ARK_PREFIX,
 };
 use cpe_store_build::error::BuildErrors;
 use cpe_store_build::hook::Hook;
@@ -218,7 +218,12 @@ pub fn band(iri: &str, label: &str, asset: &str) -> Resource {
 }
 
 pub fn still_image(asset: &str) -> File {
-    File::StillImage { asset: asset.to_string(), width: 1200, height: 1800 }
+    File::StillImage {
+        asset: asset.to_string(),
+        width: 1200,
+        height: 1800,
+        legal: FileLegal::default(),
+    }
 }
 
 /// An annotation of `class` on `target`, which must be in the snapshot it is added to.
@@ -527,6 +532,7 @@ pub fn shown(row: &PropertyRow) -> String {
         ),
         "link" => format!("-> {}", or_none(&row.target_id)),
         "integer" => format!("int {}", row.value_int.map_or("-".to_string(), |n| n.to_string())),
+        "boolean" => format!("bool {}", row.value_int.map_or("-".to_string(), |n| n.to_string())),
         "list_value" => format!("node {}", or_none(&row.target_id)),
         other => panic!("no test reads a row of type {other}"),
     }

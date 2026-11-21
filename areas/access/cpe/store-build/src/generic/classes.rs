@@ -36,8 +36,9 @@ fn is_ignored(resource: &Resource, mapping: &Remodel) -> bool {
     resource.annotation.is_none() && mapping.ignored.iter().any(|ignored| ignored.as_str() == class)
 }
 
-/// The class of `resource`. A class the mapping neither declares nor leaves out is refused,
-/// never dropped: its resources would silently be missing from the store.
+/// The class of `resource`: the declared class whose `iri` or one of whose `also` is the
+/// resource's class. A class the mapping neither declares nor leaves out is refused, never
+/// dropped: its resources would silently be missing from the store.
 ///
 /// An annotation is known by its `annotation` field and is a link or not by its motivation; its
 /// class must be the one that motivation belongs to. A mapping without an `annotations` block
@@ -60,7 +61,7 @@ fn class_of<'a>(resource: &Resource, mapping: &'a Remodel) -> Result<EntryClass<
         }
         None => mapping
             .indexed_classes()
-            .find(|(_, declared)| declared.iri.as_str() == class)
+            .find(|(_, declared)| declared.takes(class))
             .map(|(index, declared)| EntryClass::Mapped(index, declared))
             .ok_or_else(|| refused(Rule::UnmappedClass)),
     }

@@ -114,7 +114,7 @@ fn makes_the_id(class: &RemodelClass, property: PropertyIndex) -> bool {
         IdPolicy::Minted { source, .. } => Some(*source),
         IdPolicy::Curated { fallback, .. } => *fallback,
     };
-    source == Some(IdSource::Property(property))
+    matches!(source, Some(IdSource::Property(index) | IdSource::Verbatim(index)) if index == property)
 }
 
 /// What follows a hook, for every resource that still gets a row. The links are read as the
@@ -165,16 +165,18 @@ fn check_overridden<'a>(draft: &mut Draft<'a>, mapping: &'a Remodel, errors: &mu
             // The hook's values are as many as the node takes, like the archive's. The
             // mapping's own were counted as served, before any was left out.
             let set_by_hook = names(node).any(|name| entry.set_by_hook.contains(name));
+            // A resource has one label and one class, so the property that is told from either
+            // has one value: a hook may give another, and neither none nor several.
+            let mut not_one = |read: &str| {
+                if given.len() != 1 {
+                    errors.push(BuildError::refused(Rule::ValueCount, subject, read));
+                }
+                given.len() != 1
+            };
             let miscounted = match &node.source {
                 _ if !set_by_hook => false,
-                // A resource has one label, so the property that is told from it has one
-                // value: a hook may give another, and neither none nor several.
-                PropertySource::Label { .. } => {
-                    if given.len() != 1 {
-                        errors.push(BuildError::refused(Rule::ValueCount, subject, "label"));
-                    }
-                    given.len() != 1
-                }
+                PropertySource::Label { .. } => not_one("label"),
+                PropertySource::Class { .. } => not_one("class"),
                 PropertySource::Text { iri, count, .. }
                 | PropertySource::Uri { iri, count, .. }
                 | PropertySource::Date { iri, count, .. }
@@ -245,6 +247,10 @@ pub(crate) fn served<'a>(mapping: &Remodel, resource: &'a Resource, node: &Remod
                 .into_iter()
                 .filter_map(|node| lists::node_id_of_iri(mapping.list(*list), node));
             mapped.map(Value::ListNode).collect()
+        }
+        PropertySource::Class { list } => {
+            let node = lists::node_id_of_iri(mapping.list(*list), resource.class.as_str());
+            node.map(Value::ListNode).into_iter().collect()
         }
         PropertySource::Date { iri, mixed, .. } => those(resource, iri.as_str(), date_of)
             .into_iter()
@@ -350,7 +356,8 @@ pub(crate) fn of_node<'a>(
             });
             Some(values.collect())
         }
-        PropertySource::Link { iri, count, target } => {
+        // `ordered` is the writer's: the links are kept here in the port's order.
+        PropertySource::Link { iri, count, target, ordered: _ } => {
             let property = iri.as_str();
             let targets = of_kind(resource, property, refusals.kinds, link_of)?;
             counted(*count, targets.len(), subject, property, refusals.held)?;
@@ -386,6 +393,28 @@ pub(crate) fn of_node<'a>(
             }
             Some(ids)
         }
+        PropertySource::Class { list } => {
+            let class = resource.class.as_str();
+            let Some(id) = lists::node_id_of_iri(sources.mapping.list(*list), class) else {
+                refusals.held.push(BuildError::refused(Rule::UnknownListNode, subject, class));
+                return None;
+            };
+            Some(vec![Value::ListNode(id)])
+        }
+    }
+}
+
+/// Gives every kept resource each flag of its class whose archive class is the resource's: one
+/// `true`. A resource of another archive class of the class gets no value under the flag.
+pub(crate) fn flags<'a>(draft: &mut Draft<'a>) {
+    let mut flagged = Vec::new();
+    for (entry, _, class) in draft.kept() {
+        let archive_class = entry.resource.class.as_str();
+        let own = class.flags.iter().filter(|flag| flag.iri.as_str() == archive_class);
+        flagged.extend(own.map(|flag| (entry.resource.iri.as_str(), flag.name.as_str())));
+    }
+    for (iri, name) in flagged {
+        draft.give(iri, [name], &[Value::Boolean(true)]);
     }
 }
 
@@ -565,7 +594,8 @@ impl<'s> Check<'s> {
             PropertySource::Date { .. }
             | PropertySource::Link { .. }
             | PropertySource::Integer { .. }
-            | PropertySource::ListNode { .. } => None,
+            | PropertySource::ListNode { .. }
+            | PropertySource::Class { .. } => None,
         }
     }
 

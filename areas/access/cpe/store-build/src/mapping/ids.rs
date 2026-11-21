@@ -1,5 +1,6 @@
 //! Ids. A resource's id is the slug the editors curated for it, or is made from its label, from
-//! the one value of one of its properties, or from its IRI, as its class's `id` node says.
+//! the one value of one of its properties (made a slug, or kept verbatim), or from its IRI, as
+//! its class's `id` node says.
 //!
 //! An id is part of a public URL. Every rule here gives the same id for the same snapshot, and
 //! a resource whose id cannot be made is refused, never given another.
@@ -188,7 +189,7 @@ fn local_part<'a>(
         IdSource::Label if read.label_refused => None,
         IdSource::Label => Some((slug(&resource.label), resource.label.as_str())),
         IdSource::Iri => Some((iri_local(iri).to_string(), iri)),
-        IdSource::Property(index) => {
+        IdSource::Property(index) | IdSource::Verbatim(index) => {
             let node = class.property(index);
             let reported = errors.len();
             let mut refusals = NodeRefusals { kinds: errors, held: &mut read.held };
@@ -203,6 +204,7 @@ fn local_part<'a>(
             let silent = errors.len() == reported && read.held.is_empty() && !label_refused;
             read.source = mapped.map(|mapped| (node, mapped));
             match text {
+                Some(text) if matches!(source, IdSource::Verbatim(_)) => Some((py_strip(text).to_string(), text)),
                 Some(text) => Some((slug(text), text)),
                 // A property that may be without a value has none: nothing was refused, and
                 // the resource must not go missing without a word.

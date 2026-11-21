@@ -1022,9 +1022,9 @@ pub enum DiagnosticKind {
     /// class, two `overrides` of one property; an `ignore-class` `iri=` that a
     /// `class` declares or another `ignore-class` names. Hard-fail.
     DuplicateRemodelEntry,
-    /// A `remodel` node takes a name the block reserves: a `class` named
-    /// like the `images` block's class, or, in a block with an `images`
-    /// node, a property named `image`. Hard-fail.
+    /// A `remodel` node takes a property name the builder writes: `image` in
+    /// a block whose `images` node names no declared class, or `authorship`,
+    /// `copyright` or `license` on the class it names. Hard-fail.
     ReservedRemodelName,
     /// A `remodel` node carries an attribute the grammar does not list for
     /// it. Hard-fail.

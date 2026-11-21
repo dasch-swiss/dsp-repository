@@ -384,8 +384,8 @@ fn cycle_representatives<'a>(edges: &BTreeMap<&'a str, Vec<&'a str>>) -> Vec<&'a
 mod tests {
     use super::*;
     use crate::{
-        Annotation, Calendar, ClassIri, DateBound, DatePrecision, DateValue, File, LangString, ListNode, Motivation,
-        Resource, Value,
+        Annotation, Calendar, ClassIri, DateBound, DatePrecision, DateValue, File, FileLegal, LangString, ListNode,
+        Motivation, Resource, Value,
     };
 
     const PAGE: &str = "http://www.knora.org/ontology/0803/incunabula#page";
@@ -495,20 +495,28 @@ mod tests {
                     kind: ValueKind::Link(res("m-person")),
                 },
             ],
-            file: Some(File::Document { asset: "b.pdf".to_string() }),
+            file: Some(File::Document { asset: "b.pdf".to_string(), legal: FileLegal::default() }),
             ..resource("q-book", BOOK)
         };
         let two_parents = Resource {
             part_of: vec![res("q-book"), res("c-collection")],
-            file: Some(File::Audio { asset: "a.mp3".to_string() }),
+            file: Some(File::Audio { asset: "a.mp3".to_string(), legal: FileLegal::default() }),
             ..resource("f-leaflet", PAGE)
         };
         let still = Resource {
-            file: Some(File::StillImage { asset: "p.jp2".to_string(), width: 1200, height: 1800 }),
+            file: Some(File::StillImage {
+                asset: "p.jp2".to_string(),
+                width: 1200,
+                height: 1800,
+                legal: FileLegal {
+                    authorship: vec!["Basler Druckerei".to_string(), "Johann Bergmann".to_string()],
+                    copyright_holder: Some("Universitätsbibliothek Basel".to_string()),
+                },
+            }),
             ..page("x-page", "q-book", Some(3))
         };
         let moving = Resource {
-            file: Some(File::MovingImage { asset: "v.mp4".to_string() }),
+            file: Some(File::MovingImage { asset: "v.mp4".to_string(), legal: FileLegal::default() }),
             ..page("a-page", "q-book", Some(1))
         };
         let region = Resource {

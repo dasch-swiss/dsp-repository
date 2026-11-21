@@ -72,6 +72,9 @@ the port's contract, run on every call.
 An annotation target that is not a resource of the file refuses the snapshot (`UnknownTarget`), unlike a
 link to an IRI outside the file, which is dropped.
 What `FORMAT.md` lets a reader omit, and what the port does not carry, is omitted and never an error.
+A file carries its legal information, the authors (`dao:authorship`) and the copyright holder
+(`dao:copyrightHolder`) its representation names; a second copyright holder or an unfit literal refuses the
+snapshot. Access rights and data classification are left out for now.
 The **Data ARK** ([`../cpe/CONTEXT.md`](../cpe/CONTEXT.md)) of each resource is derived from its IRI
 in `ark.rs`, not read from the file, until DAO carries it;
 a served resource whose IRI yields none refuses the snapshot (`NoDataArk`).

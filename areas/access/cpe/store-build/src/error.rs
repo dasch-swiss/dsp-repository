@@ -81,11 +81,12 @@ rules! {
     EmptyIdSlug => "empty-id-slug",
     /// Two resources of declared classes have the same id.
     DuplicateId => "duplicate-id",
-    /// A resource of a class with an image has no file, or one that is not a still image.
+    /// A resource of a class with an image, or of the declared images class, has no file, or one
+    /// that is not a still image.
     NotStillImage => "not-still-image",
     /// A file's name has no stem to make the Image's id of.
     EmptyStem => "empty-stem",
-    /// A file's name does not end in `.jp2`.
+    /// A file's name ends in neither `.jp2` nor `.jpx`, the two JPEG 2000 names.
     NotJp2 => "not-jp2",
     /// A still image is zero pixels wide or high.
     ZeroDimension => "zero-dimension",
@@ -198,8 +199,8 @@ rules! {
     HookExceedsDeclaration => "hook-exceeds-declaration",
     /// A link points at a resource that a hook dropped, which has no row.
     LinkTargetWithoutRow => "link-target-without-row",
-    /// The id of a resource, an Image, an annotation or an annotation link is empty or holds a
-    /// character outside `A-Z a-z 0-9 - . _ ~`, which a URL carries unchanged.
+    /// The id of a resource, an Image, an annotation or an annotation link is empty, holds a
+    /// character outside `A-Z a-z 0-9 - . _ ~`, which a URL carries unchanged, or is dots only.
     IdNotUrlSafe => "id-not-url-safe",
 }
 

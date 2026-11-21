@@ -34,7 +34,8 @@
 //!
 //! Only what `FORMAT.md` lets a reader omit is omitted, never an error: a value whose `rdf:value`
 //! datatype the port has no kind for, a representation whose type it has no `File` for, and facts
-//! the port does not carry, such as the access rights, data classification and legal information.
+//! the port does not carry, such as the access rights and data classification. A file's legal
+//! information (`dao:authorship`, `dao:copyrightHolder`) is read and served on its `File`.
 //! Annotations (`oa:Annotation`) are served as resources.
 //!
 //! One violation is accepted, by decision: an edge to a value node that lacks `rdf:type dao:Value`.

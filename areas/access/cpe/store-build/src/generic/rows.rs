@@ -49,6 +49,14 @@ pub(crate) fn integer(resource_id: &str, name: &str, value: i64) -> PropertyRow 
     }
 }
 
+/// One `boolean` row: the truth value in `value_int`, 1 for true and 0 for false.
+pub(crate) fn boolean(resource_id: &str, name: &str, value: bool) -> PropertyRow {
+    PropertyRow {
+        value_int: Some(i64::from(value)),
+        ..row(resource_id, name, 0, "boolean")
+    }
+}
+
 /// A link to the resource `target_id`.
 pub(crate) fn link(resource_id: &str, name: &str, target_id: &str) -> PropertyRow {
     PropertyRow {

@@ -88,10 +88,22 @@ pub struct ClassIndex(pub(crate) usize);
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PropertyIndex(pub(crate) usize);
 
-/// The name of the link from a resource to its image, in CPE's store. A block with an `images`
-/// node has the builder write that link itself, so lowering lets no node of such a block take
-/// the name, and the builder writes the link under it.
+/// The name of the link from a resource to its image, in CPE's store. A block whose `images`
+/// node names no declared class has the builder write that link itself, so lowering lets no node
+/// of such a block take the name, and the builder writes the link under it.
 pub const IMAGE_LINK: &str = "image";
+
+/// The names an image's rights are written under, in CPE's store: who made it, who holds its
+/// copyright, and its licence. On a declared images class ([`RemodelImages::declared`]) the
+/// builder writes them on the class's resources, so lowering lets no node of that class take
+/// them.
+pub const IMAGE_RIGHTS: [&str; 3] = [IMAGE_AUTHORSHIP, IMAGE_COPYRIGHT, IMAGE_LICENSE];
+/// See [`IMAGE_RIGHTS`].
+pub const IMAGE_AUTHORSHIP: &str = "authorship";
+/// See [`IMAGE_RIGHTS`].
+pub const IMAGE_COPYRIGHT: &str = "copyright";
+/// See [`IMAGE_RIGHTS`].
+pub const IMAGE_LICENSE: &str = "license";
 
 /// A project's whole mapping.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -166,6 +178,15 @@ impl Remodel {
             .any(|provides| provides.richtext && provides.class == class && provides.name.as_str() == name);
         property || provided
     }
+
+    /// Whether the links a resource of `class` holds under the name `name` are written in
+    /// positional order: `name` is a name of a `link` property of the class with `ordered`.
+    pub fn orders_links(&self, class: ClassIndex, name: &str) -> bool {
+        self.class(class).properties.iter().any(|property| {
+            let ordered = matches!(property.source, PropertySource::Link { ordered: true, .. });
+            ordered && property.names.iter().any(|own| own.as_str() == name)
+        })
+    }
 }
 
 /// One `list`: a name and its nodes.
@@ -206,6 +227,9 @@ pub struct RemodelClass {
     pub name: CpeClass,
     /// The class's IRI in the archive.
     pub iri: ArchiveClassIri,
+    /// Further archive classes whose resources are this class's, in declared order. No IRI is
+    /// the `iri` or an `also` of two classes.
+    pub also: Vec<ArchiveClassIri>,
     /// Whether its resources carry no data address.
     pub no_addresses: bool,
     /// How a resource of the class gets its image.
@@ -219,6 +243,10 @@ pub struct RemodelClass {
     pub properties: Vec<RemodelProperty>,
     /// The properties read from the curation table, in declared order.
     pub curated: Vec<RemodelCurated>,
+    /// The flags, in declared order.
+    pub flags: Vec<RemodelFlag>,
+    /// The properties linking to the resources whose parent a resource is, in declared order.
+    pub members: Vec<RemodelMembers>,
     /// The properties counting the class's members, in declared order.
     pub member_counts: Vec<RemodelMemberCount>,
     /// The properties counting the links that point at the class, in declared order.
@@ -228,10 +256,17 @@ pub struct RemodelClass {
 impl RemodelClass {
     /// The property `index` names.
     ///
-    /// In bounds for an index lowering built for this class: [`IdSource::Property`] of its own
-    /// `id`, and a `via` of an incoming count whose `from` is this class.
+    /// In bounds for an index lowering built for this class: [`IdSource::Property`] or
+    /// [`IdSource::Verbatim`] of its own `id`, a `via` of an incoming count whose `from` is this
+    /// class, and the `via` of the membership of a class whose parent is this class.
     pub fn property(&self, index: PropertyIndex) -> &RemodelProperty {
         &self.properties[index.0]
+    }
+
+    /// Whether a resource of the archive class `iri` is of this class: `iri` is its `iri` or
+    /// one of its `also`.
+    pub fn takes(&self, iri: &str) -> bool {
+        self.iri.as_str() == iri || self.also.iter().any(|also| also.as_str() == iri)
     }
 
     /// The properties in declared order, each with its index.
@@ -248,12 +283,15 @@ impl RemodelClass {
         let Self {
             name: _,
             iri: _,
+            also: _,
             no_addresses: _,
             image,
             id,
             member_of: _,
             properties,
             curated,
+            flags: _,
+            members: _,
             member_counts: _,
             incoming_counts: _,
         } = self;
@@ -277,7 +315,8 @@ impl RemodelClass {
                 PropertySource::Uri { .. }
                 | PropertySource::Link { .. }
                 | PropertySource::Integer { .. }
-                | PropertySource::ListNode { .. } => {}
+                | PropertySource::ListNode { .. }
+                | PropertySource::Class { .. } => {}
             }
         }
         keys.extend(curated.iter().map(|curated| &curated.key));
@@ -305,6 +344,9 @@ pub enum IdSource {
     Label,
     /// The one value of a text property of the class that holds at most one.
     Property(PropertyIndex),
+    /// That value as served less the whitespace around it, not made a slug: the archive's own
+    /// identifier, kept as it is.
+    Verbatim(PropertyIndex),
     /// The last part of the resource's IRI.
     Iri,
 }
@@ -335,6 +377,19 @@ pub struct Membership {
     pub parent: ClassIndex,
     /// The property a member's position is stored under, if it is stored.
     pub seq: Option<CpeProperty>,
+    /// The link property of `parent` that points at a member, when a member's parent is the
+    /// resource that links to it; `None` when it is the resource its `part_of` names.
+    pub via: Option<PropertyIndex>,
+}
+
+/// One `members`: a property linking a resource to every resource of `from` whose `part_of`
+/// names it, in positional order.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RemodelMembers {
+    /// The property's name in CPE's store.
+    pub name: CpeProperty,
+    /// The class whose resources are linked.
+    pub from: ClassIndex,
 }
 
 /// One `member-count`: a property holding how many members a resource has.
@@ -492,6 +547,9 @@ pub enum PropertySource {
         count: ValueCount,
         /// The class the link points at.
         target: ClassIndex,
+        /// Whether the targets are written in positional order (by `seqnum`, a target without
+        /// one after those with one, then by id) rather than in the port's order.
+        ordered: bool,
     },
     /// An archive integer property.
     Integer {
@@ -509,13 +567,18 @@ pub enum PropertySource {
         /// The list whose nodes stand for the archive's, by their `iri`.
         list: ListIndex,
     },
+    /// The resource's archive class: one value, the node of `list` whose `iri` is that class.
+    Class {
+        /// The list whose nodes stand for the archive classes, by their `iri`.
+        list: ListIndex,
+    },
 }
 
 impl PropertySource {
-    /// The archive property's IRI; `None` for the label.
+    /// The archive property's IRI; `None` for the label and the class.
     pub fn iri(&self) -> Option<&ArchivePropertyIri> {
         match self {
-            Self::Label { .. } => None,
+            Self::Label { .. } | Self::Class { .. } => None,
             Self::Text { iri, .. }
             | Self::Uri { iri, .. }
             | Self::Date { iri, .. }
@@ -560,19 +623,34 @@ pub struct RemodelCurated {
     pub required: bool,
 }
 
+/// One `flag`: a property that is true on each resource of one archive class of its class, and
+/// absent on the others.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RemodelFlag {
+    /// The property's name in CPE's store.
+    pub name: CpeProperty,
+    /// The archive class whose resources carry it: the class's `iri` or one of its `also`.
+    pub iri: ArchiveClassIri,
+}
+
 /// The `images` block.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RemodelImages {
     /// The name of the class the images are stored as.
     pub class: CpeClass,
+    /// The declared class `class` names, if it names one. Then each resource of that class is
+    /// its own image, with its file as its representation; no class has `image` or `cover`, and
+    /// the builder writes no image link. Otherwise each file of a class that requires an image
+    /// is an image of its own, by the file's stem, stored as `class`.
+    pub declared: Option<ClassIndex>,
     /// The IIIF base every image URI starts with.
     pub iiif_base: String,
-    /// The authorship every image carries.
+    /// The authorship of an image whose file names no author.
     pub authorship: String,
     /// The licence every image carries.
     pub license: String,
-    /// How many `class` nodes are written before the block. The images are stored at this
-    /// place among the classes: after the resources of that many classes.
+    /// How many `class` nodes are written before the block. The images of files are stored at
+    /// this place among the classes: after the resources of that many classes.
     pub classes_before: usize,
 }
 

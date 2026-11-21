@@ -7,6 +7,7 @@ use cpe_core::remodel::Remodel;
 
 use crate::draft::{Draft, Entry, EntryClass, Value};
 use crate::error::{refuse_shared_keys, BuildError, Rule};
+use crate::generic::order::sort_positional;
 use crate::generic::{images, membership, rows, slug, text};
 use crate::store::{CompoundPartRow, PropertyRow, ResourceRow, Store};
 
@@ -66,8 +67,8 @@ fn refuse_unsafe_ids(draft: &Draft<'_>, mapping: &Remodel, errors: &mut Vec<Buil
         Some((id, entry.resource.iri.as_str(), id))
     });
     slug::refuse_unsafe_ids(kept, errors);
-    if mapping.images.is_some() {
-        images::refuse_unsafe_ids(draft, errors);
+    if let Some(block) = &mapping.images {
+        images::refuse_unsafe_ids(draft, block, errors);
     }
 }
 
@@ -119,12 +120,30 @@ fn properties(draft: &Draft<'_>, mapping: &Remodel) -> Vec<PropertyRow> {
         };
         for (name, values) in &entry.values {
             let richtext = class.is_some_and(|class| mapping.writes_richtext(class, name));
-            let written = values.iter().filter_map(|value| row(draft, id, name, value, richtext));
+            let mut values: Vec<&Value<'_>> = values.iter().collect();
+            if class.is_some_and(|class| mapping.orders_links(class, name)) {
+                sort_positional(&mut values, |value| link_position(draft, value));
+            }
+            let written = values.into_iter().filter_map(|value| row(draft, id, name, value, richtext));
             found.extend((0..).zip(written).map(|(seq, row)| PropertyRow { seq, ..row }));
         }
     }
     found.sort_by(|a, b| (&a.resource_id, &a.name, a.seq).cmp(&(&b.resource_id, &b.name, b.seq)));
     found
+}
+
+/// Where a link of an `ordered` property stands: by its target's `seqnum`, a target without one
+/// after those with one, then by the target's id. An id holds no `/`, so the positional order's
+/// last part of the IRI is the whole id. A target that gets no row writes none, wherever it
+/// stands.
+fn link_position<'d>(draft: &'d Draft<'_>, value: &Value<'_>) -> (i64, &'d str) {
+    let Value::Link(target) = value else {
+        return (i64::MAX, "");
+    };
+    let Some(target) = draft.get(target) else {
+        return (i64::MAX, "");
+    };
+    (target.resource.seqnum.unwrap_or(i64::MAX), target.kept_id().unwrap_or(""))
 }
 
 /// The row of one value. A link to a resource that gets no row gives none: that resource was
@@ -146,5 +165,6 @@ fn row(draft: &Draft<'_>, id: &str, name: &str, value: &Value<'_>, richtext: boo
         Value::ListNode(node) => Some(rows::list_value(id, name, node)),
         Value::Image(image) => Some(rows::link(id, name, image)),
         Value::Integer(number) => Some(rows::integer(id, name, *number)),
+        Value::Boolean(truth) => Some(rows::boolean(id, name, *truth)),
     }
 }

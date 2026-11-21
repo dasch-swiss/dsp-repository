@@ -168,7 +168,12 @@ impl<'a> Draft<'a> {
     fn holds_no_nul(&self, iri: &str, name: &str, value: &Value<'a>) -> bool {
         let nul = match value {
             Value::Text(text, lang) => text.contains('\0') || lang.is_some_and(|l| l.contains('\0')),
-            Value::Date { .. } | Value::Link(_) | Value::ListNode(_) | Value::Image(_) | Value::Integer(_) => false,
+            Value::Date { .. }
+            | Value::Link(_)
+            | Value::ListNode(_)
+            | Value::Image(_)
+            | Value::Integer(_)
+            | Value::Boolean(_) => false,
         };
         if nul {
             let refusal = BuildError::refused(Rule::InteriorNul, iri, name);
@@ -204,8 +209,9 @@ impl<'a> Draft<'a> {
     ///
     /// A value is of the kind the property writes: a text for a text, an address and a label;
     /// a link to a resource of the property's target class; an integer for an integer; a node of
-    /// the property's list, by its id, for a list node; a date the mapping gave. The checks the
-    /// mapping makes of a text run on these values once the hook has returned.
+    /// the property's list, by its id, for a list node and a class value; a date the mapping
+    /// gave. The checks the mapping makes of a text run on these values once the hook has
+    /// returned.
     pub fn override_values(&mut self, iri: &str, name: &str, values: Vec<Value<'a>>) {
         let class = self.class_of(iri);
         let Some(node) = class.and_then(|class| self.overridden(class, name)) else {
@@ -239,7 +245,7 @@ impl<'a> Draft<'a> {
                 linked.is_some_and(|linked| linked.is_of(*target))
             }
             PropertySource::Integer { .. } => matches!(value, Value::Integer(_)),
-            PropertySource::ListNode { list, .. } => {
+            PropertySource::ListNode { list, .. } | PropertySource::Class { list } => {
                 let Value::ListNode(id) = value else {
                     return false;
                 };
@@ -343,7 +349,8 @@ impl<'d, 'a> View<'d, 'a> {
         text::offence(self.label(), limits).is_none()
     }
 
-    /// The IRIs of the resource's parents, as served.
+    /// The IRIs of the resource's parents, as served. For a member placed through its parent's
+    /// link (`member-of … via=`) they need not name that parent.
     pub fn part_of(&self) -> Vec<&'a str> {
         let parents = self.entry.resource.part_of.iter();
         parents.map(|parent| parent.as_str()).collect()

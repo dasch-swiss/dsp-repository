@@ -76,6 +76,8 @@ pub enum Value<'a> {
     /// A whole number: a value of an integer property, or one the mapping derived, a position
     /// or a count.
     Integer(i64),
+    /// A truth value the mapping derived: a flag.
+    Boolean(bool),
 }
 
 /// The names the values of `node` are held under, and written under. It stands here, below

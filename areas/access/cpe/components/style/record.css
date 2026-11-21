@@ -807,7 +807,7 @@ html[data-align="justify"] .record__intro .prose > p {
 /* Sticky only on windows at least 48rem tall. Below it the
    reader scrolls with the page. Stacked, it never sticks: it would cover the
    Apparat. The arrival scroll reads this `position: sticky` to tell the two
-   layouts apart (annotation.rs, `ARRIVAL_INIT_EXPR`). The desk stage's 17rem
+   layouts apart (`cpe.arrival`, public/cpe.js). The desk stage's 17rem
    budgets the pinned reader: this sticky top (--header-clear, 81px) plus
    191px for its own chrome (head, pager, links row). A taller top or more
    chrome puts the pinned reader's end below the window, and a page with

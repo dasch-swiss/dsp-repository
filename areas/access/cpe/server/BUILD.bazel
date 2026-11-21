@@ -33,6 +33,7 @@ rust_library(
         "@crates//:maud",
         "@crates//:percent-encoding",
         "@crates//:serde",
+        "@crates//:sha2",
         "@crates//:tower",
         "@crates//:tracing",
     ],
@@ -69,7 +70,6 @@ rust_test(
     deps = [
         "//areas/access/media/store:media_store_for_tests",
         "//areas/access/sync/store:sync_store_for_tests",
-        "@crates//:sha2",
         "@crates//:tempfile",
         "@crates//:thiserror",
         "@crates//:tokio",

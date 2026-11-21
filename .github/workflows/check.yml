@@ -5,7 +5,7 @@
 #   clippy over every Bazel target
 # - publish-dry-run: verifies dsp-cli's crates.io packaging with `cargo publish --dry-run` and runs
 #   its tests against its own manifest, the one crate Cargo still builds
-# - biome: lints the E2E suites' TypeScript
+# - biome: lints the E2E suites' TypeScript and CPE's own script, public/cpe.js
 # - docs: builds the mdBook
 
 name: check
@@ -102,6 +102,8 @@ jobs:
         run: cd modules/mosaic/playground-e2e-tests && npx @biomejs/biome check .
       - name: Lint CPE E2E tests
         run: cd areas/access/cpe/web-e2e-tests && npx @biomejs/biome check .
+      - name: Lint CPE's script
+        run: cd areas/access/cpe/public && npx @biomejs/biome check cpe.js
 
   docs:
     runs-on: ubuntu-latest

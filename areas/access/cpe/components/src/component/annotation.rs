@@ -12,7 +12,7 @@ use cpe_core::lang::Lang;
 use maud::{html, Markup};
 
 use crate::chrome::{anno_arrival_text, anno_chip_name, anno_register_heading, ChromeMsg};
-use crate::component::dom::{entry_id, HEADER_MENU_OPEN_EXPR, PANEL_ID};
+use crate::component::dom::{entry_id, HEADER_MENU_OPEN_EXPR, PAGES_TITLE_ID, PANEL_ID};
 use crate::component::links::LinkResolver;
 use crate::component::values::member_text;
 
@@ -22,7 +22,7 @@ use crate::component::values::member_text;
 pub const ANNOTATIONS_TARGET_ID: &str = "cv-annotations";
 
 /// The hovered, pinned and arrival-emphasised ids (`''` = none; only
-/// [`ARRIVAL_INIT_EXPR`] writes the arrival one) and the arrival note's text.
+/// [`arrival_init_expr`] writes the arrival one) and the arrival note's text.
 /// The one key set both the declaration and the reset use. Every annotation
 /// signal is `_`-prefixed, so DataStar's default `filterSignals` keeps it out
 /// of every request (`_compound`'s `?datastar=` among them). Each is a string
@@ -45,41 +45,22 @@ pub fn annotation_reset_signals_json() -> String {
 }
 
 /// The arrival: a `data-init` on `article.record--reader`, which
-/// no swap re-inserts, so it runs once per real load. A `#annotation-<id>`
-/// hash for a numbered entry here emphasises its shape (no zoom). The note
-/// needs a `navigate` load (the referrer survives a reload and Back/Forward)
-/// and a same-origin referrer naming a partner page: the partner link's path,
-/// with its `page=` id, or no `page=` on a book's first page. It shows the
-/// link's `data-anno-note`; nothing is written to the URL or storage.
-///
-/// A `navigate` load also scrolls once (`dsp-incubator
-/// cpe/docs/adr/0007-fragment-swaps-are-transient.md`, 2026-10-07 amendment): a sticky reader's
-/// entry to the window's end, else a one-track (stacked) reader's head, the parent of `#cv-title`.
-/// The layout is read from `record.css`'s computed style, so `#compound-viewer`'s sticky rule and
-/// the `.record__tracks` grid are part of this contract. The scroll waits a frame:
-/// by then the note, which sits above the entries, is in the DOM.
-pub(crate) const ARRIVAL_INIT_EXPR: &str = "\
-    const at = (() => { try { return document.getElementById(decodeURIComponent(location.hash.slice(1))); } \
-        catch { return null; } })()?.closest('#annotations .anno__entry'); \
-    if (at) { \
-        if (!at.classList.contains('anno__entry--page')) $_annoArrive = at.id.slice('annotation-'.length); \
-        const nav = performance.getEntriesByType('navigation')[0]; \
-        const ref = nav?.type === 'navigate' && document.referrer ? new URL(document.referrer) : null; \
-        if (ref?.origin === location.origin) { \
-            const page = ref.searchParams.get('page'); \
-            const from = [...at.querySelectorAll('a[data-anno-page]')].find((a) => \
-                new URL(a.href).pathname === ref.pathname \
-                && (page === null ? 'annoFirst' in a.dataset : page === a.dataset.annoPage)); \
-            if (from) $_annoNote = from.dataset.annoNote ?? ''; \
-        } \
-        if (nav?.type === 'navigate') requestAnimationFrame(() => { \
-            const reader = document.getElementById('compound-viewer'); \
-            const tracks = el.querySelector('.record__tracks'); \
-            if (reader && getComputedStyle(reader).position === 'sticky') at.scrollIntoView({block: 'end'}); \
-            else if (tracks && getComputedStyle(tracks).gridTemplateColumns.split(' ').length === 1) \
-                document.getElementById('cv-title')?.parentElement?.scrollIntoView({block: 'start'}); \
-        }); \
-    }";
+/// no swap re-inserts, so it runs once per real load. `cpe.arrival` (`public/cpe.js`) reads the
+/// `#annotation-<id>` hash and the referrer, scrolls on a `navigate` load, and returns the
+/// emphasised id and the note, which this expression writes. The ids it queries are passed from
+/// here. Its scroll reads `record.css`'s computed style, so `#compound-viewer`'s sticky rule and
+/// the `.record__tracks` grid are part of its contract (`dsp-incubator
+/// cpe/docs/adr/0007-fragment-swaps-are-transient.md`, 2026-10-07 amendment). It does nothing
+/// when `cpe.js` is missing: a `data-init` that throws stops the page's other `data-init`s, the
+/// reader's address seed among them.
+pub(crate) fn arrival_init_expr() -> String {
+    format!(
+        "const arrival = window.cpe?.arrival(el, {{register: '{REGISTER_ID}', entryPrefix: '{}', \
+         reader: 'compound-viewer', title: '{PAGES_TITLE_ID}'}}); \
+         if (arrival) {{ $_annoArrive = arrival.arrive; $_annoNote = arrival.note; }}",
+        entry_id("")
+    )
+}
 
 /// Clears the arrival note: the toggle, a pin and a zoom away from fit each
 /// end the arrival; a page turn resets it with the rest.
@@ -272,7 +253,7 @@ fn render_register(page: &CompoundPage, member_class_label: &str, page_label: &s
                     { (ChromeMsg::AnnoShowOnScan.text(lang)) }
                 }
             }
-            // The arrival note, filled by `ARRIVAL_INIT_EXPR`;
+            // The arrival note, filled by `arrival_init_expr`;
             // empty, and so no height, otherwise.
             p.anno__arrival role="status" data-text="$_annoNote" {}
             // `role="list"`: `list-style: none` drops the list semantics in
@@ -396,7 +377,7 @@ impl Partners<'_> {
     /// words as plain text when it has no route.
     ///
     /// A partner page in a reader also carries the arrival data that
-    /// [`ARRIVAL_INIT_EXPR`] reads: its page id, whether it is its
+    /// `cpe.arrival` (`public/cpe.js`) reads: its page id, whether it is its
     /// book's first page, and the finished note naming it. The names are
     /// `data-anno-*` on purpose: a `data-<name>` whose name is a DataStar
     /// plugin (`data-text`, `data-init`, …) would be executed.
@@ -430,6 +411,7 @@ impl Partners<'_> {
         let note = page.map(|page| anno_arrival_text(note_title, page, number, self.lang));
         match self.links.partner_href(partner) {
             Some(href) => html! {
+                // `cpe.arrival` (`public/cpe.js`) reads the three `data-anno-*`.
                 a   .anno__partner
                     href=(href)
                     data-anno-page=[note.is_some().then_some(&partner.resource_id)]
@@ -466,6 +448,7 @@ fn render_numbered_entry(number: u32, annotation: &Annotation, lines: &Markup, l
     let enter = format!("$_annoHover = {id}");
     let leave = format!("if ($_annoHover === {id}) $_annoHover = ''");
     html! {
+        // `cpe.arrival` (`public/cpe.js`) reads `.anno__entry`.
         li  .anno__entry
             id=(entry_id(&annotation.id))
             style=[colour.as_ref().map(|(style, _)| style)]
@@ -509,7 +492,8 @@ fn render_numbered_entry(number: u32, annotation: &Annotation, lines: &Markup, l
 
 /// A page-level entry (a link targeting the page itself): unnumbered, the
 /// whole-page shape word, the link's own comment as its remark, then its
-/// annotation-link `lines`.
+/// annotation-link `lines`. `cpe.arrival` reads `.anno__entry` and `.anno__entry--page`: an arrival
+/// on a page-level entry emphasises nothing.
 fn render_page_entry(link: &AnnotationLink, lines: &Markup, lang: &Lang) -> Markup {
     html! {
         li.anno__entry.anno__entry--page id=(entry_id(&link.id)) {
@@ -1144,57 +1128,25 @@ mod tests {
         );
     }
 
-    /// The arrival expression, pinned as a string: it must read the entry
-    /// ids `entry_id` writes and the partner data `partner` writes, and
-    /// write neither the URL nor any storage.
+    /// The arrival expression, pinned as a string: it hands `cpe.arrival`
+    /// the ids the register and the reader render, and writes both signals
+    /// from what it returns. What `cpe.arrival` does is `book.spec.ts`'s.
     #[test]
     fn snapshot_arrival_init_expr() {
-        // The register's id and the entry-id prefix are spelled as literals;
-        // they must match what is rendered. (`READER_VIEWER_EXPR`'s reader id
-        // is checked against a rendered reader in `compound_viewer`'s tests.)
-        assert!(
-            ARRIVAL_INIT_EXPR.contains(&format!("'#{REGISTER_ID} .anno__entry'")),
-            "{ARRIVAL_INIT_EXPR}"
-        );
-        assert!(
-            ARRIVAL_INIT_EXPR.contains(&format!("'{}'.length", entry_id(""))),
-            "{ARRIVAL_INIT_EXPR}"
-        );
-        // Each scroll sits under the layout test that selects it, reading
-        // the reader and the tracks the record renders.
-        let title = crate::component::dom::PAGES_TITLE_ID;
-        for branch in [
-            "document.getElementById('compound-viewer')".to_owned(),
-            "el.querySelector('.record__tracks')".to_owned(),
-            "getComputedStyle(reader).position === 'sticky') at.scrollIntoView({block: 'end'})".to_owned(),
-            format!(
-                "gridTemplateColumns.split(' ').length === 1) \
-                 document.getElementById('{title}')?.parentElement?.scrollIntoView({{block: 'start'}})"
-            ),
+        let expr = arrival_init_expr();
+        assert!(expr.starts_with("const arrival = window.cpe?.arrival(el, {"), "{expr}");
+        for id in [
+            format!("register: '{REGISTER_ID}'"),
+            format!("entryPrefix: '{}'", entry_id("")),
+            format!("title: '{PAGES_TITLE_ID}'"),
         ] {
-            assert!(ARRIVAL_INIT_EXPR.contains(&branch), "{branch}");
+            assert!(expr.contains(&id), "{id}: {expr}");
         }
-        // Both scrolls come after the frame callback opens, after the note
-        // has filled above the entries, and only on a `navigate` load.
-        let frame = ARRIVAL_INIT_EXPR
-            .find("if (nav?.type === 'navigate') requestAnimationFrame(() => {")
-            .expect("the deferred scroll");
-        assert!(ARRIVAL_INIT_EXPR.find("$_annoNote =").expect("the note") < frame);
-        let scrolls: Vec<usize> = ARRIVAL_INIT_EXPR.match_indices("scrollIntoView").map(|(i, _)| i).collect();
-        assert_eq!(scrolls.len(), 2, "{ARRIVAL_INIT_EXPR}");
-        assert!(scrolls.iter().all(|&i| i > frame), "{ARRIVAL_INIT_EXPR}");
-        for read in [
-            "a[data-anno-page]",
-            "a.dataset.annoPage",
-            "'annoFirst' in a.dataset",
-            "from.dataset.annoNote",
-        ] {
-            assert!(ARRIVAL_INIT_EXPR.contains(read), "{read}");
-        }
-        for never in ["history", "Storage", "location.hash =", "location.href =", "behavior"] {
-            assert!(!ARRIVAL_INIT_EXPR.contains(never), "{never}");
-        }
-        insta::assert_snapshot!(ARRIVAL_INIT_EXPR);
+        assert!(
+            expr.ends_with("if (arrival) { $_annoArrive = arrival.arrive; $_annoNote = arrival.note; }"),
+            "{expr}"
+        );
+        insta::assert_snapshot!(expr);
     }
 
     /// The register carries the empty arrival note, bound to `$_annoNote`,

@@ -32,7 +32,7 @@ use std::convert::Infallible;
 use std::sync::Arc;
 
 use axum::extract::{Path, Request};
-use axum::http::{header, HeaderValue, StatusCode, Uri};
+use axum::http::{header, HeaderMap, HeaderValue, StatusCode, Uri};
 use axum::response::sse::Event;
 use axum::response::{IntoResponse, Redirect, Response, Sse};
 use axum::routing::get;
@@ -428,7 +428,7 @@ fn indexing_of(hidden_ids: &BTreeSet<String>, id: &str) -> Indexing {
 fn static_routes(app: Router, dir: &cpe_core::url::StaticDir) -> Router {
     app.route(
         &axum_route(&dir.file("*path")),
-        get(|Path(path): Path<String>| std::future::ready(static_files::serve(&path))),
+        get(|Path(path): Path<String>, headers: HeaderMap| std::future::ready(static_files::serve(&path, &headers))),
     )
     .route(&axum_route(&dir.file("image-viewer/*path")), get(serve_viewer_asset))
 }
@@ -2952,7 +2952,7 @@ mod tests {
         assert!(body.contains(r#"href="/cpe/?appearance=dark""#), "{body}");
         assert!(body.contains(r#"href="/cpe/_static/cpe/tokens.css""#), "{body}");
         assert!(body.contains(r#"src="/cpe/_static/cpe/dasch-logo-colour.svg""#), "{body}");
-        assert!(!body.contains("/cpe/cpe"), "{body}");
+        assert!(!body.replace("_static/cpe/cpe.js", "").contains("/cpe/cpe"), "{body}");
         for path in body.split('"').filter(|text| text.starts_with('/') && !text.starts_with("//")) {
             assert!(path.starts_with("/cpe/"), "{path} leaves the base");
         }

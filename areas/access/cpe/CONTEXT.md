@@ -216,9 +216,30 @@ are not in this repository.
 holds the vendored `datastar.js` with a `README.md` that records its checksum, which `just verify-checksums`
 recomputes. `cpe-server` embeds these files and the seven stylesheets and serves them under each project's
 `_static/` and, for the **Overview** and CPE's own not-found page, under CPE's own; a
-test there fails when a file of the three directories has no row in its table. `cpe-web`'s tests read
-`datastar.js` and four of the stylesheets to hold the markup's attributes, breakpoints and class names
-against them.
+test there fails when a file of the three directories has no row in its table. A row also says how the file
+is cached: `cpe.js` is answered with `Cache-Control: no-cache` and an `ETag`, and `304` to a matching
+`If-None-Match`, because the HTML calls its functions; the other files carry no caching header. `cpe-web`'s tests read
+`datastar.js`, `cpe.js` and four of the stylesheets to hold the markup's attributes, breakpoints, class
+names and called functions against them.
+
+`public/cpe.js` is CPE's own script, first-party and outside `vendor/`: the longer logic of the components'
+DataStar attributes (the annotation arrival, the page picker's open-scroll and delegated click, the reader's
+arrow keys) as functions on `window.cpe`, which return values; the attributes keep the signal writes and the
+`@get`, and pass in the element ids. Its header names its callers and lists, one selector per line, the
+classes, elements and attributes it reads from the Rust markup; `cpe-web`'s
+`cpe_js_header_selectors_occur_in_a_reader_page` renders a reader page and fails when one of them is missing
+or a line of the list is not a selector. Biome lints it
+with `public/.biome.json` (`just lint-e2e`).
+
+**Inline expression**: JavaScript written in the Rust code, as the value of a `data-*` attribute. A page
+carries no inline `<script>`. A short expression stays in its attribute; a long one moves to `cpe.js`. Short
+behaviour DataStar cannot express stays inline as a listed exception: the clipboard copy (`breadcrumb.rs`,
+`data_links.rs`), Escape, outside-click and focus-out on disclosures (`dom.rs`), clearing the search field
+(`search_bar.rs`, `facet_panel.rs`), the header menu and the crop-error marks (`page.rs`, `dom.rs`,
+`showcase.rs`), and the order control (`resource_list.rs`). Not yet in code: the viewer controls in
+`media.rs` call into the image viewer from their attributes, and `cpe-server`'s `router.rs` sends an
+`ExecuteScript` (#582).
+_Avoid_: inline script (for an attribute's expression).
 
 ## The host crate
 

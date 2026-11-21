@@ -293,6 +293,7 @@ pub(crate) fn render_viewer_unit(
             // image shows: it toggles every per-image bar/Details/caption
             // block, drives the strip's `aria-current`, and is set (with a
             // `goToPage()` call) by the pager + strip. Default = `sel0`.
+            // `cpe.pageKey` (`public/cpe.js`) stands aside for focus inside `.rv`.
             div .rv
                 data-signals=(signals)
                 data-class="{'rail-adjust': $rail === 'adjust', 'rail-details': $rail === 'details'}"

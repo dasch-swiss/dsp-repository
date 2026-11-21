@@ -1276,7 +1276,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `cpe-core`), `components/` (crate `cpe-components`, with its stylesheets in `components/style/`),
   `image-viewer/` (crate `cpe-image-viewer`), `store/` (crate `cpe-store`, with its schema in
   `store/schema.sql`), `store-build/` (crate `cpe-store-build`), `web/` (crate `cpe-web`), `server/` (crate `cpe-server`), `projects/` (one folder per project,
-  `projects/incunabula/` so far), `public/` (CPE's shared static files, with the vendored `datastar.js` in
+  `projects/incunabula/` so far), `public/` (CPE's shared static files and its own `cpe.js`, with the vendored `datastar.js` in
   `public/vendor/`), `web-e2e-tests/` (the Playwright suite on Incunabula, with and without JavaScript,
   `just test-e2e-cpe`, run by `a11y-cpe.yml`) and `CONTEXT.md` (CPE's vocabulary and what its port serves)
 - **Purpose:** CPE, the Configurable Presentation Environment — a second Access-Area
@@ -1299,13 +1299,14 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   from its KDL, its store's SQL text and its narrative, and the functions that render a page, the compound
   viewer's fragment, the overview of the projects and the not-found pages from `cpe-components`' parts; it
   holds no routes. `public/` holds
-  the files every CPE page refers to (two logos, the fingerprint, Datastar). `cpe-server` is the host crate, a
+  the files every CPE page refers to (two logos, the fingerprint, Datastar, and `cpe.js`, CPE's own script for
+  the longer logic its DataStar attributes call). `cpe-server` is the host crate, a
   facade in the shape of `dpe-server`: `CpeConfig`, and `Cpe` with its router and its activation. The router's
   root, which is the base with and without a trailing slash, is the overview of the loaded projects that are not hidden (ADR-0007). Activation
   loads every project folder that holds a `SHORTCODE`, from the files the bytes port serves for that
   shortcode and a store built from the archive projection port's snapshot, and a project that fails to
   activate answers 503 on its own prefix, and one with no Ready token 404, while the others are served (ADR-0007); the crate also serves the stylesheets and `public/` from a
-  compiled-in table. A project's folder under `projects/` holds its `SHORTCODE` and the documents describing its
+  compiled-in table, `cpe.js` with `Cache-Control: no-cache` and an `ETag`. A project's folder under `projects/` holds its `SHORTCODE` and the documents describing its
   data, and no code; until `media` serves assets at request time, it also holds its `assets/`. A
   hook is a module of the builder and a `HOOKS` row, a project component a `PROJECT_RENDERERS` row (ADR-0007).
 - **Key entities:** `ArchiveProjection`, `ProjectSnapshot`, `Resource`, `Annotation`,

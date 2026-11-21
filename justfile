@@ -763,12 +763,13 @@ run-docker-editor:
     # while the service looks healthy. Locally the console transport is the point.
     docker run --rm --platform linux/amd64 -p 8080:8080 -e EDITOR_ENV=DEV local-scan/editor:latest
 
-# Lint E2E test TypeScript with Biome
+# Lint E2E test TypeScript, and CPE's own script, with Biome
 lint-e2e: _check-node
     cd areas/access/dpe/web-e2e-tests && npx @biomejs/biome check .
     cd modules/mosaic/playground-e2e-tests && npx @biomejs/biome check .
     cd areas/deposit/editor/web-e2e-tests && npx @biomejs/biome check .
     cd areas/access/cpe/web-e2e-tests && npx @biomejs/biome check .
+    cd areas/access/cpe/public && npx @biomejs/biome check cpe.js
 
 ###################
 # dsp-cli targets

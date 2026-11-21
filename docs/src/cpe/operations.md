@@ -36,7 +36,10 @@ to CPE.
   (DEV-7989).
 - **Static files**: CPE's stylesheets, scripts and logos are compiled into the binary and served at
   `/cpe/<project id>/_static/…`, and at `/cpe/_static/…` for the overview and CPE's not-found page; a
-  project's own files at `/cpe/<project id>/_assets/…`.
+  project's own files at `/cpe/<project id>/_assets/…`. `cpe/cpe.js` is answered with
+  `Cache-Control: no-cache` and an `ETag` from its bytes, so a browser revalidates it on every page load
+  (a `304` while it is unchanged) and never pairs a deployment's HTML with another deployment's script. The
+  other static files carry no `Cache-Control` and no validator; the browser's heuristics decide.
 
 ## Configuration
 

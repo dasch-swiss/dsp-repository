@@ -933,7 +933,7 @@ beyond the mapping's own result:
 | Child | What it permits |
 |-------|-----------------|
 | `key "<key>" class="<Class>"` | the hook reads the curated texts under the key on a resource of the class. Where the hook reads the stripped texts, the key is checked like every curated key: a text that holds an address or the sentinel refuses it (`http-in-value`, `missing-in-value`), once per resource. A resource on which the hook reads the key only as served, or not at all, is not refused for it. How many texts there may be is the hook's rule. |
-| `provides "<name>" class="<Class>"` | the hook writes the property, which no node of the class yields: texts, or nodes of a `list` the block declares (a node the list does not have is `unknown-list-node`). With `richtext=#true` its texts are written as `richtext`, converted as a `richtext` property's are. |
+| `provides "<name>" class="<Class>"` | the hook writes the property, which no node of the class yields: texts, its own composed ones among them, or nodes of a `list` the block declares (a node the list does not have is `unknown-list-node`). With `richtext=#true` its texts are written as `richtext`, converted as a `richtext` property's are. |
 | `overrides "<name>" class="<Class>"` | the hook sets the values of that `property` node, under each of the node's names. A value is of the kind the node writes: a text for a `text`, a `uri` and a `from="label"` node, a link to a resource of the `target` class, an integer for an `integer`, a node of the `list=` list, by its id, for a `list-node`, and for a `date` only a date the mapping gave. |
 | `drops class="<Class>"` | the hook drops resources of the class. |
 
@@ -972,7 +972,9 @@ before the hook; another number is `value-count`) and
 then checked and thinned by value steps 5 and 6. A property that makes its
 class's id is checked where it is mapped, before the id is made, even when
 the hook may override it. A provided property has no node and so no check:
-what its texts may hold is the hook's rule.
+what its texts may hold is the hook's rule. A text the hook writes, provided
+or set, may be one it composes rather than one it read; it is held as above
+either way.
 
 ### Other rules
 

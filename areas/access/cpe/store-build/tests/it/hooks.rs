@@ -146,7 +146,7 @@ fn tidy(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
         draft.provide_text(iri, "rank", rank, None);
     }
     for iri in moved {
-        draft.override_values(iri, "homepage", vec![Value::Text(NEW_HOMEPAGE, None)]);
+        draft.override_values(iri, "homepage", vec![Value::Text(NEW_HOMEPAGE.into(), None)]);
     }
 }
 
@@ -164,11 +164,11 @@ fn provides_a_note(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
 
 /// The block declares `overrides` for `homepage` alone.
 fn overrides_the_name(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
-    draft.override_values(VOLUME, "name", vec![Value::Text("Annalen", None)]);
+    draft.override_values(VOLUME, "name", vec![Value::Text("Annalen".into(), None)]);
 }
 
 fn overrides_with_the_sentinel(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
-    let holds_it = Value::Text("https://example.org/[fehlt]", None);
+    let holds_it = Value::Text("https://example.org/[fehlt]".into(), None);
     draft.override_values(VOLUME, "homepage", vec![holds_it]);
 }
 
@@ -179,7 +179,10 @@ fn overrides_with_a_link(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
 
 /// A Volume has at most one homepage.
 fn overrides_with_two_addresses(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
-    let two = vec![Value::Text(HOMEPAGE, None), Value::Text(NEW_HOMEPAGE, None)];
+    let two = vec![
+        Value::Text(HOMEPAGE.into(), None),
+        Value::Text(NEW_HOMEPAGE.into(), None),
+    ];
     draft.override_values(VOLUME, "homepage", two);
 }
 
@@ -234,7 +237,7 @@ fn binds_with_a_grade(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
 
 /// A number is an integer, and a text is none, though it reads as one.
 fn numbers_in_words(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
-    draft.override_values(VOLUME, "number", vec![Value::Text("4", None)]);
+    draft.override_values(VOLUME, "number", vec![Value::Text("4".into(), None)]);
 }
 
 /// Makes the three changes the block does not declare, then records what became of the Volume.
@@ -628,7 +631,7 @@ fn test_build_richtext_is_converted_when_written_and_read_by_the_hook_as_served(
 
 /// Sets the first Sheet's richtext description to a text of two lines.
 fn redescribes(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
-    draft.override_values(SHEET_1, "description", vec![Value::Text("Neu\n  beschrieben", None)]);
+    draft.override_values(SHEET_1, "description", vec![Value::Text("Neu\n  beschrieben".into(), None)]);
 }
 
 /// A hook's texts on an overridden richtext property are converted when they are written, as the
@@ -795,7 +798,7 @@ remodel {
 "#;
 
 fn names_once(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
-    draft.override_values(VOLUME, "name", vec![Value::Text("Annalen", None)]);
+    draft.override_values(VOLUME, "name", vec![Value::Text("Annalen".into(), None)]);
 }
 
 fn names_not(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
@@ -803,7 +806,7 @@ fn names_not(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
 }
 
 fn names_twice(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
-    let two = vec![Value::Text("Annalen", None), Value::Text("Chronik", None)];
+    let two = vec![Value::Text("Annalen".into(), None), Value::Text("Chronik".into(), None)];
     draft.override_values(VOLUME, "name", two);
 }
 
@@ -828,7 +831,7 @@ fn test_build_override_of_a_property_told_from_the_label_has_exactly_one_value()
 }
 
 fn names_with_an_address(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
-    let name = vec![Value::Text("Annalen, siehe http://a.example", None)];
+    let name = vec![Value::Text("Annalen, siehe http://a.example".into(), None)];
     draft.override_values(VOLUME, "name", name);
 }
 
@@ -948,8 +951,8 @@ remodel {
 fn retitles_and_renames(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
     let kept = draft.entry(SHEET_1).is_some_and(|sheet| sheet.is_kept());
     SEEN.with(|all| all.borrow_mut().push(format!("sheet kept={kept}")));
-    draft.override_values(VOLUME, "title", vec![Value::Text("Chronik", None)]);
-    draft.override_values(SHEET_1, "name", vec![Value::Text("zwei", None)]);
+    draft.override_values(VOLUME, "title", vec![Value::Text("Chronik".into(), None)]);
+    draft.override_values(SHEET_1, "name", vec![Value::Text("zwei".into(), None)]);
 }
 
 /// An overridden property is checked after the hook unless it makes its class's id. The
@@ -981,7 +984,7 @@ fn test_build_overridden_property_is_checked_before_the_hook_only_where_it_makes
 /// Provides, overrides and reads on a Sheet what the block declares for a Volume.
 fn treats_a_sheet_as_a_volume(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
     draft.provide_text(SHEET_1, "rank", "7", None);
-    draft.override_values(SHEET_1, "homepage", vec![Value::Text(HOMEPAGE, None)]);
+    draft.override_values(SHEET_1, "homepage", vec![Value::Text(HOMEPAGE.into(), None)]);
     if let Some(sheet) = draft.entry(SHEET_1) {
         let _ = sheet.curated("rank");
     }
@@ -1161,7 +1164,7 @@ fn provides_a_nul(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
 }
 
 fn overrides_with_a_nul(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
-    let address = Value::Text("https://example.org/\0", None);
+    let address = Value::Text("https://example.org/\0".into(), None);
     draft.override_values(VOLUME, "homepage", vec![address]);
 }
 
@@ -1172,6 +1175,76 @@ fn test_build_nul_in_a_text_a_hook_gives_is_refused() {
 
     assert_eq!(refused(&snapshot(), provides_a_nul), nul);
     assert_eq!(refused(&snapshot(), overrides_with_a_nul), nul);
+    assert_eq!(refused(&snapshot(), provides_a_composed_nul), nul);
+    assert_eq!(refused(&snapshot(), overrides_with_a_composed_nul), nul);
+}
+
+// ── Texts a hook composes ─────────────────────────────────────────────────────
+
+/// Provides the Volume a rank and sets its homepage, both texts made from its label.
+fn composes(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
+    let Some(volume) = draft.entry(VOLUME) else {
+        return;
+    };
+    let rank = format!("{} · Rang 7", volume.label());
+    let homepage = format!("{HOMEPAGE}/{}", volume.label().to_lowercase());
+    draft.provide_text(VOLUME, "rank", rank, None);
+    draft.override_values(VOLUME, "homepage", vec![Value::Text(homepage.into(), None)]);
+}
+
+fn provides_a_composed_nul(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
+    draft.provide_text(VOLUME, "rank", format!("erste{}", '\0'), None);
+}
+
+fn overrides_with_a_composed_nul(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
+    let address = format!("{HOMEPAGE}{}", '\0');
+    draft.override_values(VOLUME, "homepage", vec![Value::Text(address.into(), None)]);
+}
+
+/// Sets the Volume's homepage to an address it composes around the sentinel.
+fn overrides_with_a_composed_sentinel(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
+    let Some(sentinel) = draft.sentinel() else {
+        return;
+    };
+    let address = format!("{HOMEPAGE}/{sentinel}");
+    draft.override_values(VOLUME, "homepage", vec![Value::Text(address.into(), None)]);
+}
+
+/// Sets the Volume's homepage to a composed text that is empty once stripped.
+fn overrides_with_a_composed_blank(draft: &mut Draft<'_>, _refusals: &mut Refusals) {
+    let blank = " ".repeat(3);
+    draft.override_values(VOLUME, "homepage", vec![Value::Text(blank.into(), None)]);
+}
+
+/// A text the hook composes is written as given, as one it read is.
+#[test]
+fn test_build_composed_provided_text_and_override_are_written_as_given() {
+    let store = built(&snapshot(), composes);
+
+    let shown = properties(&store);
+    for row in [
+        ("chronik", "rank", 0, "Chronik · Rang 7@-".to_string()),
+        ("chronik", "homepage", 0, format!("{HOMEPAGE}/chronik@-")),
+    ] {
+        assert!(shown.contains(&row), "{row:?} in {shown:?}");
+    }
+}
+
+/// A composed override is checked and thinned after the hook (value steps 5 and 6), as a
+/// borrowed one is.
+#[test]
+fn test_build_composed_override_is_checked_and_left_out_like_any_other() {
+    assert_eq!(
+        refused(&snapshot(), overrides_with_a_composed_sentinel),
+        [(Rule::MissingInValue, VOLUME.to_string())]
+    );
+
+    let store = built(&snapshot(), overrides_with_a_composed_blank);
+    let shown = properties(&store);
+    assert!(
+        !shown.iter().any(|(id, name, ..)| (*id, *name) == ("chronik", "homepage")),
+        "{shown:?}"
+    );
 }
 
 /// Runs [`tidy`], which drops the blank Sheet, and records how many Sheets each reader gives.

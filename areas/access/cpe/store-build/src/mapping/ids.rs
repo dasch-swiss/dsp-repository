@@ -4,6 +4,7 @@
 //! An id is part of a public URL. Every rule here gives the same id for the same snapshot, and
 //! a resource whose id cannot be made is refused, never given another.
 
+use std::borrow::Cow;
 use std::collections::BTreeMap;
 
 use cpe_core::remodel::{ClassIndex, IdPolicy, IdSource, Remodel, RemodelClass, RemodelProperty};
@@ -194,8 +195,9 @@ fn local_part<'a>(
             let label_refused = read.label_refused;
             let placed = Placed { class_index, class, index, node };
             let mapped = values::of_node(sources, resource, label_refused, placed, &mut refusals);
+            // Only borrowed: ids are minted before the hook, the one writer of an owned text.
             let text = match mapped.as_deref() {
-                Some([Value::Text(text, _)]) => Some(*text),
+                Some([Value::Text(Cow::Borrowed(text), _)]) => Some(*text),
                 _ => None,
             };
             let silent = errors.len() == reported && read.held.is_empty() && !label_refused;

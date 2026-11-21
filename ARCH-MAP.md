@@ -1583,13 +1583,16 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   The snapshot is interim-DAO N-Quads in an interim format version `READABLE` lists
   (ADR-0007, `areas/deposit/vre-bridge/lift/FORMAT.md`), read with a strict `oxttl` parse. DPE keeps reading its corpus
   directly; moving it onto `sync` is its own decision.
-- **Key entities:** `LiveArchiveProjection`, `DEFAULT_POLL_INTERVAL`, the Ready-token poll (`poll.rs`), `READABLE`, `SnapshotError`, `InvalidFact`,
+- **Key entities:** `LiveArchiveProjection`, `read_snapshot`, `DEFAULT_POLL_INTERVAL`, the Ready-token poll (`poll.rs`), `READABLE`, `SnapshotError`, `InvalidFact`,
   `ArkError` (in `sync-store`; a resource IRI with no data ARK is `InvalidFact::NoDataArk`);
   (design vocabulary) Projection (`chischtli/CONTEXT.md`), Data product
   (`areas/archive/CONTEXT.md`)
 - **Public interface:** nothing to a browser. The `Live<Port>` adapters for the ports it
   implements: today `LiveArchiveProjection` for CPE's `ArchiveProjection`; later DPE's own port
-  when DPE moves onto `sync`, and the query ports the SPARQL endpoint reads through.
+  when DPE moves onto `sync`, and the query ports the SPARQL endpoint reads through. Besides the adapter,
+  `read_snapshot` maps a snapshot a reader streams, under the rules on a snapshot's content but with no Ready
+  token, for a host that keeps its snapshots elsewhere. Such a host builds this tree outside this repository;
+  nothing here calls it.
 - **Local-context kit:** `areas/access/sync/CONTEXT.md`, `areas/access/sync/data/PROVENANCE`
   (the fixture's producer and its hand-written token), `areas/access/sync/store/src/lib.rs`,
   `areas/access/sync/store/src/ark.rs` (the one derivation of the data ARK),

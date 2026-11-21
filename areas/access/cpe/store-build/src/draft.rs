@@ -1,6 +1,7 @@
 //! The draft of a build: every resource of the snapshot that has a class under the mapping, with
 //! what the build has found out about it so far.
 
+use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet};
 
 use cpe_core::remodel::{ClassIndex, RemodelClass, RemodelProperty};
@@ -53,8 +54,9 @@ pub(crate) struct Member<'a> {
 /// One value of a property of a resource, as the mapping gave it or a hook set it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Value<'a> {
-    /// A text and its language, where it has one. An address is a text.
-    Text(&'a str, Option<&'a str>),
+    /// A text and its language, where it has one. An address is a text. The text is a slice of
+    /// what the build was given, or one a hook composed.
+    Text(Cow<'a, str>, Option<&'a str>),
     /// A date from `start` to `end`, both written at `precision`, with the text a reader is
     /// shown for it and that text's language, where the mapping asks for one.
     Date {

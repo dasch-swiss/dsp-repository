@@ -11,6 +11,7 @@
 //! A property that the mapping's `hook` node lists under `overrides` is checked and thinned
 //! only once the hook has run, on the values the hook left: [`after_hook`].
 
+use std::borrow::Cow;
 use std::collections::BTreeSet;
 use std::ops::ControlFlow;
 
@@ -191,7 +192,7 @@ fn check_overridden<'a>(draft: &mut Draft<'a>, mapping: &'a Remodel, errors: &mu
                 continue;
             };
             let texts = given.iter().filter_map(|value| match value {
-                Value::Text(text, lang) => Some((*text, *lang)),
+                Value::Text(text, lang) => Some((text.clone(), *lang)),
                 _ => None,
             });
             let passed = check.passed(texts.collect(), subject, read, errors);
@@ -219,9 +220,9 @@ pub(crate) fn served<'a>(mapping: &Remodel, resource: &'a Resource, node: &Remod
         let under = values.filter(|value| value.property.as_str() == property);
         under.filter_map(|value| read(&value.kind)).collect()
     }
-    let text = |(text, lang)| Value::Text(text, lang);
+    let text = |(text, lang): Text<'a>| Value::Text(Cow::Borrowed(text), lang);
     match &node.source {
-        PropertySource::Label { .. } => vec![Value::Text(resource.label.as_str(), None)],
+        PropertySource::Label { .. } => vec![Value::Text(Cow::Borrowed(resource.label.as_str()), None)],
         PropertySource::Text { iri, .. } => {
             let texts = those(resource, iri.as_str(), text_of);
             texts.into_iter().map(text).collect()
@@ -289,7 +290,7 @@ pub(crate) fn of_node<'a>(
             if label_refused {
                 return None;
             }
-            Some(vec![Value::Text(resource.label.as_str(), None)])
+            Some(vec![Value::Text(Cow::Borrowed(resource.label.as_str()), None)])
         }
         PropertySource::Text { iri, count, rule, .. } => {
             let read = Texts {
@@ -435,7 +436,7 @@ fn texts<'a>(
     if let Some(check) = &read.check {
         texts = check.passed(texts, subject, property, refusals.held)?;
     }
-    let values = texts.into_iter().map(|(text, lang)| Value::Text(text, lang));
+    let values = texts.into_iter().map(|(text, lang)| Value::Text(Cow::Borrowed(text), lang));
     Some(values.collect())
 }
 
@@ -450,7 +451,7 @@ fn stand_in<'a>(
 ) -> ControlFlow<Option<Vec<Value<'a>>>> {
     let found = sources.curation.at_most_one(subject, key.as_str(), refusals.held);
     match found {
-        Found::One(text, _) => ControlFlow::Break(Some(vec![Value::Text(text, None)])),
+        Found::One(text, _) => ControlFlow::Break(Some(vec![Value::Text(Cow::Borrowed(text), None)])),
         Found::Refused => ControlFlow::Break(None),
         Found::Absent => ControlFlow::Continue(()),
     }
@@ -578,19 +579,19 @@ impl<'s> Check<'s> {
 
     /// The texts of `served` that give a row, as served. `None` when one of them may not be a
     /// value: the property is refused once, by the first such value in the port's order.
-    fn passed<'a>(
+    fn passed<'a, T: AsRef<str>>(
         &self,
-        served: Vec<Text<'a>>,
+        served: Vec<(T, Option<&'a str>)>,
         subject: &str,
         property: &str,
         held: &mut Vec<BuildError>,
-    ) -> Option<Vec<Text<'a>>> {
-        let offence = |(text, _): &Text<'a>| text::offence(text, self.limits);
+    ) -> Option<Vec<(T, Option<&'a str>)>> {
+        let offence = |(text, _): &(T, Option<&'a str>)| text::offence(text.as_ref(), self.limits);
         if let Some(rule) = served.iter().find_map(offence) {
             held.push(BuildError::refused(rule, subject, property));
             return None;
         }
-        let written = served.into_iter().filter(|(text, _)| !self.leaves_out(text));
+        let written = served.into_iter().filter(|(text, _)| !self.leaves_out(text.as_ref()));
         Some(written.collect())
     }
 }

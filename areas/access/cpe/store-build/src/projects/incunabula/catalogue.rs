@@ -30,12 +30,13 @@ pub(super) fn apply_overrides<'a>(draft: &mut Draft<'a>, refusals: &mut Refusals
         if matches!(book.values(NAME), Mapped::Refused(_)) {
             continue;
         }
-        let served = match book.served(NAME).as_slice() {
-            [Value::Text(address, _)] => Some(*address),
+        let served = book.served(NAME);
+        let served = match served.as_slice() {
+            [Value::Text(address, _)] => Some(address.as_ref()),
             _ => None,
         };
         if served.map(py_strip) == Some(dead) {
-            overrides.push((book.iri(), vec![Value::Text(replacement, None)]));
+            overrides.push((book.iri(), vec![Value::Text(replacement.into(), None)]));
         } else {
             let found = served.unwrap_or_default();
             refusals.refuse(Rule::StaleCatalogueOverride, book.iri(), found);

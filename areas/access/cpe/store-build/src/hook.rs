@@ -9,13 +9,18 @@
 //! node. A change the node does not declare is not made, and the build refuses it
 //! (`hook-exceeds-declaration`).
 //!
+//! A text a hook writes may be one it composes: a [`Value::Text`] holds a slice of what the build
+//! was given or an owned `String`.
+//!
 //! The fields of [`Draft`] are private to this module, so a hook cannot reach the builder's own
 //! draft, whose writers check nothing.
 
+use std::borrow::Cow;
 use std::cell::RefCell;
 use std::collections::BTreeSet;
 
 use cpe_core::remodel::{ClassIndex, PropertySource, Remodel, RemodelClass, RemodelHook, RemodelProperty};
+pub use cpe_ports::{Calendar, DatePrecision};
 
 use crate::draft::{self, Entry, EntryClass};
 pub use crate::draft::{Cause, Value};
@@ -145,11 +150,13 @@ impl<'a> Draft<'a> {
     /// has no node for the property and so no check, and what the text may hold is the hook's
     /// rule. Under a `provides` with `richtext`, the text is converted when it is written, as a
     /// `richtext` property's is: each of its lines a paragraph.
-    pub fn provide_text(&mut self, iri: &str, name: &str, text: &'a str, lang: Option<&'a str>) {
+    ///
+    /// The text is a slice of what the build was given or one the hook composed, a `String`.
+    pub fn provide_text(&mut self, iri: &str, name: &str, text: impl Into<Cow<'a, str>>, lang: Option<&'a str>) {
         let Some(name) = self.provided_on(iri, name) else {
             return;
         };
-        let value = Value::Text(text, lang);
+        let value = Value::Text(text.into(), lang);
         if self.holds_no_nul(iri, name, &value) {
             self.entries.append(iri, name, value);
         }

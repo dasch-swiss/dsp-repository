@@ -148,15 +148,16 @@ builder.
    (`knora.org`) and no type of the port or of the store. `tests/it/hygiene.rs` searches the module for an import
    beyond the seam and for the ontology host. The seam's methods are in `src/hook.rs`: `Draft::{sentinel, entry,
    entries_of, all_entries_of, drop, provide_text, provide_list_value, override_values}`, `View::{values, served,
-   curated, curated_served, label_is_text, …}` and `Refusals::refuse(rule, subject, detail)`. `label_is_text` says
+   curated, curated_served, label_is_text, …}` and `Refusals::refuse(rule, subject, detail)`. A text the hook writes,
+   through `provide_text` or a `Value::Text` it sets, is a slice of what it read or a `String` it composed;
+   `hook::{DatePrecision, Calendar}` let it read a `Value::Date` without naming the port. `label_is_text` says
    whether the label may be written as a text (not empty, no address on a `no-addresses` class, no sentinel),
    whether or not the mapping read it: the mapping reads no label while a curated text stands in for it. `entries_of`
    gives the resources of a class that get a row, so a rule that walks a class need not test `is_kept`;
    `all_entries_of` has the refused and the dropped ones too; either is refused for a name that is no class of the
    block. A hook cannot mint or change an id: the ids are final before it is called, and a resource it drops keeps
    its id. A property told from the label (`from="label"`) that a hook overrides has exactly one value (`value-count`
-   otherwise). A provided text is a `&str` borrowed from the snapshot or a constant, so a hook cannot provide a
-   string it builds. `tests/it/hygiene.rs` names Incunabula's six nouns (`PROJECT_NOUNS`) and its path
+   otherwise). `tests/it/hygiene.rs` names Incunabula's six nouns (`PROJECT_NOUNS`) and its path
    (`BINARY_ONLY`): add the new project's.
 3. Add the project's row to `HOOKS` in `src/hooks.rs`: `Hook { project: "<project>", remodel:
    projects::<module>::remodel }`, with the folder name as `project`. Without the `hook` node or without the row the

@@ -3364,3 +3364,69 @@ fn test_snapshot_siblings_sharing_position_returns_unavailable_naming_violation(
         }]
     );
 }
+
+/// One resource of project 0804, as a file would hold it.
+const ONE_0804: &str = concat!(
+    "<http://rdfh.ch/0804/kP2s> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0804> .\n",
+    "<http://rdfh.ch/0804/kP2s> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/0804/dokubib#Bild> <urn:dsp:project:0804> .\n",
+    "<http://rdfh.ch/0804/kP2s> <http://www.w3.org/2000/01/rdf-schema#label> \"Bild\" <urn:dsp:project:0804> .\n",
+);
+
+#[test]
+fn test_read_snapshot_syntax_error_names_the_path_and_line() {
+    let stream = format!("{ONE_0804}<http://rdfh.ch/0804/kP2s not n-quads .\n");
+
+    let error =
+        crate::read_snapshot("0804", stream.as_bytes(), "data/0804.nq.gz").expect_err("a syntax error is not served");
+
+    assert!(matches!(&error, SnapshotError::Syntax { line: 4, .. }), "{error:?}");
+    assert!(error.to_string().starts_with("data/0804.nq.gz "), "{error}");
+}
+
+#[test]
+fn test_read_snapshot_failing_reader_is_a_read_error() {
+    struct Failing;
+    impl std::io::Read for Failing {
+        fn read(&mut self, _: &mut [u8]) -> std::io::Result<usize> {
+            Err(std::io::Error::other("the stream broke"))
+        }
+    }
+
+    let error = crate::read_snapshot("0804", Failing, "data/0804.nq.gz").expect_err("a failing reader is not served");
+
+    assert!(
+        matches!(&error, SnapshotError::Read { path, .. } if path == Path::new("data/0804.nq.gz")),
+        "{error:?}"
+    );
+}
+
+#[test]
+fn test_read_snapshot_serves_what_the_same_file_serves() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_snapshot(dir.path(), "0804", GENERATION, ONE_0804);
+    write_token(dir.path(), "0804", GENERATION, 1);
+    let path = dir.path().join("0804").join(GENERATION).join("snapshot.nq");
+    let file = fs::File::open(&path).expect("open the snapshot file");
+
+    let read = crate::read_snapshot("0804", file, &path).expect("the stream is served");
+    let served = LiveArchiveProjection::new(dir.path())
+        .snapshot("0804")
+        .expect("the file is served");
+
+    assert_eq!(read, served);
+}
+
+#[test]
+fn test_read_snapshot_quad_in_another_graph_is_invalid() {
+    let stream = ONE_0804.replace(
+        "<urn:dsp:project:0804> .\n<http://rdfh.ch/0804/kP2s> <http://www.w3.org/2000",
+        "<urn:dsp:project:0803> .\n<http://rdfh.ch/0804/kP2s> <http://www.w3.org/2000",
+    );
+
+    let error = crate::read_snapshot("0804", stream.as_bytes(), "0804.nq").expect_err("a foreign graph is not served");
+
+    assert!(
+        matches!(&error, SnapshotError::Invalid { reason: InvalidFact::ForeignGraph { .. }, .. }),
+        "{error:?}"
+    );
+}

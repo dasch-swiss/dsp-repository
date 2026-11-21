@@ -9,11 +9,12 @@
 use std::collections::HashMap;
 use std::sync::LazyLock;
 
-use axum::http::{header, HeaderMap, StatusCode};
+use axum::http::{header, HeaderMap, HeaderValue, StatusCode};
 use axum::response::{IntoResponse, Response};
 use sha2::{Digest, Sha256};
 use Caching::{Heuristic, Revalidate};
 
+use crate::assets::ASSET_CSP;
 use crate::router::content_type;
 
 /// How a browser may cache a file.
@@ -90,7 +91,7 @@ fn if_none_match_hits(request: &HeaderMap, tag: &str) -> bool {
 
 /// Answer `{*path}` of a static directory (`cpe_core::url::StaticDir`): the file of that exact
 /// name, or 404. A [`Revalidate`] file whose `ETag` the request's `If-None-Match` names is
-/// answered `304` with no body.
+/// answered `304` with no body. An SVG carries [`ASSET_CSP`], as a project's assets do.
 pub(crate) fn serve(path: &str, request: &HeaderMap) -> Response {
     let Some((name, bytes, caching)) = FILES.iter().find(|(name, _, _)| *name == path) else {
         return StatusCode::NOT_FOUND.into_response();
@@ -99,7 +100,7 @@ pub(crate) fn serve(path: &str, request: &HeaderMap) -> Response {
         (header::CONTENT_TYPE, content_type(name)),
         (header::X_CONTENT_TYPE_OPTIONS, "nosniff"),
     ];
-    match caching {
+    let mut response = match caching {
         Heuristic => (StatusCode::OK, headers, *bytes).into_response(),
         Revalidate => {
             let tag = ETAGS[name].as_str();
@@ -110,7 +111,13 @@ pub(crate) fn serve(path: &str, request: &HeaderMap) -> Response {
                 (StatusCode::OK, headers, validators, *bytes).into_response()
             }
         }
+    };
+    if name.ends_with(".svg") {
+        response
+            .headers_mut()
+            .insert(header::CONTENT_SECURITY_POLICY, HeaderValue::from_static(ASSET_CSP));
     }
+    response
 }
 
 #[cfg(test)]
@@ -201,6 +208,19 @@ mod tests {
             assert_eq!(response.status(), StatusCode::OK, "{path}");
             assert_eq!(header_value(&response, header::CONTENT_TYPE), expected, "{path}");
             assert_eq!(header_value(&response, header::X_CONTENT_TYPE_OPTIONS), "nosniff", "{path}");
+        }
+    }
+
+    #[test]
+    fn every_svg_and_no_other_file_carries_the_asset_policy() {
+        for (path, _, _) in FILES {
+            let response = serve(path, &HeaderMap::new());
+            let policy = response.headers().get(header::CONTENT_SECURITY_POLICY);
+            if path.ends_with(".svg") {
+                assert_eq!(policy.map(|value| value.as_bytes()), Some(ASSET_CSP.as_bytes()), "{path}");
+            } else {
+                assert_eq!(policy, None, "{path}");
+            }
         }
     }
 

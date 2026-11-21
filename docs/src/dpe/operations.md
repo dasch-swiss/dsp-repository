@@ -70,6 +70,21 @@ access-server healthcheck --url http://localhost:9090/healthz # custom URL
 |------|----------|---------|
 | 8080 | HTTP | Application server |
 
+## Response Headers
+
+`access-server` adds two headers to every answer of DPE and CPE, pages, files and errors alike, unless the
+answer sets that header itself:
+
+| Header | Value |
+|--------|-------|
+| `X-Content-Type-Options` | `nosniff` |
+| `Content-Security-Policy` | `base-uri 'self'; object-src 'none'` |
+
+Neither directive restricts scripts, styles, images or connections, so no page depends on them to render.
+`/healthz` and `POST /telemetry/collect` carry neither. CPE's SVG files set their own, script-blocking policy
+([CPE Operations](../cpe/operations.md#what-is-served)). DPE's files under `public/` get the page policy.
+There is no report-only or enforcing page policy yet: it waits on where violation reports go.
+
 ## Environment Variables
 
 | Variable | Required | Default | Description |

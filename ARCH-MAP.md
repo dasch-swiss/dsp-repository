@@ -152,7 +152,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Paths:** `:(glob)areas/access/server/**`
 - **Purpose:** The Access Area's composition root (ADR-0003, ADR-0007): the one binary,
   `access-server`, holding wiring only — CLI, config loading, OTel and Pyroscope init, the OTel
-  layers, the untraced routes, and mounting each capability's router. It merges DPE's router and
+  layers, the baseline response headers, the untraced routes, and mounting each capability's router. It merges DPE's router and
   nests CPE's at CPE's base (ADR-0007), constructs `sync`'s and `media`'s
   adapters of CPE's two ports over `SYNC_DATA_DIR` and `MEDIA_DATA_DIR` and has CPE activate over them in the
   background, after the listener is bound.
@@ -177,7 +177,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   plus its `store` / `ports` crates only to construct `Live<Port>` adapters) and `media`'s `server` crate once
   it has routes;
   third-party:
-  axum, tokio, tower, clap, ureq, rustls, tower_governor, the OpenTelemetry stack, pyroscope, tracing-subscriber
+  axum, tokio, tower, tower-http, clap, ureq, rustls, tower_governor, the OpenTelemetry stack, pyroscope, tracing-subscriber
 - **Used by:** — (deployment: the image `//areas/access/server:image`, built by `app_image` in
   `tools/image/defs.bzl`, published by `dpe-docker-publish.yml` and scanned through `.github/actions/build-dpe/`)
 - **Boundary rules:**
@@ -199,6 +199,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - Depends on no crate of another area (ADR-0002; **structure**: no target of `areas/deposit` grants it).
   - Routes declared after the OTel layers are untraced, so the order in `app` is load-bearing
     (**static-analysis**: `serve.rs` tests assert the traceparent split).
+  - The baseline headers (`nosniff`, `base-uri 'self'; object-src 'none'`) are layered once, in `assemble`, with the
+    OTel layers, and with `if_not_present`: a capability overrides one only by setting that header on its answer,
+    as CPE's SVGs do (**static-analysis**: `serve.rs` tests pin every answer kind and `/healthz` without them).
   - No adapter or domain logic: wiring only (**review**).
   - Sets no router fallback: DPE's router carries the `ServeDir` fallback, and axum panics when
     merging two (**review**). CPE's router has a fallback too, so it is nested and never merged; a

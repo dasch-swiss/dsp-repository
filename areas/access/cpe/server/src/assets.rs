@@ -14,9 +14,9 @@ use axum::response::{IntoResponse, Response};
 use crate::discovery::DiscoveredProject;
 use crate::router::content_type;
 
-/// Sent with every asset. A project may ship an SVG, and an SVG opened at its own URL is a document
-/// of this origin: the policy keeps it usable as an image and lets no script in it run.
-const ASSET_CSP: &str = "default-src 'none'; style-src 'unsafe-inline'; sandbox";
+/// Sent with every asset, and with the SVG files of `static_files`. An SVG opened at its own URL is
+/// a document of this origin: the policy keeps it usable as an image and lets no script in it run.
+pub(crate) const ASSET_CSP: &str = "default-src 'none'; style-src 'unsafe-inline'; sandbox";
 
 /// Every served project's asset files, by project id and then by the path a
 /// `site.cover-image` value carries (`assets/cover.webp`, with the `assets/`

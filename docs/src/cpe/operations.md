@@ -40,6 +40,11 @@ to CPE.
   `Cache-Control: no-cache` and an `ETag` from its bytes, so a browser revalidates it on every page load
   (a `304` while it is unchanged) and never pairs a deployment's HTML with another deployment's script. The
   other static files carry no `Cache-Control` and no validator; the browser's heuristics decide.
+- **Response headers**: every answer under `/cpe` carries `X-Content-Type-Options: nosniff` and
+  `Content-Security-Policy: base-uri 'self'; object-src 'none'`, its 404 and 503 included
+  ([DPE Operations](../dpe/operations.md#response-headers)). An SVG, of `_static` or of a project's
+  `_assets`, carries `Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; sandbox` instead,
+  which keeps it usable as an image and lets no script in it run when it is opened at its own URL.
 
 ## Configuration
 

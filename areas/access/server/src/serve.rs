@@ -150,15 +150,17 @@ fn app(dpe: Router, cpe: &Cpe) -> (Router, bool) {
 }
 
 /// Assembles the app: DPE's router and, when given, CPE's at its base, then
-/// the OTel layers, then the untraced routes. Panics where [`mount_cpe`] does.
+/// the OTel layers and the baseline headers, then the untraced routes. Panics where
+/// [`mount_cpe`] does.
 ///
 /// Kept separate from `serve()` (which does I/O and process-global setup) so
 /// the traced/untraced route order — routes declared after `.layer()` are not
 /// wrapped by it — is unit-testable.
 fn assemble(dpe: Router, cpe: Option<&Cpe>) -> Router {
-    use axum::http::StatusCode;
+    use axum::http::{header, HeaderValue, StatusCode};
     use axum::routing::get;
     use axum_tracing_opentelemetry::middleware::{OtelAxumLayer, OtelInResponseLayer};
+    use tower_http::set_header::SetResponseHeaderLayer;
 
     let capabilities = Router::new().merge(dpe);
     let capabilities = match cpe {
@@ -172,6 +174,17 @@ fn assemble(dpe: Router, cpe: Option<&Cpe>) -> Router {
         // - OtelAxumLayer (declared second) runs OUTER — creates the server span from the request
         .layer(OtelInResponseLayer)
         .layer(OtelAxumLayer::default())
+        // --- Baseline headers ---
+        // `if_not_present`: an answer's own policy (CPE's on its SVGs) is kept. Neither directive
+        // restricts scripts, styles, images or connections, so no page can break.
+        .layer(SetResponseHeaderLayer::if_not_present(
+            header::X_CONTENT_TYPE_OPTIONS,
+            HeaderValue::from_static("nosniff"),
+        ))
+        .layer(SetResponseHeaderLayer::if_not_present(
+            header::CONTENT_SECURITY_POLICY,
+            HeaderValue::from_static("base-uri 'self'; object-src 'none'"),
+        ))
         // --- Untraced routes ---
         // Routes declared AFTER .layer() calls are NOT wrapped by those layers.
         .route("/healthz", get(|| async { StatusCode::OK }))
@@ -827,6 +840,95 @@ remodel {
                 "{uri}: {headers:?}"
             );
             assert!(!body.is_empty(), "{uri}");
+        }
+    }
+
+    /// The page policy `assemble` adds to an answer that sets none.
+    const PAGE_CSP: &str = "base-uri 'self'; object-src 'none'";
+
+    /// The policy CPE sends with its SVGs (`cpe_server`'s `ASSET_CSP`).
+    const SVG_CSP: &str = "default-src 'none'; style-src 'unsafe-inline'; sandbox";
+
+    /// Every value of `name` in `headers`, so a header sent twice is seen twice.
+    fn values_of(headers: &HeaderMap, name: header::HeaderName) -> Vec<&str> {
+        headers.get_all(name).iter().map(|value| value.to_str().unwrap()).collect()
+    }
+
+    /// `headers` carry one `nosniff` and one Content-Security-Policy, `policy`.
+    fn assert_baseline(headers: &HeaderMap, policy: &str, what: &str) {
+        assert_eq!(values_of(headers, header::X_CONTENT_TYPE_OPTIONS), ["nosniff"], "{what}");
+        assert_eq!(values_of(headers, header::CONTENT_SECURITY_POLICY), [policy], "{what}");
+    }
+
+    #[tokio::test]
+    async fn a_dpe_page_and_a_cpe_page_carry_the_baseline_headers_and_the_health_check_does_not() {
+        let (_folder, cpe) = things_and_offline(BASE);
+        let router = app(&dpe(), &cpe);
+        for uri in [
+            "/dpe/projects",
+            "/dpe/projects/0803",
+            "/favicon.ico",
+            "/cpe/",
+            "/cpe/things/",
+        ] {
+            let (status, headers, _) = get(&router, uri).await;
+            assert_eq!(status, StatusCode::OK, "{uri}");
+            assert_baseline(&headers, PAGE_CSP, uri);
+        }
+        let (status, headers, _) = get(&router, "/healthz").await;
+        assert_eq!(status, StatusCode::OK);
+        assert!(!headers.contains_key(header::CONTENT_SECURITY_POLICY), "{headers:?}");
+        assert!(!headers.contains_key(header::X_CONTENT_TYPE_OPTIONS), "{headers:?}");
+    }
+
+    #[tokio::test]
+    async fn cpes_404_and_a_failed_projects_503_carry_the_baseline_headers() {
+        let (_folder, cpe) = things_and_offline(BASE);
+        let router = app(&dpe(), &cpe);
+        let (status, headers, _) = get(&router, "/cpe/nope").await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
+        assert_baseline(&headers, PAGE_CSP, "CPE's 404");
+        let (status, headers, _) = get(&router, "/cpe/offline/").await;
+        assert_unavailable(status, &headers, "a failed project");
+        assert_baseline(&headers, PAGE_CSP, "a failed project's 503");
+    }
+
+    #[tokio::test]
+    async fn an_svg_of_a_project_or_of_cpe_carries_the_svg_policy_and_not_the_page_policy() {
+        let folder = projects_folder(&[("things", "0001")]);
+        let assets = folder.path().join("things/assets");
+        std::fs::create_dir(&assets).expect("the assets folder is created");
+        std::fs::write(assets.join("logo.svg"), "<svg xmlns=\"http://www.w3.org/2000/svg\"/>")
+            .expect("the SVG is written");
+        let cpe = Cpe::new(&cpe_config(folder.path(), BASE));
+        cpe.activate(
+            &FakeArchiveProjection::default().with_project(things_snapshot("0001")),
+            &things_files(),
+        );
+        let router = app(&dpe(), &cpe);
+        for uri in [
+            "/cpe/things/_assets/assets/logo.svg",
+            "/cpe/_static/cpe/dasch-logo-colour.svg",
+            "/cpe/things/_static/cpe/dasch-fingerprint.svg",
+        ] {
+            let (status, headers, _) = get(&router, uri).await;
+            assert_eq!(status, StatusCode::OK, "{uri}");
+            assert_baseline(&headers, SVG_CSP, uri);
+        }
+    }
+
+    #[tokio::test]
+    async fn a_static_file_that_is_no_svg_carries_one_nosniff_and_the_page_policy() {
+        let (_folder, cpe) = things_and_offline(BASE);
+        let router = app(&dpe(), &cpe);
+        for uri in [
+            "/cpe/_static/cpe/tokens.css",
+            "/cpe/things/_static/cpe/cpe.js",
+            "/cpe/_static/datastar.js",
+        ] {
+            let (status, headers, _) = get(&router, uri).await;
+            assert_eq!(status, StatusCode::OK, "{uri}");
+            assert_baseline(&headers, PAGE_CSP, uri);
         }
     }
 

@@ -32,6 +32,13 @@ project offline.
 after a `.layer()` call, so this order is what keeps liveness probes and the telemetry beacon
 itself untraced. A test pins it — do not reorder without checking `serve.rs`'s tests.
 
+The baseline headers sit with the OTel layers, so the same order keeps them off those two routes:
+`X-Content-Type-Options: nosniff` and `Content-Security-Policy: base-uri 'self'; object-src 'none'`, each
+added with `SetResponseHeaderLayer::if_not_present`. An answer that sets its own keeps it: CPE's SVGs carry a
+script-blocking policy, and its static files their own `nosniff`, sent once. A directive that restricts
+scripts, styles, images or connections (an enforcing or report-only page policy) is not added here until
+the owner decides where reports go (`docs/src/dpe/operations.md`, *Response Headers*).
+
 ## CPE: nested at its base, activated in the background
 
 - **The base has one source.** `mount_cpe` nests `Cpe::router()` at `Cpe::base()` (`CPE_BASE`), and CPE

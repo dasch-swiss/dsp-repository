@@ -30,8 +30,6 @@ mod tests {
         // The reader's init script: a constant, after the `replaceState` statement that
         // `stale_url_correction` builds from a JS-string-escaped URL.
         ("component/compound_viewer.rs", 1),
-        // `ANNO_DOT`, a constant.
-        ("component/annotation.rs", 1),
     ];
 
     /// Adding or removing a site fails this test until `PINNED` changes with it, so every new

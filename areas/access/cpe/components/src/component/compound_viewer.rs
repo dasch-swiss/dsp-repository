@@ -100,7 +100,7 @@ use crate::chrome::{
     picker_gathering_name, picker_leaves_meta, picker_live_count, picker_page_at, picker_pages_meta, picker_range_name,
     picker_summary_name, picker_unlabelled_name, ChromeMsg,
 };
-use crate::component::annotation::{self, render_overlay, ANNO_DOT};
+use crate::component::annotation::{self, anno_dot, render_overlay};
 use crate::component::dom::{PAGES_TITLE_ID, PICKER_ESCAPE_EXPR, PICKER_FOCUSOUT_EXPR};
 use crate::component::links::{member_href_for, reader_query, LinkResolver};
 use crate::component::media::{image_repr, overlay_will_draw, render_viewer_unit};
@@ -911,7 +911,7 @@ fn render_picker_entry(
         {
             (visible)
             (page_picker::ordinal_mark(ordinal))
-            @if annotated { (ANNO_DOT) }
+            @if annotated { (anno_dot()) }
         }
     }
 }
@@ -1028,12 +1028,12 @@ fn render_picker(page: &CompoundPage, mode: PickerMode, cfg: &CompoundViewerCfg<
                                 aria-current=[(current_group == Some(i)).then_some("true")]
                             {
                                 span aria-hidden="true" { (mark) }
-                                @if *annotated { (ANNO_DOT) }
+                                @if *annotated { (anno_dot()) }
                                 span.visually-hidden { (name) }
                             }
                         }
                         @if !page.annotated_members.is_empty() {
-                            span.pk__legend { (ANNO_DOT) (ChromeMsg::AnnoMarked.text(lang)) }
+                            span.pk__legend { (anno_dot()) (ChromeMsg::AnnoMarked.text(lang)) }
                         }
                     }
                     @for (i, (g, (mark, name, annotated))) in groups.iter().zip(&names).enumerate() {
@@ -1059,7 +1059,7 @@ fn render_picker(page: &CompoundPage, mode: PickerMode, cfg: &CompoundViewerCfg<
                             {
                                 span.pk__headmark aria-hidden="true" {
                                     (mark)
-                                    @if *annotated { (ANNO_DOT) }
+                                    @if *annotated { (anno_dot()) }
                                 }
                                 span.visually-hidden { (name) }
                                 " "
@@ -1269,7 +1269,7 @@ fn render_pages_head(
                 @if !page.annotations.is_empty() {
                     " "
                     a.linklike.cv-anno-count href={ "#" (annotation::REGISTER_ID) } {
-                        (ANNO_DOT)
+                        (anno_dot())
                         (anno_count_text(page.annotations.len(), lang))
                     }
                 }
@@ -1444,7 +1444,7 @@ fn render_reader_pager(prev: Option<ReaderStep>, next: Option<ReaderStep>, centr
                         }
                     }
                     @if step.annotated {
-                        (ANNO_DOT)
+                        (anno_dot())
                         span.visually-hidden { (anno_marked_suffix(lang)) }
                     }
                 }
@@ -1463,7 +1463,7 @@ fn render_reader_pager(prev: Option<ReaderStep>, next: Option<ReaderStep>, centr
                     title=[(!step.target.is_empty()).then_some(&step.target)]
                     data-on:click__prevent=(step.get)
                 {
-                    @if step.annotated { (ANNO_DOT) }
+                    @if step.annotated { (anno_dot()) }
                     @if short(step) {
                         span.pg__name {
                             (step.target)

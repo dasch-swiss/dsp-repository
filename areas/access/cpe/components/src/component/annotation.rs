@@ -9,7 +9,7 @@ use cpe_core::ir::{
     Annotation, AnnotationEntry, AnnotationLink, AnnotationPartner, AnnotationShape, CompoundPage, Resource,
 };
 use cpe_core::lang::Lang;
-use maud::{html, Markup, PreEscaped};
+use maud::{html, Markup};
 
 use crate::chrome::{anno_arrival_text, anno_chip_name, anno_register_heading, ChromeMsg};
 use crate::component::dom::{entry_id, HEADER_MENU_OPEN_EXPR, PANEL_ID};
@@ -180,7 +180,11 @@ pub(crate) const REGISTER_ID: &str = "annotations";
 
 /// The annotation signposts' accent dot. Decorative: each signpost states
 /// the fact in its accessible name.
-pub(crate) const ANNO_DOT: PreEscaped<&str> = PreEscaped(r#"<span class="anno-dot" aria-hidden="true"></span>"#);
+pub(crate) fn anno_dot() -> Markup {
+    html! {
+        span.anno-dot aria-hidden="true" {}
+    }
+}
 
 /// The register heading's id; the section is `aria-labelledby` it.
 const CAPTION_ID: &str = "anno-cap";

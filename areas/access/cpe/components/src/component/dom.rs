@@ -24,7 +24,8 @@ pub(crate) const PANEL_ID: &str = "crumb-data";
 /// Escape from any focus inside the open page picker (`compound_viewer`)
 /// closes it and returns focus to its summary; the `.orderctl` idiom
 /// (`resource_list::render_order_control`). Shared with the crumb dataset
-/// panel and the header language menu, so a change here changes all three.
+/// panel, the header language menu and the order control, so a change here
+/// changes all four.
 pub const PICKER_ESCAPE_EXPR: &str = "evt.key === 'Escape' && el.open && (evt.preventDefault(), el.open = false, el.querySelector('summary').focus({preventScroll: true}))";
 
 /// Focus leaving the picker for another focusable element closes it (the

@@ -74,6 +74,7 @@ use maud::{html, Markup};
 use shared_datastar as datastar;
 
 use crate::chrome::{count_of_text, count_resources_text, pager_page_n, pager_page_of, ChromeMsg};
+use crate::component::dom::{PICKER_ESCAPE_EXPR, PICKER_FOCUSOUT_EXPR};
 use crate::component::links::LinkResolver;
 use crate::component::values::{
     composed_part_texts, format_date_text, pick_values, resolve_title_str, split_keyword_label,
@@ -1236,9 +1237,9 @@ fn render_order_control(cfg: &ResourceListCfg<'_>, current_sort: Option<&str>, l
             details
                 #orderctl
                 .orderctl__disc
-                data-on:keydown__window="evt.key === 'Escape' && el.open && (evt.preventDefault(), el.open = false, el.querySelector('summary').focus({preventScroll: true}))"
+                data-on:keydown__window=(PICKER_ESCAPE_EXPR)
                 data-on:click__outside="el.open = false"
-                data-on:focusout="evt.relatedTarget && evt.relatedTarget.tabIndex >= 0 && !el.contains(evt.relatedTarget) && (el.open = false)"
+                data-on:focusout=(PICKER_FOCUSOUT_EXPR)
             {
                 summary.orderctl__current aria-label=(summary_aria_label) {
                     (current_label)

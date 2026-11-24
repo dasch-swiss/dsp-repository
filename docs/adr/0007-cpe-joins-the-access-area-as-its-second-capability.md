@@ -301,8 +301,6 @@ normaliser per process, so it changes when they do).
 
 Not yet in code: `sync` serves an on-disk snapshot, not Chischtli's projection stream or its replay (not
 scheduled).
-Not yet in code: the image carries `sync`'s data and `media`'s stand-in directory and sets `SYNC_DATA_DIR` and
-`MEDIA_DATA_DIR` to them, rather than naming mounted subtrees (DEV-7514).
 Not yet in code: the projection follows `dao-lift`'s interim format, not published DAO; value order and text
 language are raised upstream, the other deviations are not scheduled (DEV-7445).
 Not yet in code: a project's `assets/` are in its folder of `CPE_PROJECTS_DIR`, read at activation and
@@ -327,11 +325,10 @@ Not yet in code: `dsp-incubator/cpe` keeps its own engine (`engine/`, `store/`, 
 and vendors only `cpe-components`, `cpe-core`, `cpe-image-viewer`, `cpe-ports` and `sync-store`, not
 `shared-datastar`, which `cpe-components` depends on (DEV-7408).
 Not yet in code: `dsp-incubator/cpe` does not vendor `shared-names`, which `cpe-ports` depends on (DEV-7994).
-Not yet in code: no test of `access-server`'s image holds that it carries no data subtree of `sync` or `media`
-(DEV-7514).
 
 Enforced by: Bazel `visibility` per ADR-0001 for the seam, CPE's crates by their roles and the composition
-root's dependencies (**structure**); `check-capability-deps.sh`, run by `just check`, for the third-party bans
+root's dependencies, and `testonly` on `sync`'s and `media`'s `data` filegroups, which keeps them out of
+`access-server`'s image layers (**structure**); `check-capability-deps.sh`, run by `just check`, for the third-party bans
 of CPE's roles and for no target being public (**static-analysis**); `cpe-server`'s tests for the facade (`no_pub_item_names_another_cpe_crate`), for
 the 503 and 404 behaviour (its `activation` module, over `FakeArchiveProjection`), for Incunabula's store text
 (length and SHA-256, below its header and whole, in its `activation` module), for the `SHORTCODE` rules (its
@@ -348,4 +345,5 @@ block. **Review** — the port speaking archive-shaped facts; a URL being built 
 how the overview looks and what the pages' scripts do in a browser, checked by hand on a preview; a change to
 how ARKs resolve or to what CPE emits as `cite-as`; a project moving in only from an empty diff against the
 incubator's copy; the incubator's regeneration of its `data.sql`; that a project's `assets/` are the one
-input consumed at activation; that `access-server`'s image carries no data subtree of `sync` or `media`.
+input consumed at activation; that `access-server`'s image sets neither `SYNC_DATA_DIR` nor `MEDIA_DATA_DIR`
+(no test reads its tars or `env`).

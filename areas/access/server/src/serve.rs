@@ -1567,9 +1567,7 @@ remodel {
         std::fs::symlink_metadata(path).is_ok_and(|metadata| metadata.is_file())
     }
 
-    /// Or a run from the checkout serves no project. `test_files` copies the `data` filegroup the
-    /// image's `image_data` layer copies too, so a token missing here is missing in the image, and
-    /// 0803 is unknown there.
+    /// Or a run from the checkout serves no project.
     #[test]
     fn the_default_sync_data_directory_is_the_committed_one_with_0803s_ready_token() {
         assert!(is_regular_file(
@@ -1577,8 +1575,7 @@ remodel {
         ));
     }
 
-    /// A run from the checkout finds the committed media data, or it serves no project; the image
-    /// carries the same copy.
+    /// A run from the checkout finds the committed media data, or it serves no project.
     #[test]
     fn the_default_media_data_directory_is_the_committed_one_with_0803s_ready_token() {
         assert!(is_regular_file(

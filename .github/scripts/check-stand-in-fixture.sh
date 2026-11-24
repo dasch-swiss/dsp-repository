@@ -2,7 +2,7 @@
 #
 # The VRE bridge's shipped inputs of project 0803 are the one authoritative
 # copy of the files `media` serves for it; the committed `media` fixture holds
-# the same files for the tests and for access-server's image. The generation
+# the same files for the tests. The generation
 # the fixture's Ready token names must hold exactly the files of
 # areas/deposit/vre-bridge/inputs/0803/, byte for byte, both ways. The
 # fixture's two Ready tokens, `media`'s and `sync`'s, must be the same bytes

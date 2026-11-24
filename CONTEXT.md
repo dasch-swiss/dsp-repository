@@ -93,7 +93,7 @@ _Avoid_: marker, pointer, done file.
 ## Relationships
 
 - The **Deposit Area** reads the **Access Area**'s published project files (the corpus under `areas/access/dpe/server/data/`, baked into the editor image as `EDITOR_DATA_DIR`) and is meant to return approved records as a pull request against this repository; git is the source of truth today, the archive is designed to replace it.
-- Until the archive exists, the **Deposit Area**'s VRE bridge writes the **Access Area**'s stand-ins, `sync`'s and `media`'s, into a directory both areas' servers share by mount; the bridge is its only writer (ADR-0002, `areas/deposit/ADR-0005`; no deployment configures the bridge, DEV-7514).
+- Until the archive exists, the **Deposit Area**'s VRE bridge writes the **Access Area**'s stand-ins, `sync`'s and `media`'s, into a directory both areas' servers share by mount; the bridge is its only writer (ADR-0002, `areas/deposit/ADR-0005`).
 - The **Archive Area** receives Submission Information Packages from the Deposit Area over the intent protocol and feeds every read-side service of the **Access Area** through NATS pointers plus immutable S3 payloads (target design; none of this exists here yet).
 - Each area is a separate deployable on its own origin; DPE and the editor share a process, an image or an origin with nothing.
 - One **Project** has exactly one **Shortcode**; a **Project** references zero or more **Persons** and **Organizations**; a **Project** has zero or more **Records**.

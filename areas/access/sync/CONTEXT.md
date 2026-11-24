@@ -56,8 +56,8 @@ _Avoid_: watcher, inotify, reload, refresh (the bridge's; the poll only announce
 
 **Committed fixture**:
 `data/`, project 0803 laid out as the VRE bridge writes it: its token and one generation, whose `snapshot.nq` is
-`dao-lift`'s output on a VRE dump, committed with its `PROVENANCE`. The tests read it, and
-`access-server`'s image carries it until the image stops carrying stand-in data.
+`dao-lift`'s output on a VRE dump, committed with its `PROVENANCE`. The tests and a run from the checkout read
+it; its filegroup is `testonly`, so `access-server`'s image cannot carry it.
 _Avoid_: Project snapshot (the port's DTO, what one call returns), committed snapshot (this directory's Committed fixture), data product
 (what the archive will deliver in its place), the projection (the target design, held in Chischtli).
 

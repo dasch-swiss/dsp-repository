@@ -127,12 +127,10 @@ DSP-API service identity's contract (DEV-7936) is provisional until dsp-api merg
 - A CPE project new to the Access Area still needs its project folder in `access-server`'s image (ADR-0007),
   until CPE discovers its projects through `media` (DEV-7948).
 
-Not yet in code: 0803's data is committed to this repository, not written by the bridge (P-DEV-301).
 Not yet in code: of the bridge's shared terms, the root `CONTEXT.md` has only Access rights, Data
 classification, Generation and Ready token (P-DEV-301).
 Not yet in code: DSP-API has no service identity, so no dump can be taken without a person's account
 (DEV-7936).
-Not yet in code: no location is shared by `deposit-server` and `access-server` (DEV-7514).
 Not yet in code: `media` announces no changed project (DEV-7938).
 
 Enforced by: Bazel `visibility` per ADR-0001 for the bridge's crate edges, `deposit-server` granted

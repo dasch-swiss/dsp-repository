@@ -1,8 +1,7 @@
 0803/: project 0803 (incunabula) in the stand-in layout the VRE bridge writes: the Ready token
 0803/.ready, and the generation it names, 0803/20261007T000000Z-00000000/, holding snapshot.nq, the
-interim-DAO snapshot sync-store serves. The fixture is a test input and, until access-server's image
-stops carrying it, the data the image serves; in a deployment with the VRE bridge, the bridge's output
-replaces it.
+interim-DAO snapshot sync-store serves. The fixture is a test input; the image does not carry it; a
+deployment's data is the bridge's output.
 
 The token is hand-written: generation 20261007T000000Z-00000000 and as_of 2026-10-07T00:00:00Z (the
 dump's bagging date below), server prod, interim format version 1, transformation version 1, no

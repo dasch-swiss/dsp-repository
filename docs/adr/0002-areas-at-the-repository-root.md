@@ -143,9 +143,6 @@ Not yet in code: the Archive Area has no crate, so the Deposit Area publishes th
 Not yet in code: DPE's terms are in `areas/access/CONTEXT.md`, not in `areas/access/dpe/CONTEXT.md` (not
 scheduled).
 Not yet in code: dsp-cli calls DSP-API only; no area modulith serves it (not scheduled).
-Not yet in code: no stand-in directory is shared by mount; `sync`'s and `media`'s data is carried in
-`access-server`'s image (DEV-7514).
-Not yet in code: no deployment configures the VRE bridge, so it writes no stand-in (DEV-7514).
 
 Enforced by: Bazel `visibility` under ADR-0001 for crate edges (structure): every first-party target lists its
 consumers, no grant crosses `areas/access` and `areas/deposit` except the published corpus

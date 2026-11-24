@@ -92,8 +92,6 @@ code:
   model behind its ports, single writer the capability, rebuilt from empty; or no store, reading live.
 
 Not yet in code: DPE reads its corpus from disk, not through a port against `sync` (not scheduled).
-Not yet in code: the tests build `LiveArchiveProjection` over the committed 0803 data that `access-server` also
-serves, not over a fixture of its own (P-DEV-301).
 Not yet in code: CPE re-activates every project on a change the port against `sync` announces, and rebuilds
 no single named project (DEV-7989).
 Not yet in code: the bytes port against `media` announces no change, and DaTEI, which has no code yet, rebuilds

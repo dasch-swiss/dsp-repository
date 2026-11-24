@@ -105,19 +105,18 @@ files_layer(
     target_compatible_with = MUSL,
 )
 
+# No data of `sync`'s or `media`'s: the deployment mounts the VRE bridge's locations and names them in
+# `SYNC_DATA_DIR` and `MEDIA_DATA_DIR`. Their committed fixtures are `testonly`, so this layer, which is
+# not, fails analysis if it lists one (no test reads the image's tars or `env`).
 files_layer(
     name = "image_data",
     srcs = [
         "//areas/access/cpe:projects",
         "//areas/access/dpe/server:corpus",
-        "//areas/access/media:data",
-        "//areas/access/sync:data",
     ],
     prefixes = {
         "areas/access/cpe/projects": "app/cpe/projects",
         "areas/access/dpe/server/data": "app/server/data",
-        "areas/access/media/data": "app/media/data",
-        "areas/access/sync/data": "app/sync/data",
     },
     target_compatible_with = MUSL,
 )
@@ -136,10 +135,9 @@ app_image(
         "DPE_ENV": "PROD",
         "DPE_PUBLIC_DIR": "/app/public",
         "DPE_DATA_DIR": "/app/server/data",
-        "SYNC_DATA_DIR": "/app/sync/data",
         "CPE_PROJECTS_DIR": "/app/cpe/projects",
-        "MEDIA_DATA_DIR": "/app/media/data",
-        # CPE is mounted only where a base is set. CPE_PUBLIC_ORIGIN is the deployment's to set.
+        # CPE is mounted only where a base is set. CPE_PUBLIC_ORIGIN, SYNC_DATA_DIR and
+        # MEDIA_DATA_DIR are the deployment's to set.
         "CPE_BASE": "/cpe",
     },
     exposed_ports = ["8080/tcp"],

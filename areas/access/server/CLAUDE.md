@@ -30,9 +30,9 @@ itself untraced. A test pins it — do not reorder without checking `serve.rs`'s
   CPE's overview of its projects; neither redirects to the other.
 - **No base, no mount.** With `CPE_BASE` unset or refused, `Cpe::base()` is empty: `nest` panics on an
   empty path and CPE at the root would answer DPE's paths, so the binary serves DPE alone and logs why.
-  `just run`, `just dev` and the Docker image set `CPE_BASE=/cpe`. The image also sets `SYNC_DATA_DIR`,
-  `MEDIA_DATA_DIR` and `CPE_PROJECTS_DIR` to the copies it carries; `CPE_PUBLIC_ORIGIN` is the deployment's to
-  set.
+  `just run`, `just dev` and the Docker image set `CPE_BASE=/cpe`. The image also sets `CPE_PROJECTS_DIR` to
+  the copy it carries; `CPE_PUBLIC_ORIGIN`, `SYNC_DATA_DIR` and `MEDIA_DATA_DIR` are the deployment's to set,
+  the last two to the locations the VRE bridge writes, mounted read-only.
 - **CPE never stops or delays DPE.** `CpeConfig::load` and `Cpe::new` cannot fail and read nothing.
   `activate_in_background` calls `Cpe::follow` in `spawn_blocking` after the listener is bound, over `sync-store`'s
   `LiveArchiveProjection` on `SYNC_DATA_DIR` (default `areas/access/sync/data`) and `media-store`'s
@@ -61,13 +61,18 @@ itself untraced. A test pins it — do not reorder without checking `serve.rs`'s
 ## The image: the places that have to agree
 
 The published image is `:image` in `BUILD.bazel`. `image_data` maps each data directory to its place in the
-image, and the `env` of `app_image` names where each copy is. Today that is `sync/data` (`SYNC_DATA_DIR`),
-`cpe/projects` (`CPE_PROJECTS_DIR`) and `media/data` (`MEDIA_DATA_DIR`), each under `/app/`. Data for a
-capability is added in both, as a filegroup the data's package grants to this one, and in the environment
-table of `docs/src/dpe/operations.md`. Nothing checks that they agree: a directory the layer places where no
-`env` points, or an `env` that names the wrong place, builds, and the container is healthy with CPE answering
-503, or an overview with no project and its not-found. `just image-smoke` starts the image and expects
-`/healthz` to answer, which a misplaced data directory still passes.
+image, and the `env` of `app_image` names where each copy is. Today that is `server/data` (`DPE_DATA_DIR`) and
+`cpe/projects` (`CPE_PROJECTS_DIR`), each under `/app/`. Data for a capability is added in both, as a
+filegroup the data's package grants to this one, and in the environment table of `docs/src/dpe/operations.md`.
+Nothing checks that they agree: a directory the layer places where no `env` points, or an `env` that names the
+wrong place, builds, and the container is healthy with CPE answering 503, or an overview with no project and
+its not-found. `just image-smoke` starts the image and expects `/healthz` to answer, which a misplaced data
+directory still passes.
+
+The image carries no data of `sync`'s or `media`'s, and sets neither `SYNC_DATA_DIR` nor `MEDIA_DATA_DIR`:
+a deployment mounts the VRE bridge's locations (`areas/deposit/ADR-0005`). Their committed `data` filegroups
+are `testonly`, so `image_data`, which is not, fails analysis if it lists one; keep them `testonly` and do
+not add a non-`testonly` copy. With neither variable set, the image serves DPE and no CPE project.
 
 A new capability's paths also go into each path filter that should see it (`a11y-dpe.yml`,
 `cloud-run-dpe-pull-request.yml`, `scout-dpe.yml`); `docs/src/deployment.md` says what each runs on. All three

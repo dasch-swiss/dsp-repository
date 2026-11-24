@@ -1,0 +1,480 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Operations - DSP-Repository Developer Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">DSP-Repository Developer Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
+<h1 id="vre-bridge-operations-guide"><a class="header" href="#vre-bridge-operations-guide">VRE Bridge Operations Guide</a></h1>
+<p>The VRE bridge runs inside <code>deposit-server</code> (<code>areas/deposit/ADR-0005</code>). For each project on its allowlist it takes
+the project's dump from its DSP server, turns it into an interim snapshot, and writes it, with the project's media
+files, into the <code>sync</code> and <code>media</code> locations that <code>access-server</code> reads. It has no routes. Its vocabulary is in
+<code>areas/deposit/vre-bridge/CONTEXT.md</code>; its design is in <code>areas/deposit/vre-bridge/CLAUDE.md</code>.</p>
+<h2 id="when-it-runs"><a class="header" href="#when-it-runs">When it runs</a></h2>
+<ul>
+<li><strong>Inactive</strong> with no output location set (<code>EDITOR_VRE_BRIDGE_SYNC_DIR</code> and <code>EDITOR_VRE_BRIDGE_MEDIA_DIR</code> both
+unset): it touches no file and makes no request. The image sets neither, so a Cloud Run preview, which runs the
+image publicly, stays inert. Only a deployment sets them.</li>
+<li><strong>Inactive</strong> with an invalid configuration: logged once at start at error level (<code>the VRE bridge is inactive: its configuration is invalid</code>), with a reason naming the variable and never a key. <code>deposit-server</code> starts and
+serves regardless.</li>
+<li><strong>Active</strong> otherwise: at start it takes the lock if no one holds it, deletes leftover dump directories in the
+work directory and recovers every allowlisted project (see <a href="#recovery">Recovery</a>), then schedules the nightly run.</li>
+</ul>
+<p>The <strong>nightly run</strong> starts at <code>EDITOR_VRE_BRIDGE_NIGHTLY_AT</code> in <code>EDITOR_VRE_BRIDGE_TIME_ZONE</code>. It waits for the
+lock, skips the night if it already ran (the date is recorded in <code>&lt;LOCK_FILE&gt;.nightly</code>, written first), deletes
+leftover dump directories, recovers, withdraws projects no longer on the allowlist, then refreshes each
+allowlisted project. A project whose server's dump slot is busy is retried <code>EDITOR_VRE_BRIDGE_DUMP_RETRIES</code> times,
+<code>EDITOR_VRE_BRIDGE_DUMP_RETRY_SECS</code> apart, then fails. A missed run is not caught up, and a run cut short by a
+restart is not resumed that night: the <a href="#the-operators-refresh">operator's refresh</a> is the lever.</p>
+<p>A withdrawal removes the project's Ready tokens in one run and its data in a later one. An empty allowlist
+withdraws nothing, so that a lost setting removes no project: to withdraw the last project, delete its
+<code>.ready</code> file in both locations by hand, <code>sync</code> first.</p>
+<h2 id="settings"><a class="header" href="#settings">Settings</a></h2>
+<p>Every setting is an environment variable of <code>deposit-server</code> (or a key of the optional <code>editor.toml</code>, in lower
+case without the <code>EDITOR_</code> prefix). Each is read as text and checked by the bridge: a value it refuses leaves the
+bridge inactive with the variable named, and never stops <code>deposit-server</code>. A blank value counts as unset. Lists are
+<code>key=value</code> entries separated by <code>,</code>; entries are trimmed, empty ones dropped, and each splits on its first <code>=</code>.</p>
+<div class="table-wrapper"><table><thead><tr><th>Variable</th><th>Default</th><th>Meaning</th></tr></thead><tbody>
+<tr><td><code>EDITOR_VRE_BRIDGE_SYNC_DIR</code></td><td>unset</td><td><code>sync</code> location. Unset together with <code>MEDIA_DIR</code>: the bridge is inactive. One without the other is an error.</td></tr>
+<tr><td><code>EDITOR_VRE_BRIDGE_MEDIA_DIR</code></td><td>unset</td><td><code>media</code> location.</td></tr>
+<tr><td><code>EDITOR_VRE_BRIDGE_LOCK_FILE</code></td><td>unset, required</td><td>Lock file on a local disk, never inside a location; the nightly-run record is <code>&lt;LOCK_FILE&gt;.nightly</code>.</td></tr>
+<tr><td><code>EDITOR_VRE_BRIDGE_ALLOWLIST</code></td><td>empty</td><td><code>SC=server,…</code>, e.g. <code>0803=prod</code>. Shortcodes are four upper-case hexadecimal digits.</td></tr>
+<tr><td><code>EDITOR_VRE_BRIDGE_SERVERS</code></td><td>empty</td><td><code>id=base URL,…</code>, e.g. <code>prod=https://api.dasch.swiss</code>; no trailing <code>/</code>. The URL, verbatim, is the token's <code>aud</code>. <code>https</code> only: <code>http</code> is accepted for a loopback host alone (a test server), since the service token would otherwise travel in cleartext.</td></tr>
+<tr><td><code>EDITOR_VRE_BRIDGE_IIIF_BASES</code></td><td>empty</td><td><code>id=IIIF base URL,…</code>, e.g. <code>prod=https://iiif.dasch.swiss</code>, for DaTEI projects' files; <code>https</code>, as for <code>SERVERS</code>. Required for a server from which an allowlisted project ships <code>file-mapping.json</code>; without it the bridge is inactive.</td></tr>
+<tr><td><code>EDITOR_VRE_BRIDGE_KEY_IDS</code></td><td>empty</td><td><code>id=kid,…</code>: the key id dsp-api knows the deployment's public key by.</td></tr>
+<tr><td><code>EDITOR_VRE_BRIDGE_SIGNING_KEY_FILES</code></td><td>empty</td><td><code>id=&lt;absolute path&gt;,…</code>: per server, a file holding one Ed25519 private key as PEM PKCS#8 (<a href="#keys">Keys</a>), read at start and never inside a location; a symlink is followed. The value is not logged: a malformed entry is named by its position, a file that cannot be used by its server and path, never by its content.</td></tr>
+<tr><td><code>EDITOR_VRE_BRIDGE_SERVICE_NAME</code></td><td><code>dsp-repository</code></td><td>The token's <code>iss</code> and <code>sub</code>, and the <code>name</code> of the key in dsp-api's trusted keys. One per deployment.</td></tr>
+<tr><td><code>EDITOR_VRE_BRIDGE_INPUTS_DIR</code></td><td><code>areas/deposit/vre-bridge/inputs</code> (image: <code>/app/vre-bridge/inputs</code>)</td><td>Shipped inputs, one directory per shortcode. An allowlisted project without its directory is refused (exit <code>2</code>, reason <code>inputs-missing</code>) before anything is asked of its server, and logs <code>the project has no shipped-inputs directory</code> with the <code>path</code>; an empty directory is accepted. Looked for on every refresh, so no restart is needed once a release ships it.</td></tr>
+<tr><td><code>EDITOR_VRE_BRIDGE_WORK_DIR</code></td><td>the OS temporary directory</td><td>Parent of the private dump directories (<code>vre-bridge-dump-*</code>, mode <code>0700</code>); never inside a location, never a symlink.</td></tr>
+<tr><td><code>EDITOR_VRE_BRIDGE_NIGHTLY_AT</code></td><td><code>02:00</code></td><td><code>HH:MM</code>, local time of the nightly run.</td></tr>
+<tr><td><code>EDITOR_VRE_BRIDGE_TIME_ZONE</code></td><td><code>Europe/Zurich</code></td><td>IANA time zone of <code>NIGHTLY_AT</code>.</td></tr>
+<tr><td><code>EDITOR_VRE_BRIDGE_DUMP_RETRIES</code></td><td><code>3</code></td><td>Retries of a busy dump slot within a nightly run.</td></tr>
+<tr><td><code>EDITOR_VRE_BRIDGE_DUMP_RETRY_SECS</code></td><td><code>1200</code></td><td>Wait before each retry.</td></tr>
+<tr><td><code>EDITOR_VRE_BRIDGE_REQUEST_TIMEOUT_SECS</code></td><td><code>120</code></td><td>The project lookup, the change check, the export's trigger, status and delete.</td></tr>
+<tr><td><code>EDITOR_VRE_BRIDGE_EXPORT_TIMEOUT_SECS</code></td><td><code>3600</code></td><td>From the export's trigger to its completion.</td></tr>
+<tr><td><code>EDITOR_VRE_BRIDGE_EXPORT_POLL_SECS</code></td><td><code>15</code></td><td>Interval of the export's status poll.</td></tr>
+<tr><td><code>EDITOR_VRE_BRIDGE_DOWNLOAD_TIMEOUT_SECS</code></td><td><code>3600</code></td><td>The dump's download.</td></tr>
+<tr><td><code>EDITOR_VRE_BRIDGE_FILE_TIMEOUT_SECS</code></td><td><code>300</code></td><td>One anonymous file download.</td></tr>
+<tr><td><code>EDITOR_VRE_BRIDGE_MAX_DUMP_BYTES</code></td><td><code>268435456</code> (256 MiB)</td><td>Largest dump zip downloaded.</td></tr>
+<tr><td><code>EDITOR_VRE_BRIDGE_MAX_UNPACKED_BYTES</code></td><td><code>536870912</code> (512 MiB)</td><td>Most the extracted entries of a dump may unpack to.</td></tr>
+<tr><td><code>EDITOR_VRE_BRIDGE_MAX_FILE_BYTES</code></td><td><code>536870912</code> (512 MiB)</td><td>Largest single file downloaded.</td></tr>
+</tbody></table>
+</div>
+<p>The time limits and the caps must be greater than 0.</p>
+<p><strong>The caps bound memory as well as disk.</strong> The lift reads a project's unpacked RDF into an in-memory store and
+holds about 5 to 6 times the unpacked size in memory at its peak, inside <code>deposit-server</code>'s process, or inside the
+operator's refresh, a second process in the same container whose memory adds to the server's. The defaults are
+provisional. To raise them, set <code>EDITOR_VRE_BRIDGE_MAX_UNPACKED_BYTES</code> (and <code>EDITOR_VRE_BRIDGE_MAX_DUMP_BYTES</code>
+with it) in the deployment's environment, and only together with the container's memory limit (6 times the
+unpacked cap, plus what the server needs) and with room in <code>WORK_DIR</code> for the zip and its extracted entries at
+once. A project over a cap fails with reason <code>dump</code>; <code>vre_bridge.refresh.size</code> with <code>kind=dump</code> shows how close
+each project is.</p>
+<h2 id="layout"><a class="header" href="#layout">Layout</a></h2>
+<p>Per location (<code>sync</code>, <code>media</code>) and project:</p>
+<pre><code>&lt;location&gt;/&lt;SHORTCODE&gt;/.ready                    the Ready token, replaced by one rename
+&lt;location&gt;/&lt;SHORTCODE&gt;/.ready.&lt;generation&gt;.tmp   a token being written; never read
+&lt;location&gt;/&lt;SHORTCODE&gt;/&lt;generation&gt;/             a generation, written whole before a token names it
+    sync:  snapshot.nq
+    media: access-rights.json, the shipped inputs, (DaTEI projects) the downloaded files and file-manifest.json
+</code></pre>
+<p><code>&lt;generation&gt;</code> is <code>YYYYMMDDTHHMMSSZ-xxxxxxxx</code>, the same in both locations. A refresh writes <code>media</code>'s generation,
+then <code>sync</code>'s, then replaces <code>media</code>'s token and then <code>sync</code>'s, and keeps the new generation and the previous one.
+Entries whose names are not shortcodes (<code>lost+found</code>, <code>PROVENANCE</code>) are never read or deleted. Directories are
+<code>0755</code> and files <code>0644</code>, so <code>access-server</code>'s user can read them.</p>
+<p><strong>DaTEI projects.</strong> A project whose shipped inputs hold <code>file-mapping.json</code> (<code>{"format":"file-mapping", "version":1,"files":[{"key":…,"iri":…}]}</code>, made with a DaTEI page) has its mapped files resolved after the lift:
+each IRI must be a resource the snapshot holds, with one current file value. A text file is downloaded without
+credentials from <code>&lt;IIIF base&gt;/&lt;SHORTCODE&gt;/&lt;internal name&gt;/file</code>, within <code>EDITOR_VRE_BRIDGE_MAX_FILE_BYTES</code> and
+<code>EDITOR_VRE_BRIDGE_FILE_TIMEOUT_SECS</code>, and stored under its internal name; a still image is recorded by its IIIF
+URL, <code>&lt;IIIF base&gt;/&lt;SHORTCODE&gt;/&lt;internal name&gt;</code>, and not downloaded. <code>file-manifest.json</code> lists each key with its
+IRI and its stored name or IIIF URL, in the mapping's order. The bridge fetches only below the server's configured
+base URL and IIIF base and follows no redirect. The project is refused (exit <code>2</code>, reason <code>file-mapping</code>) for a
+mapped IRI that is deleted, not public, without a file value or holding another kind of file, or whose internal
+name is not a file name or collides with a shipped input, <code>file-manifest.json</code>, <code>file-layout.xml</code> or
+<code>access-rights.json</code>; an anonymous <code>401</code> or <code>403</code> on a download refuses it with reason <code>unauthorized</code>. A
+mapping that does not parse fails it with reason <code>inputs</code>.</p>
+<p><strong>One writer per location.</strong> The lock is a local file lock and does not reach across hosts: two deployments, stage
+and prod, must never share a location, a lock file or a work directory.</p>
+<h2 id="the-operators-refresh"><a class="header" href="#the-operators-refresh">The operator's refresh</a></h2>
+<p>A forced refresh of one allowlisted project, in the running container, so it has the deployment's settings:</p>
+<pre><code class="language-sh">docker exec &lt;container&gt; /app/deposit-server vre-bridge-refresh 0803
+</code></pre>
+<p>It takes the lock without waiting, refreshes the project even if nothing changed, writes the outcome line to
+stdout as JSON, and exits with the outcome. Its log, the outcome line included, goes to the <code>docker exec</code> output
+only, not to the container's log and so not to the log pipeline: keep it if it is needed later. A refresh can
+take as long as the export and the download, up to an hour each by default: run it where a dropped session does
+not lose its output (<code>tmux</code>, or <code>docker exec … &gt; file</code>).</p>
+<div class="table-wrapper"><table><thead><tr><th>Exit status</th><th>Meaning</th></tr></thead><tbody>
+<tr><td><code>0</code></td><td>Refreshed, or unchanged.</td></tr>
+<tr><td><code>2</code></td><td>Refused: the project's data does not pass the public guard or the format's closed world, its file mapping does not resolve, or it has no shipped-inputs directory. Its tokens are unchanged.</td></tr>
+<tr><td><code>1</code></td><td>Failed, with the reason in the outcome line; a busy dump slot fails at once. Its tokens are unchanged.</td></tr>
+<tr><td><code>75</code></td><td>The lock is held by the nightly run or another refresh. Try again once it has ended.</td></tr>
+<tr><td><code>64</code></td><td>The bridge is inactive, the project is not on the allowlist, or the configuration does not load.</td></tr>
+</tbody></table>
+</div>
+<p>The nightly run holds the lock from its start to its end, through its retry waits, so <code>75</code> can last as long as
+the run: with the defaults, up to three waits of 20 minutes plus the refreshes themselves, so about an hour or
+more. The operator's refresh exports no metrics; its outcome line is its record.</p>
+<h2 id="recovery"><a class="header" href="#recovery">Recovery</a></h2>
+<p>At start and before each nightly run, under the lock, the bridge points a <code>media</code> token that disagrees with its
+<code>sync</code> token back to <code>sync</code>'s generation, deletes <code>.ready.*.tmp</code> files and the generations no token names, and
+deletes every <code>vre-bridge-dump-*</code> directory in the work directory, left there by a killed process. A project whose
+token it cannot read is left as it is.</p>
+<h2 id="logs"><a class="header" href="#logs">Logs</a></h2>
+<p>One line per ended refresh, <code>refresh ended</code>, with <code>project</code>, <code>server</code>, <code>outcome</code> (<code>unchanged</code>, <code>refreshed</code>,
+<code>refused</code>, <code>failed</code>), <code>reason</code> (for refused and failed), <code>duration_secs</code> and, when refreshed, <code>dump_bytes</code>,
+<code>snapshot_bytes</code> and <code>media_bytes</code>: at info level, warning for refused, error for failed. A withdrawn project logs
+<code>project withdrawn: it is no longer allowlisted</code> at warning level. A refusal by the public guard logs each
+violation (an IRI, a class, a reason; never a value), the first 50, then the total. A refusal by the format's
+closed world logs each rule with its count. <code>missing-text-xml</code> means formatted text values on the DSP server lack
+<code>knora-base:valueHasXml</code>: a DSP-API system administrator runs its backfill
+(<code>POST /admin/maintenance/backfill-value-has-xml</code>), and the project is then refreshed. <code>unknown-text-type</code> and
+<code>text-type-mismatch</code> mean a text value's <code>knora-base:hasTextValueType</code> is one the lift does not know or contradicts
+its markup (<code>lift/FORMAT.md</code> §4.1); no backfill fixes either, so a developer looks at the values. No line holds a value of the
+dump, a key or a token, and a panic in the bridge's work is logged without its message.</p>
+<h2 id="metrics"><a class="header" href="#metrics">Metrics</a></h2>
+<p>Exported with <code>deposit-server</code>'s other metrics over OTLP (<code>OTEL_EXPORTER_OTLP_ENDPOINT</code>), meter scope <code>vre_bridge</code>:</p>
+<div class="table-wrapper"><table><thead><tr><th>Instrument</th><th>Kind</th><th>Attributes</th><th>Meaning</th></tr></thead><tbody>
+<tr><td><code>vre_bridge.refresh.outcomes</code></td><td>counter</td><td><code>project</code>, <code>server</code>, <code>outcome</code></td><td>One per ended refresh, one per withdrawn project (<code>outcome=removed</code>, <code>server=(none)</code>), and one per failed removal (<code>outcome=failed</code>, <code>server=(none)</code>; <code>project=(none)</code> when the locations could not be listed).</td></tr>
+<tr><td><code>vre_bridge.refresh.duration</code></td><td>histogram, <code>s</code></td><td><code>project</code>, <code>server</code>, <code>outcome</code></td><td>How long a refresh took; a busy project's from its first try. Not recorded for a withdrawal; <code>0</code> for a failed removal.</td></tr>
+<tr><td><code>vre_bridge.refresh.size</code></td><td>histogram, <code>By</code></td><td><code>project</code>, <code>kind</code> (<code>dump</code>, <code>snapshot</code>, <code>media</code>)</td><td>What a refreshed project's refresh handled.</td></tr>
+<tr><td><code>vre_bridge.active</code></td><td>gauge</td><td>none</td><td><code>1</code> when the bridge is active, <code>0</code> when it is not configured or its configuration is invalid.</td></tr>
+</tbody></table>
+</div>
+<p>Attribute values come from the allowlist, the locations' shortcode directories and fixed sets, so the series stay
+few. Without <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> nothing is exported. The counter starts at each process start, and a
+series exists only from its first outcome, so an alert on its increase sees nothing before then: alert on the
+series' absence as well, and expect a project's first <code>removed</code> or <code>failed</code> to show as a new series rather than as
+an increase. The gauge stops being reported when the process stops. A failed refresh logs its detail, then
+<code>refresh ended</code> at the same level, so an alert on the level counts each failure more than once: alert on the
+counter, or on <code>message="refresh ended"</code>, not on the level. Suggested alerts:</p>
+<ul>
+<li>a project <code>refused</code> or <code>failed</code> two nights running;</li>
+<li>any <code>failed</code> outcome with <code>server=(none)</code>: a project no longer allowlisted could not be removed;</li>
+<li>any <code>removed</code> outcome: a project left the allowlist, perhaps by a typo;</li>
+<li><code>vre_bridge.active</code> at <code>0</code> in a deployment that configures the bridge;</li>
+<li>no outcome for 48 hours while <code>vre_bridge.active</code> is <code>1</code>.</li>
+</ul>
+<h2 id="keys"><a class="header" href="#keys">Keys</a></h2>
+<p>Each deployment has its own service name (<code>dsp-repository-stage</code>, <code>dsp-repository-prod</code>), key pair and key id,
+because dsp-api treats an export as the caller's own by the service name: two deployments sharing one would
+recover, and delete, each other's exports. A key id must be unique among the trusted keys of a DSP server, which
+refuses to start otherwise; a dated one such as <code>dsp-repository-prod-2026-11</code> avoids clashes.</p>
+<p>The private key is a file, mounted read-only into the container; <code>EDITOR_VRE_BRIDGE_SIGNING_KEY_FILES</code> names it
+per server, e.g. <code>prod=/run/secrets/vre_bridge_signing_key.pem</code>. The key never travels in an environment
+variable, so it does not appear in the container's configuration.</p>
+<pre><code class="language-sh"># the file to mount: PEM PKCS#8, as written
+openssl genpkey -algorithm ed25519 -out vre-bridge.pem
+# for dsp-api's trusted keys, with the key id and the service name
+openssl pkey -in vre-bridge.pem -pubout -outform DER | base64 | tr -d '\n'
+</code></pre>
+<p>The bridge reads each key file and signs a probe token with its key at start; a file that is missing, cannot be
+read or holds no key that signs leaves the bridge inactive.</p>
+<h2 id="what-to-know"><a class="header" href="#what-to-know">What to know</a></h2>
+<ul>
+<li><strong>The change check sees resources only.</strong> A project whose ontology or lists change with no resource change, or
+whose resources were erased, is not refreshed until a resource changes or a release bumps the format, the
+transformation or its shipped inputs; an operator's refresh closes the gap at once.</li>
+<li><strong>A busy dump slot</strong> usually means another caller's export on that server, often the other deployment's nightly
+run: stage and prod both dump from prod, so their <code>NIGHTLY_AT</code> differ. The retries cover an overlap; a project that
+fails with reason <code>busy</code> every night needs the two times further apart.</li>
+<li><strong>A format bump</strong> (a new interim format version) releases <code>access-server</code> first, reading the new version and the
+old, then <code>deposit-server</code>. The other way round, <code>sync</code> answers the project as unavailable until it is released.</li>
+<li><strong>CPE's held-back re-activation.</strong> When a refreshed project does not load in CPE, CPE keeps serving what it served,
+logs <code>CPE's re-activation is held back</code> and tries once more; beyond that, a restart of <code>access-server</code> is the lever
+(<a href="../cpe/operations.html">CPE operations</a>).</li>
+<li><strong>An accepted race.</strong> Two refreshes of one project within a reader's NFS attribute-cache interval can delete the
+generation a reader still reads through a stale token, since only the newest two are kept. Do not run the
+operator's refresh twice in a row for a project on an NFS location.</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../editor/operations.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../mosaic/component-api-conventions.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../editor/operations.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../mosaic/component-api-conventions.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
+
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../mermaid.min.js"></script>
+        <script src="../mermaid-init.js"></script>
+
+
+
+    </div>
+    </body>
+</html>

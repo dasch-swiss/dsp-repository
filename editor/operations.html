@@ -261,10 +261,17 @@ runs it on port 8080 with <code>EDITOR_ENV=DEV</code>.</p>
 <p>The published project/person/organization set is <strong>DPE's content</strong>, not the editor's. The image's data layer (<code>image_data</code> in <code>areas/deposit/server/BUILD.bazel</code>) places <code>areas/access/dpe/server/data</code> at <code>/app/server/data</code>, where <code>EDITOR_DATA_DIR</code> points; <code>just build-docker-editor</code> builds the same image locally. Git stays the source of truth and the editor reads an image-baked snapshot, so a data change reaches the editor by rebuilding the image, not at runtime.</p>
 <p>That copy is the seam, and it is explicit on both sides. <code>EditorConfig</code> carries <strong>no default</strong> for <code>data_dir</code>: the only plausible one is a relative path into DPE's tree, which would let a records reader resolve another module's directory instead of failing on an unconfigured seam. Every environment that reads records names the directory — the image through its <code>env</code> (<code>EDITOR_DATA_DIR</code>), local development via <code>just dev-editor</code>. Unset is a legitimate state while nothing reads records, and is reported as <code>&lt;unset&gt;</code> at startup rather than as an invented path.</p>
 <p>Moving the directory under <code>shared/</code> was considered and rejected: the shared-crate rule in <a href="../repo_structure.html#shared-crates">Repo Structure</a> is about crates, and this is DPE's owned content consumed through an existing explicit seam. Reopen it only if a third consumer appears.</p>
+<h3 id="the-vre-bridge-in-the-image"><a class="header" href="#the-vre-bridge-in-the-image">The VRE bridge in the image</a></h3>
+<p>The same image runs the VRE bridge (<a href="../vre-bridge/operations.html">VRE bridge operations</a>). Its layer
+<code>image_vre_bridge_inputs</code> places the bridge's shipped inputs at <code>/app/vre-bridge/inputs</code>, where the image's
+<code>EDITOR_VRE_BRIDGE_INPUTS_DIR</code> points. The image sets no output location (<code>EDITOR_VRE_BRIDGE_SYNC_DIR</code>,
+<code>EDITOR_VRE_BRIDGE_MEDIA_DIR</code>), so the bridge does nothing unless a deployment sets them: the Cloud Run previews
+run this image publicly, and must neither write nor dump from DSP.</p>
 <h2 id="cli-commands"><a class="header" href="#cli-commands">CLI Commands</a></h2>
 <div class="table-wrapper"><table><thead><tr><th>Command</th><th>Description</th></tr></thead><tbody>
 <tr><td><code>deposit-server serve</code></td><td>Start the web server</td></tr>
 <tr><td><code>deposit-server healthcheck [--url URL]</code></td><td>Check if the server is healthy (default: <code>http://localhost:8080/healthz</code>)</td></tr>
+<tr><td><code>deposit-server vre-bridge-refresh &lt;SHORTCODE&gt;</code></td><td>The VRE bridge's operator's refresh of one project; see <a href="../vre-bridge/operations.html#the-operators-refresh">VRE bridge operations</a></td></tr>
 </tbody></table>
 </div>
 <p><code>healthcheck</code> only accepts loopback URLs (<code>http://localhost</code>, <code>http://127.0.0.1</code>, <code>http://[::1]</code>). The URL arrives as a CLI flag from the Docker <code>HEALTHCHECK</code>, and restricting it stops a mistyped or tampered value turning the container into an SSRF probe.</p>
@@ -300,6 +307,7 @@ runs it on port 8080 with <code>EDITOR_ENV=DEV</code>.</p>
 <tr><td><code>EDITOR_MAIL_ACCOUNT_DAILY_CAP</code></td><td>No</td><td><code>20</code></td><td>Codes that may be sent to a <strong>single account</strong> in 24 hours. The global cap alone does not bound one address: at a 60-second cooldown one address fits 1,440 codes a day. Must not exceed <code>EDITOR_MAIL_DAILY_CAP</code>, which startup validates.</td></tr>
 <tr><td><code>EDITOR_SESSION_ABSOLUTE_SECS</code></td><td>No</td><td><code>43200</code> (12 h)</td><td>Absolute session lifetime, set at creation and never extended.</td></tr>
 <tr><td><code>EDITOR_SESSION_IDLE_SECS</code></td><td>No</td><td><code>7200</code> (2 h)</td><td>Idle session timeout. Must not exceed the absolute lifetime, which startup validates.</td></tr>
+<tr><td><code>EDITOR_VRE_BRIDGE_*</code></td><td>No</td><td><em>(none — the bridge does nothing)</em></td><td>The VRE bridge's settings, tabled in <a href="../vre-bridge/operations.html#settings">VRE bridge operations</a>. The image sets <code>EDITOR_VRE_BRIDGE_INPUTS_DIR</code> only. A value the bridge refuses leaves it inactive and never stops the editor.</td></tr>
 <tr><td><code>OTEL_EXPORTER_OTLP_ENDPOINT</code></td><td>No</td><td><em>(none)</em></td><td>OTLP gRPC endpoint (e.g. <code>http://alloy:4317</code>). When unset, OTel falls back to no-op export.</td></tr>
 <tr><td><code>OTEL_SERVICE_NAME</code></td><td>No</td><td><em>(none)</em></td><td>Service name for OTel resource attributes (e.g. <code>editor</code>)</td></tr>
 <tr><td><code>OTEL_RESOURCE_ATTRIBUTES</code></td><td>No</td><td><em>(none)</em></td><td>Comma-separated OTel resource attributes (e.g. <code>service.namespace=editor,service.version=0.8.2,deployment.environment=prod</code>)</td></tr>
@@ -444,7 +452,7 @@ grep -o 'is:\\n\\n *[0-9]\{6\}' editor.log | tail -1 | grep -o '[0-9]\{6\}'
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../mosaic/component-api-conventions.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../vre-bridge/operations.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -458,7 +466,7 @@ grep -o 'is:\\n\\n *[0-9]\{6\}' editor.log | tail -1 | grep -o '[0-9]\{6\}'
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../mosaic/component-api-conventions.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../vre-bridge/operations.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

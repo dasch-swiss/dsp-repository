@@ -43,7 +43,7 @@ pub fn projects_page(query: &ProjectQuery, ctx: &RenderContext) -> Markup {
 
     let search_bar_inner = html! {
         div class="flex gap-4" {
-            div class="flex-1" { (project_search_input()) }
+            div class="flex-1 min-w-0" { (project_search_input()) }
             div class="lg:hidden" {
                 ({
                     mobile_filters_button(
@@ -72,7 +72,7 @@ pub fn projects_page(query: &ProjectQuery, ctx: &RenderContext) -> Markup {
                     )
                 })
             }
-            div class="flex-1 flex flex-col gap-2" {
+            div class="flex-1 min-w-0 flex flex-col gap-2" {
                 ({
                     card(card_body(search_bar_inner))
                         .variant(CardVariant::Bordered)

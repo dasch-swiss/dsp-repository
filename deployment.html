@@ -304,7 +304,7 @@ failing test names and the dsp-api image digest — and files a Linear issue fro
 <tr><td><code>build-editor</code></td><td>Build the editor image with Bazel, stamped with the caller's <code>DEPOSIT_VERSION</code>, and load it into Docker as <code>local-scan/editor:latest</code></td></tr>
 <tr><td><code>docker-publish</code></td><td>Build an image with Bazel and push it with its <code>:image_push</code> target under the caller's tag, to Docker Hub or the repository the caller names; takes no result from the remote cache unless the caller is a pull request's own preview</td></tr>
 <tr><td><code>docker-scout</code></td><td>Run Docker Scout CVE scan and upload SARIF results</td></tr>
-<tr><td><code>commit-lint</code></td><td>Run the commit gate — commitlint-rs (type allowlist and mandatory scope) plus the one-commit-per-PR cap</td></tr>
+<tr><td><code>commit-lint</code></td><td>Run the commit gate — commitlint-rs (type allowlist and mandatory scope) plus the 100-commit limit and no merge commits</td></tr>
 <tr><td><code>dsp-cli-stack-test</code></td><td>Start the Fuseki/knora-api stack, load fixtures, mint tokens, and run dsp-cli's live tests against it</td></tr>
 </tbody></table>
 </div>

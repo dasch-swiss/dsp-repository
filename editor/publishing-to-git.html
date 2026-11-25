@@ -315,7 +315,7 @@
 <p>A change is Approved for depositors until step 3 completes. A merged pull request alone does not make it Online.</p>
 <h2 id="the-token-the-workflow-uses-against-github"><a class="header" href="#the-token-the-workflow-uses-against-github">The token the workflow uses against GitHub</a></h2>
 <p><code>secrets.GH_TOKEN</code>, not <code>github.token</code>. A pull request opened with <code>GITHUB_TOKEN</code> does not trigger workflows, so a pull request opened by the run would arrive with no <code>check</code>, no <code>test</code> and no <code>commit-hygiene</code> run — looking green because nothing ran. <code>secrets.GH_TOKEN</code> is already used by <code>release-please.yml</code>, which is also the in-repo precedent for querying open pull requests rather than trusting local state.</p>
-<p>A pull request opened by the run must satisfy <code>commit-hygiene.yml</code> like any other: <code>type(scope): subject</code>, one commit, and a scope from the vocabulary in <code>CONVENTIONS.md</code>. Project metadata files take <code>dpe-data</code>.</p>
+<p>A pull request opened by the run must satisfy <code>commit-hygiene.yml</code> like any other: <code>type(scope): subject</code>, no merge commits, and a scope from <code>docs/src/git-conventions.md</code> → <em>Scopes</em>. Project metadata files take <code>dpe-data</code>.</p>
 <h2 id="running-it"><a class="header" href="#running-it">Running it</a></h2>
 <p><code>workflow_dispatch</code> only. Dispatch it after approving: until a run force-pushes the newer record, an open pull request still carries the older one.</p>
 <div class="table-wrapper"><table><thead><tr><th>Name</th><th>Kind</th><th>Why</th></tr></thead><tbody>

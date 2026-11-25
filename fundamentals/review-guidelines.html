@@ -278,8 +278,9 @@
 <p><strong>Commits</strong></p>
 <ul>
 <li>Commits follow conventional commits — one of the eight types, and a mandatory scope — see <a href="../git-conventions.html">Git Conventions</a></li>
-<li>The PR is a single commit, or <code>allow-many-commits</code> is ticked with a reason</li>
-<li>One topic per commit — apply the "and" test</li>
+<li>One commit per scope per slice: no commit per fix or review round, no multi-part PR in one commit</li>
+<li>Each body carries the decisions, invariants and gotchas, and describes the end state, never the journey</li>
+<li>Comments the branch adds or touches cite only stable sources, never a plan or spec</li>
 <li>Each commit builds and passes tests</li>
 </ul>
 <p><strong>Security</strong></p>

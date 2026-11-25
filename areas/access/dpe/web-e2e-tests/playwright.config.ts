@@ -34,8 +34,20 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
+      grepInvert: /@no-js/,
       use: {
         ...devices["Desktop Chrome"],
+      },
+    },
+
+    /* The no-JavaScript path of the facet form; `just test-e2e-dpe` runs it. */
+    {
+      name: "chromium-no-js",
+      testMatch: /project-filters\.spec\.ts/,
+      grep: /@no-js/,
+      use: {
+        ...devices["Desktop Chrome"],
+        javaScriptEnabled: false,
       },
     },
 

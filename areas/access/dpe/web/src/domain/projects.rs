@@ -535,46 +535,6 @@ mod tests {
         assert_eq!(page.items.len(), 0);
     }
 
-    // --- ProjectQuery toggle methods ---
-
-    #[test]
-    fn with_type_of_data_toggled_adds_value() {
-        let q = empty_query().with_type_of_data_toggled("Text");
-        assert_eq!(q.type_of_data(), vec!["Text"]);
-    }
-
-    #[test]
-    fn with_type_of_data_toggled_removes_value() {
-        let q = ProjectQuery {
-            type_of_data: Some("Text,Image".to_string()),
-            ..Default::default()
-        };
-        let q2 = q.with_type_of_data_toggled("Text");
-        assert_eq!(q2.type_of_data(), vec!["Image"]);
-    }
-
-    #[test]
-    fn with_type_of_data_toggled_resets_page() {
-        let q = ProjectQuery { page: Some(3), ..Default::default() };
-        let q2 = q.with_type_of_data_toggled("Text");
-        assert_eq!(q2.page(), 1);
-    }
-
-    #[test]
-    fn with_status_toggled_flips_ongoing() {
-        let q = empty_query().with_status_toggled("ongoing");
-        assert!(q.ongoing());
-        let q2 = q.with_status_toggled("ongoing");
-        assert!(!q2.ongoing());
-    }
-
-    #[test]
-    fn with_status_toggled_resets_page() {
-        let q = ProjectQuery { page: Some(5), ..Default::default() };
-        let q2 = q.with_status_toggled("ongoing");
-        assert_eq!(q2.page(), 1);
-    }
-
     // --- to_query_string ---
 
     #[test]

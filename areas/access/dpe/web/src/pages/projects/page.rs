@@ -5,73 +5,26 @@ use super::components::mobile_filters_button::mobile_filters_button;
 use super::components::project_filters::project_filters;
 use super::components::project_list::project_list;
 use super::components::project_search_input::project_search_input;
-use crate::domain::{list_data_languages, list_type_of_data, ProjectQuery};
+use crate::domain::ProjectQuery;
 use crate::RenderContext;
 
 /// Projects index page.
 ///
 /// Resolved synchronously from the in-memory project cache. The `query` is
-/// parsed from the URL query string by the Axum route handler and carries the
-/// active search/filter/pagination state.
+/// parsed from the URL query string by the route handler and carries the
+/// active search/filter/pagination state. The facets are one GET form, rendered
+/// once: the sidebar at `lg`, the slide-in panel below it.
 pub fn projects_page(query: &ProjectQuery, ctx: &RenderContext) -> Markup {
-    let status_items = query.status_filter_items();
-    let access_rights_items = query.access_rights_filter_items();
-
-    let dialog_open = query.dialog.unwrap_or(false);
-    let open_dialog_href = format!("/dpe/projects{}", query.clone().with_dialog(true).to_query_string());
-    let close_dialog_href = format!("/dpe/projects{}", query.clone().with_dialog(false).to_query_string());
-
-    let type_of_data_selected = query.type_of_data();
-    let type_of_data_items: Vec<(String, bool, String)> = list_type_of_data(ctx.corpus)
-        .into_iter()
-        .map(|t| {
-            let checked = type_of_data_selected.contains(&t);
-            let href = format!("/dpe/projects{}", query.with_type_of_data_toggled(&t).to_query_string());
-            (t, checked, href)
-        })
-        .collect();
-
-    let data_language_selected = query.data_language();
-    let data_language_items: Vec<(String, bool, String)> = list_data_languages(ctx.corpus)
-        .into_iter()
-        .map(|(code, display)| {
-            let checked = data_language_selected.contains(&code);
-            let href = format!("/dpe/projects{}", query.with_data_language_toggled(&code).to_query_string());
-            (display, checked, href)
-        })
-        .collect();
-
     let search_bar_inner = html! {
         div class="flex gap-4" {
             div class="flex-1 min-w-0" { (project_search_input()) }
-            div class="lg:hidden" {
-                ({
-                    mobile_filters_button(
-                        &status_items,
-                        &type_of_data_items,
-                        &data_language_items,
-                        &access_rights_items,
-                        dialog_open,
-                        &open_dialog_href,
-                        &close_dialog_href,
-                    )
-                })
-            }
+            div class="lg:hidden" { (mobile_filters_button(query.dialog == Some(true))) }
         }
     };
 
     html! {
         div class="flex gap-4" {
-            div class="hidden lg:block lg:w-72 2xl:w-80 flex-shrink-0" {
-                ({
-                    project_filters(
-                        &status_items,
-                        &type_of_data_items,
-                        &data_language_items,
-                        &access_rights_items,
-                    )
-                })
-            }
+            (project_filters(query, ctx))
             div class="flex-1 min-w-0 flex flex-col gap-2" {
                 ({
                     card(card_body(search_bar_inner))
@@ -100,5 +53,48 @@ mod tests {
             "search form: {out}"
         );
         assert!(out.contains("Access Rights"), "{out}");
+    }
+
+    /// Every `href` on the page that carries a facet parameter or `dialog`.
+    fn filter_hrefs(out: &str) -> Vec<String> {
+        out.match_indices(r#"href=""#)
+            .map(|(i, _)| {
+                let rest = &out[i + 6..];
+                rest[..rest.find('"').unwrap()].to_string()
+            })
+            .filter(|href| {
+                ["ongoing=", "finished=", "type_of_data=", "data_language=", "access_rights=", "dialog="]
+                    .iter()
+                    .any(|p| href.contains(p))
+            })
+            .collect()
+    }
+
+    #[test]
+    fn unfiltered_page_has_no_link_carrying_a_facet_or_dialog() {
+        for raw in ["", "dialog=true", "page=2"] {
+            let out = projects_page(&ProjectQuery::from_query_str(raw), &test_render_context(false)).into_string();
+            assert_eq!(filter_hrefs(&out), Vec::<String>::new(), "{raw}");
+        }
+    }
+
+    #[test]
+    fn filtered_page_links_carry_facets_only_in_nofollow_pagination() {
+        let ctx = test_render_context(false);
+        let out = projects_page(&ProjectQuery::from_query_str("ongoing=true&dialog=true"), &ctx).into_string();
+        for (i, _) in out.match_indices(r#"href="/dpe/projects?"#) {
+            let tag_start = out[..i].rfind('<').unwrap();
+            let tag = &out[tag_start..i + out[i..].find('>').unwrap()];
+            assert!(tag.contains(r#"rel="nofollow""#), "{tag}");
+        }
+    }
+
+    #[test]
+    fn renders_the_facet_form_once_with_the_trigger_and_panel() {
+        let ctx = test_render_context(false);
+        let out = projects_page(&ProjectQuery::from_query_str("dialog=true"), &ctx).into_string();
+        assert_eq!(out.matches(r#"<form id="project-filters""#).count(), 1, "{out}");
+        assert!(out.contains(r#"aria-controls="project-filters-panel" aria-expanded="true""#), "{out}");
+        assert!(out.contains(r#"id="project-filters-panel""#), "{out}");
     }
 }

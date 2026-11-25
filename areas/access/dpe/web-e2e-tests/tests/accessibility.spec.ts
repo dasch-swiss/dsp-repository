@@ -8,6 +8,7 @@ const BASE_URL = "http://localhost:4000";
 const pages = [
   { name: "Home", path: "/dpe/" },
   { name: "Projects listing", path: "/dpe/projects" },
+  { name: "Projects listing, filtered", path: "/dpe/projects?ongoing=true" },
   { name: "Project detail", path: "/dpe/projects/0803" },
   // 0843 has no cover image, so its hero renders the placeholder branch. The
   // listing above already covers the placeholder *card*; without this entry the
@@ -33,4 +34,25 @@ test.describe("DPE accessibility — WCAG 2.1 Level AA", () => {
       ).toBe(0);
     });
   }
+});
+
+test.describe("DPE accessibility — mobile filter panel", () => {
+  test.use({ viewport: { width: 375, height: 812 } });
+
+  test("the open filter panel (/dpe/projects?dialog=true) has no violations", async ({
+    page,
+  }) => {
+    await page.goto(`${BASE_URL}/dpe/projects?dialog=true`);
+    await expect(page.locator("#project-filters-panel")).toBeVisible();
+
+    const results = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+      .analyze();
+
+    const count = results.violations.length;
+    expect(
+      count,
+      `${count} accessibility violation(s) found:\n\n${formatViolations(results.violations)}`,
+    ).toBe(0);
+  });
 });

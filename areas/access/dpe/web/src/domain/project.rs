@@ -2,8 +2,6 @@
 // string by `ProjectQuery::from_query_str`. The domain types live elsewhere —
 // `ProjectRaw` in shared-metadata, `Project` in dpe-core.
 
-use shared_metadata::ACCESS_RIGHTS_VALUES;
-
 #[derive(Clone, Debug, PartialEq, Default)]
 pub struct ProjectQuery {
     pub ongoing: Option<bool>,
@@ -100,126 +98,8 @@ impl ProjectQuery {
         Self { page: Some(page), ..self }
     }
 
-    /// Return a new `ProjectQuery` with the given status param toggled, page reset to 1.
-    pub fn with_status_toggled(&self, param: &str) -> Self {
-        let ongoing = self.ongoing();
-        let finished = self.finished();
-        Self {
-            ongoing: Some(if param == "ongoing" { !ongoing } else { ongoing }),
-            finished: Some(if param == "finished" { !finished } else { finished }),
-            search: self.search.clone(),
-            page: Some(1),
-            type_of_data: self.type_of_data.clone(),
-            data_language: self.data_language.clone(),
-            access_rights: self.access_rights.clone(),
-            dialog: self.dialog,
-        }
-    }
-
-    /// Build access rights filter items: `(label, checked, href)` for each access rights value.
-    pub fn access_rights_filter_items(&self) -> Vec<(String, bool, String)> {
-        ACCESS_RIGHTS_VALUES
-            .iter()
-            .map(|&v| {
-                let checked = self.access_rights().contains(&v.to_string());
-                let href = format!("/dpe/projects{}", self.with_access_rights_toggled(v).to_query_string());
-                (v.to_string(), checked, href)
-            })
-            .collect()
-    }
-
-    /// Build status filter items: `(label, checked, href)` for "Ongoing" and "Finished".
-    pub fn status_filter_items(&self) -> Vec<(String, bool, String)> {
-        [
-            ("ongoing", "Ongoing", self.ongoing()),
-            ("finished", "Finished", self.finished()),
-        ]
-        .iter()
-        .map(|(param, label, checked)| {
-            let href = format!("/dpe/projects{}", self.with_status_toggled(param).to_query_string());
-            (label.to_string(), *checked, href)
-        })
-        .collect()
-    }
-
-    /// Return a new `ProjectQuery` with `value` toggled in/out of `type_of_data`, page reset to 1.
-    pub fn with_type_of_data_toggled(&self, value: &str) -> Self {
-        let mut selected = self.type_of_data();
-        if selected.contains(&value.to_string()) {
-            selected.retain(|v| v != value);
-        } else {
-            selected.push(value.to_string());
-        }
-        Self {
-            ongoing: self.ongoing,
-            finished: self.finished,
-            search: self.search.clone(),
-            page: Some(1),
-            type_of_data: if selected.is_empty() {
-                None
-            } else {
-                Some(selected.join(","))
-            },
-            data_language: self.data_language.clone(),
-            access_rights: self.access_rights.clone(),
-            dialog: self.dialog,
-        }
-    }
-
-    /// Return a new `ProjectQuery` with `value` toggled in/out of `data_language`, page reset to 1.
-    pub fn with_data_language_toggled(&self, value: &str) -> Self {
-        let mut selected = self.data_language();
-        if selected.contains(&value.to_string()) {
-            selected.retain(|v| v != value);
-        } else {
-            selected.push(value.to_string());
-        }
-        Self {
-            ongoing: self.ongoing,
-            finished: self.finished,
-            search: self.search.clone(),
-            page: Some(1),
-            type_of_data: self.type_of_data.clone(),
-            data_language: if selected.is_empty() {
-                None
-            } else {
-                Some(selected.join(","))
-            },
-            access_rights: self.access_rights.clone(),
-            dialog: self.dialog,
-        }
-    }
-
-    /// Return a new `ProjectQuery` with `value` toggled in/out of `access_rights`, page reset to 1.
-    pub fn with_access_rights_toggled(&self, value: &str) -> Self {
-        let mut selected = self.access_rights();
-        if selected.contains(&value.to_string()) {
-            selected.retain(|v| v != value);
-        } else {
-            selected.push(value.to_string());
-        }
-        Self {
-            ongoing: self.ongoing,
-            finished: self.finished,
-            search: self.search.clone(),
-            page: Some(1),
-            type_of_data: self.type_of_data.clone(),
-            data_language: self.data_language.clone(),
-            access_rights: if selected.is_empty() {
-                None
-            } else {
-                Some(selected.join(","))
-            },
-            dialog: self.dialog,
-        }
-    }
-
-    /// Return a new `ProjectQuery` with `dialog` set to `open`, preserving all other fields.
-    pub fn with_dialog(self, open: bool) -> Self {
-        Self { dialog: if open { Some(true) } else { None }, ..self }
-    }
-
-    /// The canonical query string, `?` included, or empty. Every value is percent-encoded and
+    /// The canonical query string, `?` included, or empty. It never carries `dialog`: the
+    /// open mobile panel is not part of a filtered view. Every value is percent-encoded and
     /// multi-select values are joined with a literal `,`, so the output holds only
     /// `A-Z a-z 0-9 - _ . ~ % , & = ?` and is safe in an `href` and a single-quoted JS string.
     pub fn to_query_string(&self) -> String {
@@ -256,9 +136,6 @@ impl ProjectQuery {
                 parts.push(format!("access_rights={}", encode_values(access_rights)));
             }
         }
-        if let Some(true) = self.dialog {
-            parts.push("dialog=true".to_string());
-        }
 
         if parts.is_empty() {
             String::new()
@@ -283,7 +160,11 @@ fn join_values(values: Vec<String>) -> Option<String> {
 
 /// Percent-encodes each comma-joined value on its own, so the separator stays a literal `,`.
 fn encode_values(joined: &str) -> String {
-    joined.split(',').map(|v| urlencoding::encode(v).into_owned()).collect::<Vec<_>>().join(",")
+    joined
+        .split(',')
+        .map(|v| urlencoding::encode(v).into_owned())
+        .collect::<Vec<_>>()
+        .join(",")
 }
 
 #[cfg(test)]
@@ -377,6 +258,12 @@ mod tests {
     }
 
     #[test]
+    fn to_query_string_never_emits_dialog() {
+        assert_eq!(parse("dialog=true").to_query_string(), "");
+        assert_eq!(parse("dialog=true&ongoing=true").to_query_string(), "?ongoing=true");
+    }
+
+    #[test]
     fn to_query_string_keeps_the_parameter_order() {
         let q = parse("access_rights=A&data_language=en&type_of_data=T&page=2&search=s&finished=true&ongoing=true");
         assert_eq!(
@@ -397,10 +284,7 @@ mod tests {
             ..Default::default()
         };
         let qs = q.to_query_string();
-        assert!(
-            qs.chars().all(|c| c.is_ascii_alphanumeric() || "-_.~%,&=?".contains(c)),
-            "{qs}"
-        );
+        assert!(qs.chars().all(|c| c.is_ascii_alphanumeric() || "-_.~%,&=?".contains(c)), "{qs}");
     }
 
     #[test]

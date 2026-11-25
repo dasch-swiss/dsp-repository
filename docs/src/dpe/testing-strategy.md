@@ -38,8 +38,14 @@ The DPE follows a 4-layer testing pyramid, adapted from the [Sipi testing strate
 - **Location**: `areas/access/dpe/web-e2e-tests/`
 - **Server**: the suite starts `access-server` without `CPE_BASE`, so CPE is not mounted in it and only DPE's pages
   are tested; CPE's pages are covered by its crates' own tests.
-- **Runner**: `just test-a11y-dpe`, which builds the release server and stylesheet with Bazel and passes the binary's path in `ACCESS_SERVER_BIN`
-- **Scope**: Tab switching, search autocomplete, scroll preservation, accessibility (axe-core)
+- **Runner**: `just test-a11y-dpe` (the accessibility spec) and `just test-e2e-dpe` (the facet-form spec,
+  `project-filters.spec.ts`). Both build the release server and stylesheet with Bazel and pass the binary's
+  path in `ACCESS_SERVER_BIN`; CI runs both in `a11y / dpe`.
+- **JavaScript off**: the `chromium-no-js` Playwright project runs the tests tagged `@no-js` with JavaScript
+  disabled, so the no-JS fallback of a Datastar-enhanced control is tested in a real browser; the `chromium`
+  project skips those tests.
+- **Scope**: Tab switching, search autocomplete, scroll preservation, the facet form with JavaScript on and
+  off, accessibility (axe-core)
 - **Accessibility**: Full-page axe-core scans against WCAG 2.1 AA
 
 ## Layer 4: Fuzz Testing
@@ -64,6 +70,7 @@ test / ubuntu / stable (one job):
 
 a11y / dpe, a11y / editor (on path changes):
   release server and stylesheet built with Bazel, then Playwright with axe-core
+  (a11y / dpe also runs the facet-form spec, with JavaScript on and off)
 ```
 
 Bazel jobs share the remote cache and executor; see [Building with Bazel](../bazel.md#remote-cache-and-execution).

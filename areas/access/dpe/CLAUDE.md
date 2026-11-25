@@ -37,7 +37,7 @@ Fragment handlers live in `server/src/fragments.rs`. Each renders a Maud view to
 
 ## Running Tests
 
-Rust: `bazel test //areas/access/dpe/...`. Snapshot tests use **insta**: a changed snapshot fails its test; `just snap-accept <test target>` (for example `//areas/access/dpe/server:dpe_server_test`) rewrites it from the checkout, and `git diff` is the review. Playwright: `just test-a11y-dpe` builds the release server and stylesheet and runs the accessibility spec; the Playwright config reads the server's path from `ACCESS_SERVER_BIN`, which the recipe sets.
+Rust: `bazel test //areas/access/dpe/...`. Snapshot tests use **insta**: a changed snapshot fails its test; `just snap-accept <test target>` (for example `//areas/access/dpe/server:dpe_server_test`) rewrites it from the checkout, and `git diff` is the review. Playwright: `just test-a11y-dpe` builds the release server and stylesheet and runs the accessibility spec; `just test-e2e-dpe` does the same for the facet-form spec, under `chromium` and under `chromium-no-js` (JavaScript disabled, the tests tagged `@no-js`). The Playwright config reads the server's path from `ACCESS_SERVER_BIN`, which the recipes set.
 
 ## When Making Changes
 

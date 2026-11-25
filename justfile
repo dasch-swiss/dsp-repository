@@ -362,11 +362,11 @@ image-smoke *FLAGS:
 rust-project:
     bazel run @rules_rust//tools/rust_analyzer:gen_rust_project
 
-# Run the commit gate over `<base>..HEAD`: message rules, then the one-commit cap
+# Run the commit gate over `<base>..HEAD`: message rules, then the 100-commit cap and no merge commits
 commit-lint base="origin/main":
     #!/usr/bin/env bash
     # Enforces the type allowlist + mandatory scope from `.commitlintrc.yml`, then
-    # the one-commit-per-PR cap. Same checks the CI `gate` job runs. See
+    # the branch shape: at most 100 commits, no merge commits. Same checks the CI `gate` job runs. See
     # `docs/src/git-conventions.md`.
     #
     # We feed one message at a time on stdin instead of commitlint's `--from/--to`
@@ -378,10 +378,7 @@ commit-lint base="origin/main":
     # rules do not apply to merges, and `required_linear_history` in the ruleset
     # is what actually blocks a merge commit from landing on `main`.
     #
-    # Both checks always run, so a branch with two problems reports both. The
-    # count check reads PR_BODY from the environment for the `allow-many-commits`
-    # override — CI passes the PR description; locally it is empty, so the cap
-    # applies strictly.
+    # Both checks always run, so a branch with two problems reports both.
     set -uo pipefail
     merge_base="$(git merge-base "{{ base }}" HEAD)"
     fail=0

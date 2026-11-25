@@ -13,7 +13,12 @@ use std::fmt;
 
 /// Start a `@get(...)` action for `path`.
 pub fn get(path: impl Into<String>) -> Get {
-    Get { path: path.into(), tail_js: None, retry_never: false }
+    Get {
+        path: path.into(),
+        tail_js: None,
+        retry_never: false,
+        form: false,
+    }
 }
 
 /// Start a `@post(...)` action for `path`.
@@ -27,6 +32,7 @@ pub struct Get {
     path: String,
     tail_js: Option<&'static str>,
     retry_never: bool,
+    form: bool,
 }
 
 impl Get {
@@ -48,6 +54,13 @@ impl Get {
         self.retry_never = true;
         self
     }
+
+    /// Adds `contentType: 'form'`: Datastar sends the closest form's fields, which for a GET
+    /// go into the query string.
+    pub fn form(mut self) -> Self {
+        self.form = true;
+        self
+    }
 }
 
 impl fmt::Display for Get {
@@ -58,8 +71,15 @@ impl fmt::Display for Get {
         if let Some(tail) = &self.tail_js {
             write!(f, " + {tail}")?;
         }
+        let mut options = Vec::new();
+        if self.form {
+            options.push("contentType: 'form'");
+        }
         if self.retry_never {
-            f.write_str(", {retry: 'never', retryMaxCount: 0}")?;
+            options.push("retry: 'never', retryMaxCount: 0");
+        }
+        if !options.is_empty() {
+            write!(f, ", {{{}}}", options.join(", "))?;
         }
         f.write_str(")")
     }
@@ -144,6 +164,18 @@ mod tests {
             get("/x").plus_js("encodeURIComponent(evt.target.value)").to_string(),
             "@get('/x' + encodeURIComponent(evt.target.value))"
         );
+    }
+
+    #[test]
+    fn get_form() {
+        assert_eq!(get("/x").form().to_string(), "@get('/x', {contentType: 'form'})");
+    }
+
+    #[test]
+    fn get_form_and_retry_never_share_one_options_object_in_either_order() {
+        let expected = "@get('/dpe/projects/results', {contentType: 'form', retry: 'never', retryMaxCount: 0})";
+        assert_eq!(get("/dpe/projects/results").form().retry_never().to_string(), expected);
+        assert_eq!(get("/dpe/projects/results").retry_never().form().to_string(), expected);
     }
 
     #[test]

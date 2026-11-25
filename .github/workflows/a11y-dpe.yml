@@ -88,6 +88,10 @@ jobs:
         # Playwright starts the server from the path the recipe passes.
         run: just test-a11y-dpe ${{ steps.bazel.outputs.flags }}
 
+      - name: Run facet-form E2E tests
+        # The facet form with JavaScript on and off (`chromium-no-js`).
+        run: just test-e2e-dpe ${{ steps.bazel.outputs.flags }}
+
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4

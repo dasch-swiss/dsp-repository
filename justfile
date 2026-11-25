@@ -657,6 +657,16 @@ test-a11y-dpe *FLAGS: _check-node
     export ACCESS_SERVER_BIN
     cd areas/access/dpe/web-e2e-tests && npx playwright test tests/accessibility.spec.ts --project=chromium
 
+# Run the DPE facet-form E2E suite, with JavaScript on (`chromium`) and off (`chromium-no-js`, the `@no-js` tests), against the release server and stylesheet.
+[group('dpe')]
+test-e2e-dpe *FLAGS: _check-node
+    #!/usr/bin/env bash
+    set -euo pipefail
+    just css-release {{ FLAGS }}
+    ACCESS_SERVER_BIN="$(just -q _release-bin //areas/access/server:access_server {{ FLAGS }})"
+    export ACCESS_SERVER_BIN
+    cd areas/access/dpe/web-e2e-tests && npx playwright test tests/project-filters.spec.ts --project=chromium --project=chromium-no-js
+
 ###################
 # Editor targets
 ###################

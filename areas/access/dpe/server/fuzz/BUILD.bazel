@@ -21,10 +21,9 @@ _TARGETS = {
     ],
     "origin_validation": ["//shared/telemetry:shared_telemetry"],
     "query_params": [
+        "//areas/access/dpe/web:dpe_web",
         "//shared/metadata:shared_metadata",
-        "@crates//:serde",
         "@crates//:serde_json",
-        "@crates//:serde_urlencoded",
     ],
     "tab_validation": [
         "//areas/access/dpe/core:dpe_core",

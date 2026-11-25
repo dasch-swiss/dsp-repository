@@ -483,4 +483,12 @@ mod tests {
         let app = build_router(state, NO_PUBLIC_DIR.as_ref(), rate_limited_router(&config, oai_state));
         assert_ne!(status_of(app, "/dpe/oai").await, StatusCode::TOO_MANY_REQUESTS);
     }
+
+    #[tokio::test]
+    async fn projects_page_accepts_repeated_facet_keys() {
+        // A checkbox form submits one key per checked box; `Query<_>` answered that with 400.
+        let app = crate::router::build_router(test_state(), NO_PUBLIC_DIR.as_ref(), axum::Router::new());
+        let uri = "/dpe/projects?type_of_data=a&type_of_data=b&data_language=en&data_language=de";
+        assert_eq!(status_of(app, uri).await, StatusCode::OK);
+    }
 }

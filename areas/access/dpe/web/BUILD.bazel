@@ -6,15 +6,18 @@ rust_library(
     crate_name = "dpe_web",
     # The tests read the corpus through `CARGO_MANIFEST_DIR`.
     rustc_env = {"CARGO_MANIFEST_DIR": "areas/access/dpe/web"},
-    visibility = ["//areas/access/dpe/server:__pkg__"],
+    visibility = [
+        "//areas/access/dpe/server:__pkg__",
+        "//areas/access/dpe/server/fuzz:__pkg__",
+    ],
     deps = [
         "//areas/access/dpe/core:dpe_core",
         "//modules/mosaic/tiles:mosaic_tiles",
         "//shared/datastar:shared_datastar",
         "//shared/metadata:shared_metadata",
         "@crates//:maud",
-        "@crates//:serde",
         "@crates//:serde_json",
+        "@crates//:url",
         "@crates//:urlencoding",
     ],
 )

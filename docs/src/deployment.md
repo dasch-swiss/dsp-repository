@@ -125,13 +125,13 @@ Defined in `dpe-docker-publish.yml`.
 On every push to `main`:
 1. Builds the image with Bazel (`//areas/access/server:image_push`), taking no result from the remote cache
 2. Pushes it to Docker Hub (`daschswiss/dpe:{tag}`)
-3. Triggers a Jenkins webhook for DEV deployment
+3. Triggers Jenkins webhooks for the DEV and STAGE deployments
 
 #### Release Publishing
 
 Defined in `dpe-release-publish.yml`.
 
-When a GitHub Release is published (tag starting with `v`), builds and pushes a release-tagged Docker image and triggers the STAGE and PROD deployments.
+When a GitHub Release is published (tag starting with `v`), builds and pushes a release-tagged Docker image and triggers the PROD deployment.
 
 ### Editor
 
@@ -150,13 +150,13 @@ On every push to `main`:
 2. Pushes it to Docker Hub (`daschswiss/metadata-editor:{tag}`)
 3. Triggers a Jenkins webhook (`Service=deposit`) for STAGE deployment, `deposit.stage.dasch.swiss`
 
-The editor deploys as its own `deposit` stack in ops-deploy. That stack has no dev host, so its stage takes the role DEV plays for DPE: it follows `main`.
+The editor deploys as its own `deposit` stack in ops-deploy. That stack has no dev host; as with DPE, stage follows `main`.
 
 #### Release Publishing
 
 Defined in `editor-release-publish.yml`.
 
-When a GitHub Release is published (tag starting with `v`), builds and pushes a release-tagged Docker image and triggers the PROD deployment, `deposit.dasch.swiss`. Unlike DPE's release, it does not deploy to stage. The version is the repository-wide release-please version, so every `v*` release ships DPE and the editor to prod together.
+When a GitHub Release is published (tag starting with `v`), builds and pushes a release-tagged Docker image and triggers the PROD deployment, `deposit.dasch.swiss`. The version is the repository-wide release-please version, so every `v*` release ships DPE and the editor to prod together.
 
 ### Release Please
 

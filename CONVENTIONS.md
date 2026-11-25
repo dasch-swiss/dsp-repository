@@ -52,18 +52,11 @@ Agent reference card for the **work phase**. Pair with `REVIEW.md`, the review-p
 
 All git handling — the rebase-merge workflow, commit message schema, commit organization, and PR conventions — lives in one file: `docs/src/git-conventions.md`. These rules are shared with SIPI.
 
-The short version: `type(scope): subject`, **both mandatory**. Eight types — `feat`, `fix`, `perf`, `refactor`, `docs`, `test`, `build`, `chore` (`revert`, `style`, and `ci` are rejected; use `chore(ci): ...`). A PR lands as **one commit**; tick `allow-many-commits` in the PR body to opt out. Enforced by `just commit-lint` and the `gate` CI job.
+The short version: `type(scope): subject`, **both mandatory**. Eight types — `feat`, `fix`, `perf`, `refactor`, `docs`, `test`, `build`, `chore` (`revert`, `style`, and `ci` are rejected; use `chore(ci): ...`). One commit per scope per slice, with a body written for the agent that reads it later; at most 100 commits per PR, then a stack cut at phase boundaries. Curate the branch and clean its comments before the merge. Enforced by `just commit-lint` and the `gate` CI job (format, the 100-commit limit, no merge commits).
 
-### Scope vocabulary
+### Scopes
 
-Scopes are lowercase and name the concern a change serves, not the directory it sits in.
-
-| Kind | Scopes |
-|------|--------|
-| Crates | `access-server`, `dpe-core`, `dpe-server`, `dpe-web`, `dpe-api-oai`, `cpe-ports`, `cpe-core`, `cpe-components`, `cpe-image-viewer`, `cpe-store`, `cpe-store-build`, `cpe-web`, `cpe-server`, `datei-ports`, `datei-core`, `datei-store`, `datei-store-build`, `datei-web`, `datei-server`, `sync-store`, `media-store`, `shared-datastar`, `shared-fair`, `shared-metadata`, `shared-names`, `shared-rate-limit`, `shared-stand-in`, `shared-telemetry`, `editor-core`, `editor-ports`, `editor-store`, `editor-web`, `deposit-server`, `editor-pull-requests`, `deposit-shell`, `identity-core`, `identity-ports`, `identity-store`, `identity-web`, `vre-bridge-lift`, `vre-bridge-core`, `vre-bridge-store`, `vre-bridge-client`, `vre-bridge-server`, `mosaic-tiles`, `mosaic-playground`, `dsp-cli` |
-| Cross-cutting | `dpe-data` (project metadata files), `ci` (workflows, justfile), `deps` (dependency bumps), `docs` (repo-level docs) |
-
-Documentation *about* a crate takes that crate's scope; only repo-level docs take `docs`. There is no catch-all scope — ask before inventing one. The gate checks only that a scope is present, so this list is advisory; keep to it anyway.
+The scope is the component of `ARCH-MAP.md` the change serves, not the crate or the directory: `cpe-ports`, `cpe-core` and `cpe-web` all take `cpe`. Cross-cutting scopes: `dpe-data`, `ci`, `deps`, `docs`. The mapping from component to scope is in `docs/src/git-conventions.md` → *Scopes*. A new scope is a new component in `ARCH-MAP.md`.
 
 ## Reviewers & Git History
 

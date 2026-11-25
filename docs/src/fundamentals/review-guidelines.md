@@ -31,8 +31,9 @@ Review checklist for the DSP Repository. Organized by priority.
 
 **Commits**
 - Commits follow conventional commits — one of the eight types, and a mandatory scope — see [Git Conventions](../git-conventions.md)
-- The PR is a single commit, or `allow-many-commits` is ticked with a reason
-- One topic per commit — apply the "and" test
+- One commit per scope per slice: no commit per fix or review round, no multi-part PR in one commit
+- Each body carries the decisions, invariants and gotchas, and describes the end state, never the journey
+- Comments the branch adds or touches cite only stable sources, never a plan or spec
 - Each commit builds and passes tests
 
 **Security**

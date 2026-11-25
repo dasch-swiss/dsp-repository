@@ -27,7 +27,7 @@ Before considering a change done:
 
 - **Run the checks in `CONVENTIONS.md` → *Before Committing*.** `just check` covers formatting and linting, so there is no need to run them earlier.
 - **Check if documentation needs updating** — consider `docs/src/`, `CLAUDE.md`, `CONVENTIONS.md`, and `REVIEW.md`.
-- **Commits and PRs follow `docs/src/git-conventions.md`**, summarised in `CONVENTIONS.md` → *Git, Commits, and Pull Requests* (types, scopes; the PR template is `.github/PULL_REQUEST_TEMPLATE.md`). Two rules agents miss: CI caps a PR at one commit, because rebase-merge lands every branch commit on `main` (the same file says when to split, stack or tick `allow-many-commits`); and a bug introduced earlier in the same branch is amended into the commit that introduced it, never committed as a `fix:`. `just commit-lint` checks the format before pushing.
+- **Commits and PRs follow `docs/src/git-conventions.md`**, summarised in `CONVENTIONS.md` → *Git, Commits, and Pull Requests* (types, scopes; the PR template is `.github/PULL_REQUEST_TEMPLATE.md`). Two rules agents miss: rebase-merge lands every branch commit on `main`, so the branch is curated to one commit per scope per slice, each body written for the agent that reads it later, at most 100 commits per PR (the same file says when to split or stack); and a bug introduced earlier in the same branch is amended into the commit that introduced it, never committed as a `fix:`. `just commit-lint` checks the format before pushing.
 
 ## Testing Guidelines
 

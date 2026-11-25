@@ -50,10 +50,11 @@ While the version is below 1.0.0 the scheme shifts down one place — breaking
 changes bump the minor, everything else the patch — so the version still says
 whether a release broke anything.
 
-A PR lands as **one commit** by default. A CI gate (`commitlint-rs`) enforces the
-type, the mandatory scope, and the one-commit cap; run it yourself with
-`just commit-lint`. The full type list, the scope vocabulary, what `fix:` means,
-and how to opt out of the cap all live in one place —
+A PR holds one commit per scope per slice of work, at most 100. A CI gate
+(`commitlint-rs`) enforces the type, the mandatory scope, the 100-commit limit
+and a branch without merge commits; run it yourself with `just commit-lint`.
+The full type list, the scope vocabulary, what `fix:` means, and how to shape
+the commits all live in one place —
 [docs/src/git-conventions.md](docs/src/git-conventions.md).
 
 ## License

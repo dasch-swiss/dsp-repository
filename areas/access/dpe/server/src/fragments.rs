@@ -7,7 +7,7 @@
 
 use std::convert::Infallible;
 
-use axum::extract::{Path, State};
+use axum::extract::{Path, RawQuery, State};
 use axum::http::StatusCode;
 use axum::response::sse::{Event, Sse};
 use axum::response::IntoResponse;
@@ -15,8 +15,10 @@ use datastar::axum::ReadSignals;
 use datastar::prelude::{ExecuteScript, PatchElements};
 use dpe_core::project::VALID_TABS;
 use dpe_core::Page;
-use dpe_web::domain::{get_contributors, get_project, list_projects};
+use dpe_web::domain::{get_contributors, get_project, list_projects, ProjectQuery};
 use dpe_web::pages::project::components::project_details_tabs::{has_publications, project_tabs};
+use dpe_web::pages::projects::components::project_filters_content::filters_clear_slot;
+use dpe_web::pages::projects::components::project_results::{project_results, results_count_text};
 use futures::stream::{self, Stream};
 use maud::html;
 use mosaic_tiles::icon::{icon, IconSearch};
@@ -148,6 +150,49 @@ pub async fn search_fragment_handler(
 
     let stream = stream::iter(vec![Ok::<_, Infallible>(patch.into())]);
     Ok(Sse::new(stream))
+}
+
+/// SSE fragment handler for the facet form: `GET /dpe/projects/results`.
+///
+/// Datastar sends the form's fields in the query string. The handler parses it like the
+/// page does, drops `page` (any change starts at page 1) and sends:
+///
+/// 1. PatchElements — outer-morphs `#project-results` (list and pagination)
+/// 2. PatchElements — outer-morphs `#project-filters-clear` (the "Clear all" slot)
+/// 3. PatchElements — inner-patches `#project-results-count`, so the live region survives
+/// 4. ExecuteScript — `history.replaceState` to `/dpe/projects` plus the canonical query string.
+///    The server is the only writer of the URL. Every value in that string is percent-encoded, so
+///    nothing in it can end the single-quoted JS string.
+#[tracing::instrument(
+    skip_all,
+    fields(
+        otel.kind = "internal",
+        otel.name = "SSE results_fragment",
+    )
+)]
+pub async fn results_fragment_handler(
+    State(state): State<AppState>,
+    RawQuery(raw): RawQuery,
+) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
+    let query = ProjectQuery {
+        page: None,
+        ..ProjectQuery::from_query_str(raw.as_deref().unwrap_or_default())
+    };
+    let ctx = state.render_context();
+
+    let results = PatchElements::new(project_results(&query, &ctx).into_string()).selector("#project-results");
+    let clear = PatchElements::new(filters_clear_slot(&query).into_string()).selector("#project-filters-clear");
+    let count = PatchElements::new(results_count_text(&query, &ctx))
+        .selector("#project-results-count")
+        .mode(datastar::prelude::ElementPatchMode::Inner);
+    let url = ExecuteScript::new(format!(
+        "history.replaceState(null, '', '/dpe/projects{}')",
+        query.to_query_string()
+    ));
+
+    let events: Vec<Result<Event, Infallible>> =
+        vec![Ok(results.into()), Ok(clear.into()), Ok(count.into()), Ok(url.into())];
+    Sse::new(stream::iter(events))
 }
 
 /// Render the search-results dropdown content. The query echo is a plain,
@@ -603,5 +648,78 @@ mod tests {
         };
         let html = render_project_sidebar(&project);
         insta::assert_snapshot!("project_sidebar_with_entity_ids", html);
+    }
+
+    // --- results_fragment_handler via the real router ---
+
+    async fn results_body(uri: &str) -> (AxumStatusCode, Option<String>, String) {
+        let app = crate::router::build_router(
+            crate::test_support::test_state(),
+            crate::test_support::NO_PUBLIC_DIR.as_ref(),
+            Router::new(),
+        );
+        let response = app
+            .oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        let status = response.status();
+        let content_type = response
+            .headers()
+            .get(axum::http::header::CONTENT_TYPE)
+            .map(|v| v.to_str().unwrap().to_string());
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        (status, content_type, String::from_utf8_lossy(&body).into_owned())
+    }
+
+    #[tokio::test]
+    async fn results_fragment_streams_the_three_patches_and_the_url() {
+        let (status, content_type, body) = results_body("/dpe/projects/results?ongoing=true").await;
+        assert_eq!(status, AxumStatusCode::OK);
+        assert_eq!(content_type.as_deref(), Some("text/event-stream"));
+        assert!(body.contains("selector #project-results\n"), "{body}");
+        assert!(body.contains(r#"elements <div id="project-results""#), "{body}");
+        assert!(body.contains("selector #project-filters-clear\n"), "{body}");
+        assert!(body.contains("Clear all"), "{body}");
+        assert!(body.contains("selector #project-results-count\ndata: mode inner"), "{body}");
+        assert!(body.contains(" projects\n"), "{body}");
+        assert!(
+            body.contains("history.replaceState(null, '', '/dpe/projects?ongoing=true')"),
+            "{body}"
+        );
+        assert!(
+            !body.contains("Page not found"),
+            "/dpe/projects/{{id}} must not capture results: {body}"
+        );
+    }
+
+    #[tokio::test]
+    async fn results_fragment_empties_the_clear_slot_without_a_facet() {
+        let (_, _, body) = results_body("/dpe/projects/results").await;
+        assert!(body.contains(r#"elements <span id="project-filters-clear"></span>"#), "{body}");
+        assert!(body.contains("history.replaceState(null, '', '/dpe/projects')"), "{body}");
+    }
+
+    #[tokio::test]
+    async fn results_fragment_url_is_the_canonical_query_without_page() {
+        let (_, _, body) =
+            results_body("/dpe/projects/results?type_of_data=b&type_of_data=a&page=3&datastar=%7B%7D").await;
+        assert!(
+            body.contains("history.replaceState(null, '', '/dpe/projects?type_of_data=b,a')"),
+            "{body}"
+        );
+    }
+
+    #[tokio::test]
+    async fn results_fragment_url_carries_a_hostile_value_only_percent_encoded() {
+        let (_, _, body) = results_body("/dpe/projects/results?search=%27%3C%2Fscript%3E").await;
+        let line = body
+            .lines()
+            .find(|l| l.contains("history.replaceState"))
+            .expect("the URL script");
+        let call = &line[line.find("history.replaceState").unwrap()..line.rfind("</script>").unwrap()];
+        assert_eq!(
+            call,
+            "history.replaceState(null, '', '/dpe/projects?search=%27%3C%2Fscript%3E')"
+        );
     }
 }

@@ -33,7 +33,7 @@ The `<head>` and outer HTML document are hand-written in `server/src/view.rs` (`
 
 ### Fragments (Datastar SSE)
 
-Fragment handlers live in `server/src/fragments.rs`. Each renders a Maud view to a string and returns a `Sse` stream of Datastar `PatchElements` (and optionally `ExecuteScript`) events. The `#project-tabs` morph root is rendered by the single `project_tabs` function in `dpe-web`, used by **both** the full page and the `/tab/{tab}` SSE route, so the two can never drift (a test pins this contract).
+Fragment handlers live in `server/src/fragments.rs`. Each renders a Maud view to a string and returns a `Sse` stream of Datastar `PatchElements` (and optionally `ExecuteScript`) events. The `#project-tabs` morph root is rendered by the single `project_tabs` function in `dpe-web`, used by **both** the full page and the `/tab/{tab}` SSE route, so the two can never drift (a test pins this contract). The fragments are `/dpe/projects/{id}/tab/{tab}` (tab switch), `/dpe/projects/search` (search autocomplete) and `/dpe/projects/results` (the facet form: results region, "Clear all" slot, count text and the `replaceState` URL, rendered by the same `project_results`, `filters_clear_slot` and `results_count_text` the page uses).
 
 ## Running Tests
 

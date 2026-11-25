@@ -334,7 +334,7 @@ failing test names and the dsp-api image digest — and files a Linear issue fro
 <ol>
 <li>Builds the image with Bazel (<code>//areas/access/server:image_push</code>), taking no result from the remote cache</li>
 <li>Pushes it to Docker Hub (<code>daschswiss/dpe:{tag}</code>)</li>
-<li>Triggers Jenkins webhooks for the DEV and STAGE deployments</li>
+<li>Triggers a Jenkins webhook for STAGE deployment</li>
 </ol>
 <h4 id="release-publishing"><a class="header" href="#release-publishing">Release Publishing</a></h4>
 <p>Defined in <code>dpe-release-publish.yml</code>.</p>

@@ -1344,7 +1344,7 @@ failing test names and the dsp-api image digest — and files a Linear issue fro
 <ol>
 <li>Builds the image with Bazel (<code>//areas/access/server:image_push</code>), taking no result from the remote cache</li>
 <li>Pushes it to Docker Hub (<code>daschswiss/dpe:{tag}</code>)</li>
-<li>Triggers Jenkins webhooks for the DEV and STAGE deployments</li>
+<li>Triggers a Jenkins webhook for STAGE deployment</li>
 </ol>
 <h4 id="release-publishing"><a class="header" href="#release-publishing">Release Publishing</a></h4>
 <p>Defined in <code>dpe-release-publish.yml</code>.</p>
@@ -3078,8 +3078,8 @@ access-server healthcheck --url http://localhost:9090/healthz # custom URL
 <tr><td><code>RUST_LOG</code></td><td>No</td><td><code>info</code></td><td>Log level filter (e.g., <code>access_server=info,dpe_server=info,tower_http=debug</code>)</td></tr>
 <tr><td><code>DPE_DATA_DIR</code></td><td>No</td><td><code>areas/access/dpe/server/data</code></td><td>Path to project/record JSON data files. Legacy alias: <code>DATA_DIR</code> (checked if <code>DPE_DATA_DIR</code> is unset)</td></tr>
 <tr><td><code>DPE_FATHOM_SITE_ID</code></td><td>No</td><td><em>(none)</em></td><td>Fathom Analytics site ID (not a secret). <strong>Production only</strong> — leave unset or empty everywhere else; empty is normalised to unset.</td></tr>
-<tr><td><code>DPE_SHOW_PLACEHOLDER_VALUES</code></td><td>No</td><td><code>false</code></td><td>Show placeholder values (MISSING, CALCULATED) in the UI, styled in red. Enable on DEV/STAGE for QA visibility.</td></tr>
-<tr><td><code>DPE_OAI_BASE_URL</code></td><td>No</td><td><code>https://repository.dasch.swiss/dpe/oai</code></td><td>Public base URL emitted as the OAI-PMH <code>baseURL</code> and echoed in <code>&lt;request&gt;</code> elements. Set per environment to match the public endpoint (e.g. <code>https://api.dev.dasch.swiss/dpe/oai</code> on DEV, <code>http://localhost:4000/dpe/oai</code> locally). See <a href="dpe/./oai-pmh.html">OAI-PMH</a>.</td></tr>
+<tr><td><code>DPE_SHOW_PLACEHOLDER_VALUES</code></td><td>No</td><td><code>false</code></td><td>Show placeholder values (MISSING, CALCULATED) in the UI, styled in red. Enable on STAGE for QA visibility.</td></tr>
+<tr><td><code>DPE_OAI_BASE_URL</code></td><td>No</td><td><code>https://repository.dasch.swiss/dpe/oai</code></td><td>Public base URL emitted as the OAI-PMH <code>baseURL</code> and echoed in <code>&lt;request&gt;</code> elements. Set per environment to match the public endpoint (e.g. <code>http://localhost:4000/dpe/oai</code> locally). See <a href="dpe/./oai-pmh.html">OAI-PMH</a>.</td></tr>
 <tr><td><code>DPE_PUBLIC_BASE_URL</code></td><td>No</td><td><code>https://repository.dasch.swiss</code></td><td>Public origin of the site itself, used to build the landing-page and machine-readable-representation URLs carried by the embedded metadata and the <code>Link</code> header. Origin only: scheme <code>http</code> or <code>https</code>, no path, query or trailing slash. A bad value fails startup. Independent of <code>DPE_OAI_BASE_URL</code> (see the note below).</td></tr>
 <tr><td><code>DPE_ARK_RESOLVER_BASE_URL</code></td><td>No</td><td><em>(none)</em></td><td>Origin every emitted ARK is rewritten to carry, and the origin the deployment's own <code>/ark:/{naan}/{shoulder}/{shortcode}</code> resolver answers on. <strong>Leave unset everywhere but a PR preview.</strong> Unset, the ARKs are the ones the corpus records, resolving through <code>ark.dasch.swiss</code>, and no resolver route is mounted. Origin only, validated exactly as <code>DPE_PUBLIC_BASE_URL</code> is. See the note below.</td></tr>
 <tr><td><code>DPE_OAI_RATE_LIMIT_PER_SECOND</code></td><td>No</td><td><code>1</code></td><td>Per-IP rate limit, seconds per request once the burst is spent. <code>1</code> ≈ 60 requests/minute sustained. Governs <code>/dpe/oai</code> and both machine-readable representation routes, which share one bucket. See <a href="dpe/./oai-pmh.html">OAI-PMH</a> and <a href="dpe/./machine-readable-metadata.html">Machine-Readable Metadata</a>.</td></tr>
@@ -3102,7 +3102,7 @@ access-server healthcheck --url http://localhost:9090/healthz # custom URL
 </tbody></table>
 </div>
 <blockquote>
-<p><strong>Two base URLs, on purpose.</strong> <code>DPE_PUBLIC_BASE_URL</code> and <code>DPE_OAI_BASE_URL</code> are set independently and neither is derived from the other. The OAI endpoint advertises its own <code>baseURL</code> in every response, and on DEV that endpoint lives on a different host (<code>https://api.dev.dasch.swiss/dpe/oai</code>) from the site (<code>https://repository.dev.dasch.swiss</code>). Set both per environment.</p>
+<p><strong>Two base URLs, on purpose.</strong> <code>DPE_PUBLIC_BASE_URL</code> and <code>DPE_OAI_BASE_URL</code> are set independently and neither is derived from the other. The OAI endpoint advertises its own <code>baseURL</code> in every response, and that endpoint may answer on a different host from the site. Set both per environment.</p>
 <p><strong>Assessing a local run from a container.</strong> A FAIR assessor running in Docker resolves the URLs the page emits, so <code>DPE_PUBLIC_BASE_URL</code> must name a host the container can reach — <code>http://host.docker.internal:4000</code>, not <code>http://localhost:4000</code>, which inside the container is the container itself.</p>
 <p><strong>PR previews set all three themselves.</strong> <code>cloud-run-dpe-pull-request.yml</code> runs <code>gcloud run services update</code> right after the deploy, setting <code>DPE_PUBLIC_BASE_URL</code>, <code>DPE_OAI_BASE_URL</code> and <code>DPE_ARK_RESOLVER_BASE_URL</code> to the preview's own Cloud Run URL. It is a second step because Cloud Run assigns that URL only once the service exists. Each one left unset makes the preview advertise production: the typed links and the <code>303</code> target, the OAI <code>baseURL</code>, and every emitted ARK respectively.</p>
 <p><strong>PR previews set no <code>CPE_*</code> variable, no <code>SYNC_DATA_DIR</code> and no <code>MEDIA_DATA_DIR</code>.</strong> They run with the image's own, so CPE is served under <code>/cpe</code> there from the data the image carries, and its share links carry the preview's host, taken from each request.</p>
@@ -3110,7 +3110,7 @@ access-server healthcheck --url http://localhost:9090/healthz # custom URL
 <p><strong>Applied once, as corpus data enters.</strong> <code>dpe-core</code>'s caches normalise the ARK host on load, so everything downstream — the embedded JSON-LD, the Dublin Core tags, the <code>Link</code> header, the OAI payloads, the sidebar permalink a person clicks and copies, and the <code>pid</code> in <code>/dpe/api/v2/projects</code> — is correct without any of them knowing a resolver exists. Conceptually this is the <code>sync</code> capability's work and moves there when <code>sync</code> lands; <code>dpe_core::ark</code> records that.</p>
 <p>Only the host is rewritten. The ARK path — <code>ark:/72163/1/{shortcode}</code> — is the identifier and passes through untouched, and <strong>recorded text is quoted rather than asserted</strong>: a <code>howToCite</code> citation whose author wrote the ARK into the sentence, and a project's recorded website (083D records its own ARK there), are served as written.</p>
 <p>The resolver answers project ARKs only, with a <code>302</code> to the landing page, mirroring <code>ark.dasch.swiss</code>. A record ARK gets a <code>404</code>: DPE serves no record landing page, and <code>ark.dasch.swiss</code> resolves a record ARK to the VRE rather than to DPE.</p>
-<p><strong>Do not set it on DEV, STAGE or PROD.</strong> Those deployments <em>are</em> what the recorded ARK resolves to, or are meant to become it. Setting it there would make them publish identifiers that only they answer, and mount a second ARK authority beside <code>ark.dasch.swiss</code>.</p>
+<p><strong>Do not set it on STAGE or PROD.</strong> Those deployments <em>are</em> what the recorded ARK resolves to, or are meant to become it. Setting it there would make them publish identifiers that only they answer, and mount a second ARK authority beside <code>ark.dasch.swiss</code>.</p>
 </blockquote>
 <blockquote>
 <p><strong>What the rate limit does not bound.</strong> It bounds the request <em>rate</em>, not the
@@ -3205,7 +3205,7 @@ RUST_LOG=debug
 <h2 id="observability"><a class="header" href="#observability">Observability</a></h2>
 <h3 id="fathom-analytics"><a class="header" href="#fathom-analytics">Fathom Analytics</a></h3>
 <p>Privacy-friendly, GDPR-compliant analytics. No cookies, no personal data collected.</p>
-<p><strong>Configuration:</strong> Set the <code>DPE_FATHOM_SITE_ID</code> environment variable to your Fathom site ID (not a secret). The tracking script is automatically injected into the HTML shell. It is set in <code>ops-deploy/group_vars/prod.yml</code> and nowhere else, so DEV and STAGE render no script at all.</p>
+<p><strong>Configuration:</strong> Set the <code>DPE_FATHOM_SITE_ID</code> environment variable to your Fathom site ID (not a secret). The tracking script is automatically injected into the HTML shell. It is set in <code>ops-deploy/group_vars/prod.yml</code> and nowhere else, so STAGE renders no script at all.</p>
 <p><strong>What gets tracked:</strong></p>
 <ul>
 <li>Page views</li>
@@ -3319,17 +3319,17 @@ RUST_LOG=debug
 <p>These are <strong>standards-shaped</strong>: their field names and structure are schema.org's and DataCite's, so a FAIR assessor or a harvester can read them without knowing anything about DPE. <code>/dpe/api/v2</code> is not — it serves the internal project shape, which is DaSCH's own and changes with the corpus. A consumer that wants interoperable metadata wants those two; a consumer that wants what DPE itself holds wants <code>/dpe/api/v2</code>.</p>
 <div class="table-wrapper"><table><thead><tr><th>Environment</th><th>Base URL</th></tr></thead><tbody>
 <tr><td>Local development (<code>just dev</code>)</td><td><code>http://localhost:4000</code></td></tr>
-<tr><td>DEV</td><td><code>https://repository.dev.dasch.swiss</code></td></tr>
+<tr><td>STAGE</td><td><code>https://repository.stage.dasch.swiss</code></td></tr>
 <tr><td>Production</td><td><code>https://repository.dasch.swiss</code></td></tr>
 </tbody></table>
 </div>
 <h2 id="list-all-projects"><a class="header" href="#list-all-projects">List all projects</a></h2>
-<pre><code class="language-bash">curl "https://repository.dev.dasch.swiss/dpe/api/v2/projects"
+<pre><code class="language-bash">curl "https://repository.stage.dasch.swiss/dpe/api/v2/projects"
 </code></pre>
 <p>Returns a JSON array containing every project. The list is <strong>not paginated and not filtered</strong> — the entire collection is returned in one response. (The HTML listing at <code>/dpe/projects</code> supports search and faceting; this JSON endpoint does not.)</p>
 <h2 id="fetch-a-single-project"><a class="header" href="#fetch-a-single-project">Fetch a single project</a></h2>
 <p>The path segment is the project <strong>shortcode</strong>, not the <code>id</code> field. Matching is case-insensitive, so <code>0803</code> and any case variant of an alphanumeric shortcode (e.g. <code>080c</code> for <code>080C</code>) resolve to the same project.</p>
-<pre><code class="language-bash">curl "https://repository.dev.dasch.swiss/dpe/api/v2/projects/0803"
+<pre><code class="language-bash">curl "https://repository.stage.dasch.swiss/dpe/api/v2/projects/0803"
 </code></pre>
 <div class="table-wrapper"><table><thead><tr><th>Status</th><th>Returned when</th></tr></thead><tbody>
 <tr><td><code>200 OK</code></td><td>The shortcode resolves to a project.</td></tr>
@@ -3464,7 +3464,7 @@ just RECORD_SHORTCODES="081C 0868 0803" fetch-records
 </ul>
 <div class="table-wrapper"><table><thead><tr><th>Environment</th><th>Base URL</th></tr></thead><tbody>
 <tr><td>Local development (<code>just dev</code>)</td><td><code>http://localhost:4000/dpe/oai</code></td></tr>
-<tr><td>DEV</td><td><code>https://api.dev.dasch.swiss/dpe/oai</code></td></tr>
+<tr><td>STAGE</td><td><code>https://repository.stage.dasch.swiss/dpe/oai</code></td></tr>
 <tr><td>Production</td><td><code>https://repository.dasch.swiss/dpe/oai</code></td></tr>
 </tbody></table>
 </div>
@@ -3483,7 +3483,7 @@ just RECORD_SHORTCODES="081C 0868 0803" fetch-records
 <p>Arguments outside these lists are rejected with <code>badArgument</code>, with two exceptions that are silently ignored: <code>set</code> on <code>ListSets</code> and <code>metadataPrefix</code> on <code>ListMetadataFormats</code>.</p>
 <p><code>ListIdentifiers</code> and <code>ListRecords</code> support <code>resumptionToken</code> for paging — see <a href="dpe/oai-pmh.html#flow-control-paging">Flow control (paging)</a>. When a <code>resumptionToken</code> is supplied it must be the request's only argument besides <code>verb</code>; combining it with any other argument yields <code>badArgument</code>, and an invalid or expired token yields <code>badResumptionToken</code>. Every other verb rejects <code>resumptionToken</code> with <code>badResumptionToken</code>.</p>
 <h3 id="identify"><a class="header" href="#identify">Identify</a></h3>
-<pre><code class="language-bash">curl "https://api.dev.dasch.swiss/dpe/oai?verb=Identify"
+<pre><code class="language-bash">curl "https://repository.stage.dasch.swiss/dpe/oai?verb=Identify"
 </code></pre>
 <p>Abbreviated example response (values vary by environment):</p>
 <pre><code class="language-xml">&lt;OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" ...&gt;
@@ -3500,11 +3500,11 @@ just RECORD_SHORTCODES="081C 0868 0803" fetch-records
 &lt;/OAI-PMH&gt;
 </code></pre>
 <h3 id="listmetadataformats"><a class="header" href="#listmetadataformats">ListMetadataFormats</a></h3>
-<pre><code class="language-bash">curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListMetadataFormats"
+<pre><code class="language-bash">curl "https://repository.stage.dasch.swiss/dpe/oai?verb=ListMetadataFormats"
 </code></pre>
 <p>With an <code>identifier</code> argument, the supported formats for that item are returned. Note: identifiers are currently validated against projects only — a record identifier that works with <code>GetRecord</code> returns <code>idDoesNotExist</code> here.</p>
 <h3 id="listsets"><a class="header" href="#listsets">ListSets</a></h3>
-<pre><code class="language-bash">curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListSets"
+<pre><code class="language-bash">curl "https://repository.stage.dasch.swiss/dpe/oai?verb=ListSets"
 </code></pre>
 <p>Abbreviated example response — the full response also contains one <code>project:{shortcode}</code> set per project and one <code>cluster:{id}</code> set per cluster:</p>
 <pre><code class="language-xml">&lt;OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" ...&gt;
@@ -3627,7 +3627,7 @@ https://repository.dasch.swiss/dpe/records/0862/RMgW_EICR3OLcMi7LNE=Sgu/file
 </div>
 <p>These differ from the resolvable ARK URLs (<code>https://ark.dasch.swiss/ark:/72163/1/...</code>), which appear in the metadata payloads as <code>dc:identifier</code> / DataCite <code>identifier</code>.</p>
 <p>The OAI <code>&lt;identifier&gt;</code> header is the <strong>only</strong> place an ARK appears without the resolver in front — it is an identifier authority, not an address, so it is deliberately host-independent. Everywhere else an ARK is exposed — <code>dc:identifier</code>, <code>dc:relation</code>, DataCite <code>identifier</code> and <code>relatedIdentifier</code>, and the project page's permalink link target — carries a resolver in front so a harvester can dereference it. <code>Pid::as_url()</code> is the accessor for that form; there is deliberately no accessor returning a bare <code>ark:/…</code> path.</p>
-<p>Which resolver is a deployment's own business. Production, DEV and STAGE all emit <code>https://ark.dasch.swiss/</code>, the host the corpus records. A PR preview sets <a href="dpe/./operations.html#environment-variables"><code>DPE_ARK_RESOLVER_BASE_URL</code></a> and emits its own, so that it does not publish an identifier resolving to a deployment that runs different code; the ARK path is untouched either way, and the OAI <code>&lt;identifier&gt;</code> header, being host-independent already, does not change at all.</p>
+<p>Which resolver is a deployment's own business. Production and STAGE both emit <code>https://ark.dasch.swiss/</code>, the host the corpus records. A PR preview sets <a href="dpe/./operations.html#environment-variables"><code>DPE_ARK_RESOLVER_BASE_URL</code></a> and emits its own, so that it does not publish an identifier resolving to a deployment that runs different code; the ARK path is untouched either way, and the OAI <code>&lt;identifier&gt;</code> header, being host-independent already, does not change at all.</p>
 <h2 id="sets"><a class="header" href="#sets">Sets</a></h2>
 <p>Selective harvesting uses the <code>set</code> argument on <code>ListIdentifiers</code> and <code>ListRecords</code>. Two kinds of sets exist: static <strong>entity-type</strong> sets and dynamic <strong>project</strong>/<strong>cluster</strong> sets.</p>
 <div class="table-wrapper"><table><thead><tr><th><code>setSpec</code></th><th>Contents</th><th>Notes</th></tr></thead><tbody>
@@ -3644,20 +3644,20 @@ https://repository.dasch.swiss/dpe/records/0862/RMgW_EICR3OLcMi7LNE=Sgu/file
 <p><strong>Set validation.</strong> An unrecognised <code>set</code> value — bad prefix, empty value, or a <code>project:</code>/<code>cluster:</code> value matching no known project or cluster — is rejected with <code>badArgument</code>. A recognised set that matches zero items (e.g. a known project with no records yet, possibly after date filtering) returns <code>noRecordsMatch</code>.</p>
 <h2 id="harvesting"><a class="header" href="#harvesting">Harvesting</a></h2>
 <p>Full harvest of all items:</p>
-<pre><code class="language-bash">curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListRecords&amp;metadataPrefix=oai_dc"
+<pre><code class="language-bash">curl "https://repository.stage.dasch.swiss/dpe/oai?verb=ListRecords&amp;metadataPrefix=oai_dc"
 </code></pre>
 <p>Selective harvest of research projects only:</p>
-<pre><code class="language-bash">curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListRecords&amp;metadataPrefix=oai_datacite&amp;set=entityType:ResearchProject"
+<pre><code class="language-bash">curl "https://repository.stage.dasch.swiss/dpe/oai?verb=ListRecords&amp;metadataPrefix=oai_datacite&amp;set=entityType:ResearchProject"
 </code></pre>
 <p>Selective harvest of one project's records, or of everything under one cluster:</p>
 <pre><code class="language-bash"># All records of project 0803
-curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListRecords&amp;metadataPrefix=oai_dc&amp;set=project:0803"
+curl "https://repository.stage.dasch.swiss/dpe/oai?verb=ListRecords&amp;metadataPrefix=oai_dc&amp;set=project:0803"
 
 # All project entries and records under cluster cluster-003
-curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListRecords&amp;metadataPrefix=oai_dc&amp;set=cluster:cluster-003"
+curl "https://repository.stage.dasch.swiss/dpe/oai?verb=ListRecords&amp;metadataPrefix=oai_dc&amp;set=cluster:cluster-003"
 </code></pre>
 <p>Headers only (no metadata payloads):</p>
-<pre><code class="language-bash">curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListIdentifiers&amp;metadataPrefix=oai_dc"
+<pre><code class="language-bash">curl "https://repository.stage.dasch.swiss/dpe/oai?verb=ListIdentifiers&amp;metadataPrefix=oai_dc"
 </code></pre>
 <h3 id="rate-limiting"><a class="header" href="#rate-limiting">Rate limiting</a></h3>
 <p>The endpoint is rate-limited per client IP. By default a harvester may make up to 60 requests back-to-back (the burst) and then a sustained ~60 requests/minute; exceeding this yields <code>429 Too Many Requests</code> with a <code>Retry-After</code> header (and <code>X-RateLimit-*</code> headers indicating the limit and remaining budget). A well-behaved harvester that pages through resumption tokens sequentially stays well within these limits. The limits are configurable per environment via <code>DPE_OAI_RATE_LIMIT_PER_SECOND</code> and <code>DPE_OAI_RATE_LIMIT_BURST</code> (see <a href="dpe/./operations.html">operations</a>); the same settings and the same per-IP bucket also cover the two machine-readable representation routes (see <a href="dpe/./machine-readable-metadata.html">Machine-Readable Metadata</a>).</p>
@@ -3666,17 +3666,17 @@ curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListRecords&amp;metadataPrefix=oa
 <pre><code class="language-xml">&lt;resumptionToken completeListSize="342" cursor="0"&gt;MHwyMDIw...&lt;/resumptionToken&gt;
 </code></pre>
 <p>To fetch the next page, repeat the request with <strong>only</strong> the <code>verb</code> and the <code>resumptionToken</code> — no other arguments (the token already carries the original <code>metadataPrefix</code>, <code>from</code>, <code>until</code>, and <code>set</code>):</p>
-<pre><code class="language-bash">curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListRecords&amp;resumptionToken=MHwyMDIw..."
+<pre><code class="language-bash">curl "https://repository.stage.dasch.swiss/dpe/oai?verb=ListRecords&amp;resumptionToken=MHwyMDIw..."
 </code></pre>
 <p>The token is opaque: harvesters must pass it back verbatim and must not attempt to parse or construct it. The last page of a paged list carries an empty <code>resumptionToken</code> element (<code>&lt;resumptionToken completeListSize="342" cursor="300"/&gt;</code>), signalling that the list is complete. A response whose entire result fits in one page carries no <code>resumptionToken</code> element at all.</p>
 <p>Tokens encode a position into the list rather than server-side state, so a token remains valid as long as the underlying data has not changed. A token whose position no longer exists (for example, because records were removed) is rejected with <code>badResumptionToken</code>; re-harvest from the start in that case.</p>
 <p>Tokens are stateless: each carries its own filter arguments and offset, and the server keeps no session between pages, re-running the query from scratch on each resume. The trade-off is that tokens never expire on a clock, but the list is not a pinned snapshot — so items added or removed between pages can shift the offset and cause a resumed page to skip or duplicate items. Harvesters needing a strictly consistent view should re-harvest in one uninterrupted pass.</p>
 <h3 id="fetching-a-single-item"><a class="header" href="#fetching-a-single-item">Fetching a single item</a></h3>
 <pre><code class="language-bash"># A research project
-curl "https://api.dev.dasch.swiss/dpe/oai?verb=GetRecord&amp;metadataPrefix=oai_dc&amp;identifier=oai:dasch.swiss:ark:/72163/1/0803"
+curl "https://repository.stage.dasch.swiss/dpe/oai?verb=GetRecord&amp;metadataPrefix=oai_dc&amp;identifier=oai:dasch.swiss:ark:/72163/1/0803"
 
 # A record within a project
-curl "https://api.dev.dasch.swiss/dpe/oai?verb=GetRecord&amp;metadataPrefix=oai_dc&amp;identifier=oai:dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"
+curl "https://repository.stage.dasch.swiss/dpe/oai?verb=GetRecord&amp;metadataPrefix=oai_dc&amp;identifier=oai:dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"
 </code></pre>
 <p>Abbreviated example response:</p>
 <pre><code class="language-xml">&lt;OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" ...&gt;
@@ -3715,7 +3715,7 @@ curl "https://api.dev.dasch.swiss/dpe/oai?verb=GetRecord&amp;metadataPrefix=oai_
 <li>Use <code>YYYY-MM-DD</code> values. Other formats are not rejected with an error but compare incorrectly.</li>
 <li>Because record datestamps may include a time component, <code>until=2012-06-19</code> excludes a record stamped <code>2012-06-19T14:33:33Z</code>. To include a full day, filter with <code>until</code> set to the following day.</li>
 </ul>
-<pre><code class="language-bash">curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListIdentifiers&amp;metadataPrefix=oai_dc&amp;from=2010-01-01&amp;until=2020-12-31"
+<pre><code class="language-bash">curl "https://repository.stage.dasch.swiss/dpe/oai?verb=ListIdentifiers&amp;metadataPrefix=oai_dc&amp;from=2010-01-01&amp;until=2020-12-31"
 </code></pre>
 <p><strong>Incremental harvesting is not reliable with these semantics.</strong> Project datestamps reflect research start dates, so new or updated project metadata does not surface through <code>from</code>-based incremental harvests, and deletions are not tracked (<code>deletedRecord: no</code>). Harvesters should periodically re-harvest the full repository instead of relying on date-based increments.</p>
 <h2 id="errors"><a class="header" href="#errors">Errors</a></h2>
@@ -4124,7 +4124,7 @@ more. The embedded block is what Google reads, it is capped by count, and at
 <p><code>DPE_PUBLIC_BASE_URL</code> gives the site's own URLs — the landing page and the
 catalogue. <code>DPE_OAI_BASE_URL</code> gives the <code>describedby</code> targets, because that is
 the URL the OAI endpoint advertises for itself. Neither is derived from the
-other: on DEV the OAI endpoint answers on a different host.</p>
+other: the OAI endpoint may answer on a different host.</p>
 <p><code>DPE_ARK_RESOLVER_BASE_URL</code> is the odd one out and is <strong>unset everywhere but a
 PR preview</strong>. Set, it rewrites the host of every emitted ARK to the deployment's
 own and mounts the <code>/ark:/</code> resolver that answers it, so a deployment which is

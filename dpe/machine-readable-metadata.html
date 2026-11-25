@@ -562,7 +562,7 @@ more. The embedded block is what Google reads, it is capped by count, and at
 <p><code>DPE_PUBLIC_BASE_URL</code> gives the site's own URLs — the landing page and the
 catalogue. <code>DPE_OAI_BASE_URL</code> gives the <code>describedby</code> targets, because that is
 the URL the OAI endpoint advertises for itself. Neither is derived from the
-other: on DEV the OAI endpoint answers on a different host.</p>
+other: the OAI endpoint may answer on a different host.</p>
 <p><code>DPE_ARK_RESOLVER_BASE_URL</code> is the odd one out and is <strong>unset everywhere but a
 PR preview</strong>. Set, it rewrites the host of every emitted ARK to the deployment's
 own and mounts the <code>/ark:/</code> resolver that answers it, so a deployment which is

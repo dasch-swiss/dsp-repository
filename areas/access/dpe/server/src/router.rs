@@ -116,6 +116,7 @@ pub(crate) fn build_router(state: AppState, public_dir: &std::path::Path, rate_l
         .merge(rate_limited)
         .route("/dpe/projects/{id}/tab/{tab}", get(fragments::tab_fragment_handler))
         .route("/dpe/projects/search", get(fragments::search_fragment_handler))
+        .route("/dpe/projects/results", get(fragments::results_fragment_handler))
         .route("/dpe/api/v2/projects", get(fragments::projects_json_handler))
         .route("/dpe/api/v2/projects/{id}", get(fragments::project_json_handler))
         .fallback_service(serve_dir)

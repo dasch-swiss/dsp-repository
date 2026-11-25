@@ -11,8 +11,8 @@ use crate::domain::projects::filter_and_paginate;
 use crate::domain::ProjectQuery;
 use crate::RenderContext;
 
-/// Filtered + paginated project list, resolved synchronously from the in-process
-/// project cache. Renders an empty-state card when nothing matches, otherwise a
+/// Filtered + paginated project list (the count is `project_results_count`), resolved synchronously
+/// from the in-process project cache. Renders an empty-state card when nothing matches, otherwise a
 /// responsive grid of project cards plus pagination.
 pub fn project_list(query: &ProjectQuery, ctx: &RenderContext) -> Markup {
     render_project_list(filter_and_paginate(ctx.corpus.all_projects(), query, None), query, ctx)
@@ -36,7 +36,6 @@ fn render_project_list(page: Page, query: &ProjectQuery, ctx: &RenderContext) ->
 
     html! {
         div {
-            div class="mb-4 text-sm text-gray-600" { (format!("{} projects", page.total_items)) }
             div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" {
                 @for project in &page.items {
                     @let keywords: Vec<String> = project
@@ -67,10 +66,9 @@ mod tests {
     }
 
     #[test]
-    fn non_empty_page_renders_count_cards_and_pagination() {
+    fn non_empty_page_renders_cards_and_pagination() {
         let page = Page { items: vec![sample_project()], nr_pages: 2, total_items: 1 };
         let out = render_project_list(page, &ProjectQuery::default(), &test_render_context(false)).into_string();
-        assert!(out.contains("1 projects"), "{out}");
         assert!(out.contains("Sample Research Project"), "card rendered: {out}");
         assert!(out.contains(r#"aria-label="Pagination""#), "pagination rendered: {out}");
     }

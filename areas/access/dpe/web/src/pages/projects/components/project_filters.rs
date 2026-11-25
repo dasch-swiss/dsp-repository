@@ -7,11 +7,27 @@ use crate::RenderContext;
 /// The `id` of the filter panel, which the mobile trigger controls.
 pub const FILTER_PANEL_ID: &str = "project-filters-panel";
 
+/// The client-only signal that opens the panel below `lg` with JavaScript; seeded from
+/// `dialog` by the page (`filters_open_signal`).
+const HIDE_UNLESS_OPEN: &str = "{'max-lg:hidden': !$_filters_open}";
+
+/// Close the panel and give focus back to the trigger.
+const CLOSE_PANEL: &str = "$_filters_open = false; document.getElementById('project-filters-trigger').focus()";
+
+/// Escape closes the panel only while it is open, so it changes nothing otherwise.
+pub const CLOSE_PANEL_ON_ESCAPE: &str = "evt.key === 'Escape' && $_filters_open && ($_filters_open = false, document.getElementById('project-filters-trigger').focus())";
+
+/// The `data-signals` value that seeds `_filters_open` from the request.
+pub fn filters_open_signal(open: bool) -> String {
+    format!("{{_filters_open: {open}}}")
+}
+
 /// The one container of the facet form: the static sidebar card at `lg`, a fixed slide-in
 /// panel with a backdrop below `lg`. Below `lg` the panel is hidden unless `dialog=true` is
 /// in the request. The panel and the backdrop are always rendered, so the JavaScript path
 /// can show them without a request. The panel is a non-modal disclosure: no focus trap,
-/// the backdrop only dims and takes a click.
+/// the backdrop only dims and takes a click. With JavaScript, `_filters_open` toggles
+/// `max-lg:hidden` on both and Close neither submits nor fetches.
 pub fn project_filters(query: &ProjectQuery, ctx: &RenderContext) -> Markup {
     let open = query.dialog == Some(true);
     let backdrop_class = if open {
@@ -25,19 +41,26 @@ pub fn project_filters(query: &ProjectQuery, ctx: &RenderContext) -> Markup {
         "max-lg:hidden max-lg:fixed max-lg:right-0 max-lg:top-0 max-lg:bottom-0 max-lg:w-full md:max-lg:w-96 max-lg:z-50 max-lg:overflow-y-auto bg-white lg:w-72 2xl:w-80 lg:shrink-0"
     };
     html! {
-        div id="project-filters-backdrop" aria-hidden="true" class=(backdrop_class) {}
+        div id="project-filters-backdrop"
+            aria-hidden="true"
+            class=(backdrop_class)
+            data-class=(HIDE_UNLESS_OPEN)
+            data-on:click=(CLOSE_PANEL) {}
         div id=(FILTER_PANEL_ID)
             role="region"
             aria-labelledby="project-filters-heading"
             tabindex="-1"
             class=(panel_class)
+            data-class=(HIDE_UNLESS_OPEN)
         {
-            div class="relative lg:rounded-lg lg:border lg:border-neutral-200 dpe-small p-4 text-gray-700 w-full" {
+            div class="relative lg:rounded-lg lg:border lg:border-neutral-200 dpe-small p-4 text-gray-700 w-full"
+            {
                 button
                     type="submit"
                     form=(FILTER_FORM_ID)
                     aria-label="Close filters"
                     autofocus[open]
+                    data-on:click__prevent=(CLOSE_PANEL)
                     class="btn btn-ghost size-8 justify-center rounded-full p-0 absolute right-2 top-2 cursor-pointer lg:hidden"
                 { "✕" }
                 (project_filters_content(query, ctx))
@@ -58,7 +81,7 @@ mod tests {
     #[test]
     fn closed_panel_and_backdrop_render_hidden_below_lg() {
         let out = render("");
-        assert!(out.contains(r#"<div id="project-filters-backdrop" aria-hidden="true" class="fixed inset-0 bg-black/40 z-40 lg:hidden max-lg:hidden">"#), "{out}");
+        assert!(out.contains(r#"<div id="project-filters-backdrop" aria-hidden="true" class="fixed inset-0 bg-black/40 z-40 lg:hidden max-lg:hidden""#), "{out}");
         assert!(out.contains(r#"tabindex="-1" class="max-lg:hidden "#), "{out}");
         assert!(!out.contains("autofocus"), "{out}");
     }
@@ -66,9 +89,12 @@ mod tests {
     #[test]
     fn dialog_true_renders_the_panel_open_with_close_focused() {
         let out = render("dialog=true");
-        assert!(out.contains(r#"<div id="project-filters-backdrop" aria-hidden="true" class="fixed inset-0 bg-black/40 z-40 lg:hidden">"#), "{out}");
+        assert!(out.contains(r#"<div id="project-filters-backdrop" aria-hidden="true" class="fixed inset-0 bg-black/40 z-40 lg:hidden""#), "{out}");
         assert!(out.contains(r#"id="project-filters-panel" role="region" aria-labelledby="project-filters-heading" tabindex="-1" class="max-lg:fixed "#), "{out}");
-        assert!(out.contains(r#"<button type="submit" form="project-filters" aria-label="Close filters" autofocus"#), "{out}");
+        assert!(
+            out.contains(r#"<button type="submit" form="project-filters" aria-label="Close filters" autofocus"#),
+            "{out}"
+        );
     }
 
     #[test]
@@ -77,5 +103,31 @@ mod tests {
         assert_eq!(out.matches(r#"<form id="project-filters""#).count(), 1, "{out}");
         assert!(!out.contains(r#"href="/dpe/projects?"#), "{out}");
         assert!(!out.contains("outline-none"), "{out}");
+    }
+
+    #[test]
+    fn panel_and_backdrop_toggle_on_the_client_signal() {
+        let out = render("");
+        assert_eq!(
+            out.matches(r#"data-class="{'max-lg:hidden': !$_filters_open}""#).count(),
+            2,
+            "{out}"
+        );
+        assert!(
+            out.contains(
+                r#"data-on:click="$_filters_open = false; document.getElementById('project-filters-trigger').focus()""#
+            ),
+            "{out}"
+        );
+        assert!(
+            out.contains(r#"data-on:click__prevent="$_filters_open = false; document.getElementById('project-filters-trigger').focus()""#),
+            "Close must neither submit nor fetch with JavaScript: {out}"
+        );
+    }
+
+    #[test]
+    fn signal_seed_follows_dialog() {
+        assert_eq!(filters_open_signal(true), "{_filters_open: true}");
+        assert_eq!(filters_open_signal(false), "{_filters_open: false}");
     }
 }

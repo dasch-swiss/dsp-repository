@@ -64,6 +64,14 @@ Tab switch (with JS):
 
 Tab switch (without JS):
   Browser → GET /dpe/projects/ABC1?tab=publications → Full page reload
+
+Facet change (with JS):
+  Browser → GET /dpe/projects/results?<form fields> (SSE)
+         ← PatchElements (#project-results, #project-filters-clear, #project-results-count text)
+         ← ExecuteScript (history.replaceState to /dpe/projects + the canonical query string)
+
+Facet change (without JS):
+  Browser → Apply → GET /dpe/projects?<form fields> → Full page reload
 ```
 
 ## Fragment Route Convention
@@ -96,6 +104,28 @@ The server returns the **complete tab component** (tab bar + panel) in each SSE 
 
 The client never needs to track tab state — the server-rendered HTML IS the state.
 
+## Facet Form Pattern
+
+The project list's facets are one `<form method="get" action="/dpe/projects">` of checkboxes, not a link
+per option: a link per option gives a crawler one URL per combination of a multi-select facet, which is
+practically unbounded. Crawlers do not submit forms; `robots.txt` and a canonical link cover the filtered
+URLs that people share (see [Operations](./operations.md#crawlers)).
+
+- **Two query forms, one meaning.** The form submits repeated keys (`type_of_data=a&type_of_data=b`);
+  bookmarks carry comma-joined values (`type_of_data=a,b`). `ProjectQuery::from_query_str` accepts both.
+- **The server writes the URL.** With JavaScript, `data-on:change` on the form fetches
+  `/dpe/projects/results` with the form's fields (`datastar::get(…).form()`). The fragment patches the
+  results region and the "Clear all" slot, replaces the text of the `role="status"` count (not the node,
+  so it is announced), and sends `history.replaceState` to `/dpe/projects` plus
+  `ProjectQuery::to_query_string()`. That string percent-encodes every value, so it needs no JS escaping.
+  The form itself is never patched, so focus stays on the toggled checkbox.
+- **The fallback is the form.** The Apply button submits it without JavaScript (`data-show="false"` hides
+  it with JavaScript), and a failed fetch calls `el.submit()` from the form's `data-on:datastar-fetch`,
+  guarded by `evt.detail.el === el` because Datastar fires that event on `document` for every fetch.
+- **The mobile panel is the same form.** Below `lg` the sidebar is a slide-in panel. Without JavaScript the
+  trigger is a submit button that adds `dialog=true`; with JavaScript the client-only `_filters_open`
+  signal toggles it, with no request.
+
 ## Datastar Attribute Patterns
 
 ```html
@@ -121,7 +151,8 @@ The client never needs to track tab state — the server-rendered HTML IS the st
 - **Signal naming**: Use `_` prefix for client-only signals (e.g., `_tab_loading`). The underscore excludes the signal from server payloads.
 - **Actions**: Build `@get()` and `@post()` values with `shared_datastar` (`datastar::get(…)`), never as strings. The attribute name stays a Maud literal.
 - **`Get::retry_never()`**: Use on `@get()` calls where fallback to full navigation is preferred over retrying; it emits `{retry: 'never', retryMaxCount: 0}`. `retry: 'never'` alone covers only HTTP statuses: a network failure or dropped stream is still retried (10 times, about 3 minutes with the defaults) before `retries-failed` fires. `retryMaxCount: 0` makes it fire on the first failure.
-- **Graceful degradation**: Every Datastar-enhanced `<a>` must have a valid `href` for no-JS fallback.
+- **Graceful degradation**: Every Datastar-enhanced `<a>` must have a valid `href` for no-JS fallback, and
+  every Datastar-enhanced form a real `action` and a submit button.
 
 ## See Also
 

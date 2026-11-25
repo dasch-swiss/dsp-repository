@@ -54,8 +54,8 @@ mod oai_state_tests {
     #[test]
     fn explicit_value_is_used() {
         assert_eq!(
-            OaiState::new("https://api.dev.dasch.swiss/dpe/oai", test_corpus()).base_url,
-            "https://api.dev.dasch.swiss/dpe/oai"
+            OaiState::new("https://repository.stage.dasch.swiss/dpe/oai", test_corpus()).base_url,
+            "https://repository.stage.dasch.swiss/dpe/oai"
         );
     }
 

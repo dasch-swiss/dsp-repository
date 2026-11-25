@@ -632,7 +632,7 @@ fn projects_with_a_record() -> Vec<(ProjectRaw, Option<Record>)> {
 }
 
 /// **The safety property of `DPE_ARK_RESOLVER_BASE_URL`.** Unset — the default,
-/// and what production, DEV and STAGE run — every ARK every representation
+/// and what production and STAGE run — every ARK every representation
 /// emits is exactly the one the corpus records, host and all.
 ///
 /// Corpus-wide and byte-level, because this is what makes the whole

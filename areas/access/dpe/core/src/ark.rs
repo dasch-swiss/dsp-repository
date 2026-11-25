@@ -22,7 +22,7 @@
 //!
 //! # What it does
 //!
-//! Unset — the default, and what production, DEV and STAGE run — nothing is
+//! Unset — the default, and what production and STAGE run — nothing is
 //! normalised and every ARK is the one the corpus records. Set, on
 //! [`crate::CorpusSettings::ark_resolver_base_url`], every ARK entering the
 //! caches carries the configured host instead, so a deployment that is not the

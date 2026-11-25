@@ -34,14 +34,14 @@ pub struct DpeConfig {
 
     /// Whether to display placeholder values ("MISSING", "CALCULATED") in the UI.
     /// When false (default/production), placeholders are hidden entirely.
-    /// When true (DEV/STAGE), they are shown styled in red for QA visibility.
+    /// When true (STAGE), they are shown styled in red for QA visibility.
     /// Set via `DPE_SHOW_PLACEHOLDER_VALUES`.
     pub show_placeholder_values: bool,
 
     /// Public base URL at which the OAI-PMH endpoint is reachable. Emitted as the
     /// OAI-PMH `baseURL` and echoed in every `<request>` element, so it must match the
     /// URL harvesters actually use (e.g. `https://repository.dasch.swiss/dpe/oai` in
-    /// production, `https://api.dev.dasch.swiss/dpe/oai` on DEV). Set via `DPE_OAI_BASE_URL`.
+    /// production). Set via `DPE_OAI_BASE_URL`.
     ///
     /// Not origin-validated the way [`DpeConfig::public_base_url`] is: this one
     /// legitimately carries a path (`/dpe/oai`), which that check exists to reject.
@@ -60,14 +60,14 @@ pub struct DpeConfig {
     /// metadata and the `Link` header carry. Origin only, no trailing slash.
     ///
     /// Independent of [`DpeConfig::oai_base_url`] and never derived from it: the
-    /// OAI endpoint advertises its own `baseURL`, which on DEV lives on a
+    /// OAI endpoint advertises its own `baseURL`, which may live on a
     /// different host. Set via `DPE_PUBLIC_BASE_URL`.
     pub public_base_url: String,
 
     /// Origin that every emitted ARK is rewritten to carry, and the origin the
     /// deployment's own `/ark:/…` resolver answers on.
     ///
-    /// Unset is the default and is what production, DEV and STAGE run: the ARKs
+    /// Unset is the default and is what production and STAGE run: the ARKs
     /// are the ones the corpus records, resolving through `ark.dasch.swiss` to
     /// production, and no resolver route is mounted at all.
     ///
@@ -167,7 +167,7 @@ mod tests {
         assert_eq!(config.oai_rate_limit_per_second, 1);
         assert_eq!(config.oai_rate_limit_burst, 60);
         assert_eq!(config.public_base_url, "https://repository.dasch.swiss");
-        // Unset by default and everywhere but a PR preview: production, DEV and
+        // Unset by default and everywhere but a PR preview: production and
         // STAGE publish the ARKs the corpus records.
         assert!(config.ark_resolver_base_url.is_none());
     }

@@ -125,7 +125,7 @@ Defined in `dpe-docker-publish.yml`.
 On every push to `main`:
 1. Builds the image with Bazel (`//areas/access/server:image_push`), taking no result from the remote cache
 2. Pushes it to Docker Hub (`daschswiss/dpe:{tag}`)
-3. Triggers Jenkins webhooks for the DEV and STAGE deployments
+3. Triggers a Jenkins webhook for STAGE deployment
 
 #### Release Publishing
 

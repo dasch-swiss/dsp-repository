@@ -329,7 +329,7 @@ fn plain_text() -> [(header::HeaderName, HeaderValue); 1] {
 ///
 /// The site's URLs come from `DPE_PUBLIC_BASE_URL` and the OAI ones from
 /// `DPE_OAI_BASE_URL`. Neither is derived from the other: the OAI endpoint
-/// advertises its own base URL, and on DEV it answers on a different host.
+/// advertises its own base URL, and it may answer on a different host.
 fn url_layout(raw: &ProjectRaw, state: &AppState) -> UrlLayout {
     let shortcode = &raw.shortcode;
     // Percent-encoded, which is what stops a recorded PID carrying an `&` or a
@@ -709,7 +709,7 @@ mod tests {
 
     /// The two representations this deployment serves, off the site's base URL,
     /// then the two OAI records, off the OAI endpoint's own. The two base URLs
-    /// differ in `test_state`, as they do on DEV, so neither can be passing by
+    /// differ in `test_state`, as they may in a deployment, so neither can be passing by
     /// being derived from the other.
     #[test]
     fn the_describedby_targets_are_the_representations_and_the_oai_records() {

@@ -15,8 +15,10 @@ We use a **rebase workflow**. All changes are made on a branch, then rebased ont
 The goal is a **meaningful history on `main`**: every commit on main should be a deliberate, self-contained unit of change. Working commits ("WIP", "fix typo", "address review feedback") do not belong on main.
 
 - **Rebase-merge**: PRs are integrated using rebase-merge (not squash or merge commits). Every commit on the branch lands on main verbatim — so the branch history _is_ the main history. There is no squash-on-merge safety net; whatever you leave on the branch is what ships.
-- **Clean up before merging (mandatory)**: before a PR is merged, rewrite the branch (interactive rebase) so its commits read well on main. Squash working commits, reword messages, reorder as needed.
-- **One commit per PR**: a PR lands as **one** commit by default, and CI enforces it. Split into multiple commits only when the work genuinely represents several independent, self-contained changes that each deserve their own line in the history — and each must stand on its own. See [Commit Organization](#commit-organization) and [Enforcement](#enforcement).
+- **Curate before merging (mandatory)**: before a PR is merged, rewrite the branch (interactive rebase) so its commits read well on main. Fold fixups into the commit they belong to, reword messages, reorder as needed.
+- **One commit per scope per slice**: a commit is one slice of work (a phase of a plan, or a feature within it) inside one component of `ARCH-MAP.md`, whose scope it takes. A PR holds as many such commits as the work has slices. See [Commit Organization](#commit-organization).
+- **At most 100 commits per PR**: GitHub's "Rebase and merge" is [limited to 100 commits](https://docs.github.com/en/repositories/creating-and-managing-repositories/repository-limits). Above that it refuses with "This branch cannot be rebased due to conflicts" although nothing conflicts. Larger work is cut into a stack at phase boundaries. CI enforces the limit; see [Enforcement](#enforcement).
+- **Comments cleaned before the merge**: in the same curation pass, every comment, doc comment and command help string the branch adds or touches is held to `CONVENTIONS.md` → *Comments*. It describes the current state, carries no journey, and cites only stable sources (an ADR, a `DEV-` id, a `docs/` page), never a plan or a spec, a plan phase or a plan decision number. `eng:review:reference-reviewer`, bound in `eng.yaml`, checks each citation against its source during review. Its findings are folded into the commits they belong to, never fixed in a trailing commit.
 
 ## Commit Message Schema
 
@@ -42,7 +44,7 @@ Every type is visible in the release notes, in its own section, rendered in the 
 
 Breaking changes take a `!` suffix (or a `BREAKING CHANGE:` footer):
 
-    feat(dpe-api-oai)!: remove the deprecated verb alias
+    feat(dpe)!: remove the deprecated OAI verb alias
 
 > [!NOTE]
 > The "Version bump" column above describes the steady state from 1.0.0 onward.
@@ -60,7 +62,7 @@ Breaking changes take a `!` suffix (or a `BREAKING CHANGE:` footer):
 > is the breaking position. Without the second flag `feat:` and `feat!:` would
 > both bump the minor, and the version would carry no signal about breakage.
 
-The release-please config sentence-cases subjects in the changelog, so write the subject in normal prose case (`feat(dpe-web): add project filter`, not `feat(dpe-web): Add ...`).
+The release-please config sentence-cases subjects in the changelog, so write the subject in normal prose case (`feat(dpe): add project filter`, not `feat(dpe): Add ...`).
 
 ### Removed types
 
@@ -74,7 +76,7 @@ The release-please config sentence-cases subjects in the changelog, so write the
 
 A `fix:` corrects behavior that exists on `main` — a bug a deployer could hit today, or that a released version shipped. It earns a "Bug Fixes" changelog line precisely because deployers need to know. The same change filed as `chore:` or `refactor:` still appears in the release notes, but under a section nobody scanning for a regression will read.
 
-A bug you introduced earlier in the **same branch** is not a `fix:`. Fold it into the commit that introduced it (`git commit --fixup=<sha>`, then `git rebase --autosquash`) so it never lands on `main` and never generates a changelog entry for a bug nobody ever saw. With the one-commit default this is the normal case: you are amending, not accumulating.
+A bug you introduced earlier in the **same branch** is not a `fix:`. Fold it into the commit that introduced it (`git commit --fixup=<sha>`, then `git rebase --autosquash`) so it never lands on `main` and never generates a changelog entry for a bug nobody ever saw.
 
 Corollary: if you discover a genuine pre-existing `main` bug while doing unrelated work, give it its **own** `fix:` commit — don't bury it inside the `feat:`/`refactor:` you happened to be writing.
 
@@ -82,33 +84,43 @@ Corollary: if you discover a genuine pre-existing `main` bug while doing unrelat
 
 **A scope is mandatory.** Every commit is `type(scope): subject`, so every release-notes line reads `concern: subject`. There is no scopeless form.
 
-The scope names the **concern the change serves** — the crate or area whose responsibility it belongs to, not the directory the edited files happen to sit in. Use one of these names, lowercase:
+The scope is the **component the change serves**, as [`ARCH-MAP.md`](https://github.com/dasch-swiss/dsp-repository/blob/main/ARCH-MAP.md) lists it under *Components* — not the crate, and not the directory the edited files happen to sit in. A component's crates share its scope: a change to `cpe-ports`, `cpe-core` and `cpe-web` is `cpe`. `ARCH-MAP.md` is the one list; the scope is the component's directory name, prefixed where two would collide:
 
-- **Crate scopes:** `access-server`, `dpe-core`, `dpe-server`, `dpe-web`, `dpe-api-oai`, `cpe-ports`, `cpe-core`, `cpe-components`, `cpe-image-viewer`, `cpe-store`, `cpe-store-build`, `cpe-web`, `cpe-server`, `datei-ports`, `datei-core`, `datei-store`, `datei-store-build`, `datei-web`, `datei-server`, `sync-store`, `media-store`, `shared-datastar`, `shared-fair`, `shared-metadata`, `shared-names`, `shared-rate-limit`, `shared-stand-in`, `shared-telemetry`, `editor-core`, `editor-ports`, `editor-store`, `editor-web`, `deposit-server`, `editor-pull-requests`, `deposit-shell`, `identity-core`, `identity-ports`, `identity-store`, `identity-web`, `vre-bridge-lift`, `vre-bridge-core`, `vre-bridge-store`, `vre-bridge-client`, `vre-bridge-server`, `mosaic-tiles`, `mosaic-playground`, `dsp-cli`
-- **Cross-cutting scopes** (changes not tied to one crate):
-  - `dpe-data` — project metadata files under `areas/access/dpe/server/data/`
-  - `ci` — workflows, the justfile, CI scripts
-  - `deps` — dependency bumps, Dependabot, base-image updates
-  - `docs` — repo-level and process documentation with no single crate owner
+| Component | Scope |
+|-----------|-------|
+| `areas/<area>/<capability>` | `<capability>`: `dpe`, `cpe`, `datei`, `sync`, `media`, `editor`, `identity`, `vre-bridge` |
+| `areas/access/server`, `areas/deposit/server` | `access-server`, `deposit-server` |
+| `areas/deposit/shell` | `deposit-shell` |
+| `areas/archive` | `archive` |
+| `shared/<role>` | `shared-<role>`: `shared-fair`, `shared-names`, … |
+| `modules/mosaic` | `mosaic` |
+| `dsp-cli`, `vitrinli`, `chischtli` | `dsp-cli`, `vitrinli`, `chischtli` |
+
+**Cross-cutting scopes** (changes not tied to one component):
+
+- `dpe-data` — project metadata files under `areas/access/dpe/server/data/`
+- `ci` — workflows, the justfile, CI scripts
+- `deps` — dependency bumps, Dependabot, base-image updates
+- `docs` — repo-level and process documentation with no single component owner
 
 Rules:
 
 - Lowercase, kebab-case.
-- A commit that spans several crates may list them comma-separated: `refactor(dpe-core,dpe-web): ...`.
-- **Concern over location.** Scope by the responsibility a change serves, not the enclosing directory. Documentation *about* a crate takes that crate's scope (`docs(dpe-api-oai): ...`); only repo-level docs take `docs`.
-- A test *about* a specific concern takes that concern's scope (`test(dpe-core): ...`) — the `test` type already says it is a test.
-- **No catch-all.** There is no `repo`/`all` scope. If none of the enumerated scopes genuinely fits, ask the maintainer before inventing one.
+- A commit that spans several components may list them comma-separated: `feat(cpe,sync): ...`. It is rare: a `shared-*` piece a slice adds lands in its own commit ahead of the components that use it.
+- **Concern over location.** Scope by the responsibility a change serves, not the enclosing directory. Documentation *about* a component takes that component's scope (`docs(dpe): ...`); only repo-level docs take `docs`.
+- A test *about* a specific concern takes that concern's scope (`test(dpe): ...`) — the `test` type already says it is a test.
+- **No catch-all.** There is no `repo`/`all` scope. A new scope is a new component, registered in `ARCH-MAP.md` (`/dune:dune-map`), not invented in a commit.
 - **Keep `dsp-cli` commits under `dsp-cli/**` where possible.** release-please attributes a commit to a package by which paths it touches, not by its commit scope — a `dsp-cli`-scoped commit that also edits a root file (e.g. `MODULE.bazel`) lands in the root release too. See [Release Please](./deployment.md#dsp-cli) for the double-bump rule this causes.
 
-The gate enforces only that a scope is *present* — it does not restrict which one, so adding a crate needs no config change. The list above is the advisory vocabulary; keep to it.
+The gate enforces only that a scope is *present* — it does not restrict which one, so adding a component needs no config change. Choosing the right component stays the author's job.
 
 ## Enforcement
 
 Commit messages are gated in CI by [`commitlint-rs`](https://github.com/KeisukeYamashita/commitlint-rs) via the `gate` job in [`commit-hygiene.yml`](https://github.com/dasch-swiss/dsp-repository/blob/main/.github/workflows/commit-hygiene.yml) (a composite action at `.github/actions/commit-lint`). The rules live in [`.commitlintrc.yml`](https://github.com/dasch-swiss/dsp-repository/blob/main/.commitlintrc.yml): the `type` allowlist above is mandatory, `scope-empty` makes the scope mandatory, and the subject must be non-empty.
 
-The same job enforces the **one-commit-per-PR cap**. To land more than one commit, tick the `allow-many-commits` checkbox in the PR description — an unticked box does not count.
+The same job enforces the **100-commit limit** per PR, GitHub's rebase-merge limit, so the gate fails with a clear message before the merge button fails with a misleading one.
 
-The same job also **rejects merge commits on the branch**, and `allow-many-commits` does not lift that — the override is about independent commits, which a merge commit is not. The cap itself counts real commits, so a branch whose only fault is a merge is told about the merge rather than blamed for having "too many commits".
+The same job also **rejects merge commits on the branch**. The limit counts real commits, so a branch whose only fault is a merge is told about the merge rather than blamed for having too many commits.
 
 **Update a stale branch by rebasing, never by merging `main` into it:**
 
@@ -134,26 +146,42 @@ A second, **advisory** job asks a model whether the history reads well (squash /
 
 ### Principle
 
-Start from the assumption that the whole PR is **one commit**. Group commits by user-visible impact, not by implementation journey. Only split the PR when the work genuinely divides into several independent, self-contained changes that each stand on their own.
+Shape the history for the agent that reads it later. An agent asks two questions of it: "why is this line the way it is?" (`git blame`, then the commit body) and "how did this component get here?" (`git log -- <path>`). Both are answered best by **one commit per scope per slice**:
+
+- **Too fine** (a commit per screen, per fix, per review round) makes `git log -- <path>` a list of steps the agent must replay to learn the current state, and each body explains one step rather than the design.
+- **Too coarse** (a multi-part PR as one commit) makes `git blame` land every line on one message that cannot explain any of them.
+
+A slice is the unit the plan delivered: a phase, or a feature within it. Inside a slice, split by [component](#scopes), so each commit stays within one component's paths and its scope names that component. A `shared-*` piece a slice adds lands in its own commit ahead of the commits that use it, so no commit uses something that lands after it. Each commit builds and passes `just check` on its own. Small work that is one slice in one scope is one commit.
+
+### The body is written for an agent
+
+The subject says what changed; the body carries what the diff cannot:
+
+- the decisions taken and the alternatives rejected, with the reason;
+- the invariants the code relies on and where they are enforced;
+- the gotchas a later change would trip over;
+- the stable sources behind them (an ADR, a `DEV-` id, a `docs/` page).
+
+It describes the end state of the slice, never the journey to it: no "first tried", no review-round history, no behaviour that existed only on the branch. A long body is fine; an agent reads all of it. A subject that says everything needs no body.
 
 ### Rules
 
 1. Each `feat:` or `fix:` commit = one changelog entry in the sections developers deploying the DPE read first.
-2. Internal work (`build:`, `refactor:`, `docs:`, `chore:`, `test:`) lands in its own changelog section further down — squash aggressively so those sections stay readable.
+2. Fold trial-and-error and fixups into the commit they belong to, so the changelog carries no entry for work that never reached `main`.
 3. Ask: "would a developer deploying this care about this change?" If yes → `feat:` or `fix:`. If no → an internal-work prefix.
 4. Debugging journeys (trial-and-error, reverts of in-branch mistakes, iterative fixes) belong in the PR description, not the commit history. See [What `fix:` means](#what-fix-means).
 
-### One PR, several commits, or a stack
+### One PR or a stack
 
-The target is one commit per PR on `main`. Working commits while you build are fine, since they make rollback easy; squash them before review. When the finished work doesn't fit one commit, take the first rule that matches:
+A plan whose curated commits fit under 100 ships as one PR. The commits carry the structure that separate PRs would otherwise carry, grouped per phase in history order, and the PR description has a **Review guide** with one section per phase. Take a separate PR or a stack only when the first rule that matches says so:
 
 1. **The parts would need different Motivation sections** (see the PR template) → **separate PRs**, each from `main`.
 2. **The part B builds on is already an open PR, or is ready for review while B is still unfinished** → **stack** with [`gh stack`](https://docs.github.com/en/pull-requests/how-tos/stacked-pull-requests) (`gh extension install github/gh-stack`): `gh stack init <A's branch>` adopts A locally, `gh stack add <B's branch>` puts B on top, and `gh stack submit` pushes both and creates the stack on GitHub.
-3. **All parts are finished together** → **one PR with several commits**: tick `allow-many-commits` and add a Review Notes section.
+3. **The work is over 100 commits** → **stack**, cut at phase boundaries: each layer a group of whole phases that builds and passes `just check` at its head. Never a cut by count in the middle of a phase.
 
-A reviewer asking for a split turns case 3 into case 2. Each commit stands on its own in every case, per the principle above.
+Each layer of a stack is its own PR, follows every rule on this page, and is curated before it merges. The stack merges bottom-up with `gh stack merge --rebase`. A layer with a PR above it is never merged with `--delete-branch`: that closes the PR above. In a stack, the commit-hygiene gate counts commits from each PR's own base, so the 100-commit limit applies per PR.
 
-In a stack, the commit-hygiene gate counts commits from each PR's own base, so the one-commit cap applies per PR.
+A diff above 300 files or 20,000 lines does not render in full on GitHub, so such a PR is reviewed from its checkout through the Review guide.
 
 ### History lives in git, documents hold the current state
 
@@ -178,29 +206,40 @@ intended when they were written, and are not rewritten to follow the code.
 
 | Layer | Audience | Content |
 |-------|----------|---------|
-| Commit messages | Release notes readers, future developers | Every change; `feat:`/`fix:` carry the user-visible ones; the body says what changed in a document or decision, and why |
+| Commit messages | Release notes readers, future agents and developers | Every change; `feat:`/`fix:` carry the user-visible ones; the body carries the decisions, invariants and gotchas of the slice, and what changed in a document or decision, and why |
 | PR description | Reviewers + future developers | Full context including challenges |
 | Documents and ADRs | Everyone | The current state, or the target state with a Linear id; never the journey |
 | Learnings docs | Future Claude + engineers | Structured, searchable knowledge |
 | Code comments | Code readers | "Why not the obvious approach" |
 
+## Before a merge
+
+A PR or a stack merges only when every line holds for its current head. Say in its Test Plan how each was met, or why it does not apply; a skipped check is stated, never implied.
+
+1. **It stands on its own.** Nothing in it waits on later work.
+2. **The history is curated,** comments are cleaned, and `just commit-lint` passes.
+3. **CI is green,** on every layer of a stack, at the head being merged.
+4. **The whole diff has had a review:** the reviewers `eng.yaml` resolves for its files, and no verified Critical or Warning finding left.
+5. **A change someone can see has been seen.** When a page, a message or any rendered text changes or becomes newly reachable: `eng:test-browser` on the running app, and `eng:review:design-reviewer` and `eng:review:accessibility-reviewer` on the result.
+6. **Nothing is left only in text.** Every follow-up has a Linear issue, and every learning is in `docs/learnings/` in the same PR.
+
 ## Pull Requests
 
 ### PR Description
 
-The repository ships a [`.github/PULL_REQUEST_TEMPLATE.md`](https://github.com/dasch-swiss/dsp-repository/blob/main/.github/PULL_REQUEST_TEMPLATE.md) that pre-populates the expected structure (Motivation, Summary, Key Changes, Challenges and Decisions, Gotchas, Test Plan, Commit hygiene) when you open a PR. Fill it in rather than starting from scratch.
+The repository ships a [`.github/PULL_REQUEST_TEMPLATE.md`](https://github.com/dasch-swiss/dsp-repository/blob/main/.github/PULL_REQUEST_TEMPLATE.md) that pre-populates the expected structure (Motivation, Summary, Key Changes, Review guide, Challenges and Decisions, Gotchas, Learnings, Test Plan) when you open a PR. Fill it in rather than starting from scratch.
 
 Use `Part of LINEAR-ID` instead of `Fixes LINEAR-ID` when the PR advances an umbrella issue it does not close.
 
 ### Why This Format Matters
 
-The "Challenges and Decisions" section captures the debugging journey that would otherwise be lost when commits are squashed. Well-structured challenges become high-quality learnings automatically.
+The "Challenges and Decisions" section captures the debugging journey that the curated commit history deliberately omits. Well-structured challenges become high-quality learnings automatically.
 
 ### PR Creation Process
 
 1. Create as draft: `gh pr create --draft`.
 2. Assign to the requesting developer: `gh pr edit [PR_NUMBER] --add-assignee [USERNAME]`.
-3. If the PR keeps multiple commits, tick `allow-many-commits` and add a "Review Notes" section pointing out that the commits should be reviewed separately.
+3. If the PR has several phases, fill in the Review guide with one section per phase.
 
 ### What Goes Where
 
@@ -210,8 +249,9 @@ The "Challenges and Decisions" section captures the debugging journey that would
 | Bug fix | Commit message (`fix:`) |
 | Build/CI/refactor details | Commit message (`build:` / `chore(ci):` / `refactor:`) |
 | Why the work was needed | PR Motivation section |
+| What a reviewer should look at, per phase | PR Review guide section |
 | What was tried and failed | PR Challenges section |
 | Architecture decisions + rationale | PR Challenges section; a hard-to-reverse one also as an ADR |
 | How a decision or document changed, and why | Commit body (the document itself is rewritten in place) |
 | Things to watch out for | PR Gotchas section |
-| Structured, searchable knowledge | Learnings doc (dasch-specs) |
+| Structured, searchable knowledge | Learnings doc (`docs/learnings/`) |

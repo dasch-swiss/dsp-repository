@@ -7,6 +7,10 @@ defaults:
     lint: just check
     gate: just check && just test
     test_targeted: just test
+  reviewers:
+    # The sources comments cite, against the stable-source rule in CONVENTIONS.md `## Comments`.
+    # In defaults because comments live in every file kind here.
+    - eng:review:reference-reviewer
 
 overrides:
   # Per-application guidance: one override per directory with its own CLAUDE.md.

@@ -1816,8 +1816,11 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `areas/access/cpe`, whose kit spans the entry points of its crates and the ADRs that bound it,
   and `areas/access/sync`, which needs CPE's port and contract beside its own store. Splitting
   either kit by task is open. *Enforcement:* **docs-only**.
-- **Commits:** `type(scope): subject`, scope = crate name or `dpe-data` / `ci` / `deps` / `docs`;
-  one commit per PR. *Enforcement:* **static-analysis** (`just commit-lint`, the `gate` job).
+- **Commits:** `type(scope): subject`, scope = a component above (`docs/src/git-conventions.md`
+  → *Scopes*) or `dpe-data` / `ci` / `deps` / `docs`;
+  one commit per scope per slice, at most 100 per PR, no merge commits. *Enforcement:*
+  **static-analysis** for the format, the limit and merges (`just commit-lint`, the `gate` job);
+  **review** for the commit shape.
 
 ### Banned constructs
 

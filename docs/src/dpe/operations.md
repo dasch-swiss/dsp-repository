@@ -128,6 +128,25 @@ access-server healthcheck --url http://localhost:9090/healthz # custom URL
 
 > **Rate limiting and reverse proxies.** The OAI (`/dpe/oai`) and telemetry (`/telemetry/collect`) rate limits key on the client IP, taken from the **rightmost** `X-Forwarded-For` entry (the address Traefik itself appends), falling back to the connection peer address. Reading the rightmost entry — not the leftmost — is deliberate: Traefik appends the real client after any `X-Forwarded-For` value the client supplied, so the rightmost entry is proxy-authored and cannot be spoofed, while the leftmost stays attacker-controlled. This holds only while Traefik is the sole hop in front of DPE; a second proxy that appends to `X-Forwarded-For` would shift the trusted entry and require counting hops from the right.
 
+## Crawlers
+
+The project list's facets are a GET form, not links, so a crawler that follows links finds no URL per
+facet combination. Two hints cover the filtered URLs that people share and bookmark:
+
+- **`/robots.txt`** (`areas/access/dpe/public/robots.txt`, served by the static-file fallback) disallows
+  `/dpe/projects` with any facet parameter, `search` or `dialog`, and the two fragment routes
+  `/dpe/projects/results` and `/dpe/projects/search`. It does not disallow `page`: the paginated list stays
+  crawlable. The `*` in its paths is a Google and Bing extension, not RFC 9309; a crawler without it
+  ignores those lines. It names no `/cpe` path, so it never advertises a Hidden project
+  (`ACCESS_HIDDEN_PROJECTS` above).
+- **A canonical link.** A projects page with a facet, `search` or `dialog` carries
+  `<link rel="canonical" href="<DPE_PUBLIC_BASE_URL>/dpe/projects">`; the list and its pages carry none. A
+  crawler that obeys `robots.txt` never fetches those URLs, so the link serves crawlers that ignore
+  `robots.txt` and link previews. No page carries a robots `noindex`: it would be read only on a page that
+  `robots.txt` already keeps crawlers off.
+
+Neither stops a crawler that ignores both; the reverse proxy's rate limit is the bound for that.
+
 ## Health Check
 
 - **Endpoint**: `GET /healthz`

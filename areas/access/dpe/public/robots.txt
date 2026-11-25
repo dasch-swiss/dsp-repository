@@ -1,0 +1,13 @@
+# The project list's facet, search and panel parameters give a practically unbounded number of
+# URLs over the same projects. Paginated pages (?page=N) stay crawlable. No /cpe path is named
+# here: hidden CPE projects must not be advertised.
+User-agent: *
+Disallow: /dpe/projects?*ongoing=
+Disallow: /dpe/projects?*finished=
+Disallow: /dpe/projects?*search=
+Disallow: /dpe/projects?*type_of_data=
+Disallow: /dpe/projects?*data_language=
+Disallow: /dpe/projects?*access_rights=
+Disallow: /dpe/projects?*dialog=
+Disallow: /dpe/projects/results
+Disallow: /dpe/projects/search

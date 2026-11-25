@@ -10,11 +10,11 @@ pub(crate) struct AppState {
     pub(crate) css_href: String,
     /// Origin of the site itself, for landing-page and catalogue URLs.
     pub(crate) public_base_url: String,
-    /// Origin and path of the OAI endpoint, for the `describedby` targets; on DEV another host.
+    /// Origin and path of the OAI endpoint, for the `describedby` targets; may be another host.
     /// `dpe-api-oai`'s `OaiState` takes the same normalised value, built alongside this one.
     pub(crate) oai_base_url: String,
     /// Origin emitted ARKs are rewritten to, and where the `/ark:/…` resolver route answers.
-    /// `None` (production, DEV, STAGE) keeps the corpus's ARKs and mounts no resolver. This is
+    /// `None` (production, STAGE) keeps the corpus's ARKs and mounts no resolver. This is
     /// the resolver route's own copy; the corpus's setting (same `DpeConfig` field) is what
     /// actually normalises the ARKs it serves.
     pub(crate) ark_resolver_base_url: Option<String>,

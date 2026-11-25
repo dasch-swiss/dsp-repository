@@ -74,8 +74,8 @@ access-server healthcheck --url http://localhost:9090/healthz # custom URL
 | `RUST_LOG` | No | `info` | Log level filter (e.g., `access_server=info,dpe_server=info,tower_http=debug`) |
 | `DPE_DATA_DIR` | No | `areas/access/dpe/server/data` | Path to project/record JSON data files. Legacy alias: `DATA_DIR` (checked if `DPE_DATA_DIR` is unset) |
 | `DPE_FATHOM_SITE_ID` | No | *(none)* | Fathom Analytics site ID (not a secret). **Production only** — leave unset or empty everywhere else; empty is normalised to unset. |
-| `DPE_SHOW_PLACEHOLDER_VALUES` | No | `false` | Show placeholder values (MISSING, CALCULATED) in the UI, styled in red. Enable on DEV/STAGE for QA visibility. |
-| `DPE_OAI_BASE_URL` | No | `https://repository.dasch.swiss/dpe/oai` | Public base URL emitted as the OAI-PMH `baseURL` and echoed in `<request>` elements. Set per environment to match the public endpoint (e.g. `https://api.dev.dasch.swiss/dpe/oai` on DEV, `http://localhost:4000/dpe/oai` locally). See [OAI-PMH](./oai-pmh.md). |
+| `DPE_SHOW_PLACEHOLDER_VALUES` | No | `false` | Show placeholder values (MISSING, CALCULATED) in the UI, styled in red. Enable on STAGE for QA visibility. |
+| `DPE_OAI_BASE_URL` | No | `https://repository.dasch.swiss/dpe/oai` | Public base URL emitted as the OAI-PMH `baseURL` and echoed in `<request>` elements. Set per environment to match the public endpoint (e.g. `http://localhost:4000/dpe/oai` locally). See [OAI-PMH](./oai-pmh.md). |
 | `DPE_PUBLIC_BASE_URL` | No | `https://repository.dasch.swiss` | Public origin of the site itself, used to build the landing-page and machine-readable-representation URLs carried by the embedded metadata and the `Link` header. Origin only: scheme `http` or `https`, no path, query or trailing slash. A bad value fails startup. Independent of `DPE_OAI_BASE_URL` (see the note below). |
 | `DPE_ARK_RESOLVER_BASE_URL` | No | *(none)* | Origin every emitted ARK is rewritten to carry, and the origin the deployment's own `/ark:/{naan}/{shoulder}/{shortcode}` resolver answers on. **Leave unset everywhere but a PR preview.** Unset, the ARKs are the ones the corpus records, resolving through `ark.dasch.swiss`, and no resolver route is mounted. Origin only, validated exactly as `DPE_PUBLIC_BASE_URL` is. See the note below. |
 | `DPE_OAI_RATE_LIMIT_PER_SECOND` | No | `1` | Per-IP rate limit, seconds per request once the burst is spent. `1` ≈ 60 requests/minute sustained. Governs `/dpe/oai` and both machine-readable representation routes, which share one bucket. See [OAI-PMH](./oai-pmh.md) and [Machine-Readable Metadata](./machine-readable-metadata.md). |
@@ -96,7 +96,7 @@ access-server healthcheck --url http://localhost:9090/healthz # custom URL
 | `CPE_PUBLIC_ORIGIN` | No | *(none)* | Origin CPE's absolute URLs (the share links) start with, e.g. `https://repository.dasch.swiss`. An origin only: scheme `http` or `https` and a host, no path (not `…/cpe`: the base is `CPE_BASE`), no query, no trailing slash. A value of another shape is refused, and CPE then answers `503` on every path under its base. Not set in the image. Unset, CPE takes the origin of each request from `X-Forwarded-Proto` and `Host` and logs once at start that it does. Both headers are the client's unless a proxy in front overwrites them (Cloud Run does), so set the variable on every deployment that has a cache or a proxy that passes them through. |
 | `ACCESS_HIDDEN_PROJECTS` | No | *(none)* | Comma-separated shortcodes of the Hidden projects (`areas/access/CONTEXT.md`), e.g. `083C,086A`: their presentations carry `X-Robots-Tag: noindex, nofollow` and the robots meta, and no overview lists them. Read once at start by `access-server`, honoured by CPE, ignored by DPE. Entries are trimmed and upper-cased; unset, empty or blank means none, and an entry that is not a shortcode is logged as a warning and ignored. Not set in the image: it is the deployment's to set. Not access control: anyone with the link reaches the project. |
 
-> **Two base URLs, on purpose.** `DPE_PUBLIC_BASE_URL` and `DPE_OAI_BASE_URL` are set independently and neither is derived from the other. The OAI endpoint advertises its own `baseURL` in every response, and on DEV that endpoint lives on a different host (`https://api.dev.dasch.swiss/dpe/oai`) from the site (`https://repository.dev.dasch.swiss`). Set both per environment.
+> **Two base URLs, on purpose.** `DPE_PUBLIC_BASE_URL` and `DPE_OAI_BASE_URL` are set independently and neither is derived from the other. The OAI endpoint advertises its own `baseURL` in every response, and that endpoint may answer on a different host from the site. Set both per environment.
 >
 > **Assessing a local run from a container.** A FAIR assessor running in Docker resolves the URLs the page emits, so `DPE_PUBLIC_BASE_URL` must name a host the container can reach — `http://host.docker.internal:4000`, not `http://localhost:4000`, which inside the container is the container itself.
 >
@@ -112,7 +112,7 @@ access-server healthcheck --url http://localhost:9090/healthz # custom URL
 >
 > The resolver answers project ARKs only, with a `302` to the landing page, mirroring `ark.dasch.swiss`. A record ARK gets a `404`: DPE serves no record landing page, and `ark.dasch.swiss` resolves a record ARK to the VRE rather than to DPE.
 >
-> **Do not set it on DEV, STAGE or PROD.** Those deployments *are* what the recorded ARK resolves to, or are meant to become it. Setting it there would make them publish identifiers that only they answer, and mount a second ARK authority beside `ark.dasch.swiss`.
+> **Do not set it on STAGE or PROD.** Those deployments *are* what the recorded ARK resolves to, or are meant to become it. Setting it there would make them publish identifiers that only they answer, and mount a second ARK authority beside `ark.dasch.swiss`.
 
 > **What the rate limit does not bound.** It bounds the request *rate*, not the
 > per-request size, and the JSON-LD representation is large. Its own byte budget
@@ -220,7 +220,7 @@ RUST_LOG=debug
 
 Privacy-friendly, GDPR-compliant analytics. No cookies, no personal data collected.
 
-**Configuration:** Set the `DPE_FATHOM_SITE_ID` environment variable to your Fathom site ID (not a secret). The tracking script is automatically injected into the HTML shell. It is set in `ops-deploy/group_vars/prod.yml` and nowhere else, so DEV and STAGE render no script at all.
+**Configuration:** Set the `DPE_FATHOM_SITE_ID` environment variable to your Fathom site ID (not a secret). The tracking script is automatically injected into the HTML shell. It is set in `ops-deploy/group_vars/prod.yml` and nowhere else, so STAGE renders no script at all.
 
 **What gets tracked:**
 - Page views

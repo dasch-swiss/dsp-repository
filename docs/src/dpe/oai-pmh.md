@@ -18,7 +18,7 @@ just RECORD_SHORTCODES="081C 0868 0803" fetch-records
 | Environment | Base URL |
 |-------------|----------|
 | Local development (`just dev`) | `http://localhost:4000/dpe/oai` |
-| DEV | `https://api.dev.dasch.swiss/dpe/oai` |
+| STAGE | `https://repository.stage.dasch.swiss/dpe/oai` |
 | Production | `https://repository.dasch.swiss/dpe/oai` |
 
 The `baseURL` advertised by `Identify` (and echoed in every `<request>` element) is configured per environment via the `DPE_OAI_BASE_URL` environment variable, so it matches the URL harvesters actually use (see [operations](./operations.md)). If unset it defaults to the production endpoint above.
@@ -43,7 +43,7 @@ Arguments outside these lists are rejected with `badArgument`, with two exceptio
 ### Identify
 
 ```bash
-curl "https://api.dev.dasch.swiss/dpe/oai?verb=Identify"
+curl "https://repository.stage.dasch.swiss/dpe/oai?verb=Identify"
 ```
 
 Abbreviated example response (values vary by environment):
@@ -66,7 +66,7 @@ Abbreviated example response (values vary by environment):
 ### ListMetadataFormats
 
 ```bash
-curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListMetadataFormats"
+curl "https://repository.stage.dasch.swiss/dpe/oai?verb=ListMetadataFormats"
 ```
 
 With an `identifier` argument, the supported formats for that item are returned. Note: identifiers are currently validated against projects only — a record identifier that works with `GetRecord` returns `idDoesNotExist` here.
@@ -74,7 +74,7 @@ With an `identifier` argument, the supported formats for that item are returned.
 ### ListSets
 
 ```bash
-curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListSets"
+curl "https://repository.stage.dasch.swiss/dpe/oai?verb=ListSets"
 ```
 
 Abbreviated example response — the full response also contains one `project:{shortcode}` set per project and one `cluster:{id}` set per cluster:
@@ -243,7 +243,7 @@ These differ from the resolvable ARK URLs (`https://ark.dasch.swiss/ark:/72163/1
 
 The OAI `<identifier>` header is the **only** place an ARK appears without the resolver in front — it is an identifier authority, not an address, so it is deliberately host-independent. Everywhere else an ARK is exposed — `dc:identifier`, `dc:relation`, DataCite `identifier` and `relatedIdentifier`, and the project page's permalink link target — carries a resolver in front so a harvester can dereference it. `Pid::as_url()` is the accessor for that form; there is deliberately no accessor returning a bare `ark:/…` path.
 
-Which resolver is a deployment's own business. Production, DEV and STAGE all emit `https://ark.dasch.swiss/`, the host the corpus records. A PR preview sets [`DPE_ARK_RESOLVER_BASE_URL`](./operations.md#environment-variables) and emits its own, so that it does not publish an identifier resolving to a deployment that runs different code; the ARK path is untouched either way, and the OAI `<identifier>` header, being host-independent already, does not change at all.
+Which resolver is a deployment's own business. Production and STAGE both emit `https://ark.dasch.swiss/`, the host the corpus records. A PR preview sets [`DPE_ARK_RESOLVER_BASE_URL`](./operations.md#environment-variables) and emits its own, so that it does not publish an identifier resolving to a deployment that runs different code; the ARK path is untouched either way, and the OAI `<identifier>` header, being host-independent already, does not change at all.
 
 ## Sets
 
@@ -270,29 +270,29 @@ A project belongs to a cluster if the cluster's member list contains the project
 Full harvest of all items:
 
 ```bash
-curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListRecords&metadataPrefix=oai_dc"
+curl "https://repository.stage.dasch.swiss/dpe/oai?verb=ListRecords&metadataPrefix=oai_dc"
 ```
 
 Selective harvest of research projects only:
 
 ```bash
-curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListRecords&metadataPrefix=oai_datacite&set=entityType:ResearchProject"
+curl "https://repository.stage.dasch.swiss/dpe/oai?verb=ListRecords&metadataPrefix=oai_datacite&set=entityType:ResearchProject"
 ```
 
 Selective harvest of one project's records, or of everything under one cluster:
 
 ```bash
 # All records of project 0803
-curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListRecords&metadataPrefix=oai_dc&set=project:0803"
+curl "https://repository.stage.dasch.swiss/dpe/oai?verb=ListRecords&metadataPrefix=oai_dc&set=project:0803"
 
 # All project entries and records under cluster cluster-003
-curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListRecords&metadataPrefix=oai_dc&set=cluster:cluster-003"
+curl "https://repository.stage.dasch.swiss/dpe/oai?verb=ListRecords&metadataPrefix=oai_dc&set=cluster:cluster-003"
 ```
 
 Headers only (no metadata payloads):
 
 ```bash
-curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListIdentifiers&metadataPrefix=oai_dc"
+curl "https://repository.stage.dasch.swiss/dpe/oai?verb=ListIdentifiers&metadataPrefix=oai_dc"
 ```
 
 ### Rate limiting
@@ -310,7 +310,7 @@ The endpoint is rate-limited per client IP. By default a harvester may make up t
 To fetch the next page, repeat the request with **only** the `verb` and the `resumptionToken` — no other arguments (the token already carries the original `metadataPrefix`, `from`, `until`, and `set`):
 
 ```bash
-curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListRecords&resumptionToken=MHwyMDIw..."
+curl "https://repository.stage.dasch.swiss/dpe/oai?verb=ListRecords&resumptionToken=MHwyMDIw..."
 ```
 
 The token is opaque: harvesters must pass it back verbatim and must not attempt to parse or construct it. The last page of a paged list carries an empty `resumptionToken` element (`<resumptionToken completeListSize="342" cursor="300"/>`), signalling that the list is complete. A response whose entire result fits in one page carries no `resumptionToken` element at all.
@@ -323,10 +323,10 @@ Tokens are stateless: each carries its own filter arguments and offset, and the 
 
 ```bash
 # A research project
-curl "https://api.dev.dasch.swiss/dpe/oai?verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:dasch.swiss:ark:/72163/1/0803"
+curl "https://repository.stage.dasch.swiss/dpe/oai?verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:dasch.swiss:ark:/72163/1/0803"
 
 # A record within a project
-curl "https://api.dev.dasch.swiss/dpe/oai?verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"
+curl "https://repository.stage.dasch.swiss/dpe/oai?verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:dasch.swiss:ark:/72163/1/0803/lklK7rVuVOmpBZYWrF8o=gh"
 ```
 
 Abbreviated example response:
@@ -371,7 +371,7 @@ Filtering compares `from`/`until` against datestamps as plain strings (lexicogra
 - Because record datestamps may include a time component, `until=2012-06-19` excludes a record stamped `2012-06-19T14:33:33Z`. To include a full day, filter with `until` set to the following day.
 
 ```bash
-curl "https://api.dev.dasch.swiss/dpe/oai?verb=ListIdentifiers&metadataPrefix=oai_dc&from=2010-01-01&until=2020-12-31"
+curl "https://repository.stage.dasch.swiss/dpe/oai?verb=ListIdentifiers&metadataPrefix=oai_dc&from=2010-01-01&until=2020-12-31"
 ```
 
 **Incremental harvesting is not reliable with these semantics.** Project datestamps reflect research start dates, so new or updated project metadata does not surface through `from`-based incremental harvests, and deletions are not tracked (`deletedRecord: no`). Harvesters should periodically re-harvest the full repository instead of relying on date-based increments.

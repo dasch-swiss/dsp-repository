@@ -34,7 +34,7 @@ pub(crate) fn test_corpus() -> &'static Corpus {
 /// The app state every test in this crate builds a router or renders a page
 /// with.
 ///
-/// The two base URLs differ on purpose, as they do on DEV, so a test cannot
+/// The two base URLs differ on purpose, as they may in a deployment, so a test cannot
 /// pass by accident when one is derived from the other.
 pub(crate) fn test_state() -> AppState {
     AppState {

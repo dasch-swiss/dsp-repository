@@ -110,7 +110,7 @@ A change is Approved for depositors until step 3 completes. A merged pull reques
 
 `secrets.GH_TOKEN`, not `github.token`. A pull request opened with `GITHUB_TOKEN` does not trigger workflows, so a pull request opened by the run would arrive with no `check`, no `test` and no `commit-hygiene` run — looking green because nothing ran. `secrets.GH_TOKEN` is already used by `release-please.yml`, which is also the in-repo precedent for querying open pull requests rather than trusting local state.
 
-A pull request opened by the run must satisfy `commit-hygiene.yml` like any other: `type(scope): subject`, one commit, and a scope from the vocabulary in `CONVENTIONS.md`. Project metadata files take `dpe-data`.
+A pull request opened by the run must satisfy `commit-hygiene.yml` like any other: `type(scope): subject`, no merge commits, and a scope from the vocabulary in `CONVENTIONS.md`. Project metadata files take `dpe-data`.
 
 ## Running it
 

@@ -81,7 +81,7 @@ Common CI steps are extracted into composite actions in `.github/actions/`:
 | `build-editor` | Build the editor image with Bazel, stamped with the caller's `DEPOSIT_VERSION`, and load it into Docker as `local-scan/editor:latest` |
 | `docker-publish` | Build an image with Bazel and push it with its `:image_push` target under the caller's tag, to Docker Hub or the repository the caller names; takes no result from the remote cache unless the caller is a pull request's own preview |
 | `docker-scout` | Run Docker Scout CVE scan and upload SARIF results |
-| `commit-lint` | Run the commit gate — commitlint-rs (type allowlist and mandatory scope) plus the one-commit-per-PR cap |
+| `commit-lint` | Run the commit gate — commitlint-rs (type allowlist and mandatory scope) plus the 100-commit limit and no merge commits |
 | `dsp-cli-stack-test` | Start the Fuseki/knora-api stack, load fixtures, mint tokens, and run dsp-cli's live tests against it |
 
 Every image is a Bazel target (`//areas/access/server:image`, `//areas/deposit/server:image`, `//modules/mosaic/playground:image`; see [Building with Bazel](./bazel.md#images)): a static musl binary, the public directory with the stylesheet, and the data directories on distroless `static`. The preview, Scout and Mosaic publish workflows also run when the Bazel build changes: `MODULE.bazel`, `MODULE.bazel.lock`, `Cargo.Bazel.lock`, `.bazelrc`, `.bazelversion`, `platforms/`, `bazel/`, `tools/` and the composite actions they use.

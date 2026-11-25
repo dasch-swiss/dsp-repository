@@ -44,8 +44,9 @@ pub(crate) struct TabQuery {
 
 pub(crate) async fn projects_page_handler(
     axum::extract::State(state): axum::extract::State<AppState>,
-    axum::extract::Query(query): axum::extract::Query<dpe_web::domain::ProjectQuery>,
+    axum::extract::RawQuery(raw): axum::extract::RawQuery,
 ) -> axum::response::Html<String> {
+    let query = dpe_web::domain::ProjectQuery::from_query_str(raw.as_deref().unwrap_or_default());
     let tp = traceparent::extract_traceparent();
     let ctx = state.render_context();
     let content = dpe_web::pages::projects_page(&query, &ctx);

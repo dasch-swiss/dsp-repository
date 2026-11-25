@@ -57,7 +57,7 @@ pub fn project_search_input() -> Markup {
                         name="search"
                         placeholder="Search projects..."
                         aria-label="Search projects"
-                        class="grow bg-transparent outline-none text-sm/[1.5] text-neutral-950"
+                        class="grow min-w-0 bg-transparent outline-none text-sm/[1.5] text-neutral-950"
                         role="combobox"
                         aria-autocomplete="list"
                         aria-controls="search-results"

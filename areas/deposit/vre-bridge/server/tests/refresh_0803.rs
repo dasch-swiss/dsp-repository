@@ -15,7 +15,7 @@ use zip::ZipWriter;
 
 /// The digest of `inputs/0803/`, as `vre_bridge_core::inputs_digest` computes it. The committed
 /// fixture tokens record it too, which `just check-stand-in-fixture` reads from this line.
-const INPUTS_DIGEST_0803: &str = "sha256:260b4ee50905eaf727df4b6d00dc167a0aad004cf01dac2102f8a4efdaae2d9e";
+const INPUTS_DIGEST_0803: &str = "sha256:820ef882fe48de41f2d13d7663bae457ad40a24250a4c2e6d04407ccb92d8ba8";
 
 /// The shipped inputs, copied at their repository paths: runfiles are symbolic links, which the
 /// digest refuses.

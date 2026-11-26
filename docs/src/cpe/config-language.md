@@ -1378,8 +1378,7 @@ already the property list). When the list is capped (fewer rows render than
 the true total match count), a `p.incoming__count` line follows the `<ul>`:
 "Showing N of M" (localized in all four languages, both counts
 thousands-grouped). There is deliberately **no pager and no "show all"**
-affordance yet — see `docs/BACKLOG.md`'s "`incoming-links` capped list has no
-way to reach the rest" entry.
+affordance yet (DEV-8084).
 
 **Grouped mode and row anatomy (HdM Slice 3 / G3).** Six further optional
 attributes, all generic (no project literal in Rust), all absent ⇒ today's
@@ -1464,7 +1463,7 @@ the `<ul>`.
    `links::member_href_for`, the same builder the reader's own
    rail/pager and page picker use. This rung's
    assumption — that the parent's detail page actually hosts a reader — is
-   not itself validated (`docs/BACKLOG.md`).
+   not itself validated (DEV-8085).
 3. Else a plain `span.incoming__name` — no link at all.
 
 **Validation:** see the validation table below.
@@ -2861,6 +2860,6 @@ a user-facing guide.)
 - **Per-page CSS** — all CSS comes from the token-CSS system at
   `<base>/<project-id>/_static/cpe/*.css`. No `style="..."` inline declarations in config.
   Per-project theming uses the `theme {}` knob; a `style.css` override
-  is possible but deferred (see BACKLOG).
+  is possible but deferred (DEV-8086).
 - **Per-component layout primitives** — CSS handles layout; the
   config language doesn't have a grid or flex vocabulary.

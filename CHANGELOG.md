@@ -1,5 +1,81 @@
 # Changelog
 
+## [0.8.12](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.11...v0.8.12) (2026-11-26)
+
+
+### Features
+
+* **access-server,cpe-server,cpe-web:** Hide a project from crawlers and from the overview (DEV-7919) ([ddcdf1a](https://github.com/dasch-swiss/dsp-repository/commit/ddcdf1a2def6c7aa652c2a366bf05dcf819be868))
+* **access-server:** Carry no stand-in data in the image (DEV-8001) ([000743d](https://github.com/dasch-swiss/dsp-repository/commit/000743d3a7de0053701aad2e0635e9b64425e0cc))
+* **cpe-ports,sync-store,media-store:** Serve provenance and announce a changed project (DEV-7622) ([4a01274](https://github.com/dasch-swiss/dsp-repository/commit/4a012745b79bd69df7aa546c42163768d57270be))
+* **cpe-server,access-server:** Re-activate CPE on an announcement (DEV-7622) ([2688961](https://github.com/dasch-swiss/dsp-repository/commit/26889613635505660c7c9e808b5e440c1c377958))
+* **deposit-server:** Start the VRE bridge and offer an operator's refresh (DEV-7998) ([f469f8b](https://github.com/dasch-swiss/dsp-repository/commit/f469f8b8001121264058ad12a82122530eabf9e4))
+* **dpe:** Filter the project list in place, with the server writing the URL (DEV-8065) ([396256a](https://github.com/dasch-swiss/dsp-repository/commit/396256a7619feacc79851cc0928573bba1ecc49b))
+* **dpe:** Serve robots.txt and a canonical link for filtered project lists (DEV-8065) ([91a4791](https://github.com/dasch-swiss/dsp-repository/commit/91a4791576cf5809224ad75c3c5b85f03b199df8))
+* **shared-datastar:** Send a GET action's form fields with Get::form (DEV-8065) ([a5e378c](https://github.com/dasch-swiss/dsp-repository/commit/a5e378cb2ddbff92158e4d0591cf39938307196e))
+* **shared-stand-in:** The stand-in layout and the Ready token (DEV-7983) ([e913b48](https://github.com/dasch-swiss/dsp-repository/commit/e913b486966d1aeb13cb8b9495b5eb9144d95890))
+* **sync-store,media-store:** Know projects by Ready token and read their generation (DEV-7985) ([172c471](https://github.com/dasch-swiss/dsp-repository/commit/172c471a037b4a1d09a138fdde7a26a2654104aa))
+* **vre-bridge-client:** The DSP-API client with the service identity (DEV-7984) ([4d964f6](https://github.com/dasch-swiss/dsp-repository/commit/4d964f6481cae3046f4e0d57e5125a29853dacf7))
+* **vre-bridge-core,vre-bridge-server:** DaTEI file mapping, text downloads and the file manifest (DEV-8000) ([c9d9ce9](https://github.com/dasch-swiss/dsp-repository/commit/c9d9ce90af4e4b38bf627a4f0acfc8814d64a95b))
+* **vre-bridge-core:** Settings, refresh decisions and the shipped-input digest (DEV-7987) ([59aa398](https://github.com/dasch-swiss/dsp-repository/commit/59aa398ed8177eef3d812c3700a7a6bc4480f6c4))
+* **vre-bridge-lift:** Port dao-lift's snapshot from dsp-incubator (DEV-7980) ([e66eeeb](https://github.com/dasch-swiss/dsp-repository/commit/e66eeeb447f2f1756813e80e9516aa25a0a3452a))
+* **vre-bridge-lift:** Read text markup from valueHasXml and ignore standoff (DEV-8012) ([872273e](https://github.com/dasch-swiss/dsp-repository/commit/872273e5d0251c124113e3ed790c731fbc216255))
+* **vre-bridge-lift:** Select, guard and record access rights in the interim format (DEV-7982) ([17208fa](https://github.com/dasch-swiss/dsp-repository/commit/17208fa2f02224a732d012d14de114f7d3c49142))
+* **vre-bridge-server:** Nightly run, recovery at start and the operator's refresh (DEV-7993) ([8de1e1e](https://github.com/dasch-swiss/dsp-repository/commit/8de1e1e8c5fba42e28327110847863571fe65a64))
+* **vre-bridge-server:** Refresh one project (DEV-7988) ([3892619](https://github.com/dasch-swiss/dsp-repository/commit/3892619c511ab5be885ca40fe129aede7c3d1292))
+* **vre-bridge-server:** Ship 0803's inputs and pin the media fixture to them (DEV-7999) ([72ddaba](https://github.com/dasch-swiss/dsp-repository/commit/72ddabafb4df93a6be5abe02c8b3f28c6b75fc45))
+* **vre-bridge-store:** Write generations and Ready tokens (DEV-7986) ([a2cfb7c](https://github.com/dasch-swiss/dsp-repository/commit/a2cfb7cafcf6555a61050f5b79879760721aad24))
+
+
+### Bug Fixes
+
+* **access-server,deposit-server:** Read no baggage header from requests ([e26603a](https://github.com/dasch-swiss/dsp-repository/commit/e26603ac197ab3f2dd4aeed2d30b223dde79d4ff))
+* **cpe-web:** Line the overview's empty state up with its heading (DEV-7941) ([f6fb39a](https://github.com/dasch-swiss/dsp-repository/commit/f6fb39a8fbb4b944c5bba6ef1684537ed49f3b8e))
+* **dpe:** Accept repeated facet keys and percent-encode the canonical query (DEV-8065) ([e954a7f](https://github.com/dasch-swiss/dsp-repository/commit/e954a7f4531d85da3ccf206a206a76d6fc12bff3))
+* **dpe:** Keep the mobile Filters button inside the viewport ([78257a8](https://github.com/dasch-swiss/dsp-repository/commit/78257a8103cfdbfc88297da248e91d725806361c))
+* **dpe:** Render the project facets as one GET form instead of a link per option (DEV-8065) ([2d14bd9](https://github.com/dasch-swiss/dsp-repository/commit/2d14bd9de17f014659df41708eaade1b7314cc99))
+* **dsp-cli:** Search all resources when resource list has --filter ([28dcdba](https://github.com/dasch-swiss/dsp-repository/commit/28dcdba77566ce7ba6a3984ff63a883e004a8a4b))
+
+
+### Code Refactoring
+
+* **shared-names:** Move the name rules out of cpe-ports (DEV-7981) ([f1d562a](https://github.com/dasch-swiss/dsp-repository/commit/f1d562af4ea8fe002801cd7c3cb7728ddf27b6ad))
+
+
+### Documentation
+
+* **docs:** Bring DaTEI's documentation up to the incubator's current state ([9cf1d1c](https://github.com/dasch-swiss/dsp-repository/commit/9cf1d1cb0c8bc05f5a9eb50e8ac1bcd4fe9aa809))
+* **docs:** Define the VRE bridge and record its decisions (P-DEV-301) ([888406f](https://github.com/dasch-swiss/dsp-repository/commit/888406f15b2c216637131441ca3e9de20ef901ec))
+* **docs:** Plan the Bazel migration (DEV-7699) ([2bca585](https://github.com/dasch-swiss/dsp-repository/commit/2bca58529d30e27af796a430acbac104c178f727))
+* **docs:** Plan the DaTEI integration and rewrite its ADRs (DEV-7934) ([158ebb9](https://github.com/dasch-swiss/dsp-repository/commit/158ebb9e3afff53a8def4402b6f8acef775a7b76))
+* **docs:** Shape commits per component per slice, with bodies for agents ([c975c67](https://github.com/dasch-swiss/dsp-repository/commit/c975c670a6e26aadf6c2bab6a215e95400b537eb))
+* **dpe:** Plan the DPE facet form and crawler hints (DEV-8065) ([8ccf12b](https://github.com/dasch-swiss/dsp-repository/commit/8ccf12b04b25471cff9ec4b5a479eb0354e93cba))
+
+
+### Build System
+
+* **ci:** Build dsp-cli and the Mosaic playground with Bazel ([682da73](https://github.com/dasch-swiss/dsp-repository/commit/682da73917a0598f86f912530f51614a8191f5a1))
+* **ci:** Build the Access Area crates with Bazel ([7bb293f](https://github.com/dasch-swiss/dsp-repository/commit/7bb293f4a90e27955ccdbfba8eb68be894066cc2))
+* **ci:** Build the Deposit Area crates with Bazel ([944c917](https://github.com/dasch-swiss/dsp-repository/commit/944c91743a922599908090a39bcac8f05800acce))
+* **ci:** Build the DPE fuzz targets with Bazel ([c141a29](https://github.com/dasch-swiss/dsp-repository/commit/c141a299bcefabd5e7627c57852c872482ac929f))
+* **ci:** Build the shared crates and mosaic-tiles with Bazel ([9cb7381](https://github.com/dasch-swiss/dsp-repository/commit/9cb73812355b543caaadc6d324940486e47a5348))
+* **ci:** Build the stylesheets and images with Bazel ([f927d1f](https://github.com/dasch-swiss/dsp-repository/commit/f927d1f6ff0aed3190d1adcb507ad6219ec6d72a))
+* **ci:** Publish, preview and scan the Bazel images ([0dd81b5](https://github.com/dasch-swiss/dsp-repository/commit/0dd81b5404a319119579df640afd2a0064b15d30))
+* **ci:** Remove the Cargo workspace ([65c3194](https://github.com/dasch-swiss/dsp-repository/commit/65c3194fef23ec5d3ca13bc34a8ff8b2a3c026de))
+* **ci:** Run the gates and the developer tooling on Bazel ([f6303a3](https://github.com/dasch-swiss/dsp-repository/commit/f6303a355007934e7d2d1a28621c3c39acaf0276))
+* **deps:** Bump crates with published security advisories ([f687ca4](https://github.com/dasch-swiss/dsp-repository/commit/f687ca465e8eca04c3bdf05fbe7caa918d5f7365))
+* **deps:** Bump rusqlite to 0.40 and Rust to 1.95 ([7d5eae0](https://github.com/dasch-swiss/dsp-repository/commit/7d5eae08808a08f830b215df4193f5524d557dca))
+* **deps:** Use ring as the one TLS crypto provider ([c791c59](https://github.com/dasch-swiss/dsp-repository/commit/c791c59c8fa4435ca4426bbad3d3d6db2974bd1e))
+
+
+### Miscellaneous Chores
+
+* **ci:** Deploy DPE to stage on every push to main (INFRA-1426) ([6c7c571](https://github.com/dasch-swiss/dsp-repository/commit/6c7c571ad8c4ee319e232a6b1d7c600eda850113))
+* **ci:** Replace the one-commit cap with GitHub's 100-commit limit ([48d9dbe](https://github.com/dasch-swiss/dsp-repository/commit/48d9dbe250fb423d96929cbf3fee85a02a5cbd61))
+* **ci:** Run the DPE facet-form E2E tests (DEV-8065) ([7bdee5c](https://github.com/dasch-swiss/dsp-repository/commit/7bdee5ce9076af0b3df1450e4de5382d2fe73f11))
+* **ci:** Stop deploying DPE to dev (INFRA-1426) ([ffd6b4b](https://github.com/dasch-swiss/dsp-repository/commit/ffd6b4bbece1fe43d1ed6942431f0e262e3df902))
+* **dpe-data:** Update the demo URL for 0854 (Alice in DaSCHland) ([a1897e6](https://github.com/dasch-swiss/dsp-repository/commit/a1897e61dad0b90df86df9f3b6d7d882a5a85c0f))
+
 ## [0.8.11](https://github.com/dasch-swiss/dsp-repository/compare/v0.8.10...v0.8.11) (2026-11-13)
 
 

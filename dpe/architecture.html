@@ -300,6 +300,14 @@ Tab switch (with JS):
 
 Tab switch (without JS):
   Browser → GET /dpe/projects/ABC1?tab=publications → Full page reload
+
+Facet change (with JS):
+  Browser → GET /dpe/projects/results?&lt;form fields&gt; (SSE)
+         ← PatchElements (#project-results, #project-filters-clear, #project-results-count text)
+         ← ExecuteScript (history.replaceState to /dpe/projects + the canonical query string)
+
+Facet change (without JS):
+  Browser → Apply → GET /dpe/projects?&lt;form fields&gt; → Full page reload
 </code></pre>
 <h2 id="fragment-route-convention"><a class="header" href="#fragment-route-convention">Fragment Route Convention</a></h2>
 <p>Fragment endpoints are plain Axum handlers that render Maud <code>Markup</code> to HTML strings and deliver them as Datastar SSE events. The full page and the SSE fragment render the <code>#project-tabs</code> morph root through the same <code>project_tabs</code> function, so the two paths cannot drift.</p>
@@ -323,6 +331,27 @@ byte-identical for every <code>Accept</code> value, and every answer from the ro
 <li>Server pushes the bookmarkable URL via <code>ExecuteScript</code> + <code>history.replaceState</code></li>
 </ul>
 <p>The client never needs to track tab state — the server-rendered HTML IS the state.</p>
+<h2 id="facet-form-pattern"><a class="header" href="#facet-form-pattern">Facet Form Pattern</a></h2>
+<p>The project list's facets are one <code>&lt;form method="get" action="/dpe/projects"&gt;</code> of checkboxes, not a link
+per option: a link per option gives a crawler one URL per combination of a multi-select facet, which is
+practically unbounded. Crawlers do not submit forms; <code>robots.txt</code> and a canonical link cover the filtered
+URLs that people share (see <a href="./operations.html#crawlers">Operations</a>).</p>
+<ul>
+<li><strong>Two query forms, one meaning.</strong> The form submits repeated keys (<code>type_of_data=a&amp;type_of_data=b</code>);
+bookmarks carry comma-joined values (<code>type_of_data=a,b</code>). <code>ProjectQuery::from_query_str</code> accepts both.</li>
+<li><strong>The server writes the URL.</strong> With JavaScript, <code>data-on:change</code> on the form fetches
+<code>/dpe/projects/results</code> with the form's fields (<code>datastar::get(…).form()</code>). The fragment patches the
+results region and the "Clear all" slot, replaces the text of the <code>role="status"</code> count (not the node,
+so it is announced), and sends <code>history.replaceState</code> to <code>/dpe/projects</code> plus
+<code>ProjectQuery::to_query_string()</code>. That string percent-encodes every value, so it needs no JS escaping.
+The form itself is never patched, so focus stays on the toggled checkbox.</li>
+<li><strong>The fallback is the form.</strong> The Apply button submits it without JavaScript (<code>data-show="false"</code> hides
+it with JavaScript), and a failed fetch calls <code>el.submit()</code> from the form's <code>data-on:datastar-fetch</code>,
+guarded by <code>evt.detail.el === el</code> because Datastar fires that event on <code>document</code> for every fetch.</li>
+<li><strong>The mobile panel is the same form.</strong> Below <code>lg</code> the sidebar is a slide-in panel. Without JavaScript the
+trigger is a submit button that adds <code>dialog=true</code>; with JavaScript the client-only <code>_filters_open</code>
+signal toggles it, with no request.</li>
+</ul>
 <h2 id="datastar-attribute-patterns"><a class="header" href="#datastar-attribute-patterns">Datastar Attribute Patterns</a></h2>
 <pre><code class="language-html">&lt;!-- Tab link with Datastar enhancement --&gt;
 &lt;a href="/projects/ABC1?tab=publications"
@@ -345,7 +374,8 @@ byte-identical for every <code>Accept</code> value, and every answer from the ro
 <li><strong>Signal naming</strong>: Use <code>_</code> prefix for client-only signals (e.g., <code>_tab_loading</code>). The underscore excludes the signal from server payloads.</li>
 <li><strong>Actions</strong>: Build <code>@get()</code> and <code>@post()</code> values with <code>shared_datastar</code> (<code>datastar::get(…)</code>), never as strings. The attribute name stays a Maud literal.</li>
 <li><strong><code>Get::retry_never()</code></strong>: Use on <code>@get()</code> calls where fallback to full navigation is preferred over retrying; it emits <code>{retry: 'never', retryMaxCount: 0}</code>. <code>retry: 'never'</code> alone covers only HTTP statuses: a network failure or dropped stream is still retried (10 times, about 3 minutes with the defaults) before <code>retries-failed</code> fires. <code>retryMaxCount: 0</code> makes it fire on the first failure.</li>
-<li><strong>Graceful degradation</strong>: Every Datastar-enhanced <code>&lt;a&gt;</code> must have a valid <code>href</code> for no-JS fallback.</li>
+<li><strong>Graceful degradation</strong>: Every Datastar-enhanced <code>&lt;a&gt;</code> must have a valid <code>href</code> for no-JS fallback, and
+every Datastar-enhanced form a real <code>action</code> and a submit button.</li>
 </ul>
 <h2 id="see-also"><a class="header" href="#see-also">See Also</a></h2>
 <ul>

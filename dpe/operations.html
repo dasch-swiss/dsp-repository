@@ -353,6 +353,23 @@ than a harvester's throughput does.</p>
 <blockquote>
 <p><strong>Rate limiting and reverse proxies.</strong> The OAI (<code>/dpe/oai</code>) and telemetry (<code>/telemetry/collect</code>) rate limits key on the client IP, taken from the <strong>rightmost</strong> <code>X-Forwarded-For</code> entry (the address Traefik itself appends), falling back to the connection peer address. Reading the rightmost entry — not the leftmost — is deliberate: Traefik appends the real client after any <code>X-Forwarded-For</code> value the client supplied, so the rightmost entry is proxy-authored and cannot be spoofed, while the leftmost stays attacker-controlled. This holds only while Traefik is the sole hop in front of DPE; a second proxy that appends to <code>X-Forwarded-For</code> would shift the trusted entry and require counting hops from the right.</p>
 </blockquote>
+<h2 id="crawlers"><a class="header" href="#crawlers">Crawlers</a></h2>
+<p>The project list's facets are a GET form, not links, so a crawler that follows links finds no URL per
+facet combination. Two hints cover the filtered URLs that people share and bookmark:</p>
+<ul>
+<li><strong><code>/robots.txt</code></strong> (<code>areas/access/dpe/public/robots.txt</code>, served by the static-file fallback) disallows
+<code>/dpe/projects</code> with any facet parameter, <code>search</code> or <code>dialog</code>, and the two fragment routes
+<code>/dpe/projects/results</code> and <code>/dpe/projects/search</code>. It does not disallow <code>page</code>: the paginated list stays
+crawlable. The <code>*</code> in its paths is a Google and Bing extension, not RFC 9309; a crawler without it
+ignores those lines. It names no <code>/cpe</code> path, so it never advertises a Hidden project
+(<code>ACCESS_HIDDEN_PROJECTS</code> above).</li>
+<li><strong>A canonical link.</strong> A projects page with a facet, <code>search</code> or <code>dialog</code> carries
+<code>&lt;link rel="canonical" href="&lt;DPE_PUBLIC_BASE_URL&gt;/dpe/projects"&gt;</code>; the list and its pages carry none. A
+crawler that obeys <code>robots.txt</code> never fetches those URLs, so the link serves crawlers that ignore
+<code>robots.txt</code> and link previews. No page carries a robots <code>noindex</code>: it would be read only on a page that
+<code>robots.txt</code> already keeps crawlers off.</li>
+</ul>
+<p>Neither stops a crawler that ignores both; the reverse proxy's rate limit is the bound for that.</p>
 <h2 id="health-check"><a class="header" href="#health-check">Health Check</a></h2>
 <ul>
 <li><strong>Endpoint</strong>: <code>GET /healthz</code></li>

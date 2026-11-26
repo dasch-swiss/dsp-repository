@@ -345,8 +345,7 @@ labels {
     // `note`/`citation` are declared but deferred — Slice 3 decision 3
     // leaves the book-level "Anmerkung"/"Verweis" presentation unbuilt
     // (needs a Book-level dump extraction plus two further generic
-    // value-presentation mechanisms). See docs/BACKLOG.md's "Incunabula's
-    // `citation` and `note` properties" entry. No data emits these
+    // value-presentation mechanisms): DEV-8083. No data emits these
     // properties yet, so they still warn UnknownLabel until that lands.
     property "note" {
         de "Anmerkung"

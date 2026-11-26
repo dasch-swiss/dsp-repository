@@ -327,7 +327,7 @@ failing test names and the dsp-api image digest — and files a Linear issue fro
 <h4 id="pr-preview-cloud-run-1"><a class="header" href="#pr-preview-cloud-run-1">PR Preview (Cloud Run)</a></h4>
 <p>Defined in <code>cloud-run-dpe-pull-request.yml</code>.</p>
 <p>When a pull request modifies files under <code>areas/access/dpe/</code>, <code>areas/access/server/</code>, <code>areas/access/cpe/</code>, <code>areas/access/sync/</code>, <code>areas/access/media/</code>, <code>shared/</code>, <code>modules/mosaic/tiles/</code> or the Bazel build, a preview of the DPE is automatically deployed to Google Cloud Run. Works the same way as the Mosaic preview: ephemeral service per PR, cleaned up on close/merge.</p>
-<p>The preview is the whole image, so it serves CPE under <code>/cpe</code> too, from the data the image carries; a change to a presentation's code or files gets a preview of its own. It runs without CPU throttling, because CPE loads its projects after the port is bound.</p>
+<p>The preview is the whole image, so it mounts CPE under <code>/cpe</code> too, but it has no location of the VRE bridge's and the image carries no data of <code>sync</code>'s or <code>media</code>'s, so CPE serves no project there: its overview lists none and a project's paths answer <code>503</code>. It runs without CPU throttling, because CPE loads its projects after the port is bound.</p>
 <h4 id="continuous-deployment-docker-hub--jenkins"><a class="header" href="#continuous-deployment-docker-hub--jenkins">Continuous Deployment (Docker Hub + Jenkins)</a></h4>
 <p>Defined in <code>dpe-docker-publish.yml</code>.</p>
 <p>On every push to <code>main</code>:</p>

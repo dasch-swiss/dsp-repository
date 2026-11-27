@@ -7,14 +7,14 @@
 use crate::hook::Hook;
 use crate::projects;
 
-/// Every project that has a hook. A project's row names its folder and the `fn` of its hook
-/// module.
+/// Every project of this tree that has a hook; a host may supply rows for its own projects. A
+/// project's row names its folder and the `fn` of its hook module.
 pub const HOOKS: &[Hook] = &[Hook {
     project: "incunabula",
     remodel: projects::incunabula::remodel,
 }];
 
-/// The hook of the project with the folder name `project`, if it has one.
+/// The row of [`HOOKS`] for the folder name `project`, if it has one; a host's rows are not seen.
 pub fn resolve(project: &str) -> Option<&'static Hook> {
     HOOKS.iter().find(|hook| hook.project == project)
 }

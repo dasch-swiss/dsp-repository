@@ -33,7 +33,9 @@
 
 ## CPE
 
+- [Architecture](./cpe/architecture.md)
 - [Config Language](./cpe/config-language.md)
+- [Component Library](./cpe/component-library.md)
 - [Operations](./cpe/operations.md)
 
 ## Editor

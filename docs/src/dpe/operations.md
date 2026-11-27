@@ -31,18 +31,19 @@ The `access-server` binary provides three subcommands:
 | Command | Description |
 |---------|-------------|
 | `access-server serve` | Start the web server |
-| `access-server validate <data_dir>` | Validate all data files under the given directory |
+| `access-server validate <data_dir> [--inputs <dir>] [--must-serve <shortcode>...]` | Validate DPE's data files under the given directory, then every CPE project (the two flags are CPE's) |
 | `access-server healthcheck [--url URL]` | Check if the server is healthy (default: `http://localhost:8080/healthz`) |
 
 ### `access-server validate`
 
-Validates JSON data files for structural correctness and cross-reference integrity.
+Validates DPE's JSON data files for structural correctness and cross-reference integrity, then checks CPE's
+projects strictly (`docs/src/cpe/operations.md`, *Checking the projects: `access-server validate`*).
 
 ```bash
 access-server validate ./data
 ```
 
-**What it checks:**
+**What it checks in DPE's data:**
 - JSON schema validity for all data file types (projects, persons, organizations, records, clusters, collections)
 - Cross-references between projects, persons, and organizations
 - Orphaned files that are not referenced by any parent entity
@@ -50,8 +51,9 @@ access-server validate ./data
 - Every distinct `temporalCoverage` name resolves to a structured date (ChronOntology or the offline enrichment table), or is explicitly marked `source: "unresolved"`. See `docs/src/dpe/oai-pmh.md` → *Temporal coverage*.
 
 **Exit codes:**
-- `0` — all data files are valid
-- `1` — validation errors found (details printed to stderr)
+- `0` — all of DPE's data files are valid and no CPE project failed
+- `1` — DPE's data has errors, or a CPE project failed, or CPE's configuration is refused (details printed to
+  stdout)
 
 ### `access-server healthcheck`
 
@@ -67,6 +69,21 @@ access-server healthcheck --url http://localhost:9090/healthz # custom URL
 | Port | Protocol | Purpose |
 |------|----------|---------|
 | 8080 | HTTP | Application server |
+
+## Response Headers
+
+`access-server` adds two headers to every answer of DPE and CPE, pages, files and errors alike, unless the
+answer sets that header itself:
+
+| Header | Value |
+|--------|-------|
+| `X-Content-Type-Options` | `nosniff` |
+| `Content-Security-Policy` | `base-uri 'self'; object-src 'none'` |
+
+Neither directive restricts scripts, styles, images or connections, so no page depends on them to render.
+`/healthz` and `POST /telemetry/collect` carry neither. CPE's SVG files set their own, script-blocking policy
+([CPE Operations](../cpe/operations.md#what-is-served)). DPE's files under `public/` get the page policy.
+There is no report-only or enforcing page policy yet: it waits on where violation reports go.
 
 ## Environment Variables
 
@@ -89,7 +106,7 @@ access-server healthcheck --url http://localhost:9090/healthz # custom URL
 | `DPE_SITE_ADDR` | No | `127.0.0.1:4000` | Listen address and port. The Docker image sets `0.0.0.0:8080`. |
 | `DPE_PUBLIC_DIR` | No | `areas/access/dpe/public` | Directory served as static assets by `ServeDir` (favicon, logo, vendored JS, project images, and the compiled `app.<hash>.css`). |
 | `DPE_ENV` | No | `DEV` | Deployment environment (`DEV` or `PROD`). Controls OTLP log export (see [Logging](#logging)). The Docker image sets `PROD`. |
-| `SYNC_DATA_DIR` | In a deployment | `areas/access/sync/data` | `sync`'s stand-in subtree, read at start and on every re-activation to build each CPE project's store: one directory per shortcode, holding the project's Ready token and the generation it names (`0803/.ready`, `0803/<generation>/snapshot.nq`); a project without a token is unknown. Empty is treated as unset. The Docker image neither sets it nor carries such data: a deployment mounts the `sync` subtree of the location the VRE bridge writes, read-only, and names it here. Unset in the image, the default names `/app/areas/access/sync/data`, which does not exist, so CPE serves no project. If the directory is missing, or a project's token or snapshot is missing, unreadable or a symlink, that project answers `503` and an error is logged; DPE is unaffected. |
+| `SYNC_DATA_DIR` | In a deployment | `areas/access/sync/data` | `sync`'s stand-in subtree, read at start and on every re-activation to build each CPE project's store: one directory per shortcode, holding the project's Ready token and the generation it names (`0803/.ready`, `0803/<generation>/snapshot.nq`); a project without a token is unknown and answers `404`, as a path that names no project. Empty is treated as unset. The Docker image neither sets it nor carries such data: a deployment mounts the `sync` subtree of the location the VRE bridge writes, read-only, and names it here. Unset in the image, the default names `/app/areas/access/sync/data`, which does not exist, so CPE serves no project. If the directory is missing or holds no project directory, a project's token is unreadable or a symlink, or the generation or snapshot it names is missing, unreadable or a symlink, that project answers `503` and an error is logged; DPE is unaffected. |
 | `SYNC_POLL_SECS` | No | `30` | Seconds between two polls of the Ready tokens in `SYNC_DATA_DIR`; `sync` announces each project whose token appeared, changed or was removed, and CPE re-activates on it ([CPE Operations](../cpe/operations.md), *Refresh*); CPE retries a held-back re-activation once, after `RETRY_AFTER_POLLS` intervals (`serve.rs`). Empty is treated as unset; `0` or a value that is not a whole number of seconds is logged as a warning and treated as `30`. |
 | `MEDIA_DATA_DIR` | In a deployment | `areas/access/media/data` | `media`'s stand-in directory of deposited files, one subdirectory per shortcode holding the project's Ready token and the generation it names (`0803/.ready`, `0803/<generation>/config.kdl`, `…/curation.csv`, `…/narrative/…`), read at start and on every re-activation to build each CPE project's store. Empty is treated as unset. The Docker image neither sets it nor carries such files: a deployment mounts the `media` subtree of the location the VRE bridge writes, read-only, and names it here, together with `SYNC_DATA_DIR`. Unset in the image, the default names `/app/areas/access/media/data`, which does not exist. If the directory, or a file a project needs from it, is missing or unreadable, that project answers `503` and an error is logged (a missing directory also as a warning at start); DPE is unaffected. |
 | `CPE_BASE` | No | *(empty)* | Path CPE is mounted at. The Docker image sets `/cpe`. A leading `/`, no trailing one, unreserved characters only. Unset, empty or refused (logged as a warning and as an error with the reason): CPE is not mounted and DPE is served alone. It must not be a path DPE serves (`/dpe`, `/assets`, …): nothing checks that, and under such a base CPE answers every path DPE has no route of its own for, its static files included. A path the binary or DPE has a route for (`/healthz`, `/telemetry/collect`, `/dpe/projects`) keeps its answer under any base. If the router cannot be built with CPE at the base, that is logged as an error naming `CPE_BASE`, and CPE is not mounted; no value is known to do that. |

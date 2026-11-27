@@ -9,8 +9,8 @@ use cpe_core::remodel::Remodel;
 use cpe_core::validate::load_remodel;
 use cpe_ports::contract::violations;
 use cpe_ports::{
-    Annotation, Calendar, ClassIri, DataArk, DateBound, DatePrecision, DateValue, File, ListNode, ListNodeIri,
-    Motivation, ProjectSnapshot, PropertyIri, Resource, ResourceIri, Value, ValueKind, DATA_ARK_PREFIX,
+    Annotation, Calendar, ClassIri, DataArk, DateBound, DatePrecision, DateValue, File, FileLegal, ListNode,
+    ListNodeIri, Motivation, ProjectSnapshot, PropertyIri, Resource, ResourceIri, Value, ValueKind, DATA_ARK_PREFIX,
 };
 use cpe_store_build::error::BuildErrors;
 use cpe_store_build::hook::Hook;
@@ -218,7 +218,12 @@ pub fn band(iri: &str, label: &str, asset: &str) -> Resource {
 }
 
 pub fn still_image(asset: &str) -> File {
-    File::StillImage { asset: asset.to_string(), width: 1200, height: 1800 }
+    File::StillImage {
+        asset: asset.to_string(),
+        width: 1200,
+        height: 1800,
+        legal: FileLegal::default(),
+    }
 }
 
 /// An annotation of `class` on `target`, which must be in the snapshot it is added to.
@@ -508,13 +513,14 @@ pub fn resources(store: &Store) -> Vec<(&str, &str)> {
     rows.map(|row| (row.id.as_str(), row.class.as_str())).collect()
 }
 
-/// A row's value as one text: a text with its language after `@`, a date as its bounds, its
-/// precision, its calendar and its display text, a link as `-> ` and its target, a list value
-/// as `node ` and its node.
+/// A row's value as one text: a text with its language after `@` (a richtext after `rich `), a
+/// date as its bounds, its precision, its calendar and its display text, a link as `-> ` and its
+/// target, a list value as `node ` and its node.
 pub fn shown(row: &PropertyRow) -> String {
     let or_none = |column: &Option<String>| column.clone().unwrap_or_else(|| "-".to_string());
     match row.value_type.as_str() {
         "text" => format!("{}@{}", or_none(&row.value_text), or_none(&row.value_lang)),
+        "richtext" => format!("rich {}@{}", or_none(&row.value_text), or_none(&row.value_lang)),
         "date" => format!(
             "{}/{} {} {} {}@{}",
             or_none(&row.date_start),
@@ -526,6 +532,7 @@ pub fn shown(row: &PropertyRow) -> String {
         ),
         "link" => format!("-> {}", or_none(&row.target_id)),
         "integer" => format!("int {}", row.value_int.map_or("-".to_string(), |n| n.to_string())),
+        "boolean" => format!("bool {}", row.value_int.map_or("-".to_string(), |n| n.to_string())),
         "list_value" => format!("node {}", or_none(&row.target_id)),
         other => panic!("no test reads a row of type {other}"),
     }

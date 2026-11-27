@@ -1008,10 +1008,10 @@ pub enum DiagnosticKind {
     MissingRemodelBlock,
     /// A `remodel` entry repeats one that must be unique in its scope: a node
     /// that occurs more often than the grammar allows, an attribute written
-    /// twice on one node, a list name, a list-node slug, a label language in
-    /// one list-node, a class name or `iri=`, a `property` `iri=` on one
-    /// class, a CPE property name on one class (of a `property`, a
-    /// `curated`, a `member-count`, an `incoming-count` or a `member-of`
+    /// twice on one node, a list name, a list-node slug or `iri=` in its
+    /// list, a label language in one list-node, a class name or `iri=`, a
+    /// `property` `iri=` on one class, a CPE property name on one class (of
+    /// a `property`, a `curated`, a `member-count`, an `incoming-count` or a `member-of`
     /// `seq=`, also once by each kind), a curated key (`curated-key=` of a
     /// `property`, an `id` or a `cover`, `display-key=`, or a `curated`
     /// node's `key=`, or a `key` of the `hook` node) on one class, a class
@@ -1019,11 +1019,12 @@ pub enum DiagnosticKind {
     /// `via` nodes of one `incoming-count`, a second `id`, `member-of` or
     /// `cover` on one class; and of the `hook` node: a second `hook`, a
     /// `provides` that takes a name its class already has, two `drops` of one
-    /// class, two `overrides` of one property. Hard-fail.
+    /// class, two `overrides` of one property; an `ignore-class` `iri=` that a
+    /// `class` declares or another `ignore-class` names. Hard-fail.
     DuplicateRemodelEntry,
-    /// A `remodel` node takes a name the block reserves: a `class` named
-    /// like the `images` block's class, or, in a block with an `images`
-    /// node, a property named `image`. Hard-fail.
+    /// A `remodel` node takes a property name the builder writes: `image` in
+    /// a block whose `images` node names no declared class, or `authorship`,
+    /// `copyright` or `license` on the class it names. Hard-fail.
     ReservedRemodelName,
     /// A `remodel` node carries an attribute the grammar does not list for
     /// it. Hard-fail.
@@ -1032,8 +1033,8 @@ pub enum DiagnosticKind {
     /// all. Hard-fail.
     UnknownRemodelType,
     /// A `remodel` `property` `type=` is a port value kind the language does
-    /// not support yet (`integer`, `decimal`, `boolean`, `list-node`,
-    /// `geometry`, `color`). Hard-fail.
+    /// not support yet (`decimal`, `boolean`, `geometry`, `color`).
+    /// Hard-fail.
     UnsupportedRemodelType,
     /// A `remodel` value is out of range or malformed: a shortcode that is
     /// not four characters of `0-9A-F`, a `sentinel` that is empty or starts
@@ -1044,9 +1045,10 @@ pub enum DiagnosticKind {
     /// argument beyond the one a node takes, or any on a node that takes none;
     /// a `property` `max` below its `min`, a `min` or `max` that is negative
     /// or above `u32::MAX`, a word outside the closed vocabulary of `from`,
-    /// `empty`, `sentinel` or `sentinel-within`; a `curated` `type` outside
-    /// `text`, `list` and `per-language`, or a `curated` `min` other than 0
-    /// or 1; an `id` `from` outside `label`, `property` and `iri`. Hard-fail.
+    /// `empty`, `sentinel`, `sentinel-within` or `mixed-precision`; a
+    /// `curated` `type` outside `text`, `list` and `per-language`, or a
+    /// `curated` `min` other than 0 or 1; an `id` `from` outside `label`,
+    /// `property` and `iri`. Hard-fail.
     InvalidRemodelValue,
     /// A `list-node` lacks a label for a language the site declares.
     /// Hard-fail; not reported when the site declares no language.
@@ -1057,8 +1059,8 @@ pub enum DiagnosticKind {
     /// `incoming-count` `from=` that no `class` declares; a `member-count`
     /// `of=` that names no class that is `member-of` this one; an `id`
     /// `property=` that names no `text` property of its class with `max=1`;
-    /// a `via` that names no property of the `from` class; a `curated`
-    /// `list=` that no `list` declares; a `list-node` label in a language
+    /// a `via` that names no property of the `from` class; a `curated` or a
+    /// `property` `list=` that no `list` declares; a `list-node` label in a language
     /// the site does not declare; a `class=` of a `hook` child that no
     /// `class` declares; or an `overrides` that names no `property` node of
     /// its class. Hard-fail.
@@ -1066,9 +1068,9 @@ pub enum DiagnosticKind {
     /// A `remodel` node combines attributes the grammar does not allow
     /// together, or omits one the combination needs: a `property` with both
     /// an `iri` and a `from` or with neither, with an `iri` and no `type`, a
-    /// `link` without a `target`, an attribute its form does not take (a
-    /// `type` beside `from="label"` among them), `exclude-label` beside
-    /// `curated-key`, `sentinel` or `sentinel-within` in a block without a
+    /// `link` without a `target`, a `list-node` without a `list`, an attribute its form does not
+    /// take (a `type` beside `from="label"` among them), `exclude-label` or `richtext`
+    /// beside `curated-key`, `sentinel` or `sentinel-within` in a block without a
     /// `sentinel` node; a `curated` with `list=` beside a `type` other than
     /// `list`, or with `type="list"` and no `list=`; an `id` with neither a
     /// `curated-key` nor a `from`, with `property` and no `from="property"`

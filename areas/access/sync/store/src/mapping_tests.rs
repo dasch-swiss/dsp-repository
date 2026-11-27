@@ -1,7 +1,8 @@
 use cpe_ports::contract::violations;
 use cpe_ports::{
-    Annotation, ArchiveProjection, Calendar, ClassIri, DataArk, DateBound, DatePrecision, DateValue, File, LangString,
-    ListNode, ListNodeIri, Motivation, PropertyIri, Resource, ResourceIri, Value, ValueKind,
+    Annotation, ArchiveProjection, Calendar, ClassIri, DataArk, DateBound, DatePrecision, DateValue, File, FileLegal,
+    LangString, ListNode, ListNodeIri, Motivation, ProjectSnapshot, PropertyIri, Resource, ResourceIri, Value,
+    ValueKind,
 };
 
 use crate::snapshot_tests::write_0803;
@@ -756,7 +757,75 @@ fn test_mapping_still_image_file_serves_asset_width_and_height() {
         Some(File::StillImage {
             asset: "8F1KTUpKKra-CaFgCYlt8im.jp2".to_string(),
             width: 3297,
-            height: 5141
+            height: 5141,
+            legal: FileLegal::default(),
+        })
+    );
+}
+
+#[test]
+fn test_mapping_still_image_with_authors_and_copyright_holder_serves_them() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(
+        &dir,
+        r#"
+        <http://rdfh.ch/0803/iM7q> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/iM7q> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/0803/incunabula#Page> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/iM7q> <http://www.w3.org/2000/01/rdf-schema#label> "a1r" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/iM7q> <https://ontology.dasch.swiss/dao#hasRepresentation> <urn:dsp:representation:sdSI> <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Representation> <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#representationType> <https://ontology.dasch.swiss/dao#StillImageRepresentation> <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#internalFilename> "02c3gPR6xv7-vMHywphQIpK.jpx" <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#dimX> "3297"^^<http://www.w3.org/2001/XMLSchema#integer> <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#dimY> "5141"^^<http://www.w3.org/2001/XMLSchema#integer> <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#authorship> "John Tenniel" <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#authorship> "Dalziel Brothers" <urn:dsp:project:0803> .
+        <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#copyrightHolder> "Public Domain" <urn:dsp:project:0803> .
+        "#,
+    );
+
+    let snapshot = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect("a valid file is served");
+
+    let found = violations("0803", &snapshot);
+    assert!(found.is_empty(), "{found:?}");
+    let file = snapshot.resources[0].file.as_ref().expect("the image has its file");
+    let mut authorship = file.legal().authorship.clone();
+    authorship.sort();
+    assert_eq!(authorship, ["Dalziel Brothers", "John Tenniel"]);
+    assert_eq!(file.legal().copyright_holder.as_deref(), Some("Public Domain"));
+}
+
+#[test]
+fn test_mapping_document_with_copyright_holder_alone_serves_it_without_authors() {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(
+        &dir,
+        r#"
+        <http://rdfh.ch/0803/dc1x> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/dc1x> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/0803/incunabula#Transcript> <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/dc1x> <http://www.w3.org/2000/01/rdf-schema#label> "Transkription" <urn:dsp:project:0803> .
+        <http://rdfh.ch/0803/dc1x> <https://ontology.dasch.swiss/dao#hasRepresentation> <urn:dsp:representation:Ty4c> <urn:dsp:project:0803> .
+        <urn:dsp:representation:Ty4c> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Representation> <urn:dsp:project:0803> .
+        <urn:dsp:representation:Ty4c> <https://ontology.dasch.swiss/dao#representationType> <https://ontology.dasch.swiss/dao#DocumentRepresentation> <urn:dsp:project:0803> .
+        <urn:dsp:representation:Ty4c> <https://ontology.dasch.swiss/dao#internalFilename> "Ga0Jw5YpN3s-Transkription.pdf" <urn:dsp:project:0803> .
+        <urn:dsp:representation:Ty4c> <https://ontology.dasch.swiss/dao#copyrightHolder> "Universitätsbibliothek Basel" <urn:dsp:project:0803> .
+        "#,
+    );
+
+    let snapshot = LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect("a valid file is served");
+
+    assert_eq!(
+        snapshot.resources[0].file,
+        Some(File::Document {
+            asset: "Ga0Jw5YpN3s-Transkription.pdf".to_string(),
+            legal: FileLegal {
+                authorship: vec![],
+                copyright_holder: Some("Universitätsbibliothek Basel".to_string()),
+            },
         })
     );
 }
@@ -785,7 +854,10 @@ fn test_mapping_audio_file_serves_audio_with_asset() {
     assert!(found.is_empty(), "{found:?}");
     assert_eq!(
         snapshot.resources[0].file,
-        Some(File::Audio { asset: "3kXz9PmQ1rT-Lesung.mp3".to_string() })
+        Some(File::Audio {
+            asset: "3kXz9PmQ1rT-Lesung.mp3".to_string(),
+            legal: FileLegal::default()
+        })
     );
 }
 
@@ -813,7 +885,10 @@ fn test_mapping_moving_image_file_serves_moving_image_with_asset() {
     assert!(found.is_empty(), "{found:?}");
     assert_eq!(
         snapshot.resources[0].file,
-        Some(File::MovingImage { asset: "Vb7Qe2LdS0w-Film.mp4".to_string() })
+        Some(File::MovingImage {
+            asset: "Vb7Qe2LdS0w-Film.mp4".to_string(),
+            legal: FileLegal::default()
+        })
     );
 }
 
@@ -841,7 +916,10 @@ fn test_mapping_document_file_serves_document_with_asset() {
     assert!(found.is_empty(), "{found:?}");
     assert_eq!(
         snapshot.resources[0].file,
-        Some(File::Document { asset: "Ga0Jw5YpN3s-Transkription.pdf".to_string() })
+        Some(File::Document {
+            asset: "Ga0Jw5YpN3s-Transkription.pdf".to_string(),
+            legal: FileLegal::default()
+        })
     );
 }
 
@@ -871,12 +949,10 @@ fn test_mapping_file_of_other_kind_serves_resource_without_file() {
     assert_eq!(snapshot.resources[0].file, None);
 }
 
-// Interim format version 1: access rights, data classification and legal information, which the
-// port does not carry
+// Interim format version 1: access rights and data classification, which the port does not carry,
+// and legal information, which it carries on the file
 
-#[test]
-fn test_mapping_rights_classification_and_legal_information_serves_the_same_snapshot_as_without() {
-    let without = r#"
+const PAGE_WITH_IMAGE: &str = r#"
         <http://rdfh.ch/0803/pG4w> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://ontology.dasch.swiss/dao#Resource> <urn:dsp:project:0803> .
         <http://rdfh.ch/0803/pG4w> <https://ontology.dasch.swiss/dao#sourceClass> <http://www.knora.org/ontology/0803/incunabula#Page> <urn:dsp:project:0803> .
         <http://rdfh.ch/0803/pG4w> <http://www.w3.org/2000/01/rdf-schema#label> "a1r" <urn:dsp:project:0803> .
@@ -887,27 +963,60 @@ fn test_mapping_rights_classification_and_legal_information_serves_the_same_snap
         <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#dimX> "3297"^^<http://www.w3.org/2001/XMLSchema#integer> <urn:dsp:project:0803> .
         <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#dimY> "5141"^^<http://www.w3.org/2001/XMLSchema#integer> <urn:dsp:project:0803> .
     "#;
-    let with = format!(
-        "{without}{}",
-        r#"
+
+const RIGHTS_AND_CLASSIFICATION: &str = r#"
         <http://rdfh.ch/0803/pG4w> <https://ontology.dasch.swiss/dao#accessRights> "public" <urn:dsp:project:0803> .
         <http://rdfh.ch/0803/pG4w> <https://ontology.dasch.swiss/dao#dataClassification> "unclassified" <urn:dsp:project:0803> .
         <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#accessRights> "restricted-view" <urn:dsp:project:0803> .
         <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#dataClassification> "unclassified" <urn:dsp:project:0803> .
+    "#;
+
+fn served_0803(nquads: &str) -> ProjectSnapshot {
+    let dir = tempfile::tempdir().expect("create a temp dir");
+    write_0803(&dir, nquads);
+    LiveArchiveProjection::new(dir.path())
+        .snapshot("0803")
+        .expect("a valid file is served")
+}
+
+#[test]
+fn test_mapping_rights_and_classification_serves_the_same_snapshot_as_without() {
+    let with = format!("{PAGE_WITH_IMAGE}{RIGHTS_AND_CLASSIFICATION}");
+
+    assert_eq!(served_0803(&with), served_0803(PAGE_WITH_IMAGE));
+}
+
+#[test]
+fn test_mapping_representation_authorship_and_copyright_holder_are_served_on_its_file() {
+    let with = format!(
+        "{PAGE_WITH_IMAGE}{}",
+        r#"
         <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#authorship> "Universitätsbibliothek Basel" <urn:dsp:project:0803> .
         <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#authorship> "Lukas Rosenthaler" <urn:dsp:project:0803> .
         <urn:dsp:representation:sdSI> <https://ontology.dasch.swiss/dao#copyrightHolder> "Universitätsbibliothek Basel" <urn:dsp:project:0803> .
         "#
     );
-    let served = |nquads: &str| {
-        let dir = tempfile::tempdir().expect("create a temp dir");
-        write_0803(&dir, nquads);
-        LiveArchiveProjection::new(dir.path())
-            .snapshot("0803")
-            .expect("a valid file is served")
-    };
 
-    assert_eq!(served(&with), served(without));
+    let mut served = served_0803(&with);
+    // The store yields the repeated `dao:authorship` objects in its own order.
+    if let Some(File::StillImage { legal, .. }) = &mut served.resources[0].file {
+        legal.authorship.sort();
+    }
+
+    let mut expected = served_0803(PAGE_WITH_IMAGE);
+    expected.resources[0].file = Some(File::StillImage {
+        asset: "8F1KTUpKKra-CaFgCYlt8im.jp2".to_string(),
+        width: 3297,
+        height: 5141,
+        legal: FileLegal {
+            authorship: vec![
+                "Lukas Rosenthaler".to_string(),
+                "Universitätsbibliothek Basel".to_string(),
+            ],
+            copyright_holder: Some("Universitätsbibliothek Basel".to_string()),
+        },
+    });
+    assert_eq!(served, expected);
 }
 
 // Dates

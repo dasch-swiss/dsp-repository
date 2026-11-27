@@ -10,7 +10,7 @@
 
 use std::collections::BTreeSet;
 
-use cpe_ports::{DatePrecision, DateValue, File, Motivation, Resource, ResourceIri, ValueKind};
+use cpe_ports::{DatePrecision, DateValue, File, FileLegal, Motivation, Resource, ResourceIri, ValueKind};
 use cpe_store_build::error::Rule;
 
 use crate::build;
@@ -123,6 +123,31 @@ pub(crate) const CASES: &[Case] = &[
     Case {
         rule: Rule::InteriorNul,
         snapshot: || with_label(minimal(), PAGE, "a1r\0"),
+        subject: PAGE,
+    },
+    // In a file's legal information, which no rule of the minimal mapping reads.
+    Case {
+        rule: Rule::InteriorNul,
+        snapshot: || {
+            changed(minimal(), PAGE, |page| {
+                let Some(File::StillImage { legal, .. }) = &mut page.file else {
+                    panic!("the minimal Page has a scan");
+                };
+                legal.authorship = vec!["Johann\0Bergmann".to_string()];
+            })
+        },
+        subject: PAGE,
+    },
+    Case {
+        rule: Rule::InteriorNul,
+        snapshot: || {
+            changed(minimal(), PAGE, |page| {
+                let Some(File::StillImage { legal, .. }) = &mut page.file else {
+                    panic!("the minimal Page has a scan");
+                };
+                legal.copyright_holder = Some("Universitätsbibliothek\0Basel".to_string());
+            })
+        },
         subject: PAGE,
     },
     Case {
@@ -317,7 +342,10 @@ pub(crate) const CASES: &[Case] = &[
         rule: Rule::NotStillImage,
         snapshot: || {
             changed(with_page("a1v"), ADDED, |page| {
-                page.file = Some(File::Document { asset: "ScanOfTheSecondPage.pdf".to_string() });
+                page.file = Some(File::Document {
+                    asset: "ScanOfTheSecondPage.pdf".to_string(),
+                    legal: FileLegal::default(),
+                });
             })
         },
         subject: ADDED,
@@ -340,6 +368,7 @@ pub(crate) const CASES: &[Case] = &[
                     asset: "ScanOfTheSecondPage.jp2".to_string(),
                     width: 1200,
                     height: 0,
+                    legal: FileLegal::default(),
                 });
             })
         },

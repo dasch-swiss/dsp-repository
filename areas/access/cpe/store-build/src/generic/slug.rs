@@ -28,10 +28,12 @@ pub(crate) fn slug(text: &str) -> String {
     out
 }
 
-/// Whether `id` can stand in a URL path segment unchanged: it is not empty, and it holds only
-/// the unreserved characters of RFC 3986, `A-Z a-z 0-9 - . _ ~`.
+/// Whether `id` can stand in a URL path segment unchanged: it is not empty, it holds only the
+/// unreserved characters of RFC 3986, `A-Z a-z 0-9 - . _ ~`, and it is not dots only, which
+/// clients resolve as a dot-segment.
 pub fn is_url_safe(id: &str) -> bool {
     !id.is_empty()
+        && !id.chars().all(|c| c == '.')
         && id
             .chars()
             .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '.' | '_' | '~'))
@@ -64,6 +66,21 @@ mod tests {
     #[test]
     fn test_is_url_safe_refuses_the_empty_id() {
         assert!(!is_url_safe(""));
+    }
+
+    #[test]
+    fn test_is_url_safe_refuses_an_id_of_dots_only() {
+        assert!(!is_url_safe("."));
+        assert!(!is_url_safe(".."));
+        assert!(!is_url_safe("..."));
+    }
+
+    #[test]
+    fn test_is_url_safe_accepts_a_dot_beside_another_character() {
+        assert!(is_url_safe("a.b"));
+        assert!(is_url_safe(".a"));
+        assert!(is_url_safe("a."));
+        assert!(is_url_safe("1.2.3"));
     }
 
     #[test]

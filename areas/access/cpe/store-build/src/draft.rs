@@ -1,6 +1,7 @@
 //! The draft of a build: every resource of the snapshot that has a class under the mapping, with
 //! what the build has found out about it so far.
 
+use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet};
 
 use cpe_core::remodel::{ClassIndex, RemodelClass, RemodelProperty};
@@ -53,8 +54,9 @@ pub(crate) struct Member<'a> {
 /// One value of a property of a resource, as the mapping gave it or a hook set it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Value<'a> {
-    /// A text and its language, where it has one. An address is a text.
-    Text(&'a str, Option<&'a str>),
+    /// A text and its language, where it has one. An address is a text. The text is a slice of
+    /// what the build was given, or one a hook composed.
+    Text(Cow<'a, str>, Option<&'a str>),
     /// A date from `start` to `end`, both written at `precision`, with the text a reader is
     /// shown for it and that text's language, where the mapping asks for one.
     Date {
@@ -71,8 +73,11 @@ pub enum Value<'a> {
     ListNode(String),
     /// A link to the Image of this id.
     Image(&'a str),
-    /// A number the mapping derived: a position or a count.
+    /// A whole number: a value of an integer property, or one the mapping derived, a position
+    /// or a count.
     Integer(i64),
+    /// A truth value the mapping derived: a flag.
+    Boolean(bool),
 }
 
 /// The names the values of `node` are held under, and written under. It stands here, below
@@ -164,9 +169,22 @@ impl<'a> Entry<'a> {
 #[derive(Default)]
 pub(crate) struct Draft<'a> {
     entries: BTreeMap<&'a str, Entry<'a>>,
+    /// The IRIs of the resources of a class the mapping leaves out (`ignore-class`). They have
+    /// no entry; only the curation check reads them.
+    ignored: BTreeSet<&'a str>,
 }
 
 impl<'a> Draft<'a> {
+    /// Records that the resource `iri` is of a class the mapping leaves out: it gets no entry.
+    pub(crate) fn ignore(&mut self, iri: &'a str) {
+        self.ignored.insert(iri);
+    }
+
+    /// Whether the resource `iri` is of a class the mapping leaves out.
+    pub(crate) fn is_ignored(&self, iri: &str) -> bool {
+        self.ignored.contains(iri)
+    }
+
     /// Adds `entry` under its resource's IRI. The port's contract holds that no two resources
     /// share one.
     pub(crate) fn insert(&mut self, entry: Entry<'a>) {

@@ -37,7 +37,7 @@ The DPE follows a 4-layer testing pyramid, adapted from the [Sipi testing strate
 
 - **Location**: `areas/access/dpe/web-e2e-tests/`
 - **Server**: the suite starts `access-server` without `CPE_BASE`, so CPE is not mounted in it and only DPE's pages
-  are tested; CPE's pages are covered by its crates' own tests.
+  are tested.
 - **Runner**: `just test-a11y-dpe` (the accessibility spec) and `just test-e2e-dpe` (the facet-form spec,
   `project-filters.spec.ts`). Both build the release server and stylesheet with Bazel and pass the binary's
   path in `ACCESS_SERVER_BIN`; CI runs both in `a11y / dpe`.
@@ -47,6 +47,18 @@ The DPE follows a 4-layer testing pyramid, adapted from the [Sipi testing strate
 - **Scope**: Tab switching, search autocomplete, scroll preservation, the facet form with JavaScript on and
   off, accessibility (axe-core)
 - **Accessibility**: Full-page axe-core scans against WCAG 2.1 AA
+
+CPE has a suite of its own, `areas/access/cpe/web-e2e-tests/`, on Incunabula:
+
+- **Server**: the suite starts `access-server` from the repository root with `CPE_BASE=/cpe` on port 4102, so the
+  committed data of project 0803 is served; it is ready once `/cpe/incunabula/` answers, since CPE answers 503
+  until it has activated. Every request to another origin is aborted, so the IIIF host's images never load.
+- **Passes**: every journey runs twice, in `chromium-js` and in `chromium-nojs` (`javaScriptEnabled: false`); the
+  axe spec runs in the JavaScript pass only.
+- **Runner**: `just test-e2e-cpe` (both passes) and `just test-a11y-cpe` (axe only), which build the release server
+  with Bazel and pass its path in `ACCESS_SERVER_BIN`
+- **Scope**: the overview and the not-found pages, the book list's sort order and views, the reader's paging and
+  history, the border strips, the narrative pages, and axe (WCAG 2.1 AA) on one page of each kind
 
 ## Layer 4: Fuzz Testing
 
@@ -66,9 +78,10 @@ check (one job):
 
 test / ubuntu / stable (one job):
   bazel test //... (just test)
+  DPE's data and every committed CPE project, strictly (just validate-cpe)
   build, load and start the three images (just image-smoke)
 
-a11y / dpe, a11y / editor (on path changes):
+a11y / dpe, a11y / editor, a11y / cpe (on path changes):
   release server and stylesheet built with Bazel, then Playwright with axe-core
   (a11y / dpe also runs the facet-form spec, with JavaScript on and off)
 ```
@@ -82,7 +95,7 @@ Bazel jobs share the remote cache and executor; see [Building with Bazel](../baz
 **Test locations**:
 - Unit tests: In-crate `#[cfg(test)]` modules or adjacent `_tests.rs` files
 - Snapshot files: `.snap` files committed to git in `snapshots/` directories
-- E2E tests: `web-e2e-tests/` for DPE, `playground-e2e-tests/` for Mosaic
+- E2E tests: `web-e2e-tests/` for DPE, the editor and CPE, `playground-e2e-tests/` for Mosaic
 - Fuzz corpus: Persisted in the repository under `fuzz/corpus/`
 
 **Test file naming**: `{feature}_tests.rs` for Rust, `{feature}.spec.ts` for Playwright.

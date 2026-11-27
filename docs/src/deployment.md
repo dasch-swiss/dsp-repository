@@ -9,7 +9,7 @@ All CI/CD workflows are defined as GitHub Actions in `.github/workflows/`.
 Every push and pull request runs:
 
 - **check.yml** — `just check` with Bazel: the gate scripts, vendored-JS checksums among them (see [Security](./security.md)), formatting (`maudfmt` for `html!` macros and the pinned nightly `rustfmt`), clippy over every Bazel target; a dsp-cli packaging dry run and test run against its own manifest (`cargo publish --dry-run`, `cargo test`); the E2E suites' Biome lint; the mdBook build
-- **test.yml** — `just test` (every Bazel test) and `just image-smoke` (the three images built, started and answering), and the tests of the `.github/scripts` gates (`just test-scripts`)
+- **test.yml** — `just test` (every Bazel test), `just validate-cpe` (DPE's data and every committed CPE project) and `just image-smoke` (the three images built, started and answering), and the tests of the `.github/scripts` gates (`just test-scripts`)
 - **scout-dpe.yml** / **scout-editor.yml** / **scout-mosaic-playground.yml** — Docker image vulnerability scanning of the Bazel-built images (see [Security](./security.md))
 - **dsp-cli-drift.yml** — its `changes` job (deciding whether anything under `dsp-cli/**` changed) runs on every PR; see [dsp-cli drift detection](#dsp-cli-drift-detection) below
 
@@ -18,6 +18,10 @@ Every push and pull request runs:
 Defined in `a11y-dpe.yml`.
 
 Runs on PRs and pushes to `main` that touch `areas/access/dpe/**`, `areas/access/server/**`, `areas/access/cpe/**`, `areas/access/sync/**`, `areas/access/media/**`, `shared/**` or `modules/mosaic/tiles/**` (everything compiled into the binary the suite starts), or the Bazel build's own files. The suite tests DPE's pages. `just test-a11y-dpe` builds the release server and stylesheet with Bazel, then runs Playwright accessibility tests with axe-core against WCAG 2.1 AA. `a11y-editor.yml` does the same for the editor, with its whole suite (`just test-e2e-editor`).
+
+`a11y-cpe.yml` runs CPE's whole suite on Incunabula (`just test-e2e-cpe`): every journey with and without JavaScript, and
+axe against WCAG 2.1 AA in the JavaScript pass. It runs on PRs and pushes to `main` that touch `areas/access/**`, `shared/**` or
+`modules/mosaic/**`, or the Bazel build's own files.
 
 ### Fuzz Testing
 

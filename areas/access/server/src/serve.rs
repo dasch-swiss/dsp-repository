@@ -1,4 +1,4 @@
-//! `serve()` and `shutdown_signal`.
+//! `serve()`, `shutdown_signal`, and the setup of CPE that `serve` and `validate` share.
 
 use std::collections::BTreeSet;
 use std::process::ExitCode;
@@ -40,6 +40,24 @@ fn sync_poll_interval(value: Option<&str>) -> Duration {
                 default
             }
         },
+    }
+}
+
+/// What CPE runs on in both verbs: its configuration, from `cpe.toml` and `CPE_*`, and the data
+/// directories of its two ports, from `SYNC_DATA_DIR` and `MEDIA_DATA_DIR`.
+pub(crate) struct CpeSetup {
+    pub(crate) config: cpe_server::CpeConfig,
+    pub(crate) sync_data_dir: String,
+    pub(crate) media_data_dir: String,
+}
+
+/// [`CpeSetup`] from the environment. Cannot fail: a configuration CPE refuses is kept, with its
+/// reason, for CPE to report.
+pub(crate) fn cpe_setup_from_env() -> CpeSetup {
+    CpeSetup {
+        config: cpe_server::CpeConfig::load(),
+        sync_data_dir: data_dir(std::env::var("SYNC_DATA_DIR").ok(), DEFAULT_SYNC_DATA_DIR),
+        media_data_dir: data_dir(std::env::var("MEDIA_DATA_DIR").ok(), DEFAULT_MEDIA_DATA_DIR),
     }
 }
 
@@ -132,15 +150,17 @@ fn app(dpe: Router, cpe: &Cpe) -> (Router, bool) {
 }
 
 /// Assembles the app: DPE's router and, when given, CPE's at its base, then
-/// the OTel layers, then the untraced routes. Panics where [`mount_cpe`] does.
+/// the OTel layers and the baseline headers, then the untraced routes. Panics where
+/// [`mount_cpe`] does.
 ///
 /// Kept separate from `serve()` (which does I/O and process-global setup) so
 /// the traced/untraced route order — routes declared after `.layer()` are not
 /// wrapped by it — is unit-testable.
 fn assemble(dpe: Router, cpe: Option<&Cpe>) -> Router {
-    use axum::http::StatusCode;
+    use axum::http::{header, HeaderValue, StatusCode};
     use axum::routing::get;
     use axum_tracing_opentelemetry::middleware::{OtelAxumLayer, OtelInResponseLayer};
+    use tower_http::set_header::SetResponseHeaderLayer;
 
     let capabilities = Router::new().merge(dpe);
     let capabilities = match cpe {
@@ -154,6 +174,17 @@ fn assemble(dpe: Router, cpe: Option<&Cpe>) -> Router {
         // - OtelAxumLayer (declared second) runs OUTER — creates the server span from the request
         .layer(OtelInResponseLayer)
         .layer(OtelAxumLayer::default())
+        // --- Baseline headers ---
+        // `if_not_present`: an answer's own policy (CPE's on its SVGs) is kept. Neither directive
+        // restricts scripts, styles, images or connections, so no page can break.
+        .layer(SetResponseHeaderLayer::if_not_present(
+            header::X_CONTENT_TYPE_OPTIONS,
+            HeaderValue::from_static("nosniff"),
+        ))
+        .layer(SetResponseHeaderLayer::if_not_present(
+            header::CONTENT_SECURITY_POLICY,
+            HeaderValue::from_static("base-uri 'self'; object-src 'none'"),
+        ))
         // --- Untraced routes ---
         // Routes declared AFTER .layer() calls are NOT wrapped by those layers.
         .route("/healthz", get(|| async { StatusCode::OK }))
@@ -290,7 +321,7 @@ pub(crate) async fn serve() -> ExitCode {
     });
 
     // Neither call can fail: a CPE that cannot be served must not stop DPE.
-    let mut cpe_config = cpe_server::CpeConfig::load();
+    let CpeSetup { config: mut cpe_config, sync_data_dir, media_data_dir } = cpe_setup_from_env();
     cpe_config.hidden_shortcodes = hidden_projects_from_env();
     let cpe = Cpe::new(&cpe_config);
 
@@ -298,8 +329,6 @@ pub(crate) async fn serve() -> ExitCode {
         .unwrap_or_else(|_| "127.0.0.1:4000".to_string())
         .parse()
         .expect("invalid site address (DPE_SITE_ADDR)");
-    let sync_data_dir = data_dir(std::env::var("SYNC_DATA_DIR").ok(), DEFAULT_SYNC_DATA_DIR);
-    let media_data_dir = data_dir(std::env::var("MEDIA_DATA_DIR").ok(), DEFAULT_MEDIA_DATA_DIR);
     let sync_poll = sync_poll_interval(std::env::var("SYNC_POLL_SECS").ok().as_deref());
 
     let (app, cpe_is_mounted) = app(dpe.router(), &cpe);
@@ -396,7 +425,7 @@ async fn shutdown_signal() {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use std::collections::BTreeSet;
     use std::path::{Path, PathBuf};
     use std::sync::{mpsc, Mutex, OnceLock, PoisonError};
@@ -447,7 +476,7 @@ mod tests {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..")
     }
 
-    fn cpe_config(projects_dir: &Path, base: &str) -> CpeConfig {
+    pub(crate) fn cpe_config(projects_dir: &Path, base: &str) -> CpeConfig {
         let mut config = CpeConfig::default();
         config.projects_dir = projects_dir.to_owned();
         config.base = base.to_owned();
@@ -455,7 +484,7 @@ mod tests {
     }
 
     /// A project built from archive project `0001`.
-    const THINGS: &str = r#"
+    pub(crate) const THINGS: &str = r#"
 site {
     title "Things Fixture"
     languages "en" "de"
@@ -477,7 +506,7 @@ remodel {
 
     /// The snapshot of a Things project: `0001`, or another shortcode whose config is
     /// [`THINGS`] with that shortcode.
-    fn things_snapshot(shortcode: &str) -> ProjectSnapshot {
+    pub(crate) fn things_snapshot(shortcode: &str) -> ProjectSnapshot {
         ProjectSnapshot {
             shortcode: shortcode.to_owned(),
             resources: vec![Resource {
@@ -501,7 +530,7 @@ remodel {
 
     /// A projects folder with one Things project per `(id, shortcode)`, each a folder holding
     /// its `SHORTCODE`.
-    fn projects_folder(projects: &[(&str, &str)]) -> tempfile::TempDir {
+    pub(crate) fn projects_folder(projects: &[(&str, &str)]) -> tempfile::TempDir {
         let root = tempfile::tempdir().expect("a temporary directory");
         for (id, shortcode) in projects {
             let dir = root.path().join(id);
@@ -814,6 +843,95 @@ remodel {
         }
     }
 
+    /// The page policy `assemble` adds to an answer that sets none.
+    const PAGE_CSP: &str = "base-uri 'self'; object-src 'none'";
+
+    /// The policy CPE sends with its SVGs (`cpe_server`'s `ASSET_CSP`).
+    const SVG_CSP: &str = "default-src 'none'; style-src 'unsafe-inline'; sandbox";
+
+    /// Every value of `name` in `headers`, so a header sent twice is seen twice.
+    fn values_of(headers: &HeaderMap, name: header::HeaderName) -> Vec<&str> {
+        headers.get_all(name).iter().map(|value| value.to_str().unwrap()).collect()
+    }
+
+    /// `headers` carry one `nosniff` and one Content-Security-Policy, `policy`.
+    fn assert_baseline(headers: &HeaderMap, policy: &str, what: &str) {
+        assert_eq!(values_of(headers, header::X_CONTENT_TYPE_OPTIONS), ["nosniff"], "{what}");
+        assert_eq!(values_of(headers, header::CONTENT_SECURITY_POLICY), [policy], "{what}");
+    }
+
+    #[tokio::test]
+    async fn a_dpe_page_and_a_cpe_page_carry_the_baseline_headers_and_the_health_check_does_not() {
+        let (_folder, cpe) = things_and_offline(BASE);
+        let router = app(&dpe(), &cpe);
+        for uri in [
+            "/dpe/projects",
+            "/dpe/projects/0803",
+            "/favicon.ico",
+            "/cpe/",
+            "/cpe/things/",
+        ] {
+            let (status, headers, _) = get(&router, uri).await;
+            assert_eq!(status, StatusCode::OK, "{uri}");
+            assert_baseline(&headers, PAGE_CSP, uri);
+        }
+        let (status, headers, _) = get(&router, "/healthz").await;
+        assert_eq!(status, StatusCode::OK);
+        assert!(!headers.contains_key(header::CONTENT_SECURITY_POLICY), "{headers:?}");
+        assert!(!headers.contains_key(header::X_CONTENT_TYPE_OPTIONS), "{headers:?}");
+    }
+
+    #[tokio::test]
+    async fn cpes_404_and_a_failed_projects_503_carry_the_baseline_headers() {
+        let (_folder, cpe) = things_and_offline(BASE);
+        let router = app(&dpe(), &cpe);
+        let (status, headers, _) = get(&router, "/cpe/nope").await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
+        assert_baseline(&headers, PAGE_CSP, "CPE's 404");
+        let (status, headers, _) = get(&router, "/cpe/offline/").await;
+        assert_unavailable(status, &headers, "a failed project");
+        assert_baseline(&headers, PAGE_CSP, "a failed project's 503");
+    }
+
+    #[tokio::test]
+    async fn an_svg_of_a_project_or_of_cpe_carries_the_svg_policy_and_not_the_page_policy() {
+        let folder = projects_folder(&[("things", "0001")]);
+        let assets = folder.path().join("things/assets");
+        std::fs::create_dir(&assets).expect("the assets folder is created");
+        std::fs::write(assets.join("logo.svg"), "<svg xmlns=\"http://www.w3.org/2000/svg\"/>")
+            .expect("the SVG is written");
+        let cpe = Cpe::new(&cpe_config(folder.path(), BASE));
+        cpe.activate(
+            &FakeArchiveProjection::default().with_project(things_snapshot("0001")),
+            &things_files(),
+        );
+        let router = app(&dpe(), &cpe);
+        for uri in [
+            "/cpe/things/_assets/assets/logo.svg",
+            "/cpe/_static/cpe/dasch-logo-colour.svg",
+            "/cpe/things/_static/cpe/dasch-fingerprint.svg",
+        ] {
+            let (status, headers, _) = get(&router, uri).await;
+            assert_eq!(status, StatusCode::OK, "{uri}");
+            assert_baseline(&headers, SVG_CSP, uri);
+        }
+    }
+
+    #[tokio::test]
+    async fn a_static_file_that_is_no_svg_carries_one_nosniff_and_the_page_policy() {
+        let (_folder, cpe) = things_and_offline(BASE);
+        let router = app(&dpe(), &cpe);
+        for uri in [
+            "/cpe/_static/cpe/tokens.css",
+            "/cpe/things/_static/cpe/cpe.js",
+            "/cpe/_static/datastar.js",
+        ] {
+            let (status, headers, _) = get(&router, uri).await;
+            assert_eq!(status, StatusCode::OK, "{uri}");
+            assert_baseline(&headers, PAGE_CSP, uri);
+        }
+    }
+
     /// The base is CPE's overview, with and without the slash: `nest` answers the first and the
     /// mount's own route the second.
     #[tokio::test]
@@ -929,6 +1047,27 @@ remodel {
             let (status, headers, _) = get(&router, uri).await;
             assert_unavailable(status, &headers, uri);
         }
+        assert_eq!(status_of(router.clone(), "/cpe/things/").await, StatusCode::OK);
+        assert_eq!(status_of(router, "/dpe/projects").await, StatusCode::OK);
+    }
+
+    /// `validate` fails on this fixture; `serve` has no strict start.
+    #[tokio::test]
+    async fn a_project_validate_fails_on_takes_only_itself_offline_in_serve() {
+        let root = projects_folder(&[("things", "0001"), ("broken", "0002")]);
+        let cpe = Cpe::new(&cpe_config(root.path(), BASE));
+        let files = things_files().with_file("0002", "config.kdl", crate::validate::tests::broken_things("0002"));
+        let projection = FakeArchiveProjection::default()
+            .with_project(things_snapshot("0001"))
+            .with_project(things_snapshot("0002"));
+        assert!(!cpe_server::validate(&cpe_config(root.path(), BASE), &projection, &files, None).passes());
+
+        activate_in_background(&cpe, projection, files, Duration::from_secs(60))
+            .await
+            .expect("the activation task ends");
+        let router = app(&dpe(), &cpe);
+        let (status, headers, _) = get(&router, "/cpe/broken/").await;
+        assert_unavailable(status, &headers, "/cpe/broken/");
         assert_eq!(status_of(router.clone(), "/cpe/things/").await, StatusCode::OK);
         assert_eq!(status_of(router, "/dpe/projects").await, StatusCode::OK);
     }

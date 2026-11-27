@@ -41,7 +41,8 @@ pub enum Indexing {
 /// (with `display=swap` to avoid FOIT), the Newsreader + IBM Plex Mono font
 /// `<link>`, the 7 CSS `<link>`s in load order:
 /// `tokens.css` → `shell.css` → `editorial.css` → `record.css` → `grid.css`
-/// → `media.css` → `incunabula.css`, and `cpe_image_viewer::head_tag`
+/// → `media.css` → `incunabula.css`, the deferred `cpe.js` then DataStar's
+/// module, and `cpe_image_viewer::head_tag`
 /// — the `<image-viewer>` custom-element registration, emitted globally on
 /// every page.
 ///
@@ -100,6 +101,10 @@ pub fn document_head(
             // Incunabula's per-project components (the timeline, the
             // showcase figures). Seventh file, after media.css.
             link rel="stylesheet" href=(statics.file("cpe/incunabula.css"));
+            // CPE's own functions, which DataStar's attributes call. Deferred and before the
+            // module: deferred classic and module scripts run in document order, so `window.cpe`
+            // exists when DataStar runs `data-init`.
+            script defer src=(statics.file("cpe/cpe.js")) {}
             // DataStar v1.0.2 — ES module (defer-by-default; no async).
             script type="module" src=(statics.file("datastar.js")) {}
             // Registers the `<image-viewer>`
@@ -3983,7 +3988,10 @@ mod tests {
             out.contains(r#"href="https://repository.example/cpe/alice-in-daschland/""#),
             "the share link: {out}"
         );
-        assert!(!out.contains("/cpe/cpe"), "the base is written once: {out}");
+        assert!(
+            !out.replace("_static/cpe/cpe.js", "").contains("/cpe/cpe"),
+            "the base is written once: {out}"
+        );
         for path in out.split('"').filter(|text| text.starts_with('/') && !text.starts_with("//")) {
             assert!(path.starts_with("/cpe/"), "{path} leaves the base: {out}");
         }
@@ -6484,30 +6492,39 @@ mod tests {
     }
 
     /// The full page corrects a stale address before the reader's URL seed
-    /// runs, in the same script, to the path and query minus `page` and
-    /// `member`, JS-string-escaped; the `_compound` fragment never does.
+    /// runs, in the same `data-init`, to the path and query minus `page` and
+    /// `member`, JS-string-escaped and then attribute-escaped; the
+    /// `_compound` fragment never does.
     #[test]
     fn stale_page_replace_state_is_full_page_only_and_precedes_the_seed() {
         let (full, fragment) = render_stale_book("page=zzz&lang=de&member=2");
         assert!(
             full.contains(
-                "<script>history.replaceState(null, '', '/alice-in-daschland/books/B1?lang=de');window.__cpeReaderUrl = location.pathname + location.search;</script>"
+                r#"data-init="history.replaceState(null, '', '/alice-in-daschland/books/B1?lang=de');window.__cpeReaderUrl = location.pathname + location.search;""#
             ),
             "got: {full}"
         );
         assert_eq!(full.matches("replaceState").count(), 1, "got: {full}");
         assert!(!fragment.contains("replaceState"), "got: {fragment}");
         assert!(
-            fragment.contains("<script>window.__cpeReaderUrl = location.pathname + location.search;</script>"),
+            fragment.contains(r#"data-init="window.__cpeReaderUrl = location.pathname + location.search;""#),
             "got: {fragment}"
         );
+        assert!(!fragment.contains("<script"), "got: {fragment}");
         let (bare, _) = render_stale_book("page=zzz");
-        assert!(bare.contains("history.replaceState(null, '', '/alice-in-daschland/books/B1');"));
-        let (hostile, _) = render_stale_book("page=zzz&x=%27</script><b>");
+        assert!(bare.contains(r#"data-init="history.replaceState(null, '', '/alice-in-daschland/books/B1');"#));
+        let (hostile, _) = render_stale_book(r#"page=zzz&x=%27</script>"<b>'\"#);
         assert!(
-            hostile
-                .contains(r"history.replaceState(null, '', '/alice-in-daschland/books/B1?x=%27\x3C/script>\x3Cb>');"),
+            hostile.contains(
+                r#"data-init="history.replaceState(null, '', '/alice-in-daschland/books/B1?x=%27\x3C/script&gt;&quot;\x3Cb&gt;\'\\');"#
+            ),
             "got: {hostile}"
+        );
+        // DataStar turns `@name(` into an action call even inside a string literal.
+        let (action, _) = render_stale_book("page=zzz&x=@get(1)");
+        assert!(
+            action.contains(r"history.replaceState(null, '', '/alice-in-daschland/books/B1?x=\x40get(1)');"),
+            "got: {action}"
         );
     }
 
@@ -6517,7 +6534,7 @@ mod tests {
     fn stale_page_replace_state_keeps_the_page_shown_by_member() {
         let (full, _) = render_stale_book_at("page=zzz&lang=de&member=2", 2);
         assert!(
-            full.contains("history.replaceState(null, '', '/alice-in-daschland/books/B1?lang=de&page=CH_001');"),
+            full.contains("history.replaceState(null, '', '/alice-in-daschland/books/B1?lang=de&amp;page=CH_001');"),
             "got: {full}"
         );
         let (only, _) = render_stale_book_at("page=zzz&member=2", 2);
@@ -10265,5 +10282,332 @@ mod tests {
         assert!(hidden.contains(ROBOTS), "{hidden}");
         let indexable = document_head("T", false, None, &statics, Indexing::Indexable).into_string();
         assert!(!indexable.contains("name=\"robots\""), "{indexable}");
+    }
+
+    /// `cpe.js` defines the functions `cpe-components`' attributes call, and
+    /// reads the partner data the register writes (`data-anno-page`,
+    /// `data-anno-first`, `data-anno-note`) for the arrival note, which the
+    /// suite's fixture, with no annotation link, cannot reach.
+    #[test]
+    fn cpe_js_defines_the_called_functions_and_reads_the_partner_data() {
+        const CPE_JS: &str = include_str!("../../public/cpe.js");
+        for function in [
+            "arrival(el, ids)",
+            "pickerToggle(el)",
+            "pickerTarget(evt, el)",
+            "pageKey(evt, el)",
+        ] {
+            assert!(CPE_JS.contains(&format!("\n  {function} {{")), "{function}");
+        }
+        for read in [
+            "a[data-anno-page]",
+            "a.dataset.annoPage",
+            "\"annoFirst\" in a.dataset",
+            "from.dataset.annoNote",
+        ] {
+            assert!(CPE_JS.contains(read), "{read}");
+        }
+    }
+
+    /// One selector of `cpe.js`'s header list: a tag, a `.class` or an
+    /// `[attribute]`/`[attribute=value]`, or a tag followed by one of the
+    /// latter two. `None` for any other line.
+    #[derive(Debug)]
+    struct HeaderSelector<'a> {
+        tag: Option<&'a str>,
+        class: Option<&'a str>,
+        attribute: Option<(&'a str, Option<&'a str>)>,
+    }
+
+    fn is_markup_name(s: &str) -> bool {
+        s.starts_with(|c: char| c.is_ascii_lowercase())
+            && s.chars()
+                .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-' || c == '_')
+    }
+
+    fn parse_header_selector(line: &str) -> Option<HeaderSelector<'_>> {
+        let (tag, rest) = line.split_at(line.find(['.', '[']).unwrap_or(line.len()));
+        let tag = match tag {
+            "" => None,
+            tag => Some(Some(tag).filter(|t| is_markup_name(t))?),
+        };
+        let (class, attribute) = if let Some(class) = rest.strip_prefix('.') {
+            (Some(Some(class).filter(|c| is_markup_name(c))?), None)
+        } else if let Some(inner) = rest.strip_prefix('[') {
+            let inner = inner.strip_suffix(']')?;
+            let (name, value) = match inner.split_once('=') {
+                Some((name, value)) => (name, Some(value)),
+                None => (inner, None),
+            };
+            if !is_markup_name(name) || value.is_some_and(|v| !is_markup_name(v)) {
+                return None;
+            }
+            (None, Some((name, value)))
+        } else if rest.is_empty() {
+            (None, None)
+        } else {
+            return None;
+        };
+        (tag.is_some() || class.is_some() || attribute.is_some()).then_some(HeaderSelector { tag, class, attribute })
+    }
+
+    /// An opening tag's attributes: each name, and its value when it has one.
+    type Attributes<'a> = Vec<(&'a str, Option<&'a str>)>;
+
+    /// Each opening tag of `html`: its name and its attributes, a value as
+    /// written between its double quotes (Maud quotes every value).
+    fn opening_tags(html: &str) -> Vec<(&str, Attributes<'_>)> {
+        let mut tags = Vec::new();
+        let mut rest = html;
+        while let Some(at) = rest.find('<') {
+            rest = &rest[at + 1..];
+            let name_end = rest
+                .find(|c: char| !(c.is_ascii_alphanumeric() || c == '-'))
+                .unwrap_or(rest.len());
+            let name = &rest[..name_end];
+            if !name.starts_with(|c: char| c.is_ascii_lowercase()) {
+                continue;
+            }
+            rest = &rest[name_end..];
+            let mut attributes = Vec::new();
+            loop {
+                rest = rest.trim_start();
+                let attribute_end = rest
+                    .find(|c: char| c == '=' || c == '>' || c.is_whitespace())
+                    .unwrap_or(rest.len());
+                let attribute = &rest[..attribute_end];
+                if attribute.is_empty() || attribute == "/" {
+                    break;
+                }
+                rest = &rest[attribute_end..];
+                match rest.strip_prefix("=\"").and_then(|after| Some((after, after.find('"')?))) {
+                    Some((after, end)) => {
+                        attributes.push((attribute, Some(&after[..end])));
+                        rest = &after[end + 1..];
+                    }
+                    None => attributes.push((attribute, None)),
+                }
+            }
+            tags.push((name, attributes));
+        }
+        tags
+    }
+
+    fn selector_matches(selector: &HeaderSelector<'_>, name: &str, attributes: &[(&str, Option<&str>)]) -> bool {
+        let has = |wanted: &str, test: &dyn Fn(Option<&str>) -> bool| {
+            attributes.iter().any(|(attribute, value)| *attribute == wanted && test(*value))
+        };
+        selector.tag.is_none_or(|tag| tag == name)
+            && selector.class.is_none_or(|class| {
+                has("class", &|value| {
+                    value.is_some_and(|v| v.split_whitespace().any(|token| token == class))
+                })
+            })
+            && selector
+                .attribute
+                .is_none_or(|(attribute, wanted)| has(attribute, &|value| wanted.is_none_or(|w| value == Some(w))))
+    }
+
+    /// The selectors `cpe.js`'s header lists: its comment lines indented by
+    /// three spaces, which must be one contiguous run between the line naming
+    /// this test and an empty `//`, each a [`HeaderSelector`].
+    fn cpe_js_header_selectors() -> Vec<&'static str> {
+        const CPE_JS: &str = include_str!("../../public/cpe.js");
+        let header: Vec<&str> = CPE_JS.lines().take_while(|l| l.starts_with("//")).collect();
+        let listed: Vec<usize> = (0..header.len()).filter(|&i| header[i].starts_with("//  ")).collect();
+        let (first, last) = (*listed.first().expect("the header lists selectors"), listed[listed.len() - 1]);
+        assert_eq!(listed, (first..=last).collect::<Vec<_>>(), "the list is one run of lines");
+        assert!(
+            header[first - 1].ends_with("fails it.") && header[..first].concat().contains("cpe_js_header_selectors"),
+            "the list follows the sentence naming this test: {:?}",
+            header[first - 1]
+        );
+        assert_eq!(header.get(last + 1).copied(), Some("//"), "an empty `//` ends the list");
+        listed
+            .into_iter()
+            .map(|i| {
+                let selector = header[i].strip_prefix("//   ").unwrap_or_default();
+                assert!(
+                    parse_header_selector(selector).is_some(),
+                    "not a selector of the header's form: {:?}",
+                    header[i]
+                );
+                selector
+            })
+            .collect()
+    }
+
+    #[test]
+    fn header_selector_parser_rejects_malformed_lines() {
+        for line in [
+            "",
+            " .rv",
+            ".rv ",
+            "a[rel=prev",
+            "[rel=]",
+            ".",
+            "..rv",
+            ".Rv",
+            "a b",
+            "a.rv[x]",
+            "#cv-picker",
+        ] {
+            assert!(parse_header_selector(line).is_none(), "{line:?}");
+        }
+        for line in [".rv", "image-viewer", "a[rel=prev]", "[data-anno-first]", "a.pk__entry"] {
+            assert!(parse_header_selector(line).is_some(), "{line:?}");
+        }
+    }
+
+    /// A `pages` reader on the middle page of three, with a page picker, an
+    /// IIIF scan, and a register holding a numbered entry whose partner is the
+    /// first page of a routed book, and a page-level entry.
+    fn reader_page_for_cpe_js() -> String {
+        use cpe_core::ir::{
+            Annotation, AnnotationEntry, AnnotationLink, AnnotationPartner, AnnotationShape, CompoundPage,
+            MemberHeader, MemberIndex, MemberParent, Representation, RepresentationKind,
+        };
+        let site = make_alice_site();
+        let page = cpe_core::ir::Page {
+            id: "book".to_owned(),
+            route: "/books/:id".to_owned(),
+            params: vec!["id".to_owned()],
+            body: vec![
+                detail("Character", true),
+                Component::CompoundViewer {
+                    source: "$id".to_owned(),
+                    media: Some("image".to_owned()),
+                    picker: Some(cpe_core::ir::PickerMode::Numbered),
+                    layout: cpe_core::ir::CompoundLayout::Pages,
+                    index: MemberIndex::Off,
+                    paired: true,
+                    member_links: None,
+                    annotations: true,
+                },
+            ],
+            figure_slots: Vec::new(),
+        };
+        let mut member = named("P_002", "Page", "a1v");
+        member.properties.push(cpe_core::ir::Property {
+            name: "image".to_owned(),
+            values: vec![cpe_core::ir::PropertyValue::Link {
+                target_id: "I_P2".to_owned(),
+                target_label: Some("p2".to_owned()),
+                target_class: Some("Image".to_owned()),
+            }],
+        });
+        let mut scan = named("I_P2", "Image", "p2");
+        scan.representations.push(Representation {
+            kind: RepresentationKind::Image,
+            uri: "https://iiif.example.org/0803/p2.jpx/full/max/0/default.jpg".to_owned(),
+            width: Some(1200),
+            height: Some(1800),
+            alt: None,
+            attribution: None,
+            seq: 0,
+        });
+        let partner = AnnotationPartner {
+            link_id: "L1".to_owned(),
+            link_name: "identisch".to_owned(),
+            link_name_lang: None,
+            annotation_id: Some("x1".to_owned()),
+            number: Some(1),
+            resource_id: "lat-a1r".to_owned(),
+            resource_class: "Page".to_owned(),
+            resource_label: "a1r".to_owned(),
+            parent: Some(MemberParent { id: "lat".to_owned(), class: "Book".to_owned(), seq: 1 }),
+            parent_title: Some("Narrenschiff (lat.)".to_owned()),
+            first_member: true,
+        };
+        let compound = CompoundPage {
+            member: Some(member),
+            index: 2,
+            total: 3,
+            members: ["a1r", "a1v", "a2r"]
+                .iter()
+                .enumerate()
+                .map(|(i, name)| MemberHeader {
+                    id: format!("P_{:03}", i + 1),
+                    class: "Page".to_owned(),
+                    name: (*name).to_owned(),
+                })
+                .collect(),
+            member_media: vec![scan],
+            stale_page: None,
+            annotations: vec![
+                AnnotationEntry::Annotation {
+                    number: 1,
+                    annotation: Annotation {
+                        id: "a1".to_owned(),
+                        resource_id: "P_002".to_owned(),
+                        shape: AnnotationShape::Rectangle,
+                        x: 0.1,
+                        y: 0.1,
+                        w: 0.2,
+                        h: 0.2,
+                        points: vec![],
+                        color: Some("#ff3333".to_owned()),
+                        remark: None,
+                        remark_lang: None,
+                    },
+                    partners: vec![partner],
+                },
+                AnnotationEntry::Link {
+                    link: AnnotationLink {
+                        id: "L2".to_owned(),
+                        name: "ähnlich".to_owned(),
+                        name_lang: None,
+                        comment: None,
+                        comment_lang: None,
+                    },
+                    partners: vec![],
+                },
+            ],
+            annotated_members: std::collections::BTreeSet::from(["P_002".to_owned()]),
+        };
+        let components = vec![
+            ComponentData::Detail(Some(make_alice_resource())),
+            ComponentData::Compound(compound),
+        ];
+        let routes = HashMap::from([("Book".to_owned(), "/books/:id".to_owned())]);
+        let route_params = [("id".to_owned(), "CH_001".to_owned())];
+        let mut ctx = book_ctx(&site, &route_params, None, Appearance::Light);
+        ctx.link_routes = &routes;
+        let default_lang = resolve(&["en".to_owned()], &site);
+        render_body(&page, &ctx, &make_alice_narrative(), &components, &default_lang, &site)
+            .0
+            .into_string()
+    }
+
+    /// Every class, element and attribute `cpe.js` reads, as its header lists
+    /// them, occurs in a rendered reader page, so a rename on the Rust side
+    /// fails here rather than in the browser.
+    #[test]
+    fn cpe_js_header_selectors_occur_in_a_reader_page() {
+        let out = reader_page_for_cpe_js();
+        let tags = opening_tags(&out);
+        for line in cpe_js_header_selectors() {
+            let selector = parse_header_selector(line).expect("checked by cpe_js_header_selectors");
+            assert!(
+                tags.iter()
+                    .any(|(name, attributes)| selector_matches(&selector, name, attributes)),
+                "cpe.js reads `{line}`, which the reader page does not render: {out}"
+            );
+        }
+    }
+
+    /// `cpe.js` is deferred and comes before DataStar's module, so its
+    /// functions exist when DataStar runs the first `data-init`.
+    #[test]
+    fn document_head_loads_cpe_js_deferred_before_datastar() {
+        let statics = cpe_core::url::ROOT.static_dir();
+        let head = document_head("T", false, None, &statics, Indexing::Indexable).into_string();
+        let cpe = head
+            .find(r#"<script defer src="/_static/cpe/cpe.js"></script>"#)
+            .expect("cpe.js is loaded deferred");
+        let datastar = head
+            .find(r#"<script type="module" src="/_static/datastar.js"></script>"#)
+            .expect("DataStar is loaded");
+        assert!(cpe < datastar, "{head}");
     }
 }

@@ -34,7 +34,8 @@
 //!
 //! Only what `FORMAT.md` lets a reader omit is omitted, never an error: a value whose `rdf:value`
 //! datatype the port has no kind for, a representation whose type it has no `File` for, and facts
-//! the port does not carry, such as the access rights, data classification and legal information.
+//! the port does not carry, such as the access rights and data classification. A file's legal
+//! information (`dao:authorship`, `dao:copyrightHolder`) is read and served on its `File`.
 //! Annotations (`oa:Annotation`) are served as resources.
 //!
 //! One violation is accepted, by decision: an edge to a value node that lacks `rdf:type dao:Value`.
@@ -49,8 +50,11 @@
 //!
 //! `access-server` constructs the adapter, over the directory `SYNC_DATA_DIR` names, and hands
 //! it to CPE's activation. Nothing here writes to the subtree or watches it with file-system
-//! notifications: it may be NFS.
+//! notifications: it may be NFS. A host that keeps a snapshot elsewhere reads it with
+//! [`read_snapshot`], under the same rules on its content; the token and file-system checks above
+//! are the adapter's alone.
 
+use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, PoisonError};
 use std::time::Duration;
@@ -58,7 +62,7 @@ use std::{fs, io};
 
 use cpe_ports::{contract, ArchiveProjection, ChangeListener, ProjectSnapshot, ProjectionError, Provenance};
 use oxrdf::Quad;
-use oxttl::NQuadsParser;
+use oxttl::{NQuadsParser, TurtleParseError};
 use shared_names::is_shortcode;
 use shared_stand_in::{generation_dir, read_token, ReadyToken, TOKEN_FILE};
 
@@ -125,20 +129,60 @@ impl LiveArchiveProjection {
         }
         let path = snapshot_file(generation)?;
         let quads = read_quads(&path)?;
-        let snapshot = mapping::map(shortcode, &quads).map_err(|invalid| SnapshotError::Invalid {
-            path: path.clone(),
-            subject: invalid.subject,
-            reason: invalid.reason,
-        })?;
-        if snapshot.resources.is_empty() {
-            return Err(SnapshotError::Empty { path });
-        }
-        let violations = contract::violations(shortcode, &snapshot);
-        if !violations.is_empty() {
-            return Err(SnapshotError::Contract { path, violations });
-        }
-        Ok(snapshot)
+        map_quads(shortcode, &quads, path)
     }
+}
+
+/// The snapshot of project `shortcode` that `reader` streams, the N-Quads a generation's
+/// `snapshot.nq` holds, held to every rule on such a file's content: the strict parse, the
+/// mapping, the empty check and the port's contract. No Ready token is read, so the format version,
+/// the file-system checks and the stream's completeness are the caller's. Its text is parsed as it
+/// is read and never held whole (its quads are, as for a file), so a host can serve a snapshot it
+/// keeps compressed without writing it out first. `path` names the snapshot in an error.
+///
+/// Nothing in this repository calls it: `access-server` serves through [`LiveArchiveProjection`].
+/// Its caller is dsp-incubator's host, which reads the draft projects it keeps as `.nq.gz` files.
+///
+/// # Errors
+///
+/// [`SnapshotError::Syntax`], [`SnapshotError::Invalid`], [`SnapshotError::Empty`] or
+/// [`SnapshotError::Contract`] as for a served file, and [`SnapshotError::Read`] when `reader`
+/// fails. The token and generation errors are the adapter's alone.
+pub fn read_snapshot(
+    shortcode: &str,
+    reader: impl Read,
+    path: impl Into<PathBuf>,
+) -> Result<ProjectSnapshot, SnapshotError> {
+    let path = path.into();
+    let quads = NQuadsParser::new()
+        .for_reader(reader)
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|error| match error {
+            TurtleParseError::Io(source) => SnapshotError::Read { path: path.clone(), source },
+            TurtleParseError::Syntax(source) => SnapshotError::Syntax {
+                path: path.clone(),
+                line: source.location().start.line + 1,
+                source,
+            },
+        })?;
+    map_quads(shortcode, &quads, path)
+}
+
+/// Maps the quads of project `shortcode`'s snapshot and holds the result to the port's contract.
+fn map_quads(shortcode: &str, quads: &[Quad], path: PathBuf) -> Result<ProjectSnapshot, SnapshotError> {
+    let snapshot = mapping::map(shortcode, quads).map_err(|invalid| SnapshotError::Invalid {
+        path: path.clone(),
+        subject: invalid.subject,
+        reason: invalid.reason,
+    })?;
+    if snapshot.resources.is_empty() {
+        return Err(SnapshotError::Empty { path });
+    }
+    let violations = contract::violations(shortcode, &snapshot);
+    if !violations.is_empty() {
+        return Err(SnapshotError::Contract { path, violations });
+    }
+    Ok(snapshot)
 }
 
 impl ArchiveProjection for LiveArchiveProjection {

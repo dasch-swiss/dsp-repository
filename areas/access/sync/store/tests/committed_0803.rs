@@ -366,7 +366,7 @@ fn test_committed_0803_pages_and_bands_serves_each_a_still_image() {
     for resource in scanned {
         count += 1;
         match &resource.file {
-            Some(File::StillImage { asset, width, height }) => {
+            Some(File::StillImage { asset, width, height, .. }) => {
                 assert!(!asset.is_empty(), "{}: empty asset", resource.iri.as_str());
                 assert!(*width > 0 && *height > 0, "{}: zero dimension", resource.iri.as_str());
             }

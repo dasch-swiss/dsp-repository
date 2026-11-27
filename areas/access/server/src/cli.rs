@@ -15,16 +15,40 @@ pub(crate) struct Cli {
 pub(crate) enum Commands {
     /// Start the web server
     Serve,
-    /// Validate all data files under the given data directory
+    /// Validate DPE's data files, then every CPE project, and fail if either fails
+    ///
+    /// CPE's projects are read as `serve` reads them (`CPE_PROJECTS_DIR`, `SYNC_DATA_DIR`,
+    /// `MEDIA_DATA_DIR`), whether or not `CPE_BASE` is set. Every project's report is printed; a
+    /// project that fails to load fails the run, and one with no Ready token is a warning. Finding
+    /// no project folder fails it.
     Validate {
-        /// Path to the data directory containing projects/, persons/, organizations/, records/
+        /// Path to DPE's data directory containing projects/, persons/, organizations/, records/
         data_dir: PathBuf,
+        /// A directory of the VRE bridge's shipped inputs (`<shortcode>/config.kdl`,
+        /// `<shortcode>/narrative/`); each CPE project's inputs there get a data-free check, and a
+        /// directory that is not there fails the run
+        #[arg(long)]
+        inputs: Option<PathBuf>,
+        /// The shortcode of a CPE project that must be served: the run fails when it is unknown,
+        /// failed or declared by no project folder. Repeat it or separate shortcodes by commas
+        #[arg(long = "must-serve", value_delimiter = ',', value_parser = parse_shortcode)]
+        must_serve: Vec<String>,
     },
     /// Check if the server is healthy (for Docker HEALTHCHECK)
     Healthcheck {
         #[arg(long, default_value = "http://localhost:8080/healthz")]
         url: String,
     },
+}
+
+/// A shortcode as `cpe_ports::is_shortcode` takes it, upper-cased first.
+fn parse_shortcode(value: &str) -> Result<String, String> {
+    let shortcode = value.trim().to_ascii_uppercase();
+    if cpe_ports::is_shortcode(&shortcode) {
+        Ok(shortcode)
+    } else {
+        Err(format!("{value:?} is not a shortcode (four hexadecimal digits)"))
+    }
 }
 
 /// Whether `url` is one the healthcheck may call: loopback only, so a tampered Docker
@@ -61,6 +85,39 @@ pub(crate) fn healthcheck(url: &str) -> std::process::ExitCode {
         Err(e) => {
             eprintln!("healthcheck: {e}");
             std::process::ExitCode::FAILURE
+        }
+    }
+}
+
+#[cfg(test)]
+mod validate_tests {
+    use clap::Parser;
+
+    use super::{Cli, Commands};
+
+    #[test]
+    fn must_serve_takes_shortcodes_repeated_or_comma_separated_and_refuses_anything_else() {
+        let parsed = Cli::try_parse_from([
+            "access-server",
+            "validate",
+            "data",
+            "--must-serve",
+            "0803,08aa",
+            "--must-serve",
+            "0001",
+        ])
+        .expect("the shortcodes parse");
+        let Some(Commands::Validate { must_serve, inputs, .. }) = parsed.command else {
+            panic!("validate is parsed");
+        };
+        assert_eq!(must_serve, ["0803", "08AA", "0001"]);
+        assert_eq!(inputs, None);
+
+        for value in ["../x", "080", "08g3", ""] {
+            assert!(
+                Cli::try_parse_from(["access-server", "validate", "data", "--must-serve", value]).is_err(),
+                "{value:?}"
+            );
         }
     }
 }

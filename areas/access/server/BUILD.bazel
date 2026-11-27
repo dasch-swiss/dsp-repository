@@ -23,6 +23,7 @@ _DEPS = [
     "@crates//:rustls",
     "@crates//:tokio",
     "@crates//:tower",
+    "@crates//:tower-http",
     "@crates//:tower_governor",
     "@crates//:tracing",
     "@crates//:tracing-opentelemetry",

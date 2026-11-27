@@ -227,6 +227,9 @@ html[data-align="justify"] .record__intro .prose > p {
   line-height: 1.3;
   white-space: nowrap;
 }
+/* In a set, a chip wider than the line keeps to it: its segments wrap, a too-long word breaks.
+   A chip that fits keeps its one line, since the set wraps chip by chip first. */
+.keyword-set > .keyword { max-width: 100%; flex-wrap: wrap; white-space: normal; overflow-wrap: anywhere; }
 .keyword .path { color: var(--ink-faint); }
 /* A11y note: .keyword .path::after and .ext-link::after are
    decorative pseudo-element content (›, ↗). They are generated CSS content and
@@ -685,7 +688,12 @@ html[data-align="justify"] .record__intro .prose > p {
    click, and a box around the whole component reads as an error. Links,
    buttons and inputs inside keep their own rings. */
 #compound-viewer:focus { outline: none; }
-.cv-toc { display: grid; grid-template-columns: minmax(12rem, 16rem) 1fr; column-gap: var(--space-7); align-items: start; }
+/* `minmax(0, 1fr)`: a plain `1fr` grows to the reader's widest unbreakable
+   line (the one-line page description) and widens the page. */
+.cv-toc { display: grid; grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr); column-gap: var(--space-7); align-items: start; }
+/* The rail sits at the frame's edge, so the head and intro right above it
+   must too (editorial.css, THE COMPOSITION). Breakouts keep their axis. */
+.editorial.page:has(+ .compound-viewer.page > .cv-toc) > .narr:not(.narr-wide) { margin-inline: 0; }
 /* At ≤860px the rail stacks BELOW the reader
    by CSS `order`, so a page step shows the member head rather
    than on up to a viewport of chapter list. The markup keeps its order (rail
@@ -807,7 +815,7 @@ html[data-align="justify"] .record__intro .prose > p {
 /* Sticky only on windows at least 48rem tall. Below it the
    reader scrolls with the page. Stacked, it never sticks: it would cover the
    Apparat. The arrival scroll reads this `position: sticky` to tell the two
-   layouts apart (annotation.rs, `ARRIVAL_INIT_EXPR`). The desk stage's 17rem
+   layouts apart (`cpe.arrival`, public/cpe.js). The desk stage's 17rem
    budgets the pinned reader: this sticky top (--header-clear, 81px) plus
    191px for its own chrome (head, pager, links row). A taller top or more
    chrome puts the pinned reader's end below the window, and a page with

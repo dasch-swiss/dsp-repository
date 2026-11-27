@@ -12,8 +12,9 @@ use std::sync::LazyLock;
 use cpe_core::remodel::{IdPolicy, IdSource, Remodel};
 use cpe_ports::contract::violations;
 use cpe_ports::{
-    Annotation, ArchiveProjection, DatePrecision, DateValue, FakeArchiveProjection, File, Motivation, ProjectSnapshot,
-    Resource, ResourceIri, ValueKind, DATA_ARK_PREFIX,
+    Annotation, ArchiveProjection, Calendar, ClassIri, DateBound, DatePrecision, DateValue, FakeArchiveProjection,
+    File, FileLegal, LangString, ListNode, ListNodeIri, Motivation, ProjectSnapshot, Resource, ResourceIri, ValueKind,
+    DATA_ARK_PREFIX,
 };
 use cpe_store_build::error::Rule;
 use cpe_store_build::store::{Store, Table};
@@ -48,17 +49,73 @@ const LEAF_CLASS: &str = "http://www.knora.org/ontology/0123/plain#Leaf";
 const ORNAMENT_CLASS: &str = "http://www.knora.org/ontology/0123/plain#Ornament";
 const PERSON_CLASS: &str = "http://www.knora.org/ontology/0123/plain#Person";
 const KEYWORD_CLASS: &str = "http://www.knora.org/ontology/0123/plain#Keyword";
+/// The class the block leaves out (`ignore-class`).
+const INDEX_CLASS: &str = "http://www.knora.org/ontology/0123/plain#Index";
+/// Two index entries whose IRIs end alike: in the id space they would share an id. The first has
+/// a text and a link to a resource of the wrong class, which a mapped resource would be refused
+/// for.
+const INDEX_1: &str = "http://rdfh.ch/0123/index-1/eintrag";
+const INDEX_2: &str = "http://rdfh.ch/0123/index-2/eintrag";
 
 const HAS_TITLE: &str = "http://www.knora.org/ontology/0123/plain#hasTitle";
 const HAS_PLACE: &str = "http://www.knora.org/ontology/0123/plain#hasPlace";
 const HAS_NOTE: &str = "http://www.knora.org/ontology/0123/plain#hasNote";
 const HAS_HOMEPAGE: &str = "http://www.knora.org/ontology/0123/plain#hasHomepage";
 const HAS_DATE: &str = "http://www.knora.org/ontology/0123/plain#hasDate";
+const HAS_PRINTED: &str = "http://www.knora.org/ontology/0123/plain#hasPrinted";
+const HAS_REMARK: &str = "http://www.knora.org/ontology/0123/plain#hasRemark";
+/// The Work's remark as served: two lines, indented, with a blank one and a `\r\n` between.
+const REMARK: &str = "  Gedruckt in zwei Spalten.\r\n\n   Mit Holzschnitten. ";
+const HAS_COPIES: &str = "http://www.knora.org/ontology/0123/plain#hasCopies";
+const HAS_FORMAT: &str = "http://www.knora.org/ontology/0123/plain#hasFormat";
+
+/// The archive's list of formats: its root and three nodes, of which the block's list `format`
+/// maps the folio and the quarto.
+const FORMATS: &str = "http://rdfh.ch/lists/0123/formats";
+const FOLIO: &str = "http://rdfh.ch/lists/0123/format-folio";
+const QUARTO: &str = "http://rdfh.ch/lists/0123/format-quarto";
+const OCTAVO: &str = "http://rdfh.ch/lists/0123/format-octavo";
 const HAS_NUMBER: &str = "http://www.knora.org/ontology/0123/plain#hasNumber";
 const HAS_CAPTION: &str = "http://www.knora.org/ontology/0123/plain#hasCaption";
 const HAS_ORNAMENT: &str = "http://www.knora.org/ontology/0123/plain#hasOrnament";
 const HAS_ORNAMENT_VERSO: &str = "http://www.knora.org/ontology/0123/plain#hasOrnamentVerso";
 const HAS_TERM: &str = "http://www.knora.org/ontology/0123/plain#hasTerm";
+
+/// A value naming the archive's list node `iri`.
+fn list_node(iri: &str) -> ValueKind {
+    ValueKind::ListNode(ListNodeIri(iri.to_string()))
+}
+
+/// A date of `calendar` from `start` to `end`, each a day number and its precision.
+fn date_of(calendar: Calendar, start: (i64, DatePrecision), end: (i64, DatePrecision)) -> DateValue {
+    let bound = |(jdn, precision)| DateBound { jdn, precision };
+    DateValue { calendar, start: bound(start), end: bound(end) }
+}
+
+/// 28 November 1489 to the year 1489, Julian: bounds of different precisions.
+fn day_to_year_1489() -> DateValue {
+    date_of(
+        Calendar::Julian,
+        (2_265_247, DatePrecision::Day),
+        (2_265_280, DatePrecision::Year),
+    )
+}
+
+/// The archive's list of formats, with an English label on each node.
+fn formats() -> Vec<ListNode> {
+    let node = |iri: &str, parent: Option<&str>, position: Option<u32>, label: &str| ListNode {
+        iri: ListNodeIri(iri.to_string()),
+        parent: parent.map(|parent| ListNodeIri(parent.to_string())),
+        position,
+        labels: vec![LangString { text: label.to_string(), lang: Some("en".to_string()) }],
+    };
+    vec![
+        node(OCTAVO, Some(FORMATS), Some(2), "Octavo"),
+        node(FORMATS, None, None, "Formats"),
+        node(FOLIO, Some(FORMATS), Some(0), "Folio"),
+        node(QUARTO, Some(FORMATS), Some(1), "Quarto"),
+    ]
+}
 
 /// A Leaf of [`WORK`] at `seqnum` with its number, a scan and `more` values.
 fn leaf(iri: &str, seqnum: i64, number: &str, more: Vec<(&str, ValueKind)>) -> Resource {
@@ -82,12 +139,20 @@ fn snapshot() -> Fixture {
     let work = Resource {
         values: values(vec![
             (HAS_NOTE, text("Zweite Notiz ")),
+            (HAS_COPIES, ValueKind::Integer(3)),
             (HAS_TITLE, text("Jahrpredigten")),
             (HAS_DATE, ValueKind::Date(year_1489())),
             (HAS_NOTE, text(" \u{1f}")),
             (HAS_TITLE, text(&format!("{WORK_TITLE}\u{1e}\n  "))),
             (HAS_PLACE, text("[unbekannt]\n")),
             (HAS_NOTE, text("Erste Notiz")),
+            (HAS_FORMAT, list_node(QUARTO)),
+            (HAS_PRINTED, ValueKind::Date(day_to_year_1489())),
+            (
+                HAS_REMARK,
+                ValueKind::Text { text: REMARK.to_string(), lang: Some("de".to_string()) },
+            ),
+            (HAS_COPIES, ValueKind::Integer(1)),
             (HAS_HOMEPAGE, ValueKind::Uri(HOMEPAGE.to_string())),
         ]),
         ..fixture_resource(WORK, WORK_CLASS, WORK_TITLE)
@@ -141,9 +206,14 @@ fn snapshot() -> Fixture {
             link_obj,
             keyword,
             leaf(LEAF_B, 1, "1r", Vec::new()),
+            Resource {
+                values: values(vec![(HAS_TITLE, text("Predigt")), (HAS_ORNAMENT, link(WORK))]),
+                ..fixture_resource(INDEX_1, INDEX_CLASS, "Predigt")
+            },
             fixture_resource(PERSON, PERSON_CLASS, "Anna Muster"),
+            fixture_resource(INDEX_2, INDEX_CLASS, "Predigt"),
         ],
-        list_nodes: Vec::new(),
+        list_nodes: formats(),
     };
     let curation = vec![
         curated(REGION, "lang", None, "de"),
@@ -232,6 +302,33 @@ pub const CASES: &[Case] = &[
         rule: Rule::CuratedKeyOnWrongClass,
         snapshot: || with_curation(snapshot(), PERSON, "cover", LEAF_B),
         subject: PERSON,
+    },
+    // An index entry is no Ornament.
+    Case {
+        feature: "ignore-class",
+        rule: Rule::StripLinkTarget,
+        snapshot: || with_link(snapshot(), LEAF_B, HAS_ORNAMENT, INDEX_1),
+        subject: LEAF_B,
+    },
+    // An index entry is no Work.
+    Case {
+        feature: "ignore-class",
+        rule: Rule::PageParent,
+        snapshot: || with_resource(snapshot(), fourth_leaf(&[INDEX_1], Some(4))),
+        subject: ADDED,
+    },
+    // `genre` is a key of the Work; no class reads `sulg`.
+    Case {
+        feature: "ignore-class",
+        rule: Rule::CuratedKeyOnWrongClass,
+        snapshot: || with_curation(snapshot(), INDEX_1, "genre", "sermon"),
+        subject: INDEX_1,
+    },
+    Case {
+        feature: "ignore-class",
+        rule: Rule::UnknownCuratedKey,
+        snapshot: || with_curation(snapshot(), INDEX_2, "sulg", "eintrag"),
+        subject: INDEX_2,
     },
     // The one parent is no Work.
     Case {
@@ -401,6 +498,24 @@ pub const CASES: &[Case] = &[
         snapshot: || with_date(|date| date.start.jdn = 1_721_423),
         subject: WORK,
     },
+    // The date `printed` is written as its start bound, which is checked for its range.
+    Case {
+        feature: "mixed-precision=\"start\"",
+        rule: Rule::DateOutOfRange,
+        snapshot: || {
+            changed(snapshot(), WORK, |work| {
+                for value in &mut work.values {
+                    if value.property.as_str() != HAS_PRINTED {
+                        continue;
+                    }
+                    if let ValueKind::Date(date) = &mut value.kind {
+                        date.start.jdn = 1_721_423;
+                    }
+                }
+            })
+        },
+        subject: WORK,
+    },
     Case {
         feature: "display-key",
         rule: Rule::CuratedCount,
@@ -420,6 +535,39 @@ pub const CASES: &[Case] = &[
             let snapshot = recurated(snapshot(), WORK, "date_display", None);
             with_curation_in(snapshot, WORK, "date_display", "fr", "1489")
         },
+        subject: WORK,
+    },
+    Case {
+        feature: "type=\"integer\"",
+        rule: Rule::UnexpectedValueKind,
+        snapshot: || with_text(snapshot(), WORK, HAS_COPIES, "3"),
+        subject: WORK,
+    },
+    // The Work has two copies, and takes two at most.
+    Case {
+        feature: "type=\"integer\"",
+        rule: Rule::ValueCount,
+        snapshot: || with_value(snapshot(), WORK, HAS_COPIES, ValueKind::Integer(2)),
+        subject: WORK,
+    },
+    Case {
+        feature: "type=\"list-node\"",
+        rule: Rule::UnexpectedValueKind,
+        snapshot: || with_text(snapshot(), WORK, HAS_FORMAT, "quarto"),
+        subject: WORK,
+    },
+    // The Work has a format, and takes one at most.
+    Case {
+        feature: "type=\"list-node\"",
+        rule: Rule::ValueCount,
+        snapshot: || with_value(snapshot(), WORK, HAS_FORMAT, list_node(FOLIO)),
+        subject: WORK,
+    },
+    // The list `format` maps no node to the archive's octavo.
+    Case {
+        feature: "type=\"list-node\"",
+        rule: Rule::UnknownListNode,
+        snapshot: || reformatted(OCTAVO),
         subject: WORK,
     },
     // The link's target is a Person, no Ornament.
@@ -475,7 +623,12 @@ pub const CASES: &[Case] = &[
         feature: "image=#true, images",
         rule: Rule::ZeroDimension,
         snapshot: || {
-            let flat = File::StillImage { asset: "leaf-c.jp2".to_string(), width: 1200, height: 0 };
+            let flat = File::StillImage {
+                asset: "leaf-c.jp2".to_string(),
+                width: 1200,
+                height: 0,
+                legal: FileLegal::default(),
+            };
             refiled(LEAF_C, Some(flat))
         },
         subject: LEAF_C,
@@ -585,10 +738,24 @@ fn retexted(snapshot: Fixture, resource: &str, property: &str, new: &str) -> Fix
     })
 }
 
-/// [`snapshot`] with the Work's date changed by `change`.
+/// [`snapshot`] with `node` as the Work's format.
+fn reformatted(node: &str) -> Fixture {
+    changed(snapshot(), WORK, |work| {
+        for value in &mut work.values {
+            if value.property.as_str() == HAS_FORMAT {
+                value.kind = list_node(node);
+            }
+        }
+    })
+}
+
+/// [`snapshot`] with the Work's date `made` changed by `change`.
 fn with_date(change: fn(&mut DateValue)) -> Fixture {
     changed(snapshot(), WORK, |work| {
         for value in &mut work.values {
+            if value.property.as_str() != HAS_DATE {
+                continue;
+            }
             if let ValueKind::Date(date) = &mut value.kind {
                 change(date);
             }
@@ -630,6 +797,15 @@ fn test_build_member_has_exactly_one_distinct_parent() {
 /// mapping switches on, such as the checks of an annotation's geometry.
 const FEATURE_RULES: &[(&str, &[Rule])] = &[
     ("class", &[Rule::UnmappedClass]),
+    (
+        "ignore-class",
+        &[
+            Rule::StripLinkTarget,
+            Rule::PageParent,
+            Rule::CuratedKeyOnWrongClass,
+            Rule::UnknownCuratedKey,
+        ],
+    ),
     ("curated keys", &[Rule::UnknownCuratedKey, Rule::CuratedKeyOnWrongClass]),
     (
         "id curated-key",
@@ -656,6 +832,12 @@ const FEATURE_RULES: &[(&str, &[Rule])] = &[
     ("no-addresses", &[Rule::HttpInValue]),
     ("sentinel, sentinel-within", &[Rule::MissingInValue]),
     ("type=\"date\"", &[Rule::MixedDatePrecision, Rule::DateOutOfRange]),
+    ("mixed-precision=\"start\"", &[Rule::DateOutOfRange]),
+    ("type=\"integer\"", &[Rule::UnexpectedValueKind, Rule::ValueCount]),
+    (
+        "type=\"list-node\"",
+        &[Rule::UnexpectedValueKind, Rule::ValueCount, Rule::UnknownListNode],
+    ),
     (
         "display-key",
         &[
@@ -791,6 +973,33 @@ fn test_build_annotation_of_the_class_of_another_motivation_is_refused() {
     assert_eq!(refusals, [(Rule::AnnotationClassMismatch, ADDED.to_string())]);
 }
 
+/// `ignore-class` never reaches an annotation, which is told by its `annotation` field: a Region
+/// whose class is an ignored one is still held to its motivation's class.
+#[test]
+fn test_build_annotation_of_an_ignored_class_is_still_an_annotation() {
+    let region = Resource {
+        class: ClassIri(INDEX_CLASS.to_string()),
+        ..region_on(ADDED, LEAF_A)
+    };
+
+    let refusals = refused(&with_annotation(snapshot(), region, "yes"));
+
+    assert_eq!(refusals, [(Rule::AnnotationClassMismatch, ADDED.to_string())]);
+}
+
+/// A kept link with a target of an ignored class is dropped without a refusal, as one pointing at
+/// any resource with no entry is: neither the link nor any of its targets is written.
+#[test]
+fn test_build_link_to_an_ignored_class_is_dropped_silently() {
+    let to_the_work = built(&with_annotation(snapshot(), link_to(ADDED, &[WORK]), "yes"));
+    assert!(to_the_work.annotation_links.iter().any(|row| row.id == "added"));
+
+    let store = built(&with_annotation(snapshot(), link_to(ADDED, &[WORK, INDEX_1]), "yes"));
+
+    assert!(store.annotation_links.iter().all(|row| row.id != "added"));
+    assert!(link_targets(&store).iter().all(|(link, ..)| *link != "added"));
+}
+
 /// A mapping without an `annotations` block maps no annotation, so one is of an undeclared
 /// class, whatever its class and motivation.
 #[test]
@@ -842,7 +1051,14 @@ fn test_build_plain_snapshot_gives_the_list_tables_by_id_with_the_declared_seq()
         build_with(&served(), &PLAIN, None).unwrap_or_else(|errors| panic!("the fixture's snapshot builds: {errors}"));
 
     let lists: Vec<(&str, &str)> = store.lists.iter().map(|list| (list.id.as_str(), list.name.as_str())).collect();
-    assert_eq!(lists, [("list-genre", "genre"), ("list-technique", "technique")]);
+    assert_eq!(
+        lists,
+        [
+            ("list-format", "format"),
+            ("list-genre", "genre"),
+            ("list-technique", "technique")
+        ]
+    );
     let nodes: Vec<(&str, &str, Option<&str>, i64)> = store
         .list_nodes
         .iter()
@@ -851,6 +1067,9 @@ fn test_build_plain_snapshot_gives_the_list_tables_by_id_with_the_declared_seq()
     assert_eq!(
         nodes,
         [
+            ("format-folio", "list-format", None, 0),
+            ("format-quarto", "list-format", None, 1),
+            ("format-small", "list-format", None, 2),
             ("genre-almanac", "list-genre", None, 1),
             ("genre-other", "list-genre", None, 2),
             ("genre-sermon", "list-genre", None, 0),
@@ -866,6 +1085,12 @@ fn test_build_plain_snapshot_gives_the_list_tables_by_id_with_the_declared_seq()
     assert_eq!(
         labels,
         [
+            ("format-folio", "de", "Folio"),
+            ("format-folio", "en", "Folio"),
+            ("format-quarto", "de", "Quart"),
+            ("format-quarto", "en", "Quarto"),
+            ("format-small", "de", "Kleinformat"),
+            ("format-small", "en", "Small format"),
             ("genre-almanac", "de", "Kalender"),
             ("genre-almanac", "en", "Almanac"),
             ("genre-other", "de", "Übriges"),
@@ -878,6 +1103,49 @@ fn test_build_plain_snapshot_gives_the_list_tables_by_id_with_the_declared_seq()
             ("technique-woodcut", "en", "Woodcut"),
         ]
     );
+}
+
+/// A list node's `iri` maps the archive's values and is not written: without the `iri`s, and
+/// without the property that needs them, the list tables are the same.
+#[test]
+fn test_build_list_node_iri_leaves_the_list_tables_unchanged() {
+    let config = include_str!("../fixtures/plain/config.kdl");
+    let without: String = config
+        .lines()
+        .filter(|line| !line.contains("type=\"list-node\""))
+        .map(|line| match line.find(" iri=\"http://rdfh.ch/lists/") {
+            Some(start) => {
+                let end = line[start + 7..].find('"').map_or(line.len(), |at| start + 8 + at);
+                format!("{}{}\n", &line[..start], &line[end..])
+            }
+            None => format!("{line}\n"),
+        })
+        .collect();
+    let bare = lowered(&without);
+    assert!(bare.lists.iter().flat_map(|list| &list.nodes).all(|node| node.iri.is_none()));
+    assert!(PLAIN.lists.iter().flat_map(|list| &list.nodes).any(|node| node.iri.is_some()));
+
+    let tables = |mapping: &Remodel| {
+        let store =
+            build_with(&served(), mapping, None).unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"));
+        (store.lists, store.list_nodes, store.list_node_labels)
+    };
+    assert_eq!(tables(&bare), tables(&PLAIN));
+}
+
+/// An archive list node is written as the node of the property's list that stands for it.
+#[test]
+fn test_build_archive_list_node_is_written_as_the_node_that_stands_for_it() {
+    let folio = reformatted(FOLIO);
+
+    let store = built(&folio);
+
+    let formats: Vec<_> = store.properties.iter().filter(|row| row.name == "format").collect();
+    let shown: Vec<(&str, &str, Option<&str>)> = formats
+        .iter()
+        .map(|row| (row.resource_id.as_str(), row.value_type.as_str(), row.target_id.as_deref()))
+        .collect();
+    assert_eq!(shown, [("predigten", "list_value", Some("format-folio"))]);
 }
 
 #[test]
@@ -906,9 +1174,14 @@ fn test_build_snapshot_of_another_shortcode_is_refused_by_the_contract_alone() {
 /// under the schema with foreign keys on: the schema checks the words of a date row and the
 /// key of every row.
 fn built(snapshot: &Fixture) -> Store {
-    let store = build_with(snapshot, &PLAIN, None).unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"));
+    built_under(snapshot, &PLAIN)
+}
+
+/// [`built`] under `mapping`.
+fn built_under(snapshot: &Fixture, mapping: &Remodel) -> Store {
+    let store = build_with(snapshot, mapping, None).unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"));
     let filled: Vec<Table> = Table::ALL.into_iter().filter(|&table| store.row_count(table) > 0).collect();
-    let sql = sql::to_sql_tables(&store, &PLAIN, &sql::header("plain", &PLAIN), &filled)
+    let sql = sql::to_sql_tables(&store, mapping, &sql::header("plain", mapping), &filled)
         .expect("every table written has a row");
     let connection = Connection::open_in_memory().expect("an in-memory database opens");
     connection.pragma_update(None, "foreign_keys", true).expect("the pragma is set");
@@ -978,8 +1251,11 @@ fn test_build_plain_snapshot_gives_the_resources_and_their_values() {
             ("predigten", "alt-title", 0, untagged("Jahrpredigten")),
             ("predigten", "blurb", 0, blurb_de),
             ("predigten", "blurb", 1, blurb_en),
+            ("predigten", "copies", 0, "int 3".to_string()),
+            ("predigten", "copies", 1, "int 1".to_string()),
             ("predigten", "credit", 0, untagged("Sammlung Muster")),
             ("predigten", "extent", 0, "int 3".to_string()),
+            ("predigten", "format", 0, "node format-quarto".to_string()),
             ("predigten", "genre", 0, "node genre-sermon".to_string()),
             ("predigten", "homepage", 0, untagged(HOMEPAGE)),
             ("predigten", "image", 0, "-> leaf-b".to_string()),
@@ -987,6 +1263,13 @@ fn test_build_plain_snapshot_gives_the_resources_and_their_values() {
             ("predigten", "name", 0, untagged(WORK_TITLE)),
             ("predigten", "note", 0, untagged("Zweite Notiz ")),
             ("predigten", "note", 1, untagged("Erste Notiz")),
+            ("predigten", "printed", 0, "1489-11-28/1489-11-28 day julian -@-".to_string()),
+            (
+                "predigten",
+                "remark",
+                0,
+                "rich Gedruckt in zwei Spalten.\n\nMit Holzschnitten.@de".to_string(),
+            ),
             ("predigten-1r", "image", 0, "-> leaf-b".to_string()),
             ("predigten-1r", "leaf-id", 0, untagged("1r")),
             ("predigten-1r", "name", 0, untagged("1r")),
@@ -1205,10 +1488,14 @@ const PLAIN_FILE: &str = r"-- plain data (Work + Leaf + Ornament + Person + Keyw
 -- DO NOT hand-edit; regenerate with: just cpe store-build plain --inplace
 
 INSERT INTO lists (id, name) VALUES
+    ('list-format', 'format'),
     ('list-genre', 'genre'),
     ('list-technique', 'technique');
 
 INSERT INTO list_nodes (id, list_id, parent_id, seq) VALUES
+    ('format-folio', 'list-format', NULL, 0),
+    ('format-quarto', 'list-format', NULL, 1),
+    ('format-small', 'list-format', NULL, 2),
     ('genre-almanac', 'list-genre', NULL, 1),
     ('genre-other', 'list-genre', NULL, 2),
     ('genre-sermon', 'list-genre', NULL, 0),
@@ -1216,6 +1503,12 @@ INSERT INTO list_nodes (id, list_id, parent_id, seq) VALUES
     ('technique-woodcut', 'list-technique', NULL, 0);
 
 INSERT INTO list_node_labels (node_id, lang, label) VALUES
+    ('format-folio', 'de', 'Folio'),
+    ('format-folio', 'en', 'Folio'),
+    ('format-quarto', 'de', 'Quart'),
+    ('format-quarto', 'en', 'Quarto'),
+    ('format-small', 'de', 'Kleinformat'),
+    ('format-small', 'en', 'Small format'),
     ('genre-almanac', 'de', 'Kalender'),
     ('genre-almanac', 'en', 'Almanac'),
     ('genre-other', 'de', 'Übriges'),
@@ -1253,8 +1546,11 @@ VALUES
     ('predigten', 'alt-title', 0, 'text', 'Jahrpredigten', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
     ('predigten', 'blurb', 0, 'text', 'Predigten für jeden Sonntag.', 'de', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
     ('predigten', 'blurb', 1, 'text', 'Sermons for every Sunday.', 'en', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+    ('predigten', 'copies', 0, 'integer', NULL, NULL, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+    ('predigten', 'copies', 1, 'integer', NULL, NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
     ('predigten', 'credit', 0, 'text', 'Sammlung Muster', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
     ('predigten', 'extent', 0, 'integer', NULL, NULL, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+    ('predigten', 'format', 0, 'list_value', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'format-quarto'),
     ('predigten', 'genre', 0, 'list_value', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'genre-sermon'),
     ('predigten', 'homepage', 0, 'text', 'https://example.org/predigten', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
     ('predigten', 'image', 0, 'link', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'leaf-b'),
@@ -1262,6 +1558,10 @@ VALUES
     ('predigten', 'name', 0, 'text', 'Predigten auf das Jahr', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
     ('predigten', 'note', 0, 'text', 'Zweite Notiz ', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
     ('predigten', 'note', 1, 'text', 'Erste Notiz', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+    ('predigten', 'printed', 0, 'date', NULL, NULL, NULL, NULL, '1489-11-28', '1489-11-28', 'day', NULL, 'julian', NULL),
+    ('predigten', 'remark', 0, 'richtext', 'Gedruckt in zwei Spalten.
+
+Mit Holzschnitten.', 'de', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
     ('predigten-1r', 'image', 0, 'link', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'leaf-b'),
     ('predigten-1r', 'leaf-id', 0, 'text', '1r', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
     ('predigten-1r', 'name', 0, 'text', '1r', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
@@ -1886,6 +2186,113 @@ remodel {
     );
 }
 
+/// A date whose bounds have different precisions is refused by default and under
+/// `mixed-precision="refuse"`. Under `"start"` it is the single date of its start bound, at the
+/// start's precision, whichever bound is the finer; a date whose bounds share a precision is
+/// written as it is.
+#[test]
+fn test_build_mixed_precision_start_writes_a_mixed_date_as_its_start() {
+    let mapping = |policy: &str| {
+        lowered(&format!(
+            r#"
+site {{
+    languages "de"
+}}
+
+remodel {{
+    shortcode "0123"
+    class "Work" iri="http://www.knora.org/ontology/0123/plain#Work" {{
+        id from="iri"
+        property "made" iri="http://www.knora.org/ontology/0123/plain#hasDate" type="date"{policy}
+    }}
+}}
+"#
+        ))
+    };
+    let work = |date: DateValue| Fixture {
+        facts: ProjectSnapshot {
+            shortcode: SHORTCODE.to_string(),
+            resources: vec![Resource {
+                values: values(vec![(HAS_DATE, ValueKind::Date(date))]),
+                ..fixture_resource(WORK, WORK_CLASS, "")
+            }],
+            list_nodes: Vec::new(),
+        },
+        curation: Vec::new(),
+    };
+    let gregorian = |start, end| date_of(Calendar::Gregorian, start, end);
+    let day_to_year = gregorian((2_392_707, DatePrecision::Day), (2_392_740, DatePrecision::Year));
+    let year_to_day = gregorian((2_400_046, DatePrecision::Year), (2_400_119, DatePrecision::Day));
+    let day_to_day = gregorian((2_392_707, DatePrecision::Day), (2_392_711, DatePrecision::Day));
+
+    let start = mapping(r#" mixed-precision="start""#);
+    let made = |date: &DateValue| -> Vec<String> {
+        let store = build_with(&work(date.clone()), &start, None)
+            .unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"));
+        store.properties.iter().map(shown).collect()
+    };
+    assert_eq!(made(&day_to_year), ["1838-11-28/1838-11-28 day gregorian -@-"]);
+    assert_eq!(made(&year_to_day), ["1859/1859 year gregorian -@-"]);
+    assert_eq!(made(&day_to_day), ["1838-11-28/1838-12-02 day gregorian -@-"]);
+
+    for refusing in [mapping(""), mapping(r#" mixed-precision="refuse""#)] {
+        for mixed in [&day_to_year, &year_to_day] {
+            assert_eq!(
+                refused_under(&work(mixed.clone()), &refusing),
+                [(Rule::MixedDatePrecision, WORK.to_string())]
+            );
+        }
+        assert_eq!(refused_under(&work(day_to_day.clone()), &refusing), []);
+    }
+}
+
+/// A richtext property's texts are converted only when they are written: its steps read them as
+/// served. A title equal to the label only once its line is stripped is `label-not-a-title`; one
+/// equal as served is left out, and the rest are written as paragraphs. The sentinel inside a
+/// line refuses the property, as in any text.
+#[test]
+fn test_build_richtext_property_is_checked_on_its_texts_as_served() {
+    const CONFIG: &str = r#"
+site {
+    languages "de"
+}
+
+remodel {
+    shortcode "0123"
+    sentinel "[unbekannt]"
+    class "Work" iri="http://www.knora.org/ontology/0123/plain#Work" {
+        id from="iri"
+        property "titles" iri="http://www.knora.org/ontology/0123/plain#hasTitle" type="text" exclude-label=#true richtext=#true
+    }
+}
+"#;
+    let mapping = lowered(CONFIG);
+    let work = |titles: &[&str]| Fixture {
+        facts: ProjectSnapshot {
+            shortcode: SHORTCODE.to_string(),
+            resources: vec![Resource {
+                values: values(titles.iter().map(|title| (HAS_TITLE, text(title))).collect()),
+                ..fixture_resource(WORK, WORK_CLASS, "Chronik")
+            }],
+            list_nodes: Vec::new(),
+        },
+        curation: Vec::new(),
+    };
+
+    assert_eq!(
+        refused_under(&work(&["Chronik\n"]), &mapping),
+        [(Rule::LabelNotATitle, WORK.to_string())]
+    );
+    assert_eq!(
+        refused_under(&work(&["Chronik", "Erste Zeile\n[unbekannt]"]), &mapping),
+        [(Rule::MissingInValue, WORK.to_string())]
+    );
+    let store = build_with(&work(&["Chronik", " Die Chronik\n der Stadt"]), &mapping, None)
+        .unwrap_or_else(|errors| panic!("the snapshot builds: {errors}"));
+    let written: Vec<String> = store.properties.iter().map(shown).collect();
+    assert_eq!(written, ["rich Die Chronik\n\nder Stadt@-"]);
+}
+
 /// A mapping whose parent class has members of two classes, and counts those of one.
 const SHELVES: &str = r#"
 site {
@@ -1981,4 +2388,609 @@ fn test_build_member_id_repeated_across_parents_is_not_numbered() {
         .map(|(id, _)| id)
         .collect();
     assert_eq!(volumes, ["shelf-a-1", "shelf-b-1"]);
+}
+
+/// A mapping whose `images` node names a declared class: each Picture is its own image.
+const GALLERY: &str = r#"
+site {
+    languages "en"
+}
+
+remodel {
+    shortcode "0123"
+    images class="Picture" iiif-base="https://iiif.example.org/0123/" {
+        authorship "Unknown"
+        license "Public Domain"
+    }
+    class "Picture" iri="http://www.knora.org/ontology/0123/plain#Picture" {
+        id from="iri"
+        property "image" iri="http://www.knora.org/ontology/0123/plain#hasCaption" type="text" max=1
+    }
+}
+"#;
+
+const PICTURE_CLASS: &str = "http://www.knora.org/ontology/0123/plain#Picture";
+/// A Picture whose file names two authors and a copyright holder, in a `.jpx` file.
+const RABBIT: &str = "http://rdfh.ch/0123/rabbit";
+/// A Picture whose file names neither.
+const CAT: &str = "http://rdfh.ch/0123/cat";
+
+/// A snapshot of [`GALLERY`]: [`RABBIT`] and [`CAT`], each with its caption and its file.
+fn gallery() -> Fixture {
+    let picture = |iri: &str, label: &str, file: File| Resource {
+        values: values(vec![(HAS_CAPTION, text(label))]),
+        file: Some(file),
+        ..fixture_resource(iri, PICTURE_CLASS, label)
+    };
+    let rabbit = File::StillImage {
+        asset: "rabbit-scan.jpx".to_string(),
+        width: 800,
+        height: 600,
+        legal: FileLegal {
+            authorship: vec!["John Tenniel".to_string(), "Dalziel Brothers".to_string()],
+            copyright_holder: Some("AI-Generated".to_string()),
+        },
+    };
+    let snapshot = Fixture {
+        facts: ProjectSnapshot {
+            shortcode: SHORTCODE.to_string(),
+            resources: vec![
+                picture(RABBIT, "The White Rabbit", rabbit),
+                picture(CAT, "The Cheshire Cat", still_image("cat-scan.jp2")),
+            ],
+            list_nodes: Vec::new(),
+        },
+        curation: Vec::new(),
+    };
+    assert_eq!(violations(SHORTCODE, &snapshot.facts), []);
+    snapshot
+}
+
+/// Each resource of the declared class is the image: its row is its class's, it carries its
+/// representation, with its label as the alternative text, and its rights. No Image of a file is
+/// written, and no link to one, so the class may name a property `image`.
+#[test]
+fn test_build_declared_images_class_makes_each_resource_its_own_image() {
+    let mapping = lowered(GALLERY);
+
+    let store = built_under(&gallery(), &mapping);
+
+    assert_eq!(resources(&store), [("cat", "Picture"), ("rabbit", "Picture")]);
+    let found: Vec<_> = store
+        .representations
+        .iter()
+        .map(|row| {
+            let size = (row.width, row.height);
+            (
+                row.resource_id.as_str(),
+                row.uri.as_str(),
+                size,
+                row.alt.as_deref(),
+                row.attribution.as_deref(),
+            )
+        })
+        .collect();
+    let base = "https://iiif.example.org/0123";
+    assert_eq!(
+        found,
+        [
+            (
+                "cat",
+                format!("{base}/cat-scan.jp2/full/max/0/default.jpg").as_str(),
+                (Some(1200), Some(1800)),
+                Some("The Cheshire Cat"),
+                Some("Unknown · Public Domain"),
+            ),
+            (
+                "rabbit",
+                format!("{base}/rabbit-scan.jpx/full/max/0/default.jpg").as_str(),
+                (Some(800), Some(600)),
+                Some("The White Rabbit"),
+                Some("John Tenniel, Dalziel Brothers · Public Domain"),
+            ),
+        ]
+    );
+    assert_eq!(
+        properties(&store),
+        [
+            ("cat", "authorship", 0, "Unknown@-".to_string()),
+            ("cat", "image", 0, "The Cheshire Cat@-".to_string()),
+            ("cat", "license", 0, "Public Domain@-".to_string()),
+            ("rabbit", "authorship", 0, "John Tenniel, Dalziel Brothers@-".to_string()),
+            ("rabbit", "copyright", 0, "AI-Generated@-".to_string()),
+            ("rabbit", "image", 0, "The White Rabbit@-".to_string()),
+            ("rabbit", "license", 0, "Public Domain@-".to_string()),
+        ]
+    );
+}
+
+/// A resource of the declared images class needs a still image, as one of a class that
+/// requires an image does: one without a file, or with a file of another kind, is refused.
+#[test]
+fn test_build_declared_images_class_refuses_a_resource_without_a_still_image() {
+    let mapping = lowered(GALLERY);
+    let unfiled = changed(gallery(), CAT, |cat| cat.file = None);
+    let pdf = changed(gallery(), CAT, |cat| {
+        cat.file = Some(File::Document { asset: "cat.pdf".to_string(), legal: FileLegal::default() });
+    });
+    let tiff = changed(gallery(), CAT, |cat| cat.file = Some(still_image("cat-scan.tif")));
+
+    assert_eq!(refused_under(&unfiled, &mapping), [(Rule::NotStillImage, CAT.to_string())]);
+    assert_eq!(refused_under(&pdf, &mapping), [(Rule::NotStillImage, CAT.to_string())]);
+    assert_eq!(refused_under(&tiff, &mapping), [(Rule::NotJp2, CAT.to_string())]);
+}
+
+/// A file of the declared images class goes into its IIIF URL by its stem, so the stem is held
+/// to what a URL carries unchanged, as an Image id is; the subject is the resource's id.
+#[test]
+fn test_build_declared_images_class_refuses_a_file_a_url_does_not_carry() {
+    for asset in ["cat/../scan.jp2", "cat scan.jp2", "cat?x=1.jpx", "cat#a.jp2"] {
+        let odd = changed(gallery(), CAT, |cat| cat.file = Some(still_image(asset)));
+
+        assert_eq!(
+            refused_under(&odd, &lowered(GALLERY)),
+            [(Rule::IdNotUrlSafe, "cat".to_string())],
+            "{asset}"
+        );
+    }
+}
+
+/// An Image of a file takes the rights its file names, and the block's authorship where it names
+/// no author; the licence is the block's.
+#[test]
+fn test_build_image_of_a_file_takes_its_files_rights() {
+    let credited = changed(snapshot(), LEAF_A, |leaf| {
+        leaf.file = Some(File::StillImage {
+            asset: "leaf-a.jp2".to_string(),
+            width: 1200,
+            height: 1800,
+            legal: FileLegal {
+                authorship: vec!["Anna Muster".to_string()],
+                copyright_holder: Some("Stadtbibliothek".to_string()),
+            },
+        });
+    });
+
+    let store = built(&credited);
+
+    let rights: Vec<_> = properties(&store)
+        .into_iter()
+        .filter(|(id, _, _, _)| id.starts_with("leaf-"))
+        .filter(|(_, name, _, _)| ["authorship", "copyright", "license"].contains(name))
+        .collect();
+    assert_eq!(
+        rights,
+        [
+            ("leaf-a", "authorship", 0, "Anna Muster@-".to_string()),
+            ("leaf-a", "copyright", 0, "Stadtbibliothek@-".to_string()),
+            ("leaf-a", "license", 0, "CC0 1.0@-".to_string()),
+            ("leaf-b", "authorship", 0, "Stadtbibliothek Musterstadt@-".to_string()),
+            ("leaf-b", "license", 0, "CC0 1.0@-".to_string()),
+            ("leaf-c", "authorship", 0, "Stadtbibliothek Musterstadt@-".to_string()),
+            ("leaf-c", "license", 0, "CC0 1.0@-".to_string()),
+        ]
+    );
+    let attribution = store.representations.iter().find(|row| row.resource_id == "leaf-a");
+    assert_eq!(
+        attribution.and_then(|row| row.attribution.as_deref()),
+        Some("Anna Muster · CC0 1.0")
+    );
+}
+
+/// A mapping whose one class takes two archive classes, tells them apart by a list value and a
+/// flag, and keeps the archive's ids as they are.
+const ATLAS: &str = r#"
+site {
+    languages "en"
+}
+
+remodel {
+    shortcode "0123"
+    list "realm" {
+        list-node "dream" iri="http://www.knora.org/ontology/0123/plain#DreamPlace" { en "Dream" }
+        list-node "waking" iri="http://www.knora.org/ontology/0123/plain#WakingPlace" { en "Waking" }
+    }
+    class "Place" iri="http://www.knora.org/ontology/0123/plain#DreamPlace" {
+        also iri="http://www.knora.org/ontology/0123/plain#WakingPlace"
+        id from="property" property="local-id" verbatim=#true
+        property "local-id" iri="http://www.knora.org/ontology/0123/plain#hasNumber" type="text" min=1 max=1
+        property "realm" from="class" list="realm"
+        flag "imagined" iri="http://www.knora.org/ontology/0123/plain#DreamPlace"
+    }
+}
+"#;
+
+/// A Place of the first archive class of [`ATLAS`].
+const GARDEN: &str = "http://rdfh.ch/0123/garden";
+/// A Place of its `also`.
+const OXFORD: &str = "http://rdfh.ch/0123/oxford";
+
+/// A snapshot of [`ATLAS`]: [`GARDEN`], whose number has whitespace around it, and [`OXFORD`].
+fn atlas() -> Fixture {
+    let place = |iri: &str, class: &str, number: &str| Resource {
+        values: values(vec![(HAS_NUMBER, text(number))]),
+        ..fixture_resource(iri, &format!("http://www.knora.org/ontology/0123/plain#{class}"), "")
+    };
+    let snapshot = Fixture {
+        facts: ProjectSnapshot {
+            shortcode: SHORTCODE.to_string(),
+            resources: vec![
+                place(OXFORD, "WakingPlace", "L_002"),
+                place(GARDEN, "DreamPlace", " L_001\n"),
+            ],
+            list_nodes: Vec::new(),
+        },
+        curation: Vec::new(),
+    };
+    assert_eq!(violations(SHORTCODE, &snapshot.facts), []);
+    snapshot
+}
+
+/// The resources of both archive classes are Places. Each gets the list node that stands for
+/// its archive class and, of the flag's class only, the flag as a `boolean` row; its id is its
+/// number less the whitespace around it, not made a slug.
+#[test]
+fn test_build_class_takes_its_also_derives_a_value_and_a_flag_and_keeps_a_verbatim_id() {
+    let store = built_under(&atlas(), &lowered(ATLAS));
+
+    assert_eq!(resources(&store), [("L_001", "Place"), ("L_002", "Place")]);
+    assert_eq!(
+        properties(&store),
+        [
+            ("L_001", "imagined", 0, "bool 1".to_string()),
+            ("L_001", "local-id", 0, " L_001\n@-".to_string()),
+            ("L_001", "realm", 0, "node realm-dream".to_string()),
+            ("L_002", "local-id", 0, "L_002@-".to_string()),
+            ("L_002", "realm", 0, "node realm-waking".to_string()),
+        ]
+    );
+}
+
+/// A verbatim id is held to what a URL carries, as every id is: a space refuses it, and so does
+/// an id of dots only, which a client resolves as a dot-segment.
+#[test]
+fn test_build_verbatim_id_that_a_url_does_not_carry_is_refused() {
+    for number in ["L 001", ".", ".."] {
+        let unsafe_id = changed(atlas(), GARDEN, |garden| {
+            garden.values = values(vec![(HAS_NUMBER, text(number))])
+        });
+
+        assert_eq!(
+            refused_under(&unsafe_id, &lowered(ATLAS)),
+            [(Rule::IdNotUrlSafe, GARDEN.to_string())],
+            "{number:?}"
+        );
+    }
+}
+
+/// A verbatim id that is empty once stripped is `empty-id-slug`, and two equal verbatim ids are
+/// `duplicate-id`, as for any id.
+#[test]
+fn test_build_verbatim_id_is_held_to_emptiness_and_uniqueness() {
+    let number = |text_value: &str| values(vec![(HAS_NUMBER, text(text_value))]);
+    let blank = changed(atlas(), GARDEN, |garden| garden.values = number("  "));
+    let twice = changed(atlas(), GARDEN, |garden| garden.values = number("L_002"));
+
+    assert_eq!(
+        refused_under(&blank, &lowered(ATLAS)),
+        [(Rule::EmptyIdSlug, GARDEN.to_string())]
+    );
+    assert_eq!(
+        refused_under(&twice, &lowered(ATLAS)),
+        [(Rule::DuplicateId, "L_002".to_string())]
+    );
+}
+
+/// A class with `also` takes only the archive classes it names: a resource of a third one is
+/// refused as of an undeclared class.
+#[test]
+fn test_build_resource_of_an_archive_class_no_class_takes_is_still_unmapped() {
+    let lost = changed(atlas(), GARDEN, |garden| {
+        garden.class = ClassIri("http://www.knora.org/ontology/0123/plain#LostPlace".to_string());
+    });
+
+    assert_eq!(
+        refused_under(&lost, &lowered(ATLAS)),
+        [(Rule::UnmappedClass, GARDEN.to_string())]
+    );
+}
+
+/// A resource whose archive class no node of the list stands for gets no class value: the
+/// property is refused, naming the archive class.
+#[test]
+fn test_build_class_value_without_a_node_for_the_archive_class_is_refused() {
+    let waking = r#"list-node "waking" iri="http://www.knora.org/ontology/0123/plain#WakingPlace" { en "Waking" }"#;
+    assert!(ATLAS.contains(waking));
+    let mapping = lowered(&ATLAS.replace(waking, ""));
+
+    let errors = build_with(&atlas(), &mapping, None).expect_err("the build is refused");
+
+    let found: Vec<_> = errors
+        .as_slice()
+        .iter()
+        .map(|error| (error.rule, error.subject.as_str(), error.detail.as_deref()))
+        .collect();
+    let waking_class = "http://www.knora.org/ontology/0123/plain#WakingPlace";
+    assert_eq!(found, [(Rule::UnknownListNode, OXFORD, Some(waking_class))]);
+}
+
+/// A mapping whose Chapters are members of the Story that links to them, whose Chapters and
+/// Characters link to the Pictures that name them as parents, and whose Chapters list their
+/// Characters in positional order.
+const STORYBOOK: &str = r#"
+site {
+    languages "en"
+}
+
+remodel {
+    shortcode "0123"
+    class "Story" iri="http://www.knora.org/ontology/0123/plain#Story" {
+        id from="iri"
+        property "chapters" iri="http://www.knora.org/ontology/0123/plain#hasChapter" type="link" target="Chapter"
+        member-count "length" of="Chapter"
+    }
+    class "Chapter" iri="http://www.knora.org/ontology/0123/plain#Chapter" {
+        member-of "Story" via="chapters" seq="position"
+        id from="iri"
+        members "image" from="Picture"
+        property "character" iri="http://www.knora.org/ontology/0123/plain#hasCharacter" type="link" target="Character" ordered=#true
+    }
+    class "Character" iri="http://www.knora.org/ontology/0123/plain#Character" {
+        id from="iri"
+        members "image" from="Picture"
+    }
+    class "Picture" iri="http://www.knora.org/ontology/0123/plain#Picture" {
+        id from="iri"
+    }
+}
+"#;
+
+const HAS_CHAPTER: &str = "http://www.knora.org/ontology/0123/plain#hasChapter";
+const HAS_CHARACTER: &str = "http://www.knora.org/ontology/0123/plain#hasCharacter";
+
+/// A resource of the storybook's `class`, with `values`, `part_of` its parents and `seqnum`.
+fn storybook_resource(
+    local: &str,
+    class: &str,
+    values_of: Vec<(&str, ValueKind)>,
+    parents: &[&str],
+    seqnum: Option<i64>,
+) -> Resource {
+    let iri = |local: &str| format!("http://rdfh.ch/0123/{local}");
+    Resource {
+        values: values(values_of),
+        part_of: parents.iter().map(|parent| ResourceIri(iri(parent))).collect(),
+        seqnum,
+        ..fixture_resource(&iri(local), &format!("http://www.knora.org/ontology/0123/plain#{class}"), "")
+    }
+}
+
+/// A snapshot of [`STORYBOOK`]. `wonder` links its chapters `ch-a` (seqnum 2) and `ch-b`
+/// (seqnum 1), in that order, `glass` its chapter `ch-c`; no chapter names its story in `part_of`.
+/// `ch-a` links `hatter` and `alice`, who have no seqnum, and `cat`, who has one. `pic-1` (seqnum
+/// 2) is a picture of `ch-a` and of `alice`, `pic-2` (seqnum 1) of `alice`, `pic-3` (no seqnum) of
+/// `ch-a`.
+fn storybook() -> Fixture {
+    let link_to = |local: &str| link(&format!("http://rdfh.ch/0123/{local}"));
+    let snapshot = Fixture {
+        facts: ProjectSnapshot {
+            shortcode: SHORTCODE.to_string(),
+            resources: vec![
+                storybook_resource(
+                    "wonder",
+                    "Story",
+                    vec![(HAS_CHAPTER, link_to("ch-a")), (HAS_CHAPTER, link_to("ch-b"))],
+                    &[],
+                    None,
+                ),
+                storybook_resource("glass", "Story", vec![(HAS_CHAPTER, link_to("ch-c"))], &[], None),
+                storybook_resource(
+                    "ch-a",
+                    "Chapter",
+                    vec![
+                        (HAS_CHARACTER, link_to("hatter")),
+                        (HAS_CHARACTER, link_to("alice")),
+                        (HAS_CHARACTER, link_to("cat")),
+                    ],
+                    &[],
+                    Some(2),
+                ),
+                storybook_resource("ch-b", "Chapter", Vec::new(), &[], Some(1)),
+                storybook_resource("ch-c", "Chapter", Vec::new(), &[], Some(1)),
+                storybook_resource("hatter", "Character", Vec::new(), &[], None),
+                storybook_resource("alice", "Character", Vec::new(), &[], None),
+                storybook_resource("cat", "Character", Vec::new(), &[], Some(5)),
+                storybook_resource("pic-1", "Picture", Vec::new(), &["ch-a", "alice"], Some(2)),
+                storybook_resource("pic-2", "Picture", Vec::new(), &["alice"], Some(1)),
+                storybook_resource("pic-3", "Picture", Vec::new(), &["ch-a"], None),
+            ],
+            list_nodes: Vec::new(),
+        },
+        curation: Vec::new(),
+    };
+    assert_eq!(violations(SHORTCODE, &snapshot.facts), []);
+    snapshot
+}
+
+/// A Chapter's parent is the Story that links to it: it is placed there by its seqnum, counted
+/// there, and has its position, though its `part_of` names nothing. A Picture is linked from
+/// each Chapter and Character its `part_of` names, in positional order, numbered from 0, one
+/// without a seqnum last. An `ordered` link lists the targets with a seqnum first, then by id;
+/// the Story's own unordered link keeps the port's order, which is not the positional one.
+#[test]
+fn test_build_member_of_via_members_and_ordered_links() {
+    let store = built_under(&storybook(), &lowered(STORYBOOK));
+
+    let parts: Vec<_> = store
+        .compound_parts
+        .iter()
+        .map(|row| (row.parent_id.as_str(), row.child_id.as_str(), row.seq))
+        .collect();
+    assert_eq!(parts, [("glass", "ch-c", 1), ("wonder", "ch-b", 1), ("wonder", "ch-a", 2)]);
+    let shown_under = |name: &str| -> Vec<(String, i64, String)> {
+        let rows = store.properties.iter().filter(|row| row.name == name);
+        rows.map(|row| (row.resource_id.clone(), row.seq, shown(row))).collect()
+    };
+    let row = |id: &str, seq: i64, value: &str| (id.to_string(), seq, value.to_string());
+    assert_eq!(
+        shown_under("position"),
+        [
+            row("ch-a", 0, "int 2"),
+            row("ch-b", 0, "int 1"),
+            row("ch-c", 0, "int 1")
+        ]
+    );
+    assert_eq!(shown_under("length"), [row("glass", 0, "int 1"), row("wonder", 0, "int 2")]);
+    assert_eq!(
+        shown_under("chapters"),
+        [
+            row("glass", 0, "-> ch-c"),
+            row("wonder", 0, "-> ch-a"),
+            row("wonder", 1, "-> ch-b")
+        ]
+    );
+    assert_eq!(
+        shown_under("image"),
+        [
+            row("alice", 0, "-> pic-2"),
+            row("alice", 1, "-> pic-1"),
+            row("ch-a", 0, "-> pic-1"),
+            row("ch-a", 1, "-> pic-3"),
+        ]
+    );
+    assert_eq!(
+        shown_under("character"),
+        [
+            row("ch-a", 0, "-> cat"),
+            row("ch-a", 1, "-> alice"),
+            row("ch-a", 2, "-> hatter")
+        ]
+    );
+}
+
+/// Only a resource of the parent class makes a parent: a Picture that links to a Chapter under
+/// the Story's property does not, and the Chapter keeps its Story.
+#[test]
+fn test_build_member_of_via_reads_links_of_the_parent_class_only() {
+    let iri = |local: &str| format!("http://rdfh.ch/0123/{local}");
+    let linking = changed(storybook(), &iri("pic-3"), |picture| {
+        picture.values = values(vec![(HAS_CHAPTER, link(&iri("ch-c")))]);
+    });
+
+    let store = built_under(&linking, &lowered(STORYBOOK));
+
+    let glass: Vec<_> = store.compound_parts.iter().filter(|row| row.parent_id == "glass").collect();
+    assert_eq!(glass.len(), 1, "{glass:?}");
+    assert_eq!(glass[0].child_id, "ch-c");
+}
+
+/// A Chapter no Story links to, and one two Stories link to, has no one parent: each is refused,
+/// naming the Stories that link to it.
+#[test]
+fn test_build_member_of_via_needs_exactly_one_linking_parent() {
+    let story = |local: &str| format!("http://rdfh.ch/0123/{local}");
+    let orphaned = changed(storybook(), &story("glass"), |glass| glass.values = Vec::new());
+    let shared = changed(storybook(), &story("glass"), |glass| {
+        glass.values = values(vec![(HAS_CHAPTER, link(&story("ch-c"))), (HAS_CHAPTER, link(&story("ch-b")))]);
+    });
+
+    let refusals = |snapshot: &Fixture| -> Vec<(Rule, String, Option<String>)> {
+        match build_with(snapshot, &lowered(STORYBOOK), None) {
+            Ok(_) => Vec::new(),
+            Err(errors) => errors
+                .as_slice()
+                .iter()
+                .map(|error| (error.rule, error.subject.clone(), error.detail.clone()))
+                .collect(),
+        }
+    };
+    assert_eq!(refusals(&orphaned), [(Rule::PageParent, story("ch-c"), Some(String::new()))]);
+    let both = format!("{}, {}", story("glass"), story("wonder"));
+    assert_eq!(refusals(&shared), [(Rule::PageParent, story("ch-b"), Some(both))]);
+}
+
+/// A mapping whose Stories take their cover from a Chapter placed under them by their link.
+const COVERED: &str = r#"
+site {
+    languages "en"
+}
+
+remodel {
+    shortcode "0123"
+    images class="Image" iiif-base="https://iiif.example.org/0123/" {
+        authorship "Unknown"
+        license "Public Domain"
+    }
+    class "Story" iri="http://www.knora.org/ontology/0123/plain#Story" {
+        id from="iri"
+        property "chapters" iri="http://www.knora.org/ontology/0123/plain#hasChapter" type="link" target="Chapter"
+        cover curated-key="cover"
+    }
+    class "Chapter" iri="http://www.knora.org/ontology/0123/plain#Chapter" image=#true {
+        member-of "Story" via="chapters"
+        id from="iri"
+    }
+}
+"#;
+
+/// A snapshot of [`COVERED`]: `wonder` links `ch-a`, `glass` links `ch-b`, and `ch-a`'s `part_of`
+/// names `glass`. Each Story names `cover` as its cover.
+fn covered(cover: &str) -> Fixture {
+    let iri = |local: &str| format!("http://rdfh.ch/0123/{local}");
+    let chapter = |local: &str, parents: &[&str]| Resource {
+        file: Some(still_image(&format!("{local}-scan.jp2"))),
+        ..storybook_resource(local, "Chapter", Vec::new(), parents, Some(1))
+    };
+    let story = |local: &str, chapter: &str| {
+        storybook_resource(local, "Story", vec![(HAS_CHAPTER, link(&iri(chapter)))], &[], None)
+    };
+    let snapshot = Fixture {
+        facts: ProjectSnapshot {
+            shortcode: SHORTCODE.to_string(),
+            resources: vec![
+                story("wonder", "ch-a"),
+                story("glass", "ch-b"),
+                chapter("ch-a", &["glass"]),
+                chapter("ch-b", &[]),
+            ],
+            list_nodes: Vec::new(),
+        },
+        curation: Vec::new(),
+    };
+    assert_eq!(violations(SHORTCODE, &snapshot.facts), []);
+    let snapshot = with_curation(snapshot, &iri("wonder"), "cover", &iri(cover));
+    with_curation(snapshot, &iri("glass"), "cover", &iri("ch-b"))
+}
+
+/// A member placed through its parent's link is that parent's cover to name, whatever its
+/// `part_of` says: `wonder` may name `ch-a`, which it links; `glass` may not, though `ch-a`'s
+/// `part_of` names it.
+#[test]
+fn test_build_cover_of_a_via_member_is_its_linking_parents_alone() {
+    let mapping = lowered(COVERED);
+
+    let store = built_under(&covered("ch-a"), &mapping);
+    let covers: Vec<(&str, String)> = store
+        .properties
+        .iter()
+        .filter(|row| row.name == "image" && ["wonder", "glass"].contains(&&*row.resource_id))
+        .map(|row| (row.resource_id.as_str(), shown(row)))
+        .collect();
+    assert_eq!(
+        covers,
+        [
+            ("glass", "-> ch-b-scan".to_string()),
+            ("wonder", "-> ch-a-scan".to_string())
+        ]
+    );
+
+    let iri = |local: &str| format!("http://rdfh.ch/0123/{local}");
+    let crossed = recurated(covered("ch-b"), &iri("glass"), "cover", Some(&iri("ch-a")));
+    assert_eq!(
+        refused_under(&crossed, &mapping),
+        [
+            (Rule::CoverNotOwnPage, iri("glass")),
+            (Rule::CoverNotOwnPage, iri("wonder"))
+        ]
+    );
 }

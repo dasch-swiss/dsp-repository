@@ -117,8 +117,9 @@ pub(crate) enum Found<'a> {
 /// Refuses every curated value under a key that neither a class of `mapping` nor the builder
 /// reads, and every one on a resource of a class that does not read its key: no reader would
 /// see it, and what an editor wrote would be dropped without a word. A key is refused once per
-/// resource, whatever its languages. The values of a resource that has no entry in `draft` are
-/// passed over: it was refused for its class.
+/// resource, whatever its languages. A resource of a class the mapping leaves out reads no key,
+/// so every value on it is refused. The values of any other resource that has no entry in
+/// `draft` are passed over: it was refused for its class.
 pub(crate) fn refuse_misplaced_keys(
     curation: &Curation<'_>,
     draft: &Draft<'_>,
@@ -126,12 +127,14 @@ pub(crate) fn refuse_misplaced_keys(
     errors: &mut Vec<BuildError>,
 ) {
     for (resource, values) in &curation.by_resource {
-        let Some(entry) = draft.get(resource) else {
-            continue;
+        let class = match draft.get(resource) {
+            Some(entry) => Some(entry.class),
+            None if draft.is_ignored(resource) => None,
+            None => continue,
         };
         let keys: BTreeSet<&str> = values.iter().map(|value| value.key.as_str()).collect();
         for key in keys {
-            if reads(mapping, entry.class, key) {
+            if class.is_some_and(|class| reads(mapping, class, key)) {
                 continue;
             }
             let rule = if read_somewhere(mapping, key) {

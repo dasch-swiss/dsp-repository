@@ -84,7 +84,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   tracing-opentelemetry, tower-livereload and notify (`dpe-server`'s `dev` feature, which
   `access-server`'s `dev` feature turns on); dev: insta (`dpe-server`)
 - **Used by:** areas/access/server (`dpe-server`'s library surface only: `serve.rs::assemble` merges
-  `Dpe::router()` and nests CPE's router beside it under `CPE_BASE`; `main.rs` calls
+  `Dpe::router()` and nests CPE's router beside it under `CPE_BASE`; `validate.rs` calls
   `dpe_server::validate`; its image `//areas/access/server:image` packs `//areas/access/dpe:public`,
   `//areas/access/dpe:css` and the corpus); the fuzz targets in `server/fuzz/` inside the component
   (`cc_fuzz_test` over `testonly` shims) read `dpe-core`; areas/deposit/editor and areas/deposit/server — data
@@ -152,14 +152,14 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
 - **Paths:** `:(glob)areas/access/server/**`
 - **Purpose:** The Access Area's composition root (ADR-0003, ADR-0007): the one binary,
   `access-server`, holding wiring only — CLI, config loading, OTel and Pyroscope init, the OTel
-  layers, the untraced routes, and mounting each capability's router. It merges DPE's router and
+  layers, the baseline response headers, the untraced routes, and mounting each capability's router. It merges DPE's router and
   nests CPE's at CPE's base (ADR-0007), constructs `sync`'s and `media`'s
   adapters of CPE's two ports over `SYNC_DATA_DIR` and `MEDIA_DATA_DIR` and has CPE activate over them in the
   background, after the listener is bound.
 - **Key entities:** `app`, `assemble`, `mount_cpe`, `name_span_by_cpe_route`, `activate_in_background`, `serve`,
-  `DEFAULT_SYNC_DATA_DIR`, `DEFAULT_MEDIA_DATA_DIR`, `data_dir`, `sync_poll_interval`, `parse_hidden_projects`, `shutdown_signal`,
+  `cpe_setup_from_env` (CPE's configuration and data directories, for both verbs), `validate` (the verb), `DEFAULT_SYNC_DATA_DIR`, `DEFAULT_MEDIA_DATA_DIR`, `data_dir`, `sync_poll_interval`, `parse_hidden_projects`, `shutdown_signal`,
   `init_otel`, `init_pyroscope`, `TELEMETRY_NAME`, `is_allowed_healthcheck_url`
-- **Public interface:** the `access-server serve | validate <data_dir> | healthcheck <url>` CLI;
+- **Public interface:** the `access-server serve | validate <data_dir> [--inputs <dir>] [--must-serve <shortcode>] | healthcheck <url>` CLI;
   `/healthz` and `POST /telemetry/collect` (untraced), every route DPE's router carries, and every
   path under `Cpe::base()` (`CPE_BASE`, `/cpe` in the image), which is CPE's. `DPE_SITE_ADDR`,
   `SYNC_DATA_DIR`, `SYNC_POLL_SECS`, `MEDIA_DATA_DIR` and `ACCESS_HIDDEN_PROJECTS` are read here (an empty data directory variable is unset;
@@ -167,7 +167,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `CpeConfig::hidden_shortcodes`); `DPE_*` and `CPE_*` by the capabilities' own configurations. The
   Docker image stays `daschswiss/dpe`.
 - **Local-context kit:** `areas/access/server/CLAUDE.md`, `areas/access/server/src/serve.rs`,
-  `areas/access/server/src/observability.rs`, `areas/access/server/BUILD.bazel` (its `deps`, the
+  `areas/access/server/src/observability.rs`, `areas/access/server/src/validate.rs`, `areas/access/server/BUILD.bazel` (its `deps`, the
   image's data layer and `env`), `areas/access/dpe/server/src/lib.rs`, `areas/access/cpe/server/src/lib.rs`,
   `docs/adr/0003-one-modulith-per-area.md`
 - **Depends on:** areas/access/dpe (`dpe-server` only), areas/access/cpe (`cpe-server`, and
@@ -177,7 +177,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   plus its `store` / `ports` crates only to construct `Live<Port>` adapters) and `media`'s `server` crate once
   it has routes;
   third-party:
-  axum, tokio, tower, clap, ureq, rustls, tower_governor, the OpenTelemetry stack, pyroscope, tracing-subscriber
+  axum, tokio, tower, tower-http, clap, ureq, rustls, tower_governor, the OpenTelemetry stack, pyroscope, tracing-subscriber
 - **Used by:** — (deployment: the image `//areas/access/server:image`, built by `app_image` in
   `tools/image/defs.bzl`, published by `dpe-docker-publish.yml` and scanned through `.github/actions/build-dpe/`)
 - **Boundary rules:**
@@ -199,6 +199,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   - Depends on no crate of another area (ADR-0002; **structure**: no target of `areas/deposit` grants it).
   - Routes declared after the OTel layers are untraced, so the order in `app` is load-bearing
     (**static-analysis**: `serve.rs` tests assert the traceparent split).
+  - The baseline headers (`nosniff`, `base-uri 'self'; object-src 'none'`) are layered once, in `assemble`, with the
+    OTel layers, and with `if_not_present`: a capability overrides one only by setting that header on its answer,
+    as CPE's SVGs do (**static-analysis**: `serve.rs` tests pin every answer kind and `/healthz` without them).
   - No adapter or domain logic: wiring only (**review**).
   - Sets no router fallback: DPE's router carries the `ServeDir` fallback, and axum panics when
     merging two (**review**). CPE's router has a fallback too, so it is nested and never merged; a
@@ -1276,8 +1279,9 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `cpe-core`), `components/` (crate `cpe-components`, with its stylesheets in `components/style/`),
   `image-viewer/` (crate `cpe-image-viewer`), `store/` (crate `cpe-store`, with its schema in
   `store/schema.sql`), `store-build/` (crate `cpe-store-build`), `web/` (crate `cpe-web`), `server/` (crate `cpe-server`), `projects/` (one folder per project,
-  `projects/incunabula/` so far), `public/` (CPE's shared static files, with the vendored `datastar.js` in
-  `public/vendor/`) and `CONTEXT.md` (CPE's vocabulary and what its port serves)
+  `projects/incunabula/` so far), `public/` (CPE's shared static files and its own `cpe.js`, with the vendored `datastar.js` in
+  `public/vendor/`), `web-e2e-tests/` (the Playwright suite on Incunabula, with and without JavaScript,
+  `just test-e2e-cpe`, run by `a11y-cpe.yml`) and `CONTEXT.md` (CPE's vocabulary and what its port serves)
 - **Purpose:** CPE, the Configurable Presentation Environment — a second Access-Area
   hypermedia server rendering project-specific presentations over the same data as DPE,
   configured per project. A project's KDL, narrative and curation are deposited files read at activation
@@ -1298,13 +1302,14 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   from its KDL, its store's SQL text and its narrative, and the functions that render a page, the compound
   viewer's fragment, the overview of the projects and the not-found pages from `cpe-components`' parts; it
   holds no routes. `public/` holds
-  the files every CPE page refers to (two logos, the fingerprint, Datastar). `cpe-server` is the host crate, a
+  the files every CPE page refers to (two logos, the fingerprint, Datastar, and `cpe.js`, CPE's own script for
+  the longer logic its DataStar attributes call). `cpe-server` is the host crate, a
   facade in the shape of `dpe-server`: `CpeConfig`, and `Cpe` with its router and its activation. The router's
   root, which is the base with and without a trailing slash, is the overview of the loaded projects that are not hidden (ADR-0007). Activation
   loads every project folder that holds a `SHORTCODE`, from the files the bytes port serves for that
-  shortcode and a store built from the archive projection port's snapshot, and a project that does not
-  activate answers 503 on its own prefix while the others are served (ADR-0007); the crate also serves the stylesheets and `public/` from a
-  compiled-in table. A project's folder under `projects/` holds its `SHORTCODE` and the documents describing its
+  shortcode and a store built from the archive projection port's snapshot, and a project that fails to
+  activate answers 503 on its own prefix, and one with no Ready token 404, while the others are served (ADR-0007); the crate also serves the stylesheets and `public/` from a
+  compiled-in table, `cpe.js` with `Cache-Control: no-cache` and an `ETag`. A project's folder under `projects/` holds its `SHORTCODE` and the documents describing its
   data, and no code; until `media` serves assets at request time, it also holds its `assets/`. A
   hook is a module of the builder and a `HOOKS` row, a project component a `PROJECT_RENDERERS` row (ADR-0007).
 - **Key entities:** `ArchiveProjection`, `ProjectSnapshot`, `Resource`, `Annotation`,
@@ -1315,7 +1320,8 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   shape the contract checks (`Violation::MalformedDataArk`) and whose derivation is the
   adapter's (`sync-store`'s `ark.rs`). In `cpe-core`: the KDL config language
   (`validate::load_config`, `validate::load_remodel`, `validate::named_narratives` (the narrative files a KDL
-  names, for activation to ask the bytes port for), `ConfigLoadError`, `ConfigError`),
+  names, for activation to ask the bytes port for, and the data-free check of shipped inputs), `validate::check_site`
+  (the site-block checks that need no data and no assets, for the data-free check), `ConfigLoadError`, `ConfigError`),
   its validation against a project's facts (`ValidationContext`, `validate::facts::ProjectFacts`),
   the IR a valid configuration lowers to (`ir::SiteConfig`, `ir::Component`, `remodel::Remodel`, with
   `Remodel::reads_curation`),
@@ -1338,7 +1344,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `InvalidCuration`, `store::Store` and `store::Table` (the built rows), `sql::to_sql` and `sql::header` (the SQL text),
   `SCHEMA_SQL`, `error::BuildErrors` and `error::Rule` (every refusal has a rule), `hook::Hook` and
   `hook::Draft` (the seam a hook works through), `hooks::HOOKS` and `hooks::resolve` (the table of hooks, by
-  project id, the name of the project's folder). In `cpe-web`: `project::Project` (the loaded project; `Project::load`, `page_data`,
+  project id, the name of the project's folder; `resolve` sees no host's rows). In `cpe-web`: `project::Project` (the loaded project; `Project::load`, `page_data`,
   `get_resource`) and `project::LoadError`, `page::render_page`, `page::render_compound_fragment` and
   `page::CompoundFragmentOutput`, `page::render_site_index` and `page::ProjectTeaser` (the overview and one
   project on it, from `Project::teaser`), `page::render_not_found_project`, `page::render_not_found_site`,
@@ -1347,16 +1353,22 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   `share_link::compose_canonical_query`, `share_link::compose_absolute_url`, `share_link::ViewSurface`. In
   `cpe-server`: `CpeConfig` (`CPE_PROJECTS_DIR`, `CPE_PUBLIC_ORIGIN`, `CPE_BASE`, and `hidden_shortcodes`, which the
   host sets and no file or variable of CPE's does), `Cpe` (`new`, `activate`, `router`,
-  `base`, `projects`, and the doc-hidden `from_sql_folders`, which ends with DEV-7498), `ProjectSummary` and
-  `MatchedRoute` (the route template a response carries in its extensions, for the host's request span)
+  `base`, `projects`; `from_sql_folders` is test support and compiles for tests only), `ProjectSummary`,
+  `MatchedRoute` (the route template a response carries in its extensions, for the host's request span), and
+  `validate` with `Validation`, `ProjectReport`, `ProjectOutcome` and `InputsCheck` (every project loaded once without serving,
+  for the host's strict check, and given an inputs directory the data-free check of what it ships per project; diagnostics as text)
 - **Public interface:** `cpe-server`'s `Cpe` and `CpeConfig`: the router, mounted by areas/access/server
   at `Cpe::base()` on the area's origin beside DPE's routes, and `Cpe::follow` and `Cpe::activate`, which take both ports. No `pub` item of
-  `cpe-server` names a type of another CPE crate, `cpe-ports`' excepted. `cpe/ports` is not an interface CPE offers but the ports CPE
-  consumes: `ArchiveProjection`, which `sync` implements, and `DepositedFiles`, which `media` implements. `pub` in `cpe-core` and in `cpe-components` means visible
+  `cpe-server` names a type of another CPE crate, `cpe-ports`' excepted, with one exception: the `hooks` parameter of the
+  `#[doc(hidden)]` `Cpe::activate_with_hooks` and `Cpe::follow_with_hooks` names `cpe_store_build::hook::Hook`, so a host
+  that supplies its own projects' hooks depends on `cpe-store-build` as well. Such a host builds this tree outside this
+  repository; nothing here calls them, and no target here but `cpe-server` may depend on `cpe-store-build`.
+  `cpe/ports` is not an interface CPE offers but the ports CPE consumes: `ArchiveProjection`, which `sync` implements, and `DepositedFiles`, which `media` implements. `pub` in `cpe-core` and in `cpe-components` means visible
   to CPE's other crates, not to a host: no crate of this repository outside the capability depends on either. The
   same holds for `cpe-store`, whose `pub` surface names no `rusqlite` type, and for
   `cpe-web`, whose `pub` items are what `cpe-server` calls.
-- **Local-context kit:** `areas/access/cpe/CONTEXT.md`, `areas/access/cpe/ports/src/lib.rs`,
+- **Local-context kit:** `areas/access/cpe/CLAUDE.md` (the agent runbook), `areas/access/cpe/CONTEXT.md`,
+  `docs/src/cpe/architecture.md`, `docs/src/cpe/component-library.md`, `areas/access/cpe/ports/src/lib.rs`,
   `areas/access/cpe/core/src/lib.rs`, `areas/access/cpe/components/src/lib.rs`,
   `areas/access/cpe/image-viewer/src/lib.rs`, `areas/access/cpe/store/src/lib.rs`,
   `areas/access/cpe/server/src/lib.rs`, `areas/access/cpe/server/src/activation.rs`,
@@ -1433,8 +1445,10 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   fixture projects under `/cpe` and fail on a URL outside it on a page they reach (**static-analysis**); that a
   URL is built through that module at all, and not joined by hand, is **review**. `public/vendor/datastar.js` is checked against its README by `just verify-checksums`
   (**static-analysis**); the three SVG files in `public/` are DaSCH's own and carry no checksum.
-  `cpe-components` splices rendered Markdown and a few constants through `PreEscaped` (**review**; DPE's
-  three-site rule does not apply here). `cpe-store-build`'s library reads nothing but what it is given, and its generic code names no project
+  `cpe-components` splices rendered Markdown, and nothing else, through `PreEscaped` (**review**; DPE's
+  three-site rule does not apply here); the number of `PreEscaped(` call sites per file of its non-test code is
+  pinned, so a new site cannot land unreviewed (**static-analysis**: the crate's test
+  `pre_escaped_call_sites_match_the_pinned_table` in `src/lib.rs`, which does not see a splice without call syntax). `cpe-store-build`'s library reads nothing but what it is given, and its generic code names no project
   (**static-analysis**: the source searches of its `tests/it/hygiene.rs`. The second holds for Incunabula
   alone: the search is for the hand-kept list `PROJECT_NOUNS`, and nothing checks that a second project's
   nouns are added to it, **review**); a hook and the `hook` node of its
@@ -1443,19 +1457,21 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   committed `data.sql` byte for byte; the header names both ports (ADR-0007;
   **static-analysis**: that file is not here, and two tests of `cpe-server` hold the text below the header and the
   whole text to their lengths and SHA-256). In `cpe-server`: no `pub` item names a type of another CPE crate but
-  `cpe-ports` (**static-analysis**: the crate's test `no_pub_item_names_another_cpe_crate`, a text check over
-  `lib.rs` and `config.rs`); CPE never stops its host, so no constructor fails, `activate` returns nothing and
-  catches a panic, and what did not load answers 503 with `Retry-After` and `Cache-Control:
-  no-store`, never 404 (**static-analysis**: the tests of its `activation` module, which hold a panic inside
+  `cpe-ports`, except the `hooks` parameter of the two hidden `*_with_hooks` methods (**static-analysis**: the crate's
+  test `no_pub_item_names_another_cpe_crate`, a text check over `lib.rs` and `config.rs`, and
+  `the_boundary_exception_is_the_hooks_parameter_alone`); CPE never stops its host, so no constructor fails, `activate` returns nothing and
+  catches a panic, and a project that fails to load answers 503 with `Retry-After` and `Cache-Control:
+  no-store`, never 404, while one with no Ready token answers CPE's 404, as a path that names no project does
+  (**static-analysis**: the tests of its `activation` module, which hold a panic inside
   one project's load; a panic outside it is caught too, and that is **review**, as is a binary built with
   `panic = "abort"`); no request path is joined
   onto a directory (structural where a request is answered, since `AssetInventory::serve` and
   `static_files::serve` are given strings; **review** in `discovery`, the one module that reads the disk);
   the crate's own code cannot name either adapter (**structure**: `sync-store` and `media-store` grant
   `cpe-server` only their `testonly` variants, which a library cannot depend on); that a host feeds a store through `Cpe::follow` or `Cpe::activate` and the
-  ports, and not through the doc-hidden, legacy `Cpe::from_sql_folders` (a committed `data.sql`, with the
-  configuration and narrative read from the folder, kept for the incubator's host and for tests until
-  DEV-7498), is **review**; activation reads a project's configuration, narrative and curation through the
+  ports, and not through `Cpe::from_sql_folders` (a committed `data.sql`, with the configuration and
+  narrative read from the folder: test support), is **structure**: that loader compiles under `#[cfg(test)]`
+  only; activation reads a project's configuration, narrative and curation through the
   bytes port only, refuses a project whose KDL declares another shortcode than its `SHORTCODE` or that shares
   its shortcode with another folder, and leaves a project whose block reads a curated key and that deposited
   no curation file not ready (**static-analysis**: the tests of its `activation` and `discovery` modules); a request's origin, where none is configured, is taken from `Host` and
@@ -1497,8 +1513,7 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   single writer CPE, rebuilt from empty from what the ports serve (ADR-0008, ADR-0012;
   the schema and the queries are in `cpe-store` and what builds a store from a snapshot in `cpe-store-build`).
   The store is built at every start and re-activation and kept nowhere: `cpe-server`'s `Cpe::activate` builds each project's in
-  memory, **single writer** that call and `Cpe::follow`'s re-activations (or, until DEV-7498, `Cpe::from_sql_folders` in its place, never both
-  in one host), and nothing is written to disk. `projects/incunabula/` is
+  memory, **single writer** that call and `Cpe::follow`'s re-activations (in `cpe-server`'s tests, `Cpe::from_sql_folders` in their place), and nothing is written to disk. `projects/incunabula/` is
   committed code and documents (`SHORTCODE`, `assets/` and the four documents about its data), **single writer**
   the project's developers (**review**); the process reads it at activation and never writes it. Its
   configuration, narrative and curation are `media`'s (areas/access/media). `cpe-ports`, `cpe-core`,
@@ -1573,13 +1588,16 @@ crate. Vocabulary: root [`CONTEXT.md`](CONTEXT.md)
   The snapshot is interim-DAO N-Quads in an interim format version `READABLE` lists
   (ADR-0007, `areas/deposit/vre-bridge/lift/FORMAT.md`), read with a strict `oxttl` parse. DPE keeps reading its corpus
   directly; moving it onto `sync` is its own decision.
-- **Key entities:** `LiveArchiveProjection`, `DEFAULT_POLL_INTERVAL`, the Ready-token poll (`poll.rs`), `READABLE`, `SnapshotError`, `InvalidFact`,
+- **Key entities:** `LiveArchiveProjection`, `read_snapshot`, `DEFAULT_POLL_INTERVAL`, the Ready-token poll (`poll.rs`), `READABLE`, `SnapshotError`, `InvalidFact`,
   `ArkError` (in `sync-store`; a resource IRI with no data ARK is `InvalidFact::NoDataArk`);
   (design vocabulary) Projection (`chischtli/CONTEXT.md`), Data product
   (`areas/archive/CONTEXT.md`)
 - **Public interface:** nothing to a browser. The `Live<Port>` adapters for the ports it
   implements: today `LiveArchiveProjection` for CPE's `ArchiveProjection`; later DPE's own port
-  when DPE moves onto `sync`, and the query ports the SPARQL endpoint reads through.
+  when DPE moves onto `sync`, and the query ports the SPARQL endpoint reads through. Besides the adapter,
+  `read_snapshot` maps a snapshot a reader streams, under the rules on a snapshot's content but with no Ready
+  token, for a host that keeps its snapshots elsewhere. Such a host builds this tree outside this repository;
+  nothing here calls it.
 - **Local-context kit:** `areas/access/sync/CONTEXT.md`, `areas/access/sync/data/PROVENANCE`
   (the fixture's producer and its hand-written token), `areas/access/sync/store/src/lib.rs`,
   `areas/access/sync/store/src/ark.rs` (the one derivation of the data ARK),

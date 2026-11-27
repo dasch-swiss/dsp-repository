@@ -11,12 +11,33 @@ each capability and injects it, and mounts routes, but does not implement busine
 own. It wires two capabilities, DPE and CPE (ADR-0007), without either depending on the other, and
 constructs `sync`'s and `media`'s adapters of CPE's two ports to hand them to CPE.
 
+## `validate`: DPE's data, then CPE's projects, strictly
+
+`access-server validate <data_dir>` (`validate.rs`) runs `dpe_server::validate` on DPE's data directory, then
+`cpe_server::validate` over the same CPE configuration and ports `serve` uses (`serve::cpe_setup_from_env`:
+`CPE_*`, `SYNC_DATA_DIR`, `MEDIA_DATA_DIR`; no variable of its own), whether or not `CPE_BASE` is set. It
+prints every CPE project's outcome before it exits, and exits non-zero when DPE fails, any CPE project fails,
+or it finds no project folder; a project with no Ready token is a printed warning. `--inputs <dir>` adds the
+data-free check of what a directory laid out as the VRE bridge's shipped inputs holds for each project's
+shortcode, and fails the run when the directory is not there; a project with neither stand-in data nor
+shipped inputs gets a printed note. `--must-serve <shortcode>` fails the run when that project is unknown,
+failed or in no folder: `just validate-cpe` passes 0803, so a deleted fixture cannot pass as an unknown
+project. The strictness is the verb's alone: `serve` has no strict start and keeps taking only a failing
+project offline.
+
 ## Router assembly: the traced/untraced order matters
 
 `serve.rs`'s `app()` merges DPE's router and nests CPE's, applies the OTel layers, then mounts
 `/healthz` and `POST /telemetry/collect` *after* `.layer()`. Axum does not wrap routes declared
 after a `.layer()` call, so this order is what keeps liveness probes and the telemetry beacon
 itself untraced. A test pins it — do not reorder without checking `serve.rs`'s tests.
+
+The baseline headers sit with the OTel layers, so the same order keeps them off those two routes:
+`X-Content-Type-Options: nosniff` and `Content-Security-Policy: base-uri 'self'; object-src 'none'`, each
+added with `SetResponseHeaderLayer::if_not_present`. An answer that sets its own keeps it: CPE's SVGs carry a
+script-blocking policy, and its static files their own `nosniff`, sent once. A directive that restricts
+scripts, styles, images or connections (an enforcing or report-only page policy) is not added here until
+the owner decides where reports go (`docs/src/dpe/operations.md`, *Response Headers*).
 
 ## CPE: nested at its base, activated in the background
 
@@ -78,6 +99,8 @@ A new capability's paths also go into each path filter that should see it (`a11y
 `cloud-run-dpe-pull-request.yml`, `scout-dpe.yml`); `docs/src/deployment.md` says what each runs on. All three
 have `areas/access/cpe/**`, `areas/access/sync/**` and `areas/access/media/**` beside DPE's and this crate's
 paths, so a change to a presentation's files is previewed, scanned and checked for accessibility.
+`a11y-cpe.yml`, which runs CPE's suite (`areas/access/cpe/web-e2e-tests`, `just test-e2e-cpe`), filters on
+`areas/access/**` as a whole, so a new capability of the Access Area is already in it.
 `bazel query 'deps(//areas/access/server:image_musl)' --output=package` lists every package the image is
 built from.
 
@@ -87,7 +110,7 @@ built from.
 `shared-rate-limit`, `shared-telemetry` and infra crates only — never on a capability's `core`, `web` or `api-*` crate, and never on
 `cpe-store`. This crate imports only `dpe-server`'s public surface (`DpeConfig`, `Dpe`, `validate`,
 `normalize_page_url`), `cpe-server`'s (`CpeConfig`, `Cpe`,
-`MatchedRoute`), the ports' traits and `is_shortcode` from `cpe-ports`, `sync-store`'s `LiveArchiveProjection` and
+`MatchedRoute`, `validate` and its `Validation`, `ProjectOutcome` and `InputsCheck`), the ports' traits and `is_shortcode` from `cpe-ports`, `sync-store`'s `LiveArchiveProjection` and
 `DEFAULT_POLL_INTERVAL`, and `media-store`'s `LiveDepositedFiles`;
 reaching past them into a capability's internals defeats the boundary the capability crate exists
 to hold. Bazel `visibility` enforces this: no `core`, `web` or `api-*` target and not `cpe-store` grants this

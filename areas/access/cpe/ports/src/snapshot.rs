@@ -224,8 +224,42 @@ pub struct LangString {
 /// provisional, as are a still image's dimensions: DAO's file properties are open (Q10).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum File {
-    StillImage { asset: String, width: u32, height: u32 },
-    Audio { asset: String },
-    MovingImage { asset: String },
-    Document { asset: String },
+    StillImage { asset: String, width: u32, height: u32, legal: FileLegal },
+    Audio { asset: String, legal: FileLegal },
+    MovingImage { asset: String, legal: FileLegal },
+    Document { asset: String, legal: FileLegal },
+}
+
+impl File {
+    /// The archive's internal filename, whatever the file's kind.
+    pub fn asset(&self) -> &str {
+        match self {
+            Self::StillImage { asset, .. }
+            | Self::Audio { asset, .. }
+            | Self::MovingImage { asset, .. }
+            | Self::Document { asset, .. } => asset,
+        }
+    }
+
+    /// The legal information the archive records on the file, whatever its kind.
+    pub fn legal(&self) -> &FileLegal {
+        match self {
+            Self::StillImage { legal, .. }
+            | Self::Audio { legal, .. }
+            | Self::MovingImage { legal, .. }
+            | Self::Document { legal, .. } => legal,
+        }
+    }
+}
+
+/// The legal information the archive records on a file (`FORMAT.md` §8). The default is none.
+///
+/// A file's licence is not carried, nor are its permissions: access is CPE's decision at request
+/// time (ADR-0012). Provisional: DAO's rights terms are open (`FORMAT.md` §12 D14).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct FileLegal {
+    /// `knora-base:hasAuthorship`, each author once; order unspecified, as the archive keeps none.
+    pub authorship: Vec<String>,
+    /// `knora-base:hasCopyrightHolder`: at most one.
+    pub copyright_holder: Option<String>,
 }

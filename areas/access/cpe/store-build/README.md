@@ -10,7 +10,7 @@ and no environment. Its caller, `cpe-server`'s activation, asks the bytes port f
 its `remodel` block through `cpe_core::validate::load_remodel`, asks the bytes port for `curation.csv` and the
 archive projection port for the snapshot of the block's shortcode, reads the curation against the snapshot with
 `CuratedValues::parse` (`CuratedValues::none` when the project deposited none and its block reads no curated key),
-resolves the hook by the project's folder name with `hooks::resolve`, calls `build`, and renders the store as SQL
+takes the hook whose row in `hooks::HOOKS`, or among a host's own rows, names the project's folder, calls `build`, and renders the store as SQL
 text with `sql::to_sql` under the header `sql::header` gives. `cpe-store` opens that text over its schema
 (`../store/schema.sql`, which this crate includes as `SCHEMA_SQL`). What the store holds that the port does not serve
 is declared in the project's block (the shortcode, the sentinel, the list vocabularies, the image rights and the IIIF
@@ -112,16 +112,19 @@ shipped inputs, `areas/deposit/vre-bridge/inputs/<shortcode>/`, and the fixture 
    and a `remodel {}` block: the shortcode, the classes with their `id`, the properties, and whatever else the
    project needs ([`docs/src/cpe/config-language.md`](../../../../docs/src/cpe/config-language.md), "`remodel`
    block"). `tests/fixtures/plain/config.kdl` uses every node a project without a hook can write;
-   `tests/fixtures/minimal/config.kdl` is the least that lowers. The builder reads only the block and the site
+   `tests/fixtures/minimal/config.kdl` is the least that lowers. Images come one of two ways: a project whose
+   archive keeps each image as a resource of its own class names that class in `images class=`, and each of its
+   resources is an image with its own values; a project whose resources carry scans (Incunabula's Pages) marks
+   their class `image=#true`, and each file becomes an Image of its own. The builder reads only the block and the site
    languages. CPE's host validates the whole file, so the committed file also needs a site title, pages, narrative
    and chrome (`dsp-incubator cpe/docs/NEW_PROJECT.md`, Stage F).
 2. Build it. The outcomes are: the config's diagnostics with line and column, from `load_remodel`;
    a `ProjectionError` from the port when it serves no snapshot of the shortcode; `BuildErrors` with every
    refusal, each with its rule and its subject; or `sql::EmptyTable` from the writer when a block is present and its
-   table has no row. A class of the archive that the block does not declare is refused (`unmapped-class`), and so
-   is every Region and LinkObj when the block has no `annotations` node: a project whose archive has annotations
-   declares `annotations { on …; link-targets … }` and no class for them, and a project without annotations must not
-   declare the node. A property that the block does not declare is dropped without a word, so read "What the port
+   table has no row. A class of the archive that the block neither declares nor leaves out (`ignore-class`) is
+   refused (`unmapped-class`), and so is every Region and LinkObj when the block has no `annotations` node: a
+   project whose archive has annotations declares `annotations { on …; link-targets … }` and no class for them, and a
+   project without annotations must not declare the node. A property that the block does not declare is dropped without a word, so read "What the port
    serves and the block does not map" below.
 3. The tests over real data (`tests/it/committed_0803.rs` and the statics of `tests/it/main.rs`) build Incunabula
    only. Nothing in this crate builds a new project from its committed data until a test is written for it.
@@ -148,15 +151,16 @@ builder.
    (`knora.org`) and no type of the port or of the store. `tests/it/hygiene.rs` searches the module for an import
    beyond the seam and for the ontology host. The seam's methods are in `src/hook.rs`: `Draft::{sentinel, entry,
    entries_of, all_entries_of, drop, provide_text, provide_list_value, override_values}`, `View::{values, served,
-   curated, curated_served, label_is_text, …}` and `Refusals::refuse(rule, subject, detail)`. `label_is_text` says
+   curated, curated_served, label_is_text, …}` and `Refusals::refuse(rule, subject, detail)`. A text the hook writes,
+   through `provide_text` or a `Value::Text` it sets, is a slice of what it read or a `String` it composed;
+   `hook::{DatePrecision, Calendar}` let it read a `Value::Date` without naming the port. `label_is_text` says
    whether the label may be written as a text (not empty, no address on a `no-addresses` class, no sentinel),
    whether or not the mapping read it: the mapping reads no label while a curated text stands in for it. `entries_of`
    gives the resources of a class that get a row, so a rule that walks a class need not test `is_kept`;
    `all_entries_of` has the refused and the dropped ones too; either is refused for a name that is no class of the
    block. A hook cannot mint or change an id: the ids are final before it is called, and a resource it drops keeps
    its id. A property told from the label (`from="label"`) that a hook overrides has exactly one value (`value-count`
-   otherwise). A provided text is a `&str` borrowed from the snapshot or a constant, so a hook cannot provide a
-   string it builds. `tests/it/hygiene.rs` names Incunabula's six nouns (`PROJECT_NOUNS`) and its path
+   otherwise). `tests/it/hygiene.rs` names Incunabula's six nouns (`PROJECT_NOUNS`) and its path
    (`BINARY_ONLY`): add the new project's.
 3. Add the project's row to `HOOKS` in `src/hooks.rs`: `Hook { project: "<project>", remodel:
    projects::<module>::remodel }`, with the folder name as `project`. Without the `hook` node or without the row the
@@ -199,16 +203,21 @@ generic code (the file where one is worth naming), `H` is a hook rule and names 
 | Output | Bucket | Rule | Source |
 |--------|--------|------|--------|
 | Class of a resource | `M` `class`; `G` annotations by motivation (`generic/classes.rs`) | The block's `class` nodes map `inc:Book`, `inc:Page` and `inc:Band` to `Book`, `Page`, `BorderStrip`. A resource with an annotation body is a Region (motivation commenting or highlighting) or a LinkObj (linking), and its class IRI must be `kb:Region` or `kb:LinkObj` accordingly. Any other class is refused, not dropped. NEW | `Resource.class` |
-| Every value read | `G` the node's `type` | A value of another kind than the `property` node's `type` is refused, and a list-node value always is (NEW); the property's other values are then not counted or judged. A text's language is carried into `value_lang` | port |
+| Every value read | `G` the node's `type` | A value of another kind than the `property` node's `type` is refused (NEW); the property's other values are then not counted or judged. A text's language is carried into `value_lang` | port |
+| Every integer value | `G` `type="integer"` (`generic/kinds.rs`) | an `integer` row with `value_int`, in port order. Incunabula's block declares none. NEW | port |
+| Every archive list value | `G` `type="list-node" list=` (`generic/lists.rs`) | a `list_value` row whose target is the node of the named list that declares the served node's `iri`; a served node the list does not declare is refused (`unknown-list-node`) and the property gives nothing. `iri` is never written. Incunabula's block declares none. NEW | port |
+| A date of mixed precision | `G` `mixed-precision=` (`mapping/values.rs`) | refused (`mixed-date-precision`) under `"refuse"`, the default; under `"start"`, written as the single date of its start bound at the start's precision. Incunabula's block keeps the default. NEW | port |
+| Every richtext value | `G` `richtext=#true` (`generic/text.rs`, `generic/rows.rs`) | a `richtext` row: each line stripped as `str.strip()` does, empty lines left out, the rest joined by a blank line; converted only when written, so the value steps and a hook see the text as served; no Markdown escaping. Incunabula's block declares none. NEW | port |
+| A resource of an `ignore-class` class | `G` (`generic/classes.rs`, `generic/curation.rs`) | no row, no id and no refusal; a link to it is `strip-link-target`, a member under it `page-parent`, and a curated value on it `curated-key-on-wrong-class` (`unknown-curated-key` when no class reads the key); an annotation or annotation link that points at it is dropped silently, as one pointing at any resource without an entry is. Incunabula's block ignores none. NEW | port |
 | `lists`, `list_nodes`, `list_node_labels` | `M` `list` | Two vocabularies, office and side, with German and English labels. A node's `seq` is its declared position; rows are written sorted by node id | `T:252-288` |
 | Book id | `M` `id curated-key=` | the curated `slug`: exactly one per Book (`T:509-548`), not empty (`T:677-678`), and no two resources share an id (`T:965-972`) | curation |
 | Page id | `M` `id from="property" under-parent=#true` | `<book id>-<slug of the page number>`, with `-2`, `-3`, … on a repeat in positional order, over all of a Book's Pages. A Page has exactly one `seqnum` (`X:1092`) | `X:715-740`, `X:1078-1125`, `X:1391-1401` |
 | BorderStrip id | `M` `id curated-key= from="label"` | the curated `slug` if present, else the slug of the label; a label that holds `[missing]` is refused where no slug is curated (NEW) | `X:759-768` |
 | Slug | `G` (`generic/slug.rs`) | NFKD, combining marks dropped, ASCII lower case, every run outside `[a-z0-9]` one `-`, ends trimmed | `X:693-709` |
-| Every id | `G` (`finalise.rs`) | the id of a resource the build keeps, of an Image, and of an annotation and an annotation link that get a row, is not empty and holds only `A-Z a-z 0-9 - . _ ~` (`id-not-url-safe`). It is checked once the ids are made, so a curated slug, an asset stem and an IRI's last part are all covered, and a Book's slug that fails is refused with every Page id made from it. Ids that differ only in case are two ids. `.` and `..` pass. NEW | `src/finalise.rs` |
-| Image id | `G` `images`, `shared-file` (`generic/images.rs`) | one Image per file; the id is the asset's stem. A Book's cover is its cover Page's own Image, written once (`T:1685-1692`). Refused: two Pages with one file (`T:821-825`); two strips with one file (`T:1104-1105`); a stem equal to a Book, Page or strip id, or a Page and a strip with one file (`T:884-885`, `T:1124-1128`); an empty stem (`X:1057-1073`). Calibration scans are checked like every other Page | `T:1565-1572`, `T:1724` |
-| `representations` | `G` `images`, `image=#true` | one row per Image: `kind` `image`; `uri` the IIIF base, the asset and `/full/max/0/default.jpg` (`T:186-199`); `width` and `height` from the file; `alt` NULL; `attribution` the rights declared in the `images` node; `seq` 0. Refused: a zero width or height (`T:760-770`); a file that is not a still image (NEW); an asset not ending in `.jp2` (NEW) | `T:1640-1643`, `T:1693-1696`, `T:1725-1728` |
-| `resources.ark` | `G` | the port's ARK for Book, Page and BorderStrip; NULL for Image | port |
+| Every id | `G` (`finalise.rs`) | the id of a resource the build keeps, of an Image, and of an annotation and an annotation link that get a row, is not empty, holds only `A-Z a-z 0-9 - . _ ~` and is not dots only (`id-not-url-safe`). It is checked once the ids are made, so a curated slug, an asset stem and an IRI's last part are all covered, and a Book's slug that fails is refused with every Page id made from it. Ids that differ only in case are two ids. NEW | `src/finalise.rs` |
+| Image id | `G` `images`, `shared-file` (`generic/images.rs`) | one Image per file of a class with `image=#true`; the id is the asset's stem (a declared images class has no Image of a file: its resources are the images, with their own ids; row "A declared images class"). A Book's cover is its cover Page's own Image, written once (`T:1685-1692`). Refused: two Pages with one file (`T:821-825`); two strips with one file (`T:1104-1105`); a stem equal to a Book, Page or strip id, or a Page and a strip with one file (`T:884-885`, `T:1124-1128`); an empty stem (`X:1057-1073`). Calibration scans are checked like every other Page | `T:1565-1572`, `T:1724` |
+| `representations` | `G` `images`, `image=#true` | one row per image: `kind` `image`; `uri` the IIIF base, the asset and `/full/max/0/default.jpg` (`T:186-199`); `width` and `height` from the file; `alt` NULL for an Image of a file, the resource's label for a resource of a declared images class (NEW); `attribution` the image's authorship and the licence declared in the `images` node; `seq` 0. Refused: a zero width or height (`T:760-770`); a file that is not a still image (NEW); an asset ending in neither `.jp2` nor `.jpx` (NEW) | `T:1640-1643`, `T:1693-1696`, `T:1725-1728` |
+| `resources.ark` | `G` | the port's ARK for Book, Page and BorderStrip, and for a resource of a declared images class; NULL for an Image of a file | port |
 | Calibration scans | `H` `scans.rs`; `M` `hook › drops` | a Page whose `inc:hasPagenum` is exactly `[missing]` after a Python-style strip is dropped: no Page, no part, no Image. Refused: such a Page carrying a description, a comment or a strip (`T:993-1004`); a page number that contains but is not `[missing]`; an empty page number (`T:836`) | `T:797-881`, `T:988-1012` |
 | `compound_parts` | `M` `member-of` | a Page has exactly one parent, a Book (`X:1091`); its position is by `(seqnum, IRI local part)`, renumbered 1..n after the drop | `X:1391-1401`, `T:1005-1012`, `T:1683` |
 | Book `name` | `M` `property from="label" curated-key=` | the curated `title_override`, else the label; a label that is empty after a strip is refused, also where an override is curated (`T:681`) | `T:602-604` |
@@ -239,7 +248,16 @@ generic code (the file where one is worth naming), `H` is a hook rule and names 
 | BorderStrip `side` | `H` `sides.rs`; `M` `hook › provides` | a list value, `side-left` or `side-right`, from the label's prefix, `l_` or `r_`; no row otherwise. The old pipeline refused a strip of no side unless it was the unsigned one (`T:1068-1073`) | `X:771-779`, `T:1715-1716` |
 | BorderStrip `page-uses` | `M` `incoming-count` | the number of strip links that point at it, 0 for a strip no Page uses | `T:1133`, `T:1155`, `T:1719` |
 | BorderStrip `image` | `G` | a link, `seq` 0, to the Image of the Band's own file | `T:1720` |
-| Image `authorship`, `license` | `M` `images` | the strings of the `images` node's `authorship` and `license` | `T:209-210` |
+| Image `authorship`, `license` | `M` `images` | the strings of the `images` node's `authorship` and `license`; Incunabula's files name no author | `T:209-210` |
+| An image's rights from its file | `G` `images` (`generic/images.rs`) | `authorship` the authors the file names, joined by `, `, where it names any (else the block's); `copyright` the copyright holder it names, only where it names one; `license` always the block's. Incunabula's files name neither, so its rows are as above. NEW | port |
+| A declared images class | `G` `images class=` naming a declared `class` (`generic/images.rs`) | each kept resource of the class is an image: its own row and id, its file its `representations` row, with `alt` its label, and its rights; no Image row of a file and no `image` link. A resource of it without a still image is refused as above. Incunabula's block declares none. NEW | port |
+| A class of several archive classes | `G` `class › also` (`generic/classes.rs`) | a resource whose archive class is the class's `iri` or one of its `also` is of the class. Incunabula's block declares none. NEW | `Resource.class` |
+| A value told by the archive class | `G` `property from="class" list=` (`mapping/values.rs`) | one `list_value` row: the node of the list whose `iri` is the resource's archive class; a class no node stands for is refused (`unknown-list-node`) and the property gives nothing. Incunabula's block declares none. NEW | `Resource.class` |
+| A flag | `G` `class › flag` (`mapping/values.rs`, `generic/rows.rs`) | a `boolean` row, `value_int` 1, on each resource of the archive class the flag names; none on the class's other resources. Incunabula's block declares none. NEW | `Resource.class` |
+| A member placed through its parent's link | `G` `member-of via=` (`generic/membership.rs`) | the member's parent is the resource of the parent class whose link under `via` points at it, as the snapshot serves the link; none or several is `page-parent`, and `part_of` is not read. `compound_parts`, `seq=`, `member-count` and `cover` work as for a `part_of` parent. Incunabula's block declares none. NEW | port |
+| Member links | `G` `members from=` (`generic/membership.rs`) | links from each kept resource to every kept resource of the `from` class whose `part_of` names it, in positional order (`seqnum`, one without last, then the IRI's last part), numbered from 0; taken after the hook's drops. Incunabula's block declares none. NEW | `Resource.part_of` |
+| Ordered links | `G` `type="link" ordered=#true` (`finalise.rs`) | the targets written by their `seqnum`, one without after those with one, then by id, in place of the port's order; applied when rows are written. Incunabula's block declares none. NEW | port |
+| A verbatim id | `G` `id from="property" verbatim=#true` (`mapping/ids.rs`) | the property's one value less the whitespace around it, not made a slug; `empty-id-slug`, `id-not-url-safe` and `duplicate-id` hold as for every id. Incunabula's block declares none. NEW | port |
 | Curated keys | `M` declared where read | the keys are `slug` (Book, Band), `cover_page`, `office`, `date_display`, `title_override`, `sort_key`, `teaser`, `catalogue_uri`, `catalogue_uri_replaces` (Book), `name` (Band, LinkObj), `keep` and `lang` (Region, LinkObj). A value under another key, or on a resource of another class than its key's, is refused (NEW): the old pipeline read named columns of two tables. The block declares the Book's and the strip's keys; `keep`, `lang` and `name` on an annotation are the builder's | curation |
 | A Region's and a LinkObj's curated values | `G` (`generic/annotations.rs`) | `keep`: exactly one, `yes` or `no` (`T:1281-1282`). `lang`: at most one, `de` or `en` (`T:1283-1287`); it is the language of the Region's remark, or of the link's name and comment. `name`: a LinkObj's only, at most one. Read as a Book's curated values are | curation |
 | `annotations` | `G` (`generic/annotations.rs`) | Regions with `keep` = `yes`. The id is the last part of the Region's IRI (`X:1517`). The geometry (`kb:hasGeometry`) is normalised to a box in 0..1 and, for a polygon, its points (`T:1194-1236`); the colour (`kb:hasColor`) is stripped and lower-cased, `#rrggbb`; the remark is `kb:hasComment` stripped, NULL when empty; `remark_lang` is the curated `lang` when there is a remark; `resource_id` is the id of its `kb:isRegionOf` Page; `ark` is the port's | `T:1194-1247`, `T:1314-1349` |
@@ -285,7 +303,8 @@ fails when the properties the snapshot serves on the block's classes and the blo
 these six. A change of the committed 0803 snapshot that brings a property the block does not map therefore fails that test, and the choice is to
 map it in the block or to list it in `IGNORED` and here. A second test of that file
 (`test_build_reads_every_declared_property`) takes each mapped property away in turn and fails when the store does
-not change. Only properties are dropped this way: a resource of a class the block does not declare is refused.
+not change. Only properties are dropped this way: a resource of a class the block neither declares nor leaves out is
+refused.
 
 ## Limits that are known
 
@@ -294,7 +313,7 @@ not change. Only properties are dropped this way: a resource of a class the bloc
 - Nothing refuses two projects that declare one shortcode.
 - A list node's id is `<list>-<slug>`, so a list `a` with a node `b-c` and a list `a-b` with a node `c` give one id;
   the lowering checks a slug within its list only.
-- `.` and `..` pass `id-not-url-safe`, and ids that differ only in case are two ids.
+- Ids that differ only in case are two ids.
 - A date's display text (`display-key`) on a resource that has no date is not read and not written, and nothing says
   so: the builder cannot tell a text the editors wrote too early from one that is left over.
 - The check that generic code names no project (`hygiene.rs`) searches for six whole words, case-sensitively: the

@@ -1,13 +1,17 @@
-//! Images: one per file of a resource whose class requires an image, with the file's stem as its
-//! id, its one representation and its rights.
+//! Images, each with its one representation and its rights, in one of two ways. When the
+//! `images` node names a declared class, each kept resource of that class is an image of its own,
+//! its file its representation. Otherwise each file of a resource whose class requires an image
+//! is an Image of its own, with the file's stem as its id, and the resource links to it.
 //!
 //! A class that does not require an image gets none, whatever files its resources have. A
 //! class with a `cover` has the Image of one of its members.
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use cpe_core::remodel::{ClassIndex, ImageRule, Remodel, RemodelImages, IMAGE_LINK};
-use cpe_ports::{File, Resource};
+use cpe_core::remodel::{
+    ClassIndex, ImageRule, Remodel, RemodelImages, IMAGE_AUTHORSHIP, IMAGE_COPYRIGHT, IMAGE_LICENSE, IMAGE_LINK,
+};
+use cpe_ports::{File, FileLegal, Resource};
 
 use crate::draft::{Draft, EntryClass, Value};
 use crate::error::{refuse_shared_keys, BuildError, Rule};
@@ -16,13 +20,14 @@ use crate::generic::text::{self, py_strip, Limits, Sentinel};
 use crate::generic::{iiif, rows, slug};
 use crate::store::{PropertyRow, RepresentationRow, ResourceRow};
 
-/// The file of a resource whose class requires an image: a `.jp2` still image of at least one
-/// pixel.
+/// The file of a resource whose class requires an image, or of a resource of the declared
+/// images class: a JPEG 2000 still image (`.jp2` or `.jpx`) of at least one pixel.
 #[derive(Clone, Copy)]
 pub(crate) struct Scan<'a> {
     asset: &'a str,
     width: i64,
     height: i64,
+    legal: &'a FileLegal,
 }
 
 impl<'a> Scan<'a> {
@@ -35,15 +40,16 @@ impl<'a> Scan<'a> {
 /// The file of `resource`, refused unless it is what [`Scan`] says.
 fn scan<'a>(resource: &'a Resource, errors: &mut Vec<BuildError>) -> Option<Scan<'a>> {
     let rule = match &resource.file {
-        Some(File::StillImage { asset, width, height }) => {
+        Some(File::StillImage { asset, width, height, legal }) => {
             if iiif::stem(asset).is_empty() {
                 Rule::EmptyStem
-            } else if !asset.ends_with(".jp2") {
+            } else if !asset.ends_with(".jp2") && !asset.ends_with(".jpx") {
                 Rule::NotJp2
             } else if *width == 0 || *height == 0 {
                 Rule::ZeroDimension
             } else {
-                return Some(Scan { asset, width: i64::from(*width), height: i64::from(*height) });
+                let (width, height) = (i64::from(*width), i64::from(*height));
+                return Some(Scan { asset, width, height, legal });
             }
         }
         Some(File::Audio { .. } | File::MovingImage { .. } | File::Document { .. }) | None => Rule::NotStillImage,
@@ -56,23 +62,33 @@ fn scan<'a>(resource: &'a Resource, errors: &mut Vec<BuildError>) -> Option<Scan
     None
 }
 
+/// The declared class the `images` node names, if it names one.
+fn declared(mapping: &Remodel) -> Option<ClassIndex> {
+    mapping.images.as_ref().and_then(|images| images.declared)
+}
+
 /// Reads the file of every resource of a class that requires an image, and gives the resource
-/// its link to the file's Image. A resource whose file is refused is refused with it.
+/// its link to the file's Image; reads the file of every resource of the declared images class,
+/// which is its own image and links to none. A resource whose file is refused is refused with it.
 ///
 /// This runs before the ids are made: a member that is refused for its file takes no part in
 /// the numbering of its parent's other members.
-pub(crate) fn read(draft: &mut Draft<'_>, errors: &mut Vec<BuildError>) {
+pub(crate) fn read(draft: &mut Draft<'_>, mapping: &Remodel, errors: &mut Vec<BuildError>) {
+    let images = declared(mapping);
     let mut read = Vec::new();
-    for (entry, _, class) in draft.kept() {
-        if class.image == ImageRule::Required {
-            read.push((entry.resource.iri.as_str(), scan(entry.resource, errors)));
+    for (entry, index, class) in draft.kept() {
+        let links = class.image == ImageRule::Required;
+        if links || images == Some(index) {
+            read.push((entry.resource.iri.as_str(), scan(entry.resource, errors), links));
         }
     }
-    for (iri, scan) in read {
+    for (iri, scan, links) in read {
         match scan {
             Some(scan) => {
                 draft.scan(iri, scan);
-                draft.give(iri, [IMAGE_LINK], &[Value::Image(scan.image_id())]);
+                if links {
+                    draft.give(iri, [IMAGE_LINK], &[Value::Image(scan.image_id())]);
+                }
             }
             None => draft.refuse(iri),
         }
@@ -80,10 +96,14 @@ pub(crate) fn read(draft: &mut Draft<'_>, errors: &mut Vec<BuildError>) {
 }
 
 /// Refuses an Image id that would stand for two things: the file of two resources of one
-/// class, the file of resources of two classes, or an id that a resource already has.
+/// class, the file of resources of two classes, or an id that a resource already has. A
+/// declared images class has no Image ids: its resources' own ids are checked as any others.
 ///
 /// Every resource that has an id is checked, whether or not it gets a row.
 pub(crate) fn refuse_shared(draft: &Draft<'_>, mapping: &Remodel, errors: &mut Vec<BuildError>) {
+    if declared(mapping).is_some() {
+        return;
+    }
     let mut resource_ids = BTreeSet::new();
     // The owners of each Image id, class by class in declared order.
     let mut owners: BTreeMap<&str, Vec<Vec<&str>>> = BTreeMap::new();
@@ -163,12 +183,18 @@ pub(crate) fn covers<'a>(
             continue;
         }
         let member = draft.get(cover).filter(|member| {
-            let of_member_class = matches!(member.class, EntryClass::Mapped(_, member_class)
-            if member_class.member_of.as_ref().is_some_and(|membership| {
-                membership.parent == class
-            }));
-            let part_of = &member.resource.part_of;
-            of_member_class && part_of.iter().any(|parent| parent.as_str() == owner)
+            let EntryClass::Mapped(_, member_class) = member.class else {
+                return false;
+            };
+            let Some(membership) = member_class.member_of.as_ref().filter(|m| m.parent == class) else {
+                return false;
+            };
+            // A member placed through its parent's link (`via`) is that parent's alone, whatever
+            // its `part_of` names.
+            match membership.via {
+                Some(_) => member.member.is_some_and(|placed| placed.parent == owner),
+                None => member.resource.part_of.iter().any(|parent| parent.as_str() == owner),
+            }
         });
         match member {
             Some(member) if member.dropped_id().is_some() => {
@@ -189,23 +215,60 @@ pub(crate) fn covers<'a>(
     }
 }
 
-/// The files that get an Image, by its id: those of the resources the build kept.
-fn kept<'a>(draft: &Draft<'a>) -> BTreeMap<&'a str, Scan<'a>> {
-    let scans = draft.entries().filter(|entry| entry.is_kept()).filter_map(|entry| entry.scan);
-    scans.map(|scan| (scan.image_id(), scan)).collect()
+/// One image the store gets: its file, and the label of the resource that is the image, which
+/// is its alternative text. An Image of a file has no such resource and no alternative text.
+struct Image<'d> {
+    scan: Scan<'d>,
+    alt: Option<&'d str>,
 }
 
-/// Refuses every Image id that a URL does not carry unchanged: the stem of a kept file. The
-/// subject is the id, as for the other refusals about an Image id.
-pub(crate) fn refuse_unsafe_ids(draft: &Draft<'_>, errors: &mut Vec<BuildError>) {
-    let images = kept(draft);
-    let ids = images.iter().map(|(id, scan)| (*id, *id, scan.asset));
-    slug::refuse_unsafe_ids(ids, errors);
+impl Image<'_> {
+    /// Who made the image: its file's authors, else the block's `authorship`.
+    fn authorship(&self, images: &RemodelImages) -> String {
+        match self.scan.legal.authorship.as_slice() {
+            [] => images.authorship.clone(),
+            authors => authors.join(", "),
+        }
+    }
 }
 
-/// One row per Image, by id. An Image has no ARK: it is no resource of the archive.
+/// The images the build kept, by id: each kept resource of the declared images class, or the
+/// file of each kept resource that has one.
+fn kept<'d>(draft: &'d Draft<'_>, images: &RemodelImages) -> BTreeMap<&'d str, Image<'d>> {
+    let kept = draft.entries().filter(|entry| entry.is_kept());
+    match images.declared {
+        Some(class) => kept
+            .filter(|entry| entry.is_of(class))
+            .filter_map(|entry| {
+                let image = Image { scan: entry.scan?, alt: Some(entry.resource.label.as_str()) };
+                Some((entry.kept_id()?, image))
+            })
+            .collect(),
+        None => kept
+            .filter_map(|entry| entry.scan)
+            .map(|scan| (scan.image_id(), Image { scan, alt: None }))
+            .collect(),
+    }
+}
+
+/// Refuses every kept file whose stem a URL does not carry unchanged: the stem goes into the
+/// representation's IIIF URL. Of a file's Image the stem is its id, and the subject is that id,
+/// as for the other refusals about an Image id. A resource of a declared images class has its own
+/// id, checked as any other; its file's stem is checked here, with the resource's id as the
+/// subject.
+pub(crate) fn refuse_unsafe_ids(draft: &Draft<'_>, images: &RemodelImages, errors: &mut Vec<BuildError>) {
+    let images = kept(draft, images);
+    let stems = images.iter().map(|(id, image)| (image.scan.image_id(), *id, image.scan.asset));
+    slug::refuse_unsafe_ids(stems, errors);
+}
+
+/// One row per Image of a file, by id. An Image has no ARK: it is no resource of the archive. A
+/// resource of a declared images class has its row as a resource of its class.
 pub(crate) fn rows(draft: &Draft<'_>, images: &RemodelImages) -> Vec<ResourceRow> {
-    kept(draft)
+    if images.declared.is_some() {
+        return Vec::new();
+    }
+    kept(draft, images)
         .into_keys()
         .map(|id| ResourceRow {
             id: id.to_string(),
@@ -215,32 +278,33 @@ pub(crate) fn rows(draft: &Draft<'_>, images: &RemodelImages) -> Vec<ResourceRow
         .collect()
 }
 
-/// Every Image's rights: who made it and the licence it is under, the same for all.
+/// Every image's rights: who made it, who holds its copyright, where its file names them, and
+/// the block's licence.
 pub(crate) fn properties(draft: &Draft<'_>, images: &RemodelImages) -> Vec<PropertyRow> {
-    kept(draft)
-        .into_keys()
-        .flat_map(|id| {
-            [
-                rows::text(id, "authorship", &images.authorship, None),
-                rows::text(id, "license", &images.license, None),
-            ]
-        })
-        .collect()
+    let mut found = Vec::new();
+    for (id, image) in kept(draft, images) {
+        found.push(rows::text(id, IMAGE_AUTHORSHIP, &image.authorship(images), None));
+        if let Some(holder) = &image.scan.legal.copyright_holder {
+            found.push(rows::text(id, IMAGE_COPYRIGHT, holder, None));
+        }
+        found.push(rows::text(id, IMAGE_LICENSE, &images.license, None));
+    }
+    found
 }
 
-/// One row per Image, by its id: the full-size address of its file. No source has an
-/// alternative text for a file.
+/// One row per image, by its id: the full-size address of its file, and its alternative text
+/// where it has one.
 pub(crate) fn representations(draft: &Draft<'_>, images: &RemodelImages) -> Vec<RepresentationRow> {
-    kept(draft)
+    kept(draft, images)
         .into_iter()
-        .map(|(id, scan)| RepresentationRow {
+        .map(|(id, image)| RepresentationRow {
             resource_id: id.to_string(),
             kind: "image".to_string(),
-            uri: iiif::uri(&images.iiif_base, scan.asset),
-            width: Some(scan.width),
-            height: Some(scan.height),
-            alt: None,
-            attribution: Some(format!("{} · {}", images.authorship, images.license)),
+            uri: iiif::uri(&images.iiif_base, image.scan.asset),
+            width: Some(image.scan.width),
+            height: Some(image.scan.height),
+            alt: image.alt.map(str::to_string),
+            attribution: Some(format!("{} · {}", image.authorship(images), images.license)),
             seq: 0,
         })
         .collect()

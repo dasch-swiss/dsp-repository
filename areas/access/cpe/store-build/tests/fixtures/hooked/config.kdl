@@ -1,5 +1,5 @@
 // A project that exists only for the store builder's tests. Its `remodel` block declares a hook,
-// with one of each child, beside a cover, a link and annotations: what refuses a snapshot only
+// with every kind of child, beside a cover, a link and annotations: what refuses a snapshot only
 // once a hook has dropped a resource. The hooks themselves are functions of the test file.
 
 site {
@@ -14,7 +14,10 @@ remodel {
     hook {
         key "rank" class="Volume"
         provides "rank" class="Volume"
+        provides "summary" class="Volume" richtext=#true
         overrides "homepage" class="Volume"
+        overrides "number" class="Volume"
+        overrides "binding" class="Volume"
         drops class="Sheet"
     }
 
@@ -22,11 +25,18 @@ remodel {
         list-node "first" { de "Erste"; en "First" }
         list-node "second" { de "Zweite"; en "Second" }
     }
+    list "binding" {
+        list-node "leather" iri="http://rdfh.ch/lists/0123/binding-leather" { de "Leder"; en "Leather" }
+        list-node "paper" iri="http://rdfh.ch/lists/0123/binding-paper" { de "Papier"; en "Paper" }
+    }
 
     class "Volume" iri="http://www.knora.org/ontology/0123/hooked#Volume" {
         id from="label"
         property "name" from="label"
         property "homepage" iri="http://www.knora.org/ontology/0123/hooked#hasHomepage" type="uri" max=1
+        property "number" iri="http://www.knora.org/ontology/0123/hooked#hasVolumeNumber" type="integer" max=1
+        property "made" iri="http://www.knora.org/ontology/0123/hooked#hasDate" type="date" max=1 mixed-precision="start"
+        property "binding" iri="http://www.knora.org/ontology/0123/hooked#hasBinding" type="list-node" list="binding" max=1
         member-count "extent" of="Sheet"
         cover curated-key="cover"
     }
@@ -38,7 +48,7 @@ remodel {
         member-of "Volume"
         id from="property" property="name" under-parent=#true
         property "name" iri="http://www.knora.org/ontology/0123/hooked#hasNumber" type="text" min=1 max=1 empty="refuse" sentinel="keep"
-        property "description" iri="http://www.knora.org/ontology/0123/hooked#hasDescription" type="text" max=1
+        property "description" iri="http://www.knora.org/ontology/0123/hooked#hasDescription" type="text" max=1 richtext=#true
         property "next" iri="http://www.knora.org/ontology/0123/hooked#hasNext" type="link" max=1 target="Sheet"
     }
 

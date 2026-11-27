@@ -12,17 +12,18 @@ use super::super::attrs::{get_bool_attr, get_typed_integer_attr, has_attr, optio
 use super::nodes::{
     check_attrs, check_children, closed_word, declare_iri, declare_key, declare_name, form_of_source, form_of_type,
     key_attr, non_empty, push, reference_attr, single_string, string_args, type_words, word_attr, ClassSeen, Form,
+    FROM_WORDS,
 };
 use crate::config::Component as RawNode;
 use crate::diagnostic::{DiagnosticKind, Span, ValidationReport};
 use crate::remodel::{
-    ArchivePropertyIri, ClassIndex, CpeProperty, CuratedForm, EmptyText, ListIndex, PropertySource, RemodelCurated,
-    RemodelProperty, SentinelWhole, SentinelWithin, TextRule, ValueCount,
+    ArchivePropertyIri, ClassIndex, CpeProperty, CuratedForm, EmptyText, ListIndex, MixedPrecision, PropertySource,
+    RemodelCurated, RemodelProperty, SentinelWhole, SentinelWithin, TextRule, ValueCount,
 };
 
 /// The `type` words of the port's value kinds that `property` does not support
 /// yet.
-pub(super) const UNSUPPORTED_TYPES: [&str; 6] = ["integer", "decimal", "boolean", "list-node", "geometry", "color"];
+pub(super) const UNSUPPORTED_TYPES: [&str; 4] = ["decimal", "boolean", "geometry", "color"];
 
 /// What the nodes of a class need to know of the block around them.
 pub(super) struct Scope<'a> {
@@ -41,11 +42,21 @@ fn describe(form: Form) -> &'static str {
         Form::Uri => "type=\"uri\"",
         Form::Date => "type=\"date\"",
         Form::Link => "type=\"link\"",
+        Form::Integer => "type=\"integer\"",
+        Form::ListNode => "type=\"list-node\"",
         Form::Label => "from=\"label\"",
+        Form::Class => "from=\"class\"",
     }
 }
 
-const ARCHIVE_FORMS: &[Form] = &[Form::Text, Form::Uri, Form::Date, Form::Link];
+const ARCHIVE_FORMS: &[Form] = &[
+    Form::Text,
+    Form::Uri,
+    Form::Date,
+    Form::Link,
+    Form::Integer,
+    Form::ListNode,
+];
 
 /// Which forms take each attribute of a `property` beyond its source
 /// (`iri`, `from`). An attribute present on a node whose form is not listed
@@ -61,6 +72,10 @@ const FORM_TABLE: &[(&str, &[Form])] = &[
     ("exclude-label", &[Form::Text]),
     ("display-key", &[Form::Date]),
     ("target", &[Form::Link]),
+    ("ordered", &[Form::Link]),
+    ("list", &[Form::ListNode, Form::Class]),
+    ("mixed-precision", &[Form::Date]),
+    ("richtext", &[Form::Text]),
 ];
 
 /// An optional attribute holding a count: `Ok(None)` when absent, `Err(())`
@@ -174,8 +189,35 @@ pub(super) fn lower_property(
             "'property' has both 'exclude-label' and 'curated-key'".to_owned(),
         );
     }
+    // A curated text stands in for the source as it is, so it would be written as richtext
+    // unconverted.
+    let richtext = taken("richtext") && get_bool_attr(node, "richtext", report);
+    let richtext_beside_key =
+        taken("richtext") && taken("curated-key") && has_attr(node, "richtext") && has_attr(node, "curated-key");
+    if richtext_beside_key {
+        push(
+            report,
+            DiagnosticKind::ConflictingRemodelAttributes,
+            node.span,
+            "'property' has both 'richtext' and 'curated-key'".to_owned(),
+        );
+    }
     let target = match taken("target") {
         true => reference_attr(node, "target", "class", scope.class_names, report).map(|index| index.map(ClassIndex)),
+        false => Ok(None),
+    };
+    let ordered = taken("ordered") && get_bool_attr(node, "ordered", report);
+    let list = match taken("list") {
+        true => reference_attr(node, "list", "list", scope.list_names, report).map(|index| index.map(ListIndex)),
+        false => Ok(None),
+    };
+    let mixed = match taken("mixed-precision") {
+        true => word_attr(
+            node,
+            "mixed-precision",
+            &[("refuse", MixedPrecision::Refuse), ("start", MixedPrecision::Start)],
+            report,
+        ),
         false => Ok(None),
     };
 
@@ -192,6 +234,9 @@ pub(super) fn lower_property(
     let source = match form {
         Form::Label => PropertySource::Label { curated_key: curated_key.ok()? },
         Form::Text => {
+            if richtext_beside_key {
+                return None;
+            }
             let (sentinel, sentinel_within) = sentinels?;
             PropertySource::Text {
                 iri: ArchivePropertyIri::new(iri?),
@@ -206,6 +251,7 @@ pub(super) fn lower_property(
                 empty: empty.ok()?.unwrap_or(EmptyText::Drop),
                 sentinel,
                 sentinel_within,
+                richtext,
             }
         }
         Form::Uri => {
@@ -221,12 +267,21 @@ pub(super) fn lower_property(
             iri: ArchivePropertyIri::new(iri?),
             count: count?,
             display_key: display_key.ok()?,
+            mixed: mixed.ok()?.unwrap_or(MixedPrecision::Refuse),
         },
         Form::Link => PropertySource::Link {
             iri: ArchivePropertyIri::new(iri?),
             count: count?,
             target: target.ok()??,
+            ordered,
         },
+        Form::Integer => PropertySource::Integer { iri: ArchivePropertyIri::new(iri?), count: count? },
+        Form::ListNode => PropertySource::ListNode {
+            iri: ArchivePropertyIri::new(iri?),
+            count: count?,
+            list: list.ok()??,
+        },
+        Form::Class => PropertySource::Class { list: list.ok()?? },
     };
     Some(RemodelProperty {
         names: property_names.into_iter().map(CpeProperty::new).collect(),
@@ -256,7 +311,7 @@ fn read_source(node: &RawNode, seen: &mut ClassSeen, report: &mut ValidationRepo
         true => Ok(None),
         false => optional_string_attr(node, "type", report),
     };
-    let from_attr = word_attr(node, "from", &[("label", ())], report);
+    let from_attr = word_attr(node, "from", &FROM_WORDS, report);
 
     let iri_readable = matches!(iri_attr, Ok(Some(_)));
     let iri = match iri_attr {
@@ -283,7 +338,7 @@ fn read_source(node: &RawNode, seen: &mut ClassSeen, report: &mut ValidationRepo
                 report,
                 DiagnosticKind::ConflictingRemodelAttributes,
                 node.span,
-                "'property' has no source; give it an 'iri' with a 'type', or from=\"label\"".to_owned(),
+                "'property' has no source; give it an 'iri' with a 'type', from=\"label\" or from=\"class\"".to_owned(),
             );
             None
         }
@@ -302,15 +357,21 @@ fn read_source(node: &RawNode, seen: &mut ClassSeen, report: &mut ValidationRepo
             }
             Err(()) => None,
         },
-        (false, true) => from_attr.ok().flatten().map(|()| Form::Label),
+        (false, true) => from_attr.ok().flatten(),
     };
 
     // The forms the attributes are held to: the node's form, or, when its
     // source is faulty, every form its source attributes name. An attribute
-    // none of them takes is reported beside the source's own error.
+    // none of them takes is reported beside the source's own error. A `from`
+    // whose word is unreadable is held to every form a `from` gives.
+    let from_forms: Vec<Form> = match (has_attr(node, "from"), from_attr.ok().flatten()) {
+        (false, _) => Vec::new(),
+        (true, Some(form)) => vec![form],
+        (true, None) => FROM_WORDS.iter().map(|(_, form)| *form).collect(),
+    };
     let candidates: Vec<Form> = match form {
         Some(form) => vec![form],
-        None => kind.into_iter().chain(has_attr(node, "from").then_some(Form::Label)).collect(),
+        None => kind.into_iter().chain(from_forms).collect(),
     };
     if !candidates.is_empty() {
         let described: Vec<&str> = candidates.iter().map(|form| describe(*form)).collect();
@@ -332,6 +393,16 @@ fn read_source(node: &RawNode, seen: &mut ClassSeen, report: &mut ValidationRepo
             node.span,
             "a property with type=\"link\" needs a 'target'".to_owned(),
         );
+    }
+    if let Some(form @ (Form::ListNode | Form::Class)) = form {
+        if !has_attr(node, "list") {
+            push(
+                report,
+                DiagnosticKind::ConflictingRemodelAttributes,
+                node.span,
+                format!("a property with {} needs a 'list'", describe(form)),
+            );
+        }
     }
     Source { iri, form, candidates }
 }

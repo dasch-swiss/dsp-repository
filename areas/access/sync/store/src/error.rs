@@ -22,7 +22,8 @@ pub enum SnapshotError {
     UnreadableFormat { path: PathBuf, version: u32 },
     #[error("the generation {} the Ready token names does not exist", path.display())]
     MissingGeneration { path: PathBuf },
-    /// The generation directory or the snapshot file cannot be read, or is of the wrong kind.
+    /// The generation directory or the snapshot file cannot be read, or is of the wrong kind, or
+    /// the reader [`crate::read_snapshot`] reads fails.
     #[error("cannot read {}", path.display())]
     Read {
         path: PathBuf,

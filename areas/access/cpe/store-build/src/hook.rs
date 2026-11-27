@@ -9,13 +9,18 @@
 //! node. A change the node does not declare is not made, and the build refuses it
 //! (`hook-exceeds-declaration`).
 //!
+//! A text a hook writes may be one it composes: a [`Value::Text`] holds a slice of what the build
+//! was given or an owned `String`.
+//!
 //! The fields of [`Draft`] are private to this module, so a hook cannot reach the builder's own
 //! draft, whose writers check nothing.
 
+use std::borrow::Cow;
 use std::cell::RefCell;
 use std::collections::BTreeSet;
 
 use cpe_core::remodel::{ClassIndex, PropertySource, Remodel, RemodelClass, RemodelHook, RemodelProperty};
+pub use cpe_ports::{Calendar, DatePrecision};
 
 use crate::draft::{self, Entry, EntryClass};
 pub use crate::draft::{Cause, Value};
@@ -27,7 +32,8 @@ use crate::mapping::{label, values};
 /// A project's rules that its mapping cannot say. It sees the draft and nothing else.
 pub type HookFn = fn(&mut Draft<'_>, &mut Refusals);
 
-/// One row of the builder's table of hooks.
+/// One row of the builder's table of hooks, or of a host's.
+#[derive(Clone, Copy)]
 pub struct Hook {
     /// The project's folder name.
     pub project: &'static str,
@@ -142,12 +148,15 @@ impl<'a> Draft<'a> {
     /// Adds a text to the values of the property `name` of the resource `iri`. The block must
     /// declare `provides` for the name on its class. The text is written as given: the mapping
     /// has no node for the property and so no check, and what the text may hold is the hook's
-    /// rule.
-    pub fn provide_text(&mut self, iri: &str, name: &str, text: &'a str, lang: Option<&'a str>) {
+    /// rule. Under a `provides` with `richtext`, the text is converted when it is written, as a
+    /// `richtext` property's is: each of its lines a paragraph.
+    ///
+    /// The text is a slice of what the build was given or one the hook composed, a `String`.
+    pub fn provide_text(&mut self, iri: &str, name: &str, text: impl Into<Cow<'a, str>>, lang: Option<&'a str>) {
         let Some(name) = self.provided_on(iri, name) else {
             return;
         };
-        let value = Value::Text(text, lang);
+        let value = Value::Text(text.into(), lang);
         if self.holds_no_nul(iri, name, &value) {
             self.entries.append(iri, name, value);
         }
@@ -159,7 +168,12 @@ impl<'a> Draft<'a> {
     fn holds_no_nul(&self, iri: &str, name: &str, value: &Value<'a>) -> bool {
         let nul = match value {
             Value::Text(text, lang) => text.contains('\0') || lang.is_some_and(|l| l.contains('\0')),
-            Value::Date { .. } | Value::Link(_) | Value::ListNode(_) | Value::Image(_) | Value::Integer(_) => false,
+            Value::Date { .. }
+            | Value::Link(_)
+            | Value::ListNode(_)
+            | Value::Image(_)
+            | Value::Integer(_)
+            | Value::Boolean(_) => false,
         };
         if nul {
             let refusal = BuildError::refused(Rule::InteriorNul, iri, name);
@@ -194,8 +208,10 @@ impl<'a> Draft<'a> {
     /// the property is written under. The block must declare `overrides` for it on its class.
     ///
     /// A value is of the kind the property writes: a text for a text, an address and a label;
-    /// a link to a resource of the property's target class; a date the mapping gave. The
-    /// checks the mapping makes of a text run on these values once the hook has returned.
+    /// a link to a resource of the property's target class; an integer for an integer; a node of
+    /// the property's list, by its id, for a list node and a class value; a date the mapping
+    /// gave. The checks the mapping makes of a text run on these values once the hook has
+    /// returned.
     pub fn override_values(&mut self, iri: &str, name: &str, values: Vec<Value<'a>>) {
         let class = self.class_of(iri);
         let Some(node) = class.and_then(|class| self.overridden(class, name)) else {
@@ -227,6 +243,14 @@ impl<'a> Draft<'a> {
                 };
                 let linked = self.entries.get(to);
                 linked.is_some_and(|linked| linked.is_of(*target))
+            }
+            PropertySource::Integer { .. } => matches!(value, Value::Integer(_)),
+            PropertySource::ListNode { list, .. } | PropertySource::Class { list } => {
+                let Value::ListNode(id) = value else {
+                    return false;
+                };
+                let list = self.mapping.list(*list);
+                list.nodes.iter().any(|node| lists::node_id(list, node) == *id)
             }
             // A hook writes no date of its own: it can leave out one the mapping gave.
             PropertySource::Date { .. } => {
@@ -325,7 +349,8 @@ impl<'d, 'a> View<'d, 'a> {
         text::offence(self.label(), limits).is_none()
     }
 
-    /// The IRIs of the resource's parents, as served.
+    /// The IRIs of the resource's parents, as served. For a member placed through its parent's
+    /// link (`member-of … via=`) they need not name that parent.
     pub fn part_of(&self) -> Vec<&'a str> {
         let parents = self.entry.resource.part_of.iter();
         parents.map(|parent| parent.as_str()).collect()
@@ -379,7 +404,7 @@ impl<'d, 'a> View<'d, 'a> {
             nodes.find(|node| draft::names(node).any(|own| own == name))
         });
         match node {
-            Some(node) => values::served(self.entry.resource, node),
+            Some(node) => values::served(self.draft.mapping, self.entry.resource, node),
             None => {
                 self.draft.exceed(self.iri(), format!("read {name} as served"));
                 Vec::new()

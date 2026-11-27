@@ -53,6 +53,7 @@ install-e2e-requirements: _check-node
     cd modules/mosaic/playground-e2e-tests && npm ci && npx playwright install
     cd areas/access/dpe/web-e2e-tests && npm ci && npx playwright install
     cd areas/deposit/editor/web-e2e-tests && npm ci && npx playwright install
+    cd areas/access/cpe/web-e2e-tests && npm ci && npx playwright install
 
 # Verify Node is on PATH. just runs recipes in sh, which does NOT see shell-function version managers (e.g. lazy nvm) — only real binaries on PATH. (DEV-6642)
 [private]
@@ -170,6 +171,10 @@ run *FLAGS: css-release
 # Validate all data files in the default data directory
 validate-data:
     bazel run --run_in_cwd //areas/access/server:access_server -- validate {{ DPE_DATA_DIR }}
+
+# Validate DPE's data and every committed CPE project: in full against the committed stand-ins, which must serve 0803, and data-free against the VRE bridge's shipped inputs, read by path (ADR-0002). FLAGS: extra Bazel flags, such as CI's.
+validate-cpe *FLAGS:
+    bazel run --run_in_cwd {{ FLAGS }} //areas/access/server:access_server -- validate {{ DPE_DATA_DIR }} --inputs areas/deposit/vre-bridge/inputs --must-serve 0803
 
 # Re-download and re-patch the DataCite JSON schema the DataCite JSON writer's output is shape-checked against. The script takes the XSD directory as an argument because a shared crate may not know a module's layout; this justfile may, and passes it. (DEV-7268)
 refresh-datacite-schema:
@@ -667,6 +672,24 @@ test-e2e-dpe *FLAGS: _check-node
     export ACCESS_SERVER_BIN
     cd areas/access/dpe/web-e2e-tests && npx playwright test tests/project-filters.spec.ts --project=chromium --project=chromium-no-js
 
+# Run CPE's E2E suite on Incunabula, the JavaScript-enabled pass (axe included) and the javaScriptEnabled=false pass, against a release build; Playwright starts the server on port 4102 with CPE_BASE=/cpe. No stylesheet build: CPE's stylesheets are compiled into the binary. FLAGS: extra Bazel flags, such as CI's.
+[group('dpe')]
+test-e2e-cpe *FLAGS: _check-node
+    #!/usr/bin/env bash
+    set -euo pipefail
+    ACCESS_SERVER_BIN="$(just -q _release-bin //areas/access/server:access_server {{ FLAGS }})"
+    export ACCESS_SERVER_BIN
+    cd areas/access/cpe/web-e2e-tests && npx playwright test
+
+# Run CPE's accessibility E2E tests (WCAG 2.1 AA via axe-core), built as for `test-e2e-cpe`. FLAGS: extra Bazel flags, such as CI's.
+[group('dpe')]
+test-a11y-cpe *FLAGS: _check-node
+    #!/usr/bin/env bash
+    set -euo pipefail
+    ACCESS_SERVER_BIN="$(just -q _release-bin //areas/access/server:access_server {{ FLAGS }})"
+    export ACCESS_SERVER_BIN
+    cd areas/access/cpe/web-e2e-tests && npx playwright test tests/accessibility.spec.ts --project=chromium-js
+
 ###################
 # Editor targets
 ###################
@@ -740,11 +763,13 @@ run-docker-editor:
     # while the service looks healthy. Locally the console transport is the point.
     docker run --rm --platform linux/amd64 -p 8080:8080 -e EDITOR_ENV=DEV local-scan/editor:latest
 
-# Lint E2E test TypeScript with Biome
+# Lint E2E test TypeScript, and CPE's own script, with Biome
 lint-e2e: _check-node
     cd areas/access/dpe/web-e2e-tests && npx @biomejs/biome check .
     cd modules/mosaic/playground-e2e-tests && npx @biomejs/biome check .
     cd areas/deposit/editor/web-e2e-tests && npx @biomejs/biome check .
+    cd areas/access/cpe/web-e2e-tests && npx @biomejs/biome check .
+    cd areas/access/cpe/public && npx @biomejs/biome check cpe.js
 
 ###################
 # dsp-cli targets

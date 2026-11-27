@@ -1,6 +1,8 @@
 //! A Book's `sort-key`: what the site orders its titles by. The editors' key where they curated
 //! one, else the Book's name.
 
+use std::borrow::Cow;
+
 use super::BOOK;
 use crate::error::Rule;
 use crate::generic::text::py_strip;
@@ -16,22 +18,22 @@ const NAME: &str = "sort-key";
 /// be filed after every other, and is refused. What the editors curated under the key is
 /// checked for every Book; a Book without a name gets no key and is not refused for one.
 pub(super) fn provide<'a>(draft: &mut Draft<'a>, refusals: &mut Refusals) {
-    let mut keys: Vec<(&'a str, &'a str)> = Vec::new();
+    let mut keys: Vec<(&'a str, Cow<'a, str>)> = Vec::new();
     for book in draft.entries_of(BOOK) {
         let curated = curated_key(&book, refusals);
         let name = match book.values("name") {
-            Mapped::Values([Value::Text(name, _)]) => *name,
+            Mapped::Values([Value::Text(name, _)]) => name.clone(),
             Mapped::Values(_) => continue,
             // The label is the name of a Book whose curated title was refused, when the label
             // may be a name: the mapping does not read it while a curated title stands in.
             Mapped::Refused(_) if !book.label_is_text() => continue,
-            Mapped::Refused(_) => book.label(),
+            Mapped::Refused(_) => Cow::Borrowed(book.label()),
         };
-        let key = curated.unwrap_or(name);
-        if py_strip(key).starts_with(|first: char| first.is_ascii()) {
+        let key = curated.map_or(name, Cow::Borrowed);
+        if py_strip(&key).starts_with(|first: char| first.is_ascii()) {
             keys.push((book.iri(), key));
         } else {
-            refusals.refuse(Rule::SortKeyNotAscii, book.iri(), key);
+            refusals.refuse(Rule::SortKeyNotAscii, book.iri(), &key);
         }
     }
     for (iri, key) in keys {

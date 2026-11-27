@@ -11,7 +11,7 @@ use super::super::attrs::{get_attr, optional_string_attr, value_type_name};
 use crate::config::Component as RawNode;
 use crate::diagnostic::{Diagnostic, DiagnosticKind, Span, ValidationReport};
 use crate::ir::Value;
-use crate::remodel::{CuratedKey, IMAGE_LINK};
+use crate::remodel::CuratedKey;
 
 pub(super) fn push(report: &mut ValidationReport, kind: DiagnosticKind, span: Span, message: String) {
     report.push(Diagnostic::error(kind, message, span));
@@ -228,17 +228,25 @@ pub(super) enum Form {
     Uri,
     Date,
     Link,
+    Integer,
+    ListNode,
     Label,
+    Class,
 }
+
+/// The `from` words a `property` takes, each with the form it gives.
+pub(super) const FROM_WORDS: [(&str, Form); 2] = [("label", Form::Label), ("class", Form::Class)];
 
 /// The `type` words a `property` supports, each with the form it gives. This
 /// is the one place they are written: the lowering and the outline's silent
 /// reading of a property both come here.
-const TYPE_WORDS: [(&str, Form); 4] = [
+const TYPE_WORDS: [(&str, Form); 6] = [
     ("text", Form::Text),
     ("uri", Form::Uri),
     ("date", Form::Date),
     ("link", Form::Link),
+    ("integer", Form::Integer),
+    ("list-node", Form::ListNode),
 ];
 
 /// The supported `type` words, for a diagnostic.
@@ -256,7 +264,7 @@ pub(super) fn form_of_type(word: &str) -> Option<Form> {
 /// The form the source attributes of `property` give, read silently. `None`
 /// for a source the lowering refuses: an `iri` beside a `from` or neither, an
 /// `iri` that is no string or empty, an `iri` without a supported `type` word,
-/// a `from` that is not `label`, and a `type` beside `from`.
+/// a `from` outside [`FROM_WORDS`], and a `type` beside `from`.
 ///
 /// A reference to a property (an `id`'s `property`, a `via`) asks this, so
 /// that one whose source is refused resolves without a second diagnostic. A
@@ -265,7 +273,9 @@ pub(super) fn form_of_source(property: &RawNode) -> Option<Form> {
     let attr = |name: &str| get_attr(property, name);
     match (attr("iri"), attr("from"), attr("type")) {
         (Some(Value::String(iri)), None, Some(Value::String(word))) if !iri.is_empty() => form_of_type(&word),
-        (None, Some(Value::String(word)), None) if word == "label" => Some(Form::Label),
+        (None, Some(Value::String(word)), None) => {
+            FROM_WORDS.iter().find(|(known, _)| *known == word).map(|(_, form)| *form)
+        }
         _ => None,
     }
 }
@@ -282,20 +292,21 @@ pub(super) struct ClassSeen {
     iris: HashSet<String>,
     names: HashSet<String>,
     keys: HashSet<String>,
-    /// Whether the block has an `images` node, which reserves the property
-    /// name [`IMAGE_LINK`].
-    reserves_image: bool,
+    /// The property names the builder writes on the class, which no node may
+    /// take: [`IMAGE_LINK`](crate::remodel::IMAGE_LINK) or
+    /// [`IMAGE_RIGHTS`](crate::remodel::IMAGE_RIGHTS).
+    reserved: &'static [&'static str],
 }
 
 impl ClassSeen {
-    /// The record of a class that has declared nothing yet, in a block that
-    /// has an `images` node or has none.
-    pub(super) fn new(block_has_images: bool) -> Self {
+    /// The record of a class that has declared nothing yet, on which the
+    /// builder writes the property names `reserved`.
+    pub(super) fn new(reserved: &'static [&'static str]) -> Self {
         Self {
             iris: HashSet::new(),
             names: HashSet::new(),
             keys: HashSet::new(),
-            reserves_image: block_has_images,
+            reserved,
         }
     }
 }
@@ -311,12 +322,12 @@ pub(super) fn declare_iri(seen: &mut ClassSeen, iri: &str, span: Span, report: &
 /// name that class already has is `DuplicateRemodelEntry` at `span`, and the
 /// reserved name is `ReservedRemodelName`.
 pub(super) fn declare_name(seen: &mut ClassSeen, name: &str, span: Span, report: &mut ValidationReport) {
-    if seen.reserves_image && name == IMAGE_LINK {
+    if seen.reserved.contains(&name) {
         push(
             report,
             DiagnosticKind::ReservedRemodelName,
             span,
-            format!("the property name '{IMAGE_LINK}' is reserved in a block with an 'images' node"),
+            format!("the property name '{name}' is reserved here: the 'images' node has it written"),
         );
     }
     let message = || format!("the class already has a property named '{name}'");

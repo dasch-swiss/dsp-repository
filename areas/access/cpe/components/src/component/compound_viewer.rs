@@ -91,7 +91,7 @@ use cpe_core::ir::{
     ClassLabel, CompoundLayout, CompoundPage, MemberIndex, PickerMode, PropertyLabel, PropertyValue, Resource,
 };
 use cpe_core::lang::Lang;
-use maud::{html, Markup, PreEscaped};
+use maud::{html, Markup};
 use shared_datastar::{self as datastar, Get};
 
 use crate::chrome::{
@@ -100,7 +100,7 @@ use crate::chrome::{
     picker_gathering_name, picker_leaves_meta, picker_live_count, picker_page_at, picker_pages_meta, picker_range_name,
     picker_summary_name, picker_unlabelled_name, ChromeMsg,
 };
-use crate::component::annotation::{self, render_overlay, ANNO_DOT};
+use crate::component::annotation::{self, anno_dot, render_overlay};
 use crate::component::dom::{PAGES_TITLE_ID, PICKER_ESCAPE_EXPR, PICKER_FOCUSOUT_EXPR};
 use crate::component::links::{member_href_for, reader_query, LinkResolver};
 use crate::component::media::{image_repr, overlay_will_draw, render_viewer_unit};
@@ -264,34 +264,20 @@ pub struct CompoundViewerCfg<'a> {
 const POPSTATE_RELOAD_EXPR: &str =
     "if (location.pathname + location.search !== window.__cpeReaderUrl) { location.reload(); }";
 
-/// The one-time inline script every populated compound-viewer root emits as
-/// its FIRST child, seeding `window.__cpeReaderUrl` — the plain, one-way
+/// The statement every populated compound-viewer root runs from its
+/// `data-init`, seeding `window.__cpeReaderUrl` — the plain, one-way
 /// "URL the reader currently shows" value [`POPSTATE_RELOAD_EXPR`] compares
 /// against.
 ///
-/// Deliberately a plain `window` PROPERTY, not a DataStar signal
-/// — no two-way signal syncing, and never a
-/// reactively-written `data-*` attribute (`dsp-incubator cpe/CLAUDE.md`'s DataStar directive-
-/// scope constraint: a `data-*` attribute is for markup, not a scratch
-/// variable). Two writers only, by design:
+/// A plain `window` property: not a DataStar signal (no two-way syncing), and
+/// not a `data-*` attribute (those are for markup). Two writers only:
 ///
-/// 1. This inline `<script>`, on every NORMAL document parse — a fresh full-page load (including
-///    the reload [`POPSTATE_RELOAD_EXPR`] itself triggers) always re-executes it, seeding the value
-///    from whatever `location` the browser is actually showing at that moment. On a `_compound`
-///    fragment swap the vendored DataStar bundle's morph normally WOULD re-execute a patched-in
-///    inline `<script>` (it tracks already-loaded scripts in a `WeakSet` and skips only those);
-///    this one does not re-run in practice because the morph reuses the SAME script DOM node across
-///    the swap (same tag, same position — nothing about it diffs), so it is treated as
-///    already-tracked and skipped. This is not "patched-in scripts never execute" — it's DOM-node
-///    identity being preserved by the morph. The swap's own `ExecuteScript`
-///    (`compound_fragment_response`) is the SECOND writer, updating the value explicitly, in the
-///    same script that calls `pushState`, so the two can never drift regardless of whether this
-///    seed script re-runs (re-seeding from `location` is idempotent either way). This doc fix
-///    changes no code path.
-/// 2. `compound_fragment_response`'s `pushState` `ExecuteScript`, right after the
-///    `history.pushState` call — since a swap never re-runs this inline script, the handler must
-///    set `window.__cpeReaderUrl` itself to keep it in sync with the address bar it just wrote.
-const READER_URL_INIT_SCRIPT: &str = "window.__cpeReaderUrl = location.pathname + location.search;";
+/// 1. This statement, when DataStar initialises the root, and again whenever the attribute's value
+///    changes (a stale full page morphed to a `_compound` fragment); re-seeding from `location` is
+///    idempotent.
+/// 2. `compound_fragment_response`'s `ExecuteScript`, right after its `history.pushState`: a swap
+///    that leaves the attribute unchanged runs no `data-init`.
+const READER_URL_SEED_EXPR: &str = "window.__cpeReaderUrl = location.pathname + location.search;";
 
 /// Wraps `body` in the `<article id="compound-viewer" tabindex="-1">` root
 /// shared by every populated (`total >= 1`) branch of [`render_compound_viewer`],
@@ -316,12 +302,11 @@ const READER_URL_INIT_SCRIPT: &str = "window.__cpeReaderUrl = location.pathname 
 /// `section.resource-list-section.page`) — without it content hugs the
 /// viewport edges.
 ///
-/// Both [`READER_URL_INIT_SCRIPT`] (an inline `<script>`, first child) and
-/// [`POPSTATE_RELOAD_EXPR`] (`data-on:popstate__window`) are FIXED,
-/// per-render-invariant strings — no `cfg` value is interpolated into
-/// either — so the emitted markup, this fn's own open-tag bytes included,
-/// stays byte-identical across every render, unlike the
-/// per-member `@get(...)` expressions the pager/rail carry.
+/// [`POPSTATE_RELOAD_EXPR`] (`data-on:popstate__window`) is a FIXED,
+/// per-render-invariant string, and so is the `data-init` value
+/// ([`READER_URL_SEED_EXPR`]) except on a full page with a stale address,
+/// unlike the per-member `@get(...)` expressions the pager/rail carry.
+/// The root renders no `<script>`.
 ///
 /// `stale` (the `pages` layout only): the reader is `aria-describedby` its
 /// status line, so a screen-reader user hears the stale-address line when
@@ -329,8 +314,8 @@ const READER_URL_INIT_SCRIPT: &str = "window.__cpeReaderUrl = location.pathname 
 /// announced on arrival.
 ///
 /// `url_fix`: a `history.replaceState` statement prepended to the
-/// init script, so the seed then reads the corrected `location` — see
-/// [`stale_url_correction`].
+/// seed in `data-init`, so the seed then reads the corrected `location` —
+/// see [`stale_url_correction`].
 ///
 /// `pages_keys` is the `pages` variant's `keydown` expression, from
 /// [`pages_keydown`].
@@ -341,7 +326,7 @@ fn render_cv_root(
     url_fix: Option<String>,
     body: Markup,
 ) -> Markup {
-    let init_script = PreEscaped(format!("{}{READER_URL_INIT_SCRIPT}", url_fix.unwrap_or_default()));
+    let init = format!("{}{READER_URL_SEED_EXPR}", url_fix.unwrap_or_default());
     let popstate = POPSTATE_RELOAD_EXPR;
     if let Some(keys) = pages_keys {
         html! {
@@ -355,11 +340,9 @@ fn render_cv_root(
                 aria-describedby=[stale.then_some(PAGES_STATUS_ID)]
                 data-class=[wide]
                 data-on:popstate__window=(popstate)
+                data-init=(init)
                 data-on:keydown=(keys)
-            {
-                script { (init_script) }
-                (body)
-            }
+            { (body) }
         }
     } else {
         html! {
@@ -369,10 +352,8 @@ fn render_cv_root(
                 id="compound-viewer"
                 tabindex="-1"
                 data-on:popstate__window=(popstate)
-            {
-                script { (init_script) }
-                (body)
-            }
+                data-init=(init)
+            { (body) }
         }
     }
 }
@@ -795,34 +776,18 @@ pub fn render_compound_viewer(page: &CompoundPage, cfg: &CompoundViewerCfg<'_>, 
 /// The picker's fixed `<details>` id: a page holds at most one navigator.
 const PICKER_ID: &str = "cv-picker";
 
-/// On opening, the panel scrolls so the current entry sits a third of the
-/// way down. Instant, never `scrollIntoView`: that would scroll the window
-/// and drag the sticky reader.
-const PICKER_TOGGLE_EXPR: &str = "if (!el.open) return; const p = el.querySelector('.pk__panel'); const c = p.querySelector('[aria-current=page]'); if (c) p.scrollTop = c.offsetTop - p.clientHeight / 3;";
+/// On opening, the panel scrolls to the current entry (`cpe.pickerToggle`,
+/// `public/cpe.js`).
+const PICKER_TOGGLE_EXPR: &str = "cpe.pickerToggle(el)";
 
-/// The panel's one delegated click handler. A jump mark
-/// (`href="#cv-pk-<n>"`) scrolls the panel to its group's heading below the
-/// sticky band and focuses it — the window never scrolls. Any other link is
-/// an entry: close the picker, return focus to its summary, and make the
-/// steps' own `_compound` swap for the entry's query — except the current
-/// page's entry, which only closes: its swap would push the address already
-/// shown, leaving a Back press that goes nowhere. A modified click
-/// (Ctrl/Cmd/Shift/Alt) is left to the browser, so "open in a new tab" still
-/// works. `path` is the raw (unencoded)
-/// `{path}/{COMPOUND_FRAGMENT_SEGMENT}`; `shared-datastar` encodes it.
+/// The panel's one delegated click handler: the steps' own `_compound` swap for the query
+/// `cpe.pickerTarget` (`public/cpe.js`) returns, if any. `path` is the raw (unencoded)
+/// `{path}/{COMPOUND_FRAGMENT_SEGMENT}`; `shared-datastar` encodes it. Without `cpe.js` the call
+/// throws before any `preventDefault`, so the click follows the plain link.
 fn picker_click_expr(path: &str) -> String {
     format!(
-        "const a = evt.target.closest('a[href]'); \
-         if (!a || evt.ctrlKey || evt.metaKey || evt.shiftKey || evt.altKey) return; evt.preventDefault(); \
-         const href = a.getAttribute('href'); \
-         if (href.startsWith('#')) {{ const h = document.getElementById(href.slice(1)); \
-         if (h) {{ el.scrollTop = h.offsetTop - el.querySelector('.pk__band').offsetHeight; \
-         h.focus({{preventScroll: true}}); }} return; }} \
-         const d = document.getElementById('{PICKER_ID}'); d.open = false; \
-         d.querySelector('summary').focus({{preventScroll: true}}); \
-         if (a.getAttribute('aria-current') === 'page') return; \
-         {}",
-        datastar::get(path).plus_js("a.search")
+        "const query = cpe.pickerTarget(evt, el); if (query !== null) {}",
+        datastar::get(path).plus_js("query")
     )
 }
 
@@ -901,6 +866,7 @@ fn render_picker_entry(
     };
     let title = (has_label && visible != entry.label).then_some(entry.label.as_str());
     html! {
+        // `cpe.pickerToggle` and `cpe.pickerTarget` (`public/cpe.js`) read `aria-current="page"`.
         a   .pk__entry
             .pk__entry--dash[dash]
             .pk__entry--anno[annotated]
@@ -911,7 +877,7 @@ fn render_picker_entry(
         {
             (visible)
             (page_picker::ordinal_mark(ordinal))
-            @if annotated { (ANNO_DOT) }
+            @if annotated { (anno_dot()) }
         }
     }
 }
@@ -1019,6 +985,7 @@ fn render_picker(page: &CompoundPage, mode: PickerMode, cfg: &CompoundViewerCfg<
                     " "
                     span.pk__caret aria-hidden="true" { "▴" }
                 }
+                // `cpe.js` reads `.pk__panel`, `.pk__band` and the entries' `aria-current`.
                 div.pk__panel data-on:click=(picker_click_expr(&base)) {
                     div.pk__band {
                         span.pk__index { (index_label) }
@@ -1028,12 +995,12 @@ fn render_picker(page: &CompoundPage, mode: PickerMode, cfg: &CompoundViewerCfg<
                                 aria-current=[(current_group == Some(i)).then_some("true")]
                             {
                                 span aria-hidden="true" { (mark) }
-                                @if *annotated { (ANNO_DOT) }
+                                @if *annotated { (anno_dot()) }
                                 span.visually-hidden { (name) }
                             }
                         }
                         @if !page.annotated_members.is_empty() {
-                            span.pk__legend { (ANNO_DOT) (ChromeMsg::AnnoMarked.text(lang)) }
+                            span.pk__legend { (anno_dot()) (ChromeMsg::AnnoMarked.text(lang)) }
                         }
                     }
                     @for (i, (g, (mark, name, annotated))) in groups.iter().zip(&names).enumerate() {
@@ -1059,7 +1026,7 @@ fn render_picker(page: &CompoundPage, mode: PickerMode, cfg: &CompoundViewerCfg<
                             {
                                 span.pk__headmark aria-hidden="true" {
                                     (mark)
-                                    @if *annotated { (ANNO_DOT) }
+                                    @if *annotated { (anno_dot()) }
                                 }
                                 span.visually-hidden { (name) }
                                 " "
@@ -1132,17 +1099,9 @@ const PAGES_WIDE_CLASS_ATTR: &str = "{'is-wide': $expand}";
 
 /// Keyboard paging (`dsp-incubator cpe/docs/adr/0007-fragment-swaps-are-transient.md`'s
 /// sub-item 3): ←/→ page the `pages` reader while focus is inside it (the article's own `keydown`,
-/// not `__window`, so the scoping is free). It clicks the step's own
-/// `a[rel=prev|next]`, so the steps' handler runs; at an inert end there is
-/// no link and nothing happens. It stands aside for a held key
-/// (`evt.repeat` — one page per press), an already-handled event, any
-/// modifier (Alt+← is the browser's Back), and focus in a form control, a
-/// slider, the page picker (`details`) or the viewer unit (the canvas pans
-/// with the arrows; its shadow DOM retargets to `image-viewer`).
-const PAGES_KEYS_EXPR: &str = "if (evt.key !== 'ArrowLeft' && evt.key !== 'ArrowRight') return; \
-     if (evt.repeat || evt.defaultPrevented || evt.shiftKey || evt.ctrlKey || evt.altKey || evt.metaKey) return; \
-     if (evt.target.closest('input,select,textarea,[contenteditable],[role=slider],details,image-viewer,.rv')) return; \
-     el.querySelector(evt.key === 'ArrowLeft' ? 'a[rel=prev]' : 'a[rel=next]')?.click();";
+/// not `__window`, so the scoping is free), by clicking the steps' own links (`cpe.pageKey`,
+/// `public/cpe.js`).
+const PAGES_KEYS_EXPR: &str = "cpe.pageKey(evt, el)";
 
 /// The id of the `pages` reader's status region, which the reader is
 /// `aria-describedby` when the address is stale. Fixed, like
@@ -1160,7 +1119,7 @@ const URL_CORRECTION_DROP: &[&str] = &["page", "member", "datastar"];
 /// the Copy link gives there), else that plus `page=<shown member id>`, since
 /// a `?member=N` beside the stale value decides the page shown and must not
 /// be lost. Replace, not push: Back still leaves the
-/// book. It runs before [`READER_URL_INIT_SCRIPT`] in the same script, so
+/// book. It runs before [`READER_URL_SEED_EXPR`] in the same `data-init`, so
 /// the seed reads the corrected `location` and there is no third
 /// `__cpeReaderUrl` writer. Relative and JS-string-escaped, like the
 /// router's `pushState` URL. `None` when not stale or on the fragment path.
@@ -1262,14 +1221,14 @@ fn render_pages_head(
     let long = aside.is_some_and(|a| a.chars().count() > ASIDE_FALLBACK_BUDGET);
     html! {
         // The arrival scroll's stacked target: `#cv-title`'s parent
-        // (`annotation::ARRIVAL_INIT_EXPR`).
+        // (`annotation::arrival_init_expr`, `cpe.arrival`).
         header.cv-member__head {
             p.eyebrow.cv-member__eyebrow {
                 (eyebrow)
                 @if !page.annotations.is_empty() {
                     " "
                     a.linklike.cv-anno-count href={ "#" (annotation::REGISTER_ID) } {
-                        (ANNO_DOT)
+                        (anno_dot())
                         (anno_count_text(page.annotations.len(), lang))
                     }
                 }
@@ -1427,6 +1386,7 @@ fn render_reader_pager(prev: Option<ReaderStep>, next: Option<ReaderStep>, centr
     html! {
         nav.pg.pg--reader aria-label=(ChromeMsg::CompoundPagerLabel.text(lang)) {
             @if let Some(step) = &prev {
+                // `cpe.pageKey` (`public/cpe.js`) clicks `a[rel=prev]` and `a[rel=next]`.
                 a   .pg__step
                     href=(step.href)
                     rel="prev"
@@ -1444,7 +1404,7 @@ fn render_reader_pager(prev: Option<ReaderStep>, next: Option<ReaderStep>, centr
                         }
                     }
                     @if step.annotated {
-                        (ANNO_DOT)
+                        (anno_dot())
                         span.visually-hidden { (anno_marked_suffix(lang)) }
                     }
                 }
@@ -1457,13 +1417,14 @@ fn render_reader_pager(prev: Option<ReaderStep>, next: Option<ReaderStep>, centr
             }
             (centre)
             @if let Some(step) = &next {
+                // Read by `cpe.pageKey`, as `rel="prev"` above.
                 a   .pg__step
                     href=(step.href)
                     rel="next"
                     title=[(!step.target.is_empty()).then_some(&step.target)]
                     data-on:click__prevent=(step.get)
                 {
-                    @if step.annotated { (ANNO_DOT) }
+                    @if step.annotated { (anno_dot()) }
                     @if short(step) {
                         span.pg__name {
                             (step.target)
@@ -2017,8 +1978,8 @@ mod tests {
     /// still unconditionally carries its own `data-on:popstate__window`
     /// (every populated
     /// compound-viewer root needs Back/Forward to work, regardless of
-    /// whether it has a pager or rail at all), and the plain
-    /// `window.__cpeReaderUrl` init script the listener compares against.
+    /// whether it has a pager or rail at all), and the `data-init` that
+    /// seeds the plain `window.__cpeReaderUrl` the listener compares against.
     #[test]
     fn single_member_no_data_on() {
         let routes = make_routes();
@@ -2037,9 +1998,10 @@ mod tests {
             "the root must still carry the reload-on-popstate listener, got: {out}"
         );
         assert!(
-            out.contains("<script>window.__cpeReaderUrl = location.pathname + location.search;</script>"),
-            "the root must seed window.__cpeReaderUrl via an inline script, got: {out}"
+            out.contains(r#"data-init="window.__cpeReaderUrl = location.pathname + location.search;""#),
+            "the root must seed window.__cpeReaderUrl from its data-init, got: {out}"
         );
+        assert!(!out.contains("<script"), "the root must render no script, got: {out}");
         assert!(
             !out.contains("data-signals") && !out.contains("currentPageQuery") && !out.contains("X-CPE-Popstate"),
             "Option B must not reintroduce the retired DataStar-signal/header \
@@ -3032,23 +2994,15 @@ mod tests {
     /// The `pages` article's open tag, WIDER host wiring included.
     const PAGES_ROOT_OPEN: &str = r#"<article class="compound-viewer compound-viewer--pages page" id="compound-viewer" tabindex="-1" aria-labelledby="cv-title" data-class="{'is-wide': $expand}" data-on:popstate__window="if (location.pathname + location.search !== window.__cpeReaderUrl) { location.reload(); }""#;
 
-    /// The ←/→ handler sits on the `pages` article only
-    /// (focus-scoped, not `__window`), with every guard, and clicks the
-    /// steps' own `rel` links.
+    /// The ←/→ handler sits on the `pages` article only (focus-scoped, not
+    /// `__window`) and hands the event to `cpe.pageKey`.
     #[test]
-    fn pages_root_pages_on_arrow_keys_with_guards() {
+    fn pages_root_binds_the_arrow_keys_to_cpe_page_key() {
         let out = render_pages_mode(MemberIndex::Off);
         let open = &out[..out.find('>').expect("open tag")];
         assert_eq!(open.matches("data-on:keydown").count(), 1, "got: {open}");
-        assert!(!out.contains("keydown__window=\"if (evt.key !== 'ArrowLeft'"));
-        for guard in [
-            "evt.key !== 'ArrowLeft' &amp;&amp; evt.key !== 'ArrowRight'",
-            "evt.repeat || evt.defaultPrevented || evt.shiftKey || evt.ctrlKey || evt.altKey || evt.metaKey",
-            "evt.target.closest('input,select,textarea,[contenteditable],[role=slider],details,image-viewer,.rv')",
-            "el.querySelector(evt.key === 'ArrowLeft' ? 'a[rel=prev]' : 'a[rel=next]')?.click()",
-        ] {
-            assert!(open.contains(guard), "missing `{guard}` in: {open}");
-        }
+        assert!(open.contains(r#"data-on:keydown="cpe.pageKey(evt, el)""#), "got: {open}");
+        assert!(!out.contains("keydown__window=\"cpe.pageKey"), "got: {out}");
         let contents = render_compound_viewer(
             &make_scan_page(3, None),
             &make_cfg(None, "/incunabula/books/B1", None),
@@ -3073,6 +3027,8 @@ mod tests {
         let open = &out[..out.find('>').expect("open tag")];
         assert!(open.contains(&format!(r#" id="{id}""#)), "got: {open}");
         assert!(out.contains("<image-viewer"), "got: {out}");
+        let arrival = annotation::arrival_init_expr();
+        assert!(arrival.contains(&format!("reader: '{id}'")), "{arrival}");
     }
 
     #[test]
@@ -3652,12 +3608,12 @@ mod tests {
         let panel = element(&out, r#"<div class="pk__panel""#, "</details>");
         assert_eq!(panel.matches("data-on:").count(), 1, "got: {panel}");
         assert!(panel.starts_with(r#"<div class="pk__panel" data-on:click=""#));
-        assert!(panel.contains("@get('/incunabula/books/B1/_compound' + a.search)"));
-        // The current entry only closes the picker: no swap that would push
-        // the address already shown. The guard sits after the close and
-        // focus return, right before the request.
+        // The swap runs only for a query `cpe.pickerTarget` returns.
         assert!(
-            panel.contains("if (a.getAttribute('aria-current') === 'page') return; @get("),
+            panel.contains(
+                "const query = cpe.pickerTarget(evt, el); \
+                 if (query !== null) @get('/incunabula/books/B1/_compound' + query)"
+            ),
             "got: {panel}"
         );
         assert!(

@@ -2,12 +2,17 @@
 //!
 //! This crate is a library only; a composition root owns `main`, the listener
 //! and the tracing layers, mounts [`Cpe::router`] and calls [`Cpe::follow`], or
-//! [`Cpe::activate`] to load once.
+//! [`Cpe::activate`] to load once. [`validate`] loads every project once and
+//! serves none, for a host's strict check.
 //! Nothing here may name a type of `cpe-core`, `cpe-store`, `cpe-store-build`,
 //! `cpe-web`, `cpe-components` or `cpe-image-viewer` in a `pub` signature:
 //! that boundary is what lets a host depend on this crate and `cpe-ports`
 //! alone. `tests::no_pub_item_names_another_cpe_crate` holds it, and relies on
-//! this file and `config.rs` importing no CPE crate with `use`.
+//! this file and `config.rs` importing no CPE crate with `use`. It has one
+//! exception: the `hooks` parameter of the doc-hidden `Cpe::activate_with_hooks`
+//! and `Cpe::follow_with_hooks` names `cpe_store_build::hook::Hook`, the seam a
+//! host that supplies hooks writes them against anyway. The test allows that
+//! parameter and nothing else.
 //!
 //! CPE never stops its host. Nothing here fails or panics on what it finds: a
 //! configuration that is refused, a projects folder that is missing, a port
@@ -24,11 +29,13 @@ mod assets;
 mod config;
 mod discovery;
 mod follow;
+mod inputs;
 mod request;
 mod router;
 mod static_files;
 mod unavailable;
 
+use std::path::Path;
 use std::sync::{Arc, PoisonError, RwLock};
 
 pub use config::CpeConfig;
@@ -43,6 +50,110 @@ pub struct ProjectSummary {
     pub title: String,
     /// The path of the project's start page, [`Cpe::base`] included.
     pub url: String,
+}
+
+/// What [`validate`] found.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Validation {
+    /// Why the check fails as a whole: CPE's configuration is refused, the inputs directory is not
+    /// there, no project folder is found, or the check panicked outside a project's own load.
+    pub error: Option<String>,
+    /// Every folder with a `SHORTCODE`, sorted by folder name. A folder with none is no project and
+    /// is not in it.
+    pub projects: Vec<ProjectReport>,
+}
+
+impl Validation {
+    /// Whether no project and no project's inputs failed, and nothing stopped the check. An unknown
+    /// project does not fail it: a project not released where the check runs is expected.
+    #[must_use]
+    pub fn passes(&self) -> bool {
+        self.error.is_none() && !self.projects.iter().any(ProjectReport::failed)
+    }
+}
+
+/// One project folder, as [`validate`] found it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProjectReport {
+    /// The folder's name, which is the project id when the folder is a project.
+    pub folder: String,
+    /// The shortcode the folder's `SHORTCODE` declares; `None` for a folder discovery skips.
+    pub shortcode: Option<String>,
+    pub outcome: ProjectOutcome,
+    /// The data-free check of the inputs shipped for its shortcode; `None` when [`validate`] was
+    /// given no inputs directory, or the folder declares no valid shortcode.
+    pub inputs: Option<InputsCheck>,
+}
+
+impl ProjectReport {
+    /// Whether the folder fails the check: it does not load, or its shipped inputs fail.
+    #[must_use]
+    pub fn failed(&self) -> bool {
+        matches!(self.outcome, ProjectOutcome::Failed { .. }) || matches!(self.inputs, Some(InputsCheck::Failed { .. }))
+    }
+}
+
+/// How one project folder came out of [`validate`]. Every text is ready to print.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ProjectOutcome {
+    /// It loads and would be served. Each warning is one diagnostic, located in its config.
+    Served { warnings: Vec<String> },
+    /// `sync` knows no such project: it would answer 404, and nothing of it is checked.
+    Unknown { reason: String },
+    /// It does not load and would answer 503; the report is the one CPE logs.
+    Failed { report: String },
+}
+
+/// How a project's shipped inputs came out of [`validate`]'s data-free check.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum InputsCheck {
+    /// Its config parses, its remodel block loads and declares the folder's shortcode, and every
+    /// narrative file it names is there in its base or default-language form.
+    Passed,
+    /// The inputs directory ships nothing for its shortcode.
+    NoneShipped,
+    /// What is wrong with them, ready to print.
+    Failed { report: String },
+}
+
+/// Load every project folder from `projection` and `files` once, as [`Cpe::activate`] does,
+/// serve nothing, and report how each came out: the strict check a host runs before it ships a
+/// project, where [`Cpe::activate`] would only take a failing project offline. Given `inputs`, a
+/// directory laid out as the VRE bridge ships a project's inputs, it also runs the data-free check
+/// on what it ships for each project folder's shortcode ([`ProjectReport::inputs`]).
+///
+/// Finding no project folder fails the check, as does an `inputs` that is not a directory: either
+/// would otherwise pass with nothing checked.
+///
+/// It knows no host's hooks: a project whose hook only a host supplies fails with
+/// `hook-not-registered`.
+///
+/// Blocking, and it never panics: a panic outside a project's own load is [`Validation::error`].
+pub fn validate(
+    config: &CpeConfig,
+    projection: &dyn cpe_ports::ArchiveProjection,
+    files: &dyn cpe_ports::DepositedFiles,
+    inputs: Option<&Path>,
+) -> Validation {
+    let failed = |error: String| Validation { error: Some(error), projects: Vec::new() };
+    if let Some(reason) = config.refusal() {
+        return failed(format!("CPE's configuration is refused: {reason}"));
+    }
+    if let Some(inputs) = inputs.filter(|inputs| !inputs.is_dir()) {
+        return failed(format!(
+            "the inputs directory {} is missing or not a directory",
+            inputs.display()
+        ));
+    }
+    match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        activation::validate(config, projection, files, inputs)
+    })) {
+        Ok(projects) if projects.is_empty() => {
+            failed(format!("no project folder under {}", config.projects_dir.display()))
+        }
+        Ok(projects) => Validation { error: None, projects },
+        Err(payload) => failed(format!("CPE's check panicked: {}", activation::panic_message(payload.as_ref()))),
+    }
 }
 
 /// The route that answered a request, as its template with [`Cpe::base`] in
@@ -68,6 +179,9 @@ pub struct Cpe {
     /// `None` until the projects are loaded. A guard is held only to read or
     /// replace the `Arc`, never across an `.await`.
     active: Arc<RwLock<Option<Arc<activation::Activated>>>>,
+    /// The host's hooks the last [`Cpe::activate_with_hooks`] was given, kept before it loads
+    /// anything, so every re-activation loads with them even if that activation stored nothing.
+    hooks: Arc<RwLock<Vec<cpe_store_build::hook::Hook>>>,
 }
 
 impl Cpe {
@@ -93,6 +207,7 @@ impl Cpe {
             config: Arc::new(config.clone()),
             base: Arc::new(config.base_or_root()),
             active: Arc::default(),
+            hooks: Arc::default(),
         }
     }
 
@@ -104,10 +219,10 @@ impl Cpe {
     /// Blocking: it reads the projects folder and asks each port for each
     /// project, so an async host calls it inside `spawn_blocking`, after its
     /// listener is bound. It returns nothing and never panics. A project
-    /// that does not load is logged with its id and answers 503 on its
-    /// prefix, and the others are served and, unless hidden, listed at the base; any other
-    /// path that names no project is CPE's not-found. A later call loads
-    /// everything again and replaces what is served, whatever failed; if it
+    /// that fails to load is logged with its id and answers 503 on its
+    /// prefix, and the others are served and, unless hidden, listed at the base; a project
+    /// with no Ready token, and any other path that names no project, is CPE's not-found. A later
+    /// call loads everything again and replaces what is served, whatever failed; if it
     /// panics outside a project's own load, what was served before stays. Only
     /// [`Cpe::follow`] holds a re-activation back, and a host that follows does
     /// not call this on the same `Cpe` as well.
@@ -115,12 +230,29 @@ impl Cpe {
     /// "Never panics" rests on unwinding: a binary built with
     /// `panic = "abort"` loses it.
     pub fn activate(&self, projection: &dyn cpe_ports::ArchiveProjection, files: &dyn cpe_ports::DepositedFiles) {
+        self.activate_with_hooks(projection, files, &[]);
+    }
+
+    /// [`Cpe::activate`], with `hooks` beside `cpe-store-build`'s own table of hooks. A
+    /// project's hook is the one row that names its folder in either. A folder that two rows
+    /// name, in both tables or twice in `hooks`, does not load and answers 503 on its prefix.
+    ///
+    /// For a host that prototypes projects outside this repository, and so writes their hooks
+    /// against `cpe-store-build`'s `hook` seam itself; nothing in this repository calls it.
+    #[doc(hidden)]
+    pub fn activate_with_hooks(
+        &self,
+        projection: &dyn cpe_ports::ArchiveProjection,
+        files: &dyn cpe_ports::DepositedFiles,
+        hooks: &[cpe_store_build::hook::Hook],
+    ) {
         if self.config.refusal().is_some() {
             return;
         }
+        hooks.clone_into(&mut self.hooks.write().unwrap_or_else(PoisonError::into_inner));
         let config = &self.config;
         match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            activation::from_ports(config, projection, files)
+            activation::from_ports(config, projection, files, hooks)
         })) {
             Ok(activated) => self.store(activated),
             Err(payload) => tracing::error!(
@@ -146,12 +278,26 @@ impl Cpe {
         files: Arc<dyn cpe_ports::DepositedFiles>,
         retry_after: std::time::Duration,
     ) {
+        self.follow_with_hooks(projection, files, retry_after, &[]);
+    }
+
+    /// [`Cpe::follow`], activating with `hooks` as [`Cpe::activate_with_hooks`] does. They are
+    /// kept before the first activation runs, and every re-activation loads with them, whether or
+    /// not the first activation stored anything.
+    #[doc(hidden)]
+    pub fn follow_with_hooks(
+        &self,
+        projection: Arc<dyn cpe_ports::ArchiveProjection>,
+        files: Arc<dyn cpe_ports::DepositedFiles>,
+        retry_after: std::time::Duration,
+        hooks: &[cpe_store_build::hook::Hook],
+    ) {
         if self.config.refusal().is_some() {
             return;
         }
         let (announce, announced) = std::sync::mpsc::channel();
         projection.subscribe(Arc::new(follow::Announcements(announce)));
-        self.activate(projection.as_ref(), files.as_ref());
+        self.activate_with_hooks(projection.as_ref(), files.as_ref(), hooks);
         let cpe = self.clone();
         let spawned = std::thread::Builder::new()
             .name("cpe-reactivate".to_owned())
@@ -165,14 +311,14 @@ impl Cpe {
     /// `data.sql`, each opened from that SQL text, its config and narrative
     /// read from the folder. Blocking: it reads the projects folder.
     ///
-    /// For the incubator's host and for tests only. Removable once no project
-    /// ships a `data.sql` (DEV-7498).
+    /// Test support: it lets the tests load their `data.sql` fixtures without
+    /// the ports.
     ///
     /// A folder without a `data.sql`, and a project that does not load, are
     /// answered 503 on their prefix; the others are served.
-    #[doc(hidden)]
+    #[cfg(test)]
     #[must_use]
-    pub fn from_sql_folders(config: &CpeConfig) -> Self {
+    pub(crate) fn from_sql_folders(config: &CpeConfig) -> Self {
         let cpe = Self::new(config);
         if config.refusal().is_none() {
             cpe.store(activation::from_sql_folders(config));
@@ -186,6 +332,11 @@ impl Cpe {
         // The projects served before are dropped here, after the guard: requests do not wait for
         // it.
         drop(replaced);
+    }
+
+    /// The host's hooks the last activation was given.
+    fn hooks(&self) -> Vec<cpe_store_build::hook::Hook> {
+        self.hooks.read().unwrap_or_else(PoisonError::into_inner).clone()
     }
 
     fn activated(&self) -> Option<Arc<activation::Activated>> {
@@ -496,6 +647,340 @@ mod tests {
         assert_unavailable(status, &headers, "/clash/");
     }
 
+    mod validation {
+        use cpe_ports::FakeArchiveProjection;
+
+        use super::config_for;
+        use crate::activation::tests::{configs, projects, snapshot, things_of, things_with_narrative, THINGS};
+        use crate::{validate, InputsCheck, ProjectOutcome, ProjectReport};
+
+        /// The fixture config with a second page whose id is taken: a validation error.
+        fn broken() -> String {
+            format!("{}\npage id=\"home\" route=\"/again\"\n", things_of("0002"))
+        }
+
+        /// The fixture config under `0004`, labelling a property no Thing has: a validation
+        /// warning.
+        fn unused_label() -> String {
+            format!(
+                "{}\nlabels {{\n    property \"colour\" {{\n        en \"Colour\"\n        de \"Farbe\"\n    }}\n}}\n",
+                things_of("0004")
+            )
+        }
+
+        fn report<'a>(reports: &'a [ProjectReport], folder: &str) -> &'a ProjectReport {
+            reports
+                .iter()
+                .find(|report| report.folder == folder)
+                .unwrap_or_else(|| panic!("{folder} is reported: {reports:?}"))
+        }
+
+        /// `things` (0001) is valid, `broken` (0002) fails validation, `unknown` (0003) has no
+        /// Ready token and `labelled` (0004) loads with a warning.
+        fn validated() -> (tempfile::TempDir, crate::Validation) {
+            let root = projects(&[
+                ("things", "0001"),
+                ("broken", "0002"),
+                ("unknown", "0003"),
+                ("labelled", "0004"),
+            ]);
+            let validation = validate(
+                &config_for(root.path()),
+                &FakeArchiveProjection::default()
+                    .with_project(snapshot("0001", "Brass lamp"))
+                    .with_project(snapshot("0002", "Brass lamp"))
+                    .with_project(snapshot("0004", "Brass lamp")),
+                &configs(&[
+                    ("0001", THINGS),
+                    ("0002", &broken()),
+                    ("0003", &things_of("0003")),
+                    ("0004", &unused_label()),
+                ]),
+                None,
+            );
+            (root, validation)
+        }
+
+        #[test]
+        fn a_valid_project_is_served_a_broken_one_failed_with_its_report_and_one_without_a_token_unknown() {
+            let (_root, validation) = validated();
+            assert_eq!(validation.error, None);
+            let reports = &validation.projects;
+
+            let things = report(reports, "things");
+            assert_eq!(things.shortcode.as_deref(), Some("0001"));
+            assert_eq!(things.outcome, ProjectOutcome::Served { warnings: Vec::new() });
+
+            let ProjectOutcome::Failed { report: text } = &report(reports, "broken").outcome else {
+                panic!("broken fails: {reports:?}");
+            };
+            assert!(
+                text.starts_with("0002/config.kdl:"),
+                "the report is located in the config: {text}"
+            );
+
+            assert!(
+                matches!(&report(reports, "unknown").outcome, ProjectOutcome::Unknown { reason } if reason.contains("0003")),
+                "{reports:?}"
+            );
+            assert!(!validation.passes(), "a failed project fails the check");
+        }
+
+        #[test]
+        fn a_served_projects_warnings_are_in_its_outcome() {
+            let (_root, validation) = validated();
+            let ProjectOutcome::Served { warnings } = &report(&validation.projects, "labelled").outcome else {
+                panic!("labelled is served: {validation:?}");
+            };
+            assert_eq!(warnings.len(), 1, "{warnings:?}");
+            assert!(
+                warnings[0].starts_with("0004/config.kdl:") && warnings[0].contains("colour"),
+                "{warnings:?}"
+            );
+        }
+
+        #[test]
+        fn a_folder_with_a_malformed_shortcode_is_failed_and_one_with_none_is_not_reported() {
+            let root = projects(&[]);
+            std::fs::create_dir(root.path().join("malformed")).expect("the folder is created");
+            std::fs::write(root.path().join("malformed/SHORTCODE"), "08x3\n").expect("SHORTCODE is written");
+            std::fs::create_dir(root.path().join("notes")).expect("the folder is created");
+            let validation = validate(&config_for(root.path()), &FakeArchiveProjection::default(), &configs(&[]), None);
+
+            let malformed = report(&validation.projects, "malformed");
+            assert_eq!(malformed.shortcode, None);
+            assert!(
+                matches!(&malformed.outcome, ProjectOutcome::Failed { report } if report.contains("\"08x3\"")),
+                "{malformed:?}"
+            );
+            assert!(
+                validation.projects.iter().all(|report| report.folder != "notes"),
+                "{validation:?}"
+            );
+        }
+
+        #[test]
+        fn only_unknown_projects_besides_the_served_pass_and_a_refused_configuration_fails() {
+            let root = projects(&[("things", "0001"), ("unknown", "0003")]);
+            let projection = FakeArchiveProjection::default().with_project(snapshot("0001", "Brass lamp"));
+            let files = configs(&[("0001", THINGS)]);
+            let validation = validate(&config_for(root.path()), &projection, &files, None);
+            assert!(validation.passes(), "{validation:?}");
+
+            let refused = crate::CpeConfig { base: "no-slash".to_owned(), ..config_for(root.path()) };
+            let validation = validate(&refused, &projection, &files, None);
+            assert!(validation.error.as_deref().is_some_and(|error| error.contains("CPE_BASE")));
+            assert!(!validation.passes());
+        }
+
+        /// An inputs directory shipping, per `(shortcode, config, narrative files)`, that config
+        /// and those files under `narrative/`.
+        fn inputs(shipped: &[(&str, &str, &[&str])]) -> tempfile::TempDir {
+            let root = tempfile::tempdir().expect("a temporary directory");
+            for (shortcode, config, narrative) in shipped {
+                let dir = root.path().join(shortcode);
+                std::fs::create_dir_all(dir.join("narrative")).expect("the inputs folder is created");
+                std::fs::write(dir.join("config.kdl"), config).expect("config.kdl is written");
+                for name in *narrative {
+                    std::fs::write(dir.join("narrative").join(name), "# A narrative\n")
+                        .expect("the narrative is written");
+                }
+            }
+            root
+        }
+
+        /// The data-free check of the inputs `shipped` for one project folder, `things`, declaring
+        /// `0001`, which `sync` does not know: there is no stand-in data for it.
+        fn checked(shipped: &[(&str, &str, &[&str])]) -> crate::Validation {
+            let root = projects(&[("things", "0001")]);
+            let inputs = inputs(shipped);
+            validate(
+                &config_for(root.path()),
+                &FakeArchiveProjection::default(),
+                &configs(&[]),
+                Some(inputs.path()),
+            )
+        }
+
+        fn failed_inputs(validation: &crate::Validation) -> &str {
+            match &report(&validation.projects, "things").inputs {
+                Some(InputsCheck::Failed { report }) => report,
+                other => panic!("the inputs fail: {other:?}"),
+            }
+        }
+
+        #[test]
+        fn the_data_free_check_fails_on_shipped_inputs_whose_configuration_does_not_parse() {
+            let validation = checked(&[("0001", "site { title \"unclosed\n", &[])]);
+            assert!(failed_inputs(&validation).starts_with("0001/config.kdl"), "{validation:?}");
+            assert!(!validation.passes());
+        }
+
+        #[test]
+        fn the_data_free_check_needs_a_narratives_base_file_or_default_language_variant_only() {
+            // The fixture's site declares "en" "de": "en" is its default language.
+            let config = things_with_narrative("0001");
+            let validation = checked(&[("0001", &config, &["home.de.md"])]);
+            assert!(failed_inputs(&validation).contains("'home.md'"), "{validation:?}");
+            assert!(!validation.passes());
+
+            for held in [&["home.md"][..], &["home.en.md"]] {
+                let validation = checked(&[("0001", &config, held)]);
+                assert_eq!(
+                    report(&validation.projects, "things").inputs,
+                    Some(InputsCheck::Passed),
+                    "{held:?}"
+                );
+                assert!(validation.passes(), "{validation:?}");
+            }
+        }
+
+        #[test]
+        fn the_data_free_check_refuses_a_narrative_name_the_deposited_files_refuse_even_when_shipped() {
+            for name in ["my page.md", ".x.md"] {
+                let config = things_with_narrative("0001").replace("home.md", name);
+                let validation = checked(&[("0001", &config, &[name])]);
+                assert!(
+                    failed_inputs(&validation).contains(&format!("'{name}', which is not a file name")),
+                    "{validation:?}"
+                );
+                assert!(!validation.passes());
+            }
+        }
+
+        #[test]
+        fn the_data_free_check_follows_no_symbolic_link_for_the_narrative_folder() {
+            let root = projects(&[("things", "0001")]);
+            let shipped = inputs(&[("0001", &things_with_narrative("0001"), &[])]);
+            let elsewhere = tempfile::tempdir().expect("a temporary directory");
+            std::fs::write(elsewhere.path().join("home.md"), "# Elsewhere\n").expect("the narrative is written");
+            let narrative = shipped.path().join("0001/narrative");
+            std::fs::remove_dir(&narrative).expect("the narrative folder is removed");
+            std::os::unix::fs::symlink(elsewhere.path(), &narrative).expect("the link is created");
+            let validation = validate(
+                &config_for(root.path()),
+                &FakeArchiveProjection::default(),
+                &configs(&[]),
+                Some(shipped.path()),
+            );
+            assert_eq!(failed_inputs(&validation), "0001/narrative is not a directory");
+        }
+
+        /// The report the full load gives for project `things` (0001) with `config` and stand-in
+        /// data.
+        fn fully_loaded(config: &str) -> String {
+            let root = projects(&[("things", "0001")]);
+            let validation = validate(
+                &config_for(root.path()),
+                &FakeArchiveProjection::default().with_project(snapshot("0001", "Brass lamp")),
+                &configs(&[("0001", config)]),
+                None,
+            );
+            match &report(&validation.projects, "things").outcome {
+                ProjectOutcome::Failed { report } => report.clone(),
+                other => panic!("the full load fails: {other:?}"),
+            }
+        }
+
+        #[test]
+        fn the_data_free_check_refuses_a_default_language_the_site_does_not_declare_as_the_full_load_does() {
+            let config = THINGS.replace(
+                "languages \"en\" \"de\"\n",
+                "languages \"en\" \"de\"\n    default-language \"xx\"\n",
+            );
+            assert_ne!(config, THINGS, "the fixture declares its languages");
+            let validation = checked(&[("0001", &config, &[])]);
+            assert!(failed_inputs(&validation).contains("default-language 'xx'"), "{validation:?}");
+            assert_eq!(failed_inputs(&validation), fully_loaded(&config));
+            assert!(!validation.passes());
+        }
+
+        #[test]
+        fn the_data_free_check_refuses_a_site_without_a_required_language_as_the_full_load_does() {
+            let config = THINGS.replace("languages \"en\" \"de\"", "languages \"en\" \"fr\"");
+            assert_ne!(config, THINGS, "the fixture declares its languages");
+            let validation = checked(&[("0001", &config, &[])]);
+            assert!(failed_inputs(&validation).contains("must include 'de'"), "{validation:?}");
+            assert_eq!(failed_inputs(&validation), fully_loaded(&config));
+            assert!(!validation.passes());
+        }
+
+        #[test]
+        fn the_data_free_check_fails_when_the_mappings_shortcode_is_not_the_folders() {
+            let validation = checked(&[("0001", &things_of("0002"), &[])]);
+            assert!(
+                failed_inputs(&validation).contains("declares shortcode 0002, but the folder's SHORTCODE is 0001"),
+                "{validation:?}"
+            );
+            assert!(!validation.passes());
+        }
+
+        #[test]
+        fn the_data_free_check_fails_on_a_folder_whose_shortcode_is_not_valid() {
+            let root = projects(&[("things", "0001"), ("malformed", "08x3")]);
+            let inputs = inputs(&[("0001", THINGS, &[])]);
+            let validation = validate(
+                &config_for(root.path()),
+                &FakeArchiveProjection::default(),
+                &configs(&[]),
+                Some(inputs.path()),
+            );
+            assert_eq!(report(&validation.projects, "things").inputs, Some(InputsCheck::Passed));
+            let malformed = report(&validation.projects, "malformed");
+            assert!(matches!(malformed.outcome, ProjectOutcome::Failed { .. }), "{malformed:?}");
+            assert_eq!(
+                malformed.inputs, None,
+                "a folder without a valid shortcode has no inputs to look up"
+            );
+            assert!(!validation.passes());
+        }
+
+        #[test]
+        fn a_project_with_neither_stand_in_data_nor_shipped_inputs_passes() {
+            let validation = checked(&[]);
+            let things = report(&validation.projects, "things");
+            assert!(matches!(things.outcome, ProjectOutcome::Unknown { .. }), "{things:?}");
+            assert_eq!(things.inputs, Some(InputsCheck::NoneShipped));
+            assert!(validation.passes(), "{validation:?}");
+        }
+
+        #[test]
+        fn the_check_fails_with_no_project_folder_and_with_an_inputs_directory_that_is_not_there() {
+            let empty = projects(&[]);
+            let validation = validate(
+                &config_for(empty.path()),
+                &FakeArchiveProjection::default(),
+                &configs(&[]),
+                None,
+            );
+            assert!(
+                validation
+                    .error
+                    .as_deref()
+                    .is_some_and(|error| error.starts_with("no project folder")),
+                "{validation:?}"
+            );
+            assert!(!validation.passes());
+
+            let root = projects(&[("things", "0001")]);
+            let missing = empty.path().join("inputs");
+            let validation = validate(
+                &config_for(root.path()),
+                &FakeArchiveProjection::default(),
+                &configs(&[]),
+                Some(&missing),
+            );
+            assert!(
+                validation
+                    .error
+                    .as_deref()
+                    .is_some_and(|error| error.contains("missing or not a directory")),
+                "{validation:?}"
+            );
+            assert!(!validation.passes());
+        }
+    }
+
     /// The names of the other CPE crates. `cpe_ports` is not among them: its
     /// types are the one thing of CPE a host may see beside this crate's own.
     const OTHER_CPE_CRATES: &[&str] = &[
@@ -506,6 +991,24 @@ mod tests {
         "cpe_components",
         "cpe_image_viewer",
     ];
+
+    /// The one parameter a `pub` signature may name another CPE crate in, and the signatures that
+    /// may hold it (see the crate doc).
+    const BOUNDARY_EXCEPTION: (&[&str], &str) = (
+        &["pub fn activate_with_hooks(", "pub fn follow_with_hooks("],
+        "hooks: &[cpe_store_build::hook::Hook]",
+    );
+
+    /// The other CPE crates `signature` names, outside the one parameter the boundary allows.
+    fn forbidden_names(signature: &str) -> Vec<&'static str> {
+        let (functions, parameter) = BOUNDARY_EXCEPTION;
+        let checked = if functions.iter().any(|function| signature.starts_with(function)) {
+            signature.replacen(parameter, "", 1)
+        } else {
+            signature.to_owned()
+        };
+        OTHER_CPE_CRATES.iter().copied().filter(|name| checked.contains(name)).collect()
+    }
 
     /// `source` up to its test module, without comment lines.
     fn production_lines(source: &str) -> Vec<&str> {
@@ -577,9 +1080,8 @@ mod tests {
             }
             for signature in pub_signatures(&lines) {
                 signatures += 1;
-                for name in OTHER_CPE_CRATES {
-                    assert!(!signature.contains(name), "{file}: a pub item names {name}: {signature}");
-                }
+                let names = forbidden_names(&signature);
+                assert!(names.is_empty(), "{file}: a pub item names {names:?}: {signature}");
             }
         }
         assert!(signatures > 0, "the pub items were not found");
@@ -598,5 +1100,32 @@ mod tests {
         let signatures = pub_signatures(&lines);
         assert_eq!(signatures.len(), 1);
         assert!(signatures[0].contains("cpe_web"), "{signatures:?}");
+    }
+
+    #[test]
+    fn the_boundary_exception_is_the_hooks_parameter_alone() {
+        let lines = [
+            "    pub fn activate_with_hooks(",
+            "        &self,",
+            "        hooks: &[cpe_store_build::hook::Hook],",
+            "        project: cpe_web::project::Project,",
+            "    ) {",
+        ];
+        let signatures = pub_signatures(&lines);
+        assert_eq!(signatures.len(), 1);
+        assert_eq!(forbidden_names(&signatures[0]), ["cpe_web"]);
+
+        // `cpe_store` is a prefix of `cpe_store_build`, so both are found.
+        let elsewhere = "pub fn activate_more(&self, hooks: &[cpe_store_build::hook::Hook]) {";
+        assert!(forbidden_names(elsewhere).contains(&"cpe_store_build"));
+        let twice =
+            "pub fn activate_with_hooks(hooks: &[cpe_store_build::hook::Hook], more: &[cpe_store_build::hook::Hook]) {";
+        assert!(forbidden_names(twice).contains(&"cpe_store_build"));
+        for allowed in [
+            "pub fn activate_with_hooks( &self, hooks: &[cpe_store_build::hook::Hook], ) {",
+            "pub fn follow_with_hooks( &self, retry_after: Duration, hooks: &[cpe_store_build::hook::Hook], ) {",
+        ] {
+            assert!(forbidden_names(allowed).is_empty(), "{allowed}");
+        }
     }
 }

@@ -4,6 +4,8 @@
 //! A curated text is written without the whitespace around it, and one that is empty then is
 //! no value. Every refusal here is held on the resource.
 
+use std::borrow::Cow;
+
 use cpe_core::remodel::{CuratedForm, Remodel, RemodelCurated};
 
 use crate::draft::{Cause, Draft, Value};
@@ -53,7 +55,7 @@ fn of_node<'a>(
     let values = match node.form {
         // The language of a single curated text is not read.
         CuratedForm::Text => match curation.at_most_one(iri, key, held) {
-            Found::One(text, _) => vec![Value::Text(text, None)],
+            Found::One(text, _) => vec![Value::Text(Cow::Borrowed(text), None)],
             Found::Absent => Vec::new(),
             Found::Refused => return Vec::new(),
         },
@@ -77,7 +79,7 @@ fn of_node<'a>(
             let in_language = |language: &'a String| {
                 let language = language.as_str();
                 let found = said.iter().find(|(_, lang)| *lang == Some(language));
-                found.map(|(text, _)| Value::Text(text, Some(language)))
+                found.map(|(text, _)| Value::Text(Cow::Borrowed(*text), Some(language)))
             };
             let in_each: Vec<Value<'a>> = languages.iter().filter_map(in_language).collect();
             // One text in every language of the site and none beside them, or no text at all.

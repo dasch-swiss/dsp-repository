@@ -1,7 +1,7 @@
 //! Every IRI the mapping reads, transcribed from §15 of `areas/deposit/vre-bridge/lift/FORMAT.md`,
-//! interim format version 1. The terms of D14, D15 and D16 (`dao:authorship`,
-//! `dao:copyrightHolder`, `dao:accessRights`, `dao:dataClassification`) are left out on purpose:
-//! `sync` omits facts its port does not carry.
+//! interim format version 1. D14's terms (`dao:authorship`, `dao:copyrightHolder`) are read as a
+//! file's legal information. The terms of D15 and D16 (`dao:accessRights`,
+//! `dao:dataClassification`) are left out on purpose: `sync` omits facts its port does not carry.
 //!
 //! No IRI is written anywhere else in the crate. When `READABLE` gains a format version,
 //! re-transcribe from that version's `FORMAT.md`.
@@ -113,6 +113,11 @@ pub const DAO_INTERNAL_FILENAME: NamedNodeRef<'_> =
 pub const DAO_DIM_X: NamedNodeRef<'_> = NamedNodeRef::new_unchecked("https://ontology.dasch.swiss/dao#dimX");
 /// §8.
 pub const DAO_DIM_Y: NamedNodeRef<'_> = NamedNodeRef::new_unchecked("https://ontology.dasch.swiss/dao#dimY");
+/// §8, deviation D14.
+pub const DAO_AUTHORSHIP: NamedNodeRef<'_> = NamedNodeRef::new_unchecked("https://ontology.dasch.swiss/dao#authorship");
+/// §8, deviation D14.
+pub const DAO_COPYRIGHT_HOLDER: NamedNodeRef<'_> =
+    NamedNodeRef::new_unchecked("https://ontology.dasch.swiss/dao#copyrightHolder");
 
 /// §9.
 pub const SKOS_CONCEPT: NamedNodeRef<'_> = NamedNodeRef::new_unchecked("http://www.w3.org/2004/02/skos/core#Concept");

@@ -32,6 +32,8 @@ rust_test(
     name = "cpe_components_test",
     crate = ":cpe_components",
     compile_data = glob(["src/**/testdata/**"]),
-    data = glob(["src/**/snapshots/**"]),
+    # The sources: a test counts their `PreEscaped(` sites, below `CARGO_MANIFEST_DIR`.
+    data = glob(["src/**/snapshots/**"]) + glob(["src/**/*.rs"]),
+    rustc_env = {"CARGO_MANIFEST_DIR": "areas/access/cpe/components"},
     deps = ["@crates//:insta"],
 )

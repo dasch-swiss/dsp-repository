@@ -537,7 +537,7 @@ pub fn render_resource_detail(resource: &Resource, cfg: ResourceDetailCfg<'_>, l
     // declaration: DataStar applies an element's attributes in order.
     let annotated_reader = cfg.reader.is_some() && cfg.annotations.is_some();
     let anno_signals = annotated_reader.then(super::annotation::annotation_signals_decl);
-    let anno_arrival = annotated_reader.then_some(super::annotation::ARRIVAL_INIT_EXPR);
+    let anno_arrival = annotated_reader.then(super::annotation::arrival_init_expr);
 
     html! {
         article
@@ -552,7 +552,8 @@ pub fn render_resource_detail(resource: &Resource, cfg: ResourceDetailCfg<'_>, l
                 // container and a container query never styles its own
                 // container. The DOM order is the stacked order (head →
                 // reader → intro → Apparat); record.css places the reader
-                // in the right-hand track at desk widths.
+                // in the right-hand track at desk widths. `cpe.arrival` reads
+                // its grid to tell the stacked layout.
                 div.record__tracks {
                     (head_markup)
                     (reader)
@@ -4527,7 +4528,7 @@ mod tests {
         );
         let tag = &out[..out.find('>').expect("the article tag closes")];
         let init = maud::html! {
-            (super::super::annotation::ARRIVAL_INIT_EXPR)
+            (super::super::annotation::arrival_init_expr())
         }
         .into_string();
         assert!(tag.contains(&format!(r#"data-init="{init}""#)), "{tag}");

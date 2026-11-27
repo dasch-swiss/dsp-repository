@@ -92,22 +92,11 @@ fn validate_inner(raw: &RawConfig, ctx: &ValidationContext<'_>) -> (Option<Valid
         check_not_found_browse_routes(&site.not_found_browse, &declared_routes, &mut report);
         check_figure_more_routes(&pages, &declared_routes, &mut report);
 
-        // ── Desk header row budget ────────────────────────────────────────────
-        // Same placement rationale as `check_class_plurals` below: config-
-        // internal, needs the lowered site title, nav and chrome.
-        header_budget::check_header_row_budget(site, &mut report);
-
-        // ── Class-plural completeness ─────────────────────────────────────────
-        // Config-internal (no data needed), so it runs here — before the
-        // `validate_with_data` fork — and therefore reaches both arms without
-        // a `*_into_raw` sibling. It does sit inside the `site_result` guard
-        // (class labels live on the lowered `SiteConfig`), so a config whose
-        // `site {}` block itself failed to lower reports no `MissingClassPlural`
-        // — acceptable for an advisory on a boot that hard-fails anyway.
-        check_class_plurals(&site.class_labels, &mut report);
+        // ── Desk header row budget and class plurals ──────────────────────────
+        check_lowered_site(site, &mut report);
 
         // ── Property-group + incoming-links captions ─────────────────
-        // Same placement rationale as `check_class_plurals`: config-internal,
+        // Same placement rationale as `check_lowered_site`: config-internal,
         // needs the lowered `site.chrome`, runs before the fork.
         check_group_labels(&pages, &site.chrome, &mut report);
 
@@ -262,6 +251,9 @@ pub struct NamedNarratives {
     pub files: Vec<String>,
     /// The site's declared languages, each once.
     pub languages: Vec<String>,
+    /// The site's `default-language`, else its first declared language; `None` when it declares
+    /// none.
+    pub default_language: Option<String>,
 }
 
 impl NamedNarratives {
@@ -280,6 +272,30 @@ impl NamedNarratives {
         }
         names
     }
+
+    /// The files of [`Self::files`] that do not resolve in what `held` holds, by the rule
+    /// `NarrativeFileNotFound` applies at activation ([`narrative_resolves`]).
+    #[must_use]
+    pub fn unresolved(&self, held: impl Fn(&str) -> bool) -> Vec<&str> {
+        self.files
+            .iter()
+            .map(String::as_str)
+            .filter(|file| !narrative_resolves(file, self.default_language.as_deref(), &held))
+            .collect()
+    }
+}
+
+/// Whether narrative `file` resolves among the names `held` holds: as itself, or as its variant in
+/// `default_language`, the two forms render's fallback (requested, then default, then base) always
+/// reaches. Another language's variant is optional. With no default language only `file` counts.
+/// Activation's `check_narrative_file` and [`NamedNarratives::unresolved`] both decide by this;
+/// activation adds only a lenient probe for a site block that failed to lower, which `unresolved`
+/// never meets, since `load_remodel` refuses a site without languages first.
+fn narrative_resolves(file: &str, default_language: Option<&str>, held: impl Fn(&str) -> bool) -> bool {
+    held(file)
+        || default_language
+            .and_then(|language| crate::util::variant_filename(file, language))
+            .is_some_and(|variant| held(&variant))
 }
 
 /// Parse `config_src` and list the narrative files it names; see [`NamedNarratives`]. A host
@@ -304,8 +320,9 @@ pub fn named_narratives(config_src: &str) -> Result<NamedNarratives, ConfigError
             }
         }
     }
-    let languages = declared_languages(&raw).into_iter().map(str::to_owned).collect();
-    Ok(NamedNarratives { files, languages })
+    let languages: Vec<String> = declared_languages(&raw).into_iter().map(str::to_owned).collect();
+    let default_language = raw.default_language.clone().or_else(|| languages.first().cloned());
+    Ok(NamedNarratives { files, languages, default_language })
 }
 
 /// Run the full config-internal validation **plus** data-dependent checks.
@@ -3670,6 +3687,89 @@ fn check_and_lower_site(
     ctx: &ValidationContext<'_>,
     report: &mut ValidationReport,
 ) -> Option<SiteConfig> {
+    let site = lower_site(raw, report);
+
+    // CoverImageNotFound — `ctx.asset_files` is the project's COMPLETE
+    // `assets/` inventory, unconditionally. An empty inventory therefore means
+    // "this project has no asset files" (no `assets/` dir, or an empty one —
+    // `DiscoveredProject::asset_files()` returns `Vec::new()` for both, and in
+    // both the truthful answer to "does this file exist?" is no), so a
+    // declared `cover-image` is missing and must hard-fail.
+    //
+    // This DELIBERATELY diverges from the `narrative_files` empty-slice guard
+    // below: that inventory may be incomplete (`narrative_files_complete`),
+    // and an incomplete empty one does not constrain, whereas failing open
+    // here would let a project declaring `site.cover-image` with no `assets/`
+    // directory boot green and serve a broken <img> on the site index. Don't
+    // "restore consistency" by reintroducing an `is_empty()` guard.
+    if let Some(path) = &raw.cover_image {
+        if is_plain_cover_image_path(path) && !ctx.asset_files.iter().any(|f| f == path) {
+            report.push(Diagnostic::error_spanless(
+                DiagnosticKind::CoverImageNotFound,
+                format!("cover-image path '{path}' not found in the project's assets/ directory"),
+            ));
+            return None;
+        }
+    }
+    site
+}
+
+/// The checks that need only the lowered site: the desk header's row budget
+/// and the class plurals. Validation and [`check_site`] both run them.
+fn check_lowered_site(site: &SiteConfig, report: &mut ValidationReport) {
+    header_budget::check_header_row_budget(site, report);
+
+    // Config-internal (no data needed), so it runs before the
+    // `validate_with_data` fork and therefore reaches both arms without a
+    // `*_into_raw` sibling. Class labels live on the lowered `SiteConfig`, so
+    // a config whose `site {}` block itself failed to lower reports no
+    // `MissingClassPlural` — acceptable for an advisory on a boot that
+    // hard-fails anyway.
+    check_class_plurals(&site.class_labels, report);
+}
+
+/// Parse `config_src` and run the checks of its `site` block that need neither
+/// the project's data nor its assets: the title, the languages
+/// (`MissingSiteLanguages`, `MissingRequiredLanguage`, wrong-typed entries),
+/// `UnknownDefaultLanguage`, the chrome-string and label translations, the
+/// theme, the cover-image path's form (`InvalidCoverImagePath`),
+/// `date-precision-word`, `footer-attribution`, the narrative and text-align
+/// choices, the cap on `not-found` browse links, the desk header's row budget
+/// and the class plurals. Validation runs the same functions.
+///
+/// Left to the full load ([`load_config`]): `CoverImageNotFound`, which needs
+/// the project's `assets/` inventory, and the nav and `not-found` route
+/// checks, which compare against the lowered pages, whose checks need the
+/// project's data and inventories.
+///
+/// Returns the warnings of a site block that passes; an error comes back as
+/// `ConfigLoadError::Validation`, a source that is no KDL as
+/// `ConfigLoadError::Parse`.
+pub fn check_site(config_src: &str) -> Result<Vec<Diagnostic>, ConfigLoadError> {
+    let raw = crate::config::parse(config_src).map_err(ConfigLoadError::Parse)?;
+    let mut report = ValidationReport::new();
+    if let Some(site) = lower_site(&raw, &mut report) {
+        check_lowered_site(&site, &mut report);
+    }
+    if report.has_errors() {
+        return Err(ConfigLoadError::Validation(report));
+    }
+    Ok(report.iter().cloned().collect())
+}
+
+/// Whether `path` is a bare relative path: no ".." segment, no leading '/',
+/// and no empty or dot-prefixed segment. This MUST match the segment-rejection
+/// rules the runtime asset route independently enforces — otherwise a path
+/// can boot-validate successfully yet 404 at request time (e.g.
+/// "assets/.cover.webp" or "assets//cover.webp").
+fn is_plain_cover_image_path(path: &str) -> bool {
+    !path.starts_with('/') && !path.split('/').any(|seg| seg == ".." || seg.is_empty() || seg.starts_with('.'))
+}
+
+/// Validate and lower the site metadata, all but `CoverImageNotFound`, which
+/// needs the project's asset inventory. Returns `Some(SiteConfig)` when no
+/// errors were found; `None` when at least one error was pushed.
+fn lower_site(raw: &RawConfig, report: &mut ValidationReport) -> Option<SiteConfig> {
     let error_count_before = error_count(report);
 
     // ── title ────────────────────────────────────────────────────────────────
@@ -3960,45 +4060,15 @@ fn check_and_lower_site(
     // did NOT declare to compare against.
 
     // ── cover-image ───────────────────────────────────────────────────────────
+    // The path's form only; `check_and_lower_site` looks the file up.
     if let Some(path) = &raw.cover_image {
-        // InvalidCoverImagePath — bare relative path only: no ".." segment,
-        // no leading '/', and no empty or dot-prefixed segment. This MUST
-        // match the segment-rejection rules the runtime route
-        // (`serve_project_asset` in `dsp-incubator cpe/bin/src/router.rs`)
-        // independently enforces — otherwise a path can boot-validate
-        // successfully yet
-        // 404 at request time (e.g. "assets/.cover.webp" or
-        // "assets//cover.webp").
-        let has_leading_slash = path.starts_with('/');
-        let has_bad_segment = path.split('/').any(|seg| seg == ".." || seg.is_empty() || seg.starts_with('.'));
-        if has_leading_slash || has_bad_segment {
+        if !is_plain_cover_image_path(path) {
             report.push(Diagnostic::error_spanless(
                 DiagnosticKind::InvalidCoverImagePath,
                 format!(
                     "cover-image path '{path}' must be a plain relative path (no '..', \
                      no leading '/', and no empty or dot-prefixed segment)"
                 ),
-            ));
-        } else if !ctx.asset_files.iter().any(|f| f == path) {
-            // CoverImageNotFound — `ctx.asset_files` is the project's
-            // COMPLETE `assets/` inventory, unconditionally. An empty
-            // inventory therefore means "this project has no asset files"
-            // (no `assets/` dir, or an empty one — `DiscoveredProject::
-            // asset_files()` returns `Vec::new()` for both, and in both
-            // the truthful answer to "does this file exist?" is no), so a
-            // declared `cover-image` is missing and must hard-fail.
-            //
-            // This DELIBERATELY diverges from the `narrative_files`
-            // empty-slice guard below: that inventory may be incomplete
-            // (`narrative_files_complete`), and an incomplete empty one
-            // does not constrain, whereas failing open here would let a project
-            // declaring `site.cover-image` with no `assets/` directory
-            // boot green and serve a broken <img> on the site index.
-            // Don't "restore consistency" by reintroducing an
-            // `is_empty()` guard.
-            report.push(Diagnostic::error_spanless(
-                DiagnosticKind::CoverImageNotFound,
-                format!("cover-image path '{path}' not found in the project's assets/ directory"),
             ));
         }
     }
@@ -4865,39 +4935,21 @@ fn check_narrative_file(
     // the host does not call complete is "unknown", and existence is not
     // checked.
     if ctx.narrative_files_complete || !ctx.narrative_files.is_empty() {
-        let base_exists = ctx.narrative_files.iter().any(|f| f == file);
-        if !base_exists {
-            // The narrative file must resolve to the base file (checked above)
-            // OR the default-language variant specifically — the two rungs the
-            // render-time fallback chain (requested → default → base)
-            // guarantees will always render. Non-default-language variants are
-            // optional: they're a nice-to-have that falls back to the default
-            // variant at render time, so their absence isn't a boot-time error.
-            // This is a narrower probe than an "any language variant" check.
-            let default_variant_exists = match default_language {
-                Some(default_lang) => match crate::util::variant_filename(file, default_lang) {
-                    Some(candidate) => ctx.narrative_files.iter().any(|f| f == &candidate),
-                    // No extension → no variant form is possible; only the
-                    // base counts, and base_exists is already false here.
-                    None => false,
-                },
-                // No resolved default language (site lowering itself failed)
-                // — fall back to the lenient "any variant" probe so this
-                // check doesn't pile a second, less-precise error on top of
-                // an already-broken site block.
-                None => {
-                    let (stem, _ext) = split_stem_ext(file);
-                    ctx.narrative_files.iter().any(|f| f.starts_with(&format!("{stem}.")))
-                }
+        let held = |name: &str| ctx.narrative_files.iter().any(|f| f == name);
+        // With no resolved default language (site lowering itself failed), any variant is
+        // accepted, so this check piles no second, less precise error on a broken site block.
+        let resolves = narrative_resolves(file, default_language, held)
+            || default_language.is_none() && {
+                let (stem, _ext) = split_stem_ext(file);
+                ctx.narrative_files.iter().any(|f| f.starts_with(&format!("{stem}.")))
             };
-            if !default_variant_exists {
-                report.push(Diagnostic::error(
-                    DiagnosticKind::NarrativeFileNotFound,
-                    format!("narrative file '{file}' not found among the project's narrative files"),
-                    span,
-                ));
-                return false;
-            }
+        if !resolves {
+            report.push(Diagnostic::error(
+                DiagnosticKind::NarrativeFileNotFound,
+                format!("narrative file '{file}' not found among the project's narrative files"),
+                span,
+            ));
+            return false;
         }
     }
 
@@ -7270,6 +7322,98 @@ page id="home" route="/"
                 );
             }
             other => panic!("expected MissingSiteLanguages, got {other:?}"),
+        }
+    }
+
+    // ── check_site ────────────────────────────────────────────────────────────
+
+    #[test]
+    fn check_site_refuses_the_languages_as_the_full_validation_does() {
+        let src = r#"site {
+    title "T"
+    languages "en" "fr"
+    default-language "xx"
+}
+page id="home" route="/"
+"#;
+        let ctx = ValidationContext::for_tests("my-project");
+        let full = run(src, &ctx).expect_err("the full validation refuses the languages");
+
+        match check_site(src) {
+            Err(ConfigLoadError::Validation(report)) => {
+                assert_eq!(
+                    kinds(&report),
+                    vec![
+                        DiagnosticKind::MissingRequiredLanguage,
+                        DiagnosticKind::UnknownDefaultLanguage
+                    ]
+                );
+                assert_eq!(kinds(&report), kinds(&full));
+            }
+            other => panic!("expected the language diagnostics, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn check_site_does_not_look_for_the_cover_image_the_full_validation_misses() {
+        let src = r#"site {
+    title "T"
+    languages "de" "en"
+    cover-image "assets/cover.webp"
+}
+page id="home" route="/"
+"#;
+        let ctx = ValidationContext::for_tests("my-project");
+        let full = run(src, &ctx).expect_err("the project has no assets");
+        assert_eq!(kinds(&full), vec![DiagnosticKind::CoverImageNotFound]);
+
+        let warnings = check_site(src).unwrap_or_else(|e| panic!("the site block passes: {e:?}"));
+
+        assert!(warnings.is_empty(), "{warnings:?}");
+    }
+
+    #[test]
+    fn check_site_refuses_a_cover_image_path_that_is_not_plain() {
+        let src = r#"site {
+    title "T"
+    languages "de" "en"
+    cover-image "../cover.webp"
+}
+"#;
+        match check_site(src) {
+            Err(ConfigLoadError::Validation(report)) => {
+                assert_eq!(kinds(&report), vec![DiagnosticKind::InvalidCoverImagePath]);
+            }
+            other => panic!("expected InvalidCoverImagePath, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn check_site_returns_the_warnings_of_a_site_that_passes() {
+        let src = r#"site {
+    title "T"
+    languages "de" "en"
+}
+labels {
+    class "Book" {
+        de "Buch"
+        en "Book"
+    }
+}
+"#;
+        let warnings = check_site(src).unwrap_or_else(|e| panic!("the site block passes: {e:?}"));
+
+        assert_eq!(
+            warnings.iter().map(|d| d.kind.clone()).collect::<Vec<_>>(),
+            vec![DiagnosticKind::MissingClassPlural { class: "Book".to_owned() }]
+        );
+    }
+
+    #[test]
+    fn check_site_returns_the_parse_error_of_a_config_that_is_no_kdl() {
+        match check_site("site {") {
+            Err(ConfigLoadError::Parse(_)) => {}
+            other => panic!("expected a parse error, got {other:?}"),
         }
     }
 
@@ -12126,6 +12270,7 @@ page id="home" route="/" {{
             NamedNarratives {
                 files: vec!["book-b.md".into(), "home.md".into(), "../up.md".into()],
                 languages: vec!["de".into(), "en".into()],
+                default_language: Some("de".into()),
             }
         );
         assert_eq!(
@@ -12138,6 +12283,28 @@ page id="home" route="/" {{
                 "home.de.md",
                 "home.en.md"
             ]
+        );
+    }
+
+    #[test]
+    fn a_named_narrative_resolves_to_its_base_file_or_its_default_language_variant_only() {
+        let src = format!(
+            "site {{\n    title \"T\"\n    languages \"de\" \"en\"\n    default-language \"en\"\n}}\n{}",
+            "page id=\"home\" route=\"/\" {\n    narrative file=\"base.md\"\n    narrative file=\"default.md\"\n    \
+             narrative file=\"other.md\"\n}\n"
+        );
+        let named = named_narratives(&src).expect("the config parses");
+        assert_eq!(
+            named.default_language.as_deref(),
+            Some("en"),
+            "the site's default, not its first language"
+        );
+
+        let held = ["base.md", "default.en.md", "other.de.md"];
+        assert_eq!(
+            named.unresolved(|name| held.contains(&name)),
+            ["other.md"],
+            "another language's variant does not stand in for the default's"
         );
     }
 

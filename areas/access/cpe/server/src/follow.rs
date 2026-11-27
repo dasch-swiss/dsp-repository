@@ -81,17 +81,28 @@ fn names_a_project_folder(cpe: &Cpe, shortcodes: &BTreeSet<String>) -> bool {
         .any(|project| project.shortcode.is_some_and(|shortcode| shortcodes.contains(&shortcode)))
 }
 
-/// Load every project again, and serve the result if no project held it back. Returns whether it
-/// was stored. A panic keeps what was served and the thread.
+/// Load every project again, with the host's hooks kept on `cpe`, and serve the result if no
+/// project held it back. Returns whether it was stored. A panic keeps what was served and the
+/// thread.
 fn reactivate(cpe: &Cpe, projection: &dyn ArchiveProjection, files: &dyn DepositedFiles) -> bool {
     let outcome = catch_unwind(AssertUnwindSafe(|| {
-        let next = activation::from_ports(&cpe.config, projection, files);
         // `cpe-reactivate` is the only thread that stores once the first activation is done.
-        let held_back = cpe
-            .activated()
-            .map(|current| activation::held_back_by(&current, &next))
+        let current = cpe.activated();
+        let next = activation::from_ports(&cpe.config, projection, files, &cpe.hooks());
+        let held_back = current
+            .as_ref()
+            .map(|current| activation::held_back_by(current, &next))
             .unwrap_or_default();
         if held_back.is_empty() {
+            for project_id in current
+                .map(|current| activation::withdrawn_by(&current, &next))
+                .unwrap_or_default()
+            {
+                tracing::warn!(
+                    project_id = project_id.as_str(),
+                    "a served project is no longer in the archive projection; its prefix answers 404"
+                );
+            }
             cpe.store(next);
         }
         held_back
@@ -125,14 +136,16 @@ mod tests {
     use std::sync::{mpsc, Arc, Mutex, PoisonError, RwLock};
     use std::time::{Duration, Instant};
 
-    use axum::http::StatusCode;
+    use axum::http::{header, StatusCode};
     use cpe_ports::{
         ArchiveProjection, ChangeListener, DepositedFiles, FakeArchiveProjection, FakeDepositedFiles, FilesError,
         ProjectSnapshot, ProjectionError, Provenance,
     };
 
-    use crate::activation::tests::{configs, projects, snapshot, things_of, THINGS};
-    use crate::tests::{assert_unavailable, config_for, get};
+    use crate::activation::tests::{
+        configs, host_hook, projects, snapshot, things_of, things_with_hook, SUMMARY, THINGS,
+    };
+    use crate::tests::{config_for, get};
     use crate::Cpe;
 
     /// Answers to `provenance`, in order, the last one for good.
@@ -362,9 +375,31 @@ mod tests {
         run(&cpe, &projection, &files, &["0003"]);
 
         assert_eq!(lamp(&cpe, "things").await, Ok("Copper kettle"));
-        let (status, headers, _) = get(&cpe, "/other/").await;
-        assert_unavailable(status, &headers, "/other/");
+        let (status, headers, body) = get(&cpe, "/other/").await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
+        assert!(!headers.contains_key(header::RETRY_AFTER));
+        assert!(body.contains("This address does not name a project."), "{body}");
         assert_eq!(cpe.projects().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn a_project_sync_comes_to_know_is_presented_after_the_announcement() {
+        let root = projects(&[("things", "0001"), ("other", "0003")]);
+        let cpe = Cpe::new(&config_for(root.path()));
+        let projection = Projection::new(
+            FakeArchiveProjection::default()
+                .with_project(snapshot("0001", "Brass lamp"))
+                .with_provenance("0001", provenance("G1")),
+        );
+        let files = Files::new();
+        cpe.activate(&projection, &files);
+        assert_eq!(lamp(&cpe, "other").await, Err(StatusCode::NOT_FOUND));
+
+        projection.swap(lamps("Brass lamp"));
+        run(&cpe, &projection, &files, &["0003"]);
+
+        assert_both_brass(&cpe).await;
+        assert_eq!(cpe.projects().len(), 2);
     }
 
     /// A lost mount looks like every token removed; the missing location tells it apart.
@@ -466,5 +501,46 @@ mod tests {
         std::thread::sleep(retry_after * 5);
         assert_eq!(projection.snapshots(), 10, "held back on the announcement and on its one retry");
         assert_eq!(lamp(&cpe, "other").await, Ok("Copper kettle"));
+    }
+
+    /// Without the host's hook, the re-activation would fail `things` and be held back.
+    #[tokio::test]
+    async fn a_reactivation_keeps_the_hosts_hooks() {
+        let root = projects(&[("things", "0001")]);
+        let cpe = Cpe::new(&config_for(root.path()));
+        let projection = Projection::new(FakeArchiveProjection::default().with_project(snapshot("0001", "Brass lamp")));
+        let files = configs(&[("0001", &things_with_hook())]);
+        cpe.activate_with_hooks(&projection, &files, &[host_hook("things")]);
+        projection.swap(FakeArchiveProjection::default().with_project(snapshot("0001", "Copper kettle")));
+
+        let (announce, announced) = mpsc::channel();
+        announce.send("0001".to_owned()).expect("the receiver is here");
+        drop(announce);
+        super::run(&cpe, &announced, &projection, &files, Duration::from_millis(10));
+
+        let (status, _, body) = get(&cpe, "/things/things/lamp").await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert!(body.contains("Copper kettle") && body.contains(SUMMARY), "{body}");
+    }
+
+    /// A first activation that panics outside a project's load stores nothing; clearing what it
+    /// stored stands in for that panic.
+    #[tokio::test]
+    async fn a_reactivation_after_a_first_activation_that_stored_nothing_keeps_the_hosts_hooks() {
+        let root = projects(&[("things", "0001")]);
+        let cpe = Cpe::new(&config_for(root.path()));
+        let projection = Projection::new(FakeArchiveProjection::default().with_project(snapshot("0001", "Brass lamp")));
+        let files = configs(&[("0001", &things_with_hook())]);
+        cpe.activate_with_hooks(&projection, &files, &[host_hook("things")]);
+        *cpe.active.write().unwrap_or_else(PoisonError::into_inner) = None;
+
+        let (announce, announced) = mpsc::channel();
+        announce.send("0001".to_owned()).expect("the receiver is here");
+        drop(announce);
+        super::run(&cpe, &announced, &projection, &files, Duration::from_millis(10));
+
+        let (status, _, body) = get(&cpe, "/things/things/lamp").await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert!(body.contains("Brass lamp") && body.contains(SUMMARY), "{body}");
     }
 }
